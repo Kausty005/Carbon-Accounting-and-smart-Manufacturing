@@ -102,14 +102,34 @@ class EnergyIntelligencePipeline:
         rf_path = p / "supervised_rf_pipeline.joblib"
         supervised_model = joblib.load(rf_path) if rf_path.exists() else None
 
+        # Cross-version compatibility patch for scikit-learn >= 1.8 unpickling SimpleImputer from 1.7
+        def _patch_imputers(obj):
+            if hasattr(obj, "named_steps") and isinstance(obj.named_steps, dict):
+                for s in obj.named_steps.values():
+                    _patch_imputers(s)
+            if hasattr(obj, "transformers_"):
+                for item in obj.transformers_:
+                    if len(item) >= 2:
+                        _patch_imputers(item[1])
+            if hasattr(obj, "__class__") and obj.__class__.__name__ == "SimpleImputer":
+                if not hasattr(obj, "_fill_dtype"):
+                    setattr(obj, "_fill_dtype", getattr(obj, "_fit_dtype", float))
+
+        if supervised_model is not None and hasattr(supervised_model, "pipeline"):
+            _patch_imputers(supervised_model.pipeline)
+
         if_path = p / "isolation_forest_pipeline.joblib"
         isolation_forest_model = joblib.load(if_path) if if_path.exists() else None
+        if isolation_forest_model is not None and hasattr(isolation_forest_model, "pipeline"):
+            _patch_imputers(isolation_forest_model.pipeline)
 
         eb_path = p / "energy_baseline_model.joblib"
         energy_baseline_model = joblib.load(eb_path) if eb_path.exists() else None
 
         ft_path = p / "feature_transformer.joblib"
         feature_transformer = joblib.load(ft_path) if ft_path.exists() else None
+        if feature_transformer is not None:
+            _patch_imputers(feature_transformer)
 
         return cls(
             supervised_model=supervised_model,

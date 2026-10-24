@@ -19,6 +19,7 @@ import json
 import math
 import random
 import re
+import warnings
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -417,6 +418,10 @@ def download_incident_report(
 # Real-Time Telemetry Simulation & Live Anomaly Detection Engine
 # ------------------------------------------------------------------------------
 
+# ------------------------------------------------------------------------------
+# Real-Time CSV SCADA Telemetry Streaming & ML Anomaly Detection Engine
+# ------------------------------------------------------------------------------
+
 _simulation_state: Dict[str, Any] = {
     "tick": 0,
     "last_timestamp": None,
@@ -424,51 +429,29 @@ _simulation_state: Dict[str, Any] = {
     "history": [],
 }
 
-SIMULATED_MACHINES_CONFIG = [
-    {
-        "equipment_id": "AIR-COMP-01",
-        "name": "ELGi Industrial Air Compressor",
-        "equipment_type": "air_compressor",
-        "rated_power_kw": 75.0,
-        "base_power_kw": 24.5,
-        "base_pressure_bar": 7.2,
-        "base_cfm": 125.0,
-        "base_vibration_mm_s": 1.25,
-        "base_temp_c": 77.5,
-    },
-    {
-        "equipment_id": "CNC-01",
-        "name": "5-Axis CNC Machining Center",
-        "equipment_type": "cnc_machine",
-        "rated_power_kw": 25.0,
-        "base_power_kw": 10.4,
-        "base_rpm": 4250.0,
-        "base_load_pct": 42.0,
-        "base_vibration_mm_s": 0.58,
-        "base_temp_c": 24.2,
-    },
-    {
-        "equipment_id": "FURNACE-01",
-        "name": "Industrial Heat Treating Furnace",
-        "equipment_type": "furnace",
-        "rated_power_kw": 120.0,
-        "base_power_kw": 48.5,
-        "base_temp_c": 850.0,
-        "setpoint_temp_c": 850.0,
-        "base_vibration_mm_s": 0.32,
-    },
-    {
-        "equipment_id": "CHILLER-01",
-        "name": "Central Chilled Water System",
-        "equipment_type": "chiller",
-        "rated_power_kw": 60.0,
-        "base_power_kw": 22.8,
-        "base_supply_temp_c": 7.2,
-        "base_delta_t_c": 5.4,
-        "base_flow_m3h": 40.5,
-        "base_vibration_mm_s": 0.78,
-    },
-]
+_csv_telemetry_df: Optional[pd.DataFrame] = None
+_csv_timestamps: Optional[List[str]] = None
+_csv_stream_pointer: int = 980  # Starts at 2024-01-04T09:40:00 (4 normal ticks, then Furnace anomaly at 984!)
+
+ANOMALY_JUMP_INDICES = {
+    "FURNACE-01": 984,      # At 984: excessive_idle_heating (83.48 kW)
+    "AIR-COMP-01": 1548,    # At 1548: pressure_loss_leak (4.94 bar, 73.9 kW)
+    "CHILLER-01": 3889,     # At 3889: low_delta_t_syndrome (12.05 kW)
+    "CNC-01": 3036,         # At 3036: bearing_degradation & tool wear (34.81 kW)
+}
+
+
+def _load_telemetry_csv_stream():
+    """Load synthetic_v1/telemetry.csv into memory once for high-throughput streaming."""
+    global _csv_telemetry_df, _csv_timestamps
+    if _csv_telemetry_df is None:
+        csv_path = BASE_DIR / "data" / "synthetic_v1" / "telemetry.csv"
+        if not csv_path.exists():
+            return None, None
+        df = pd.read_csv(csv_path)
+        _csv_telemetry_df = df
+        _csv_timestamps = list(df["timestamp"].unique())
+    return _csv_telemetry_df, _csv_timestamps
 
 
 class InjectedAnomalyRequest(BaseModel):
@@ -479,15 +462,18 @@ class InjectedAnomalyRequest(BaseModel):
 @router.post("/api/anomalies/live-stream/inject")
 def inject_live_anomaly(payload: InjectedAnomalyRequest):
     """
-    Queue a manual anomaly fault to trigger on the immediate next simulation tick.
+    Queue a manual anomaly fault: advances the CSV stream directly to the target machine's
+    real anomaly event in telemetry.csv on the immediate next simulation tick.
     """
+    eq = (payload.equipment_id or "FURNACE-01").upper()
     _simulation_state["injected_anomaly"] = {
-        "equipment_id": payload.equipment_id or "FURNACE-01",
+        "equipment_id": eq,
         "anomaly_type": payload.anomaly_type or "excessive_power",
     }
     return {
         "status": "queued",
-        "message": f"Fault scheduled for {payload.equipment_id} on next simulation tick.",
+        "equipment_id": eq,
+        "message": f"Stream pointer queued to real {eq} anomaly sequence in telemetry.csv.",
     }
 
 
@@ -495,336 +481,290 @@ def inject_live_anomaly(payload: InjectedAnomalyRequest):
 def get_live_simulation_tick():
     """
     Heartbeat endpoint called every 2 seconds.
-    Generates dynamic physical SCADA readings across all 4 industrial assets,
-    detects live operational deviations in real time, and persists live incidents.
+    Streams actual high-frequency SCADA sensor telemetry from telemetry.csv,
+    runs the AI anomaly models (Supervised RF, Baseline & DualPath) in real time,
+    detects live operational deviations, and persists live incidents to the store.
     """
+    global _csv_stream_pointer
+
+    df, timestamps = _load_telemetry_csv_stream()
     _simulation_state["tick"] += 1
     t = _simulation_state["tick"]
     now_dt = datetime.now()
     now_iso = now_dt.strftime("%Y-%m-%d %H:%M:%S")
 
     store = get_incident_store()
+    pipeline = get_pipeline()
+    threshold_reg = get_threshold_registry()
+    dual_detector = DualPathAnomalyDetector(threshold_reg)
+
+    # Check for manual fault injection jump
     injected = _simulation_state.get("injected_anomaly")
     _simulation_state["injected_anomaly"] = None
-
-    # Scheduled periodic anomaly (e.g., every 15 ticks ~ 30 seconds for live demo drama)
-    auto_trigger = (t > 2 and t % 15 == 7)
-
-    target_anomaly_eq = None
-    target_fault_type = None
-
     if injected:
-        target_anomaly_eq = injected["equipment_id"]
-        target_fault_type = injected["anomaly_type"]
-    elif auto_trigger:
-        # Rotate among the 4 machines
-        machine_idx = (t // 15) % len(SIMULATED_MACHINES_CONFIG)
-        target_anomaly_eq = SIMULATED_MACHINES_CONFIG[machine_idx]["equipment_id"]
-        target_fault_type = "auto"
+        eq_req = injected.get("equipment_id", "FURNACE-01")
+        if eq_req in ANOMALY_JUMP_INDICES:
+            _csv_stream_pointer = ANOMALY_JUMP_INDICES[eq_req]
+        else:
+            _csv_stream_pointer = 984
 
-    active_detected_incident: Optional[Dict[str, Any]] = None
+    # Grab the current CSV timestamp chunk (4 machines per timestamp)
+    if timestamps and df is not None:
+        curr_ts = timestamps[_csv_stream_pointer % len(timestamps)]
+        _csv_stream_pointer += 1
+        chunk = df[df["timestamp"] == curr_ts].copy()
+    else:
+        curr_ts = now_iso
+        chunk = pd.DataFrame()
+
+    # Run Real-Time AI Model Inference on clean sensor readings
+    detected_incidents_list = []
+    if not chunk.empty:
+        # Strip ground-truth label columns to ensure pure ML feature inference
+        drop_cols = ["is_anomaly", "anomaly_type", "severity", "is_energy_waste", "alert_code", "data_provenance"]
+        clean_chunk = chunk.drop(columns=[c for c in drop_cols if c in chunk.columns], errors="ignore")
+
+        # 1. Primary Model: EnergyIntelligencePipeline (Supervised RF + Baseline + Isolation Forest)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            ml_results = pipeline.predict_new_readings(clean_chunk, model_preference="supervised")
+        ml_anomalies = ml_results.get("anomaly_records", [])
+
+        # 2. Dual-Path Anomaly Detector (Physics Envelope Rules + MAD Residuals)
+        dual_alerts = []
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            for _, r in chunk.iterrows():
+                r_dict = r.to_dict()
+                for al in dual_detector.detect_anomalies(r_dict):
+                    if al.alert_category != "sensor_data_quality_warning":
+                        dual_alerts.append(al)
+
+        # Merge detected anomalies from both models
+        detected_eq_set = set()
+        for anom in ml_anomalies:
+            eq = anom.get("equipment_id")
+            detected_eq_set.add(eq)
+            
+            # Map clean sensor readings
+            row_match = chunk[chunk["equipment_id"] == eq]
+            s_readings = {}
+            if not row_match.empty:
+                s_readings = {
+                    k: float(v) if isinstance(v, (int, float, np.number)) and not np.isnan(v) else str(v)
+                    for k, v in row_match.iloc[0].to_dict().items()
+                    if k not in ["is_anomaly", "alert_code"]
+                }
+
+            # Check if an active live incident already exists for this equipment in store within last 30s
+            existing_active_id = None
+            for ex_id, ex_inc in list(store.incidents.items())[-30:]:
+                if (
+                    ex_inc.get("equipment_id") == eq
+                    and ex_inc.get("is_live") is True
+                    and ex_inc.get("status") in ["New", "Investigating"]
+                ):
+                    existing_active_id = ex_id
+                    break
+
+            if existing_active_id:
+                inc_id = existing_active_id
+                target_inc = store.incidents[existing_active_id]
+                target_inc["latest_occurrence"] = now_iso
+                target_inc["recurrence_count"] = int(target_inc.get("recurrence_count", 1)) + 1
+                target_inc["actual_power_kw"] = round(float(anom.get("actual_power_kw", 0)), 2)
+                target_inc["deviation_kw"] = round(float(anom.get("deviation_kw", 0)), 2)
+                target_inc["sensor_readings"] = s_readings
+                target_inc["csv_timestamp"] = str(curr_ts)
+                if anom.get("model_name") == "Supervised Random Forest":
+                    target_inc["confidence"] = anom.get("model_score")
+                    target_inc["confidence_available"] = True
+                    target_inc["model_score"] = anom.get("model_score")
+                    target_inc["model_name"] = anom.get("model_name")
+                    target_inc["detection_method"] = "supervised_random_forest"
+                norm_target = normalize_incident_dict(target_inc)
+                store.incidents[existing_active_id] = norm_target
+                detected_incidents_list.append(norm_target)
+            else:
+                inc_id = f"INC-LIVE-{eq}-{now_dt.strftime('%Y%m%d_%H%M%S')}"
+                inc_obj = {
+                    "incident_id": inc_id,
+                    "timestamp": now_iso,
+                    "equipment_id": eq,
+                    "machine_type": anom.get("equipment_type", eq.lower()),
+                    "operating_mode": str(anom.get("operating_mode", "production")),
+                    "anomaly_type": str(anom.get("anomaly_type", "operational_deviation")),
+                    "detection_method": "supervised_random_forest" if anom.get("model_name") == "Supervised Random Forest" else "condition_aware_baseline",
+                    "model_name": anom.get("model_name", "Supervised Random Forest"),
+                    "model_score": anom.get("model_score"),
+                    "confidence": anom.get("model_score") if anom.get("model_name") == "Supervised Random Forest" else None,
+                    "confidence_available": anom.get("model_name") == "Supervised Random Forest",
+                    "severity": str(anom.get("severity", "high")),
+                    "status": "New",
+                    "is_live": True,
+                    "actual_power_kw": round(float(anom.get("actual_power_kw", 0)), 2),
+                    "expected_power_kw": round(float(anom.get("expected_power_kw", 0)), 2),
+                    "deviation_kw": round(float(anom.get("deviation_kw", 0)), 2),
+                    "deviation_pct": round(float(anom.get("deviation_pct", 0)), 1),
+                    "estimated_excess_energy_kwh": round(float(anom.get("estimated_excess_energy_kwh", 0)), 3) if anom.get("estimated_excess_energy_kwh") else 0.18,
+                    "evidence": anom.get("evidence", [f"Anomaly flagged by real-time {anom.get('model_name')} on incoming telemetry chunk."]),
+                    "possible_causes": anom.get("possible_causes", ["Operating parameters outside nominal baseline envelope."]),
+                    "recommended_action": anom.get("recommended_action", "Inspect machine telemetry and verify operating conditions according to SOP."),
+                    "sensor_readings": s_readings,
+                    "data_provenance": "live_csv_scada_stream",
+                    "source_file": "telemetry.csv",
+                    "csv_timestamp": str(curr_ts),
+                }
+                norm = normalize_incident_dict(inc_obj)
+                store.incidents[inc_id] = norm
+                detected_incidents_list.append(norm)
+
+        for al in dual_alerts:
+            eq = al.machine_id
+            if eq not in detected_eq_set:
+                detected_eq_set.add(eq)
+                existing_active_id = None
+                for ex_id, ex_inc in list(store.incidents.items())[-30:]:
+                    if (
+                        ex_inc.get("equipment_id") == eq
+                        and ex_inc.get("is_live") is True
+                        and ex_inc.get("status") in ["New", "Investigating"]
+                    ):
+                        existing_active_id = ex_id
+                        break
+
+                if existing_active_id:
+                    target_inc = store.incidents[existing_active_id]
+                    target_inc["latest_occurrence"] = now_iso
+                    target_inc["recurrence_count"] = int(target_inc.get("recurrence_count", 1)) + 1
+                    raw_s = al.sensor_readings or {}
+                    target_inc["sensor_readings"] = {
+                        k: float(v) if isinstance(v, (int, float, np.number)) and not (np.isnan(v) or np.isinf(v)) else str(v)
+                        for k, v in raw_s.items()
+                        if not (isinstance(v, (float, np.floating)) and (np.isnan(v) or np.isinf(v)))
+                        and str(v).lower() not in ["nan", "none", "null"]
+                    }
+                    norm_target = normalize_incident_dict(target_inc)
+                    store.incidents[existing_active_id] = norm_target
+                    detected_incidents_list.append(norm_target)
+                else:
+                    inc_id = f"INC-LIVE-{eq}-{now_dt.strftime('%Y%m%d_%H%M%S')}"
+                    inc_obj = {
+                        "incident_id": inc_id,
+                        "timestamp": now_iso,
+                        "equipment_id": eq,
+                        "machine_type": al.machine_type.lower(),
+                        "operating_mode": "running",
+                        "anomaly_type": al.alert_category,
+                        "detection_method": al.detection_method,
+                        "model_name": al.detection_method_label,
+                        "model_score": al.detector_score,
+                        "confidence": None,
+                        "confidence_available": False,
+                        "severity": al.severity,
+                        "status": "New",
+                        "is_live": True,
+                        "actual_power_kw": round(float(al.observed_value or 0), 2),
+                        "expected_power_kw": round(float(al.expected_value or al.observed_value or 0), 2),
+                        "deviation_kw": round(float(al.residual_kwh or 0), 2),
+                        "deviation_pct": round(float(al.relative_deviation_pct or 0), 1),
+                        "estimated_excess_energy_kwh": round(float(al.abs_residual_kwh or 0.15), 3),
+                        "evidence": al.evidence or [al.explanation],
+                        "possible_causes": ["Pneumatic/thermal subsystem parameter deviation exceeding physical envelope."],
+                        "recommended_action": al.recommended_action,
+                        "sensor_readings": al.sensor_readings or {},
+                        "data_provenance": "live_csv_scada_stream",
+                        "source_file": "telemetry.csv",
+                        "csv_timestamp": str(curr_ts),
+                    }
+                    norm = normalize_incident_dict(inc_obj)
+                    store.incidents[inc_id] = norm
+                    detected_incidents_list.append(norm)
+
+        # Cap live store to avoid unbounded in-memory growth (keep baseline + last 100 live incidents)
+        if len(store.incidents) > 900:
+            live_keys = [k for k, v in store.incidents.items() if v.get("is_live")]
+            if len(live_keys) > 100:
+                for k in live_keys[:-100]:
+                    del store.incidents[k]
+
+    # Build the 4 machine telemetry objects from actual CSV rows
     machine_readings: List[Dict[str, Any]] = []
     total_plant_kw = 0.0
 
-    for cfg in SIMULATED_MACHINES_CONFIG:
+    machine_configs = [
+        {"equipment_id": "AIR-COMP-01", "name": "ELGi Industrial Air Compressor", "equipment_type": "air_compressor", "base_kw": 24.5},
+        {"equipment_id": "CNC-01", "name": "5-Axis CNC Machining Center", "equipment_type": "cnc_machine", "base_kw": 10.4},
+        {"equipment_id": "FURNACE-01", "name": "Industrial Heat Treating Furnace", "equipment_type": "furnace", "base_kw": 48.5},
+        {"equipment_id": "CHILLER-01", "name": "Central Chilled Water System", "equipment_type": "chiller", "base_kw": 22.8},
+    ]
+
+    for cfg in machine_configs:
         eq_id = cfg["equipment_id"]
-        is_faulted = (eq_id == target_anomaly_eq)
-        cycle = math.sin(t * 0.2 + hash(eq_id) % 5)
-        noise = random.uniform(-0.15, 0.15)
+        m_rows = chunk[chunk["equipment_id"] == eq_id] if not chunk.empty else pd.DataFrame()
+        if not m_rows.empty:
+            r = m_rows.iloc[0]
+            p_kw = round(float(r["power_consumption_kw"]), 2)
+            is_anom = any(d["equipment_id"] == eq_id for d in detected_incidents_list)
+            op_mode = str(r.get("operating_mode", "normal"))
 
-        if eq_id == "AIR-COMP-01":
-            if is_faulted:
-                # Pressure leak / header drop
-                p_kw = round(38.2 + random.uniform(-0.6, 1.2), 2)
-                press = round(5.4 + random.uniform(-0.1, 0.2), 2)
-                cfm = round(146.5 + random.uniform(-3, 4), 1)
-                vib = round(2.35 + random.uniform(-0.1, 0.2), 2)
-                temp = round(83.2 + random.uniform(-0.5, 0.8), 1)
-                status_label = "ANOMALY"
-            else:
-                p_kw = round(cfg["base_power_kw"] + cycle * 1.2 + noise, 2)
-                press = round(cfg["base_pressure_bar"] + cycle * 0.12 + random.uniform(-0.05, 0.05), 2)
-                cfm = round(cfg["base_cfm"] + cycle * 4.0 + random.uniform(-1, 1), 1)
-                vib = round(cfg["base_vibration_mm_s"] + random.uniform(-0.04, 0.05), 2)
-                temp = round(cfg["base_temp_c"] + random.uniform(-0.3, 0.4), 1)
-                status_label = "NORMAL"
+            exp_kw = cfg["base_kw"]
+            if pipeline.energy_baseline_model is not None and getattr(pipeline.energy_baseline_model, "is_fitted", False):
+                try:
+                    exp_kw = round(float(pipeline.energy_baseline_model.get_expected_power(eq_id, op_mode)[0]), 2)
+                except Exception:
+                    pass
 
-            reading = {
-                "equipment_id": eq_id,
-                "name": cfg["name"],
-                "equipment_type": cfg["equipment_type"],
-                "status": status_label,
-                "power_kw": p_kw,
-                "expected_power_kw": cfg["base_power_kw"],
-                "discharge_pressure_bar": press,
-                "airflow_cfm": cfm,
-                "vibration_mm_s": vib,
-                "temperature_c": temp,
-            }
-
-            if is_faulted:
-                active_detected_incident = {
-                    "incident_id": f"INC-LIVE-AIRCOMP-{now_dt.strftime('%Y%m%d_%H%M%S')}",
-                    "timestamp": now_iso,
-                    "equipment_id": eq_id,
-                    "machine_type": "air_compressor",
-                    "operating_mode": "loaded_cycle",
-                    "anomaly_type": "pressure_leak",
-                    "detection_method": "supervised_random_forest",
-                    "model_name": "Supervised Random Forest",
-                    "model_score": 0.942,
-                    "confidence": 0.942,
-                    "confidence_available": True,
-                    "severity": "high",
-                    "status": "New",
-                    "is_live": True,
-                    "actual_power_kw": p_kw,
-                    "expected_power_kw": cfg["base_power_kw"],
-                    "deviation_kw": round(p_kw - cfg["base_power_kw"], 2),
-                    "deviation_pct": round(((p_kw - cfg["base_power_kw"]) / cfg["base_power_kw"]) * 100, 1),
-                    "estimated_excess_energy_kwh": round((p_kw - cfg["base_power_kw"]) * (2.0 / 3600.0) * 120, 3),
-                    "evidence": [
-                        f"Discharge pressure {press} bar collapsed below critical 6.0 bar line limit",
-                        f"Continuous load power {p_kw} kW (+55.9% above nominal unloader setpoint)",
-                        f"Elevated airflow demand {cfm} CFM indicating pneumatic header loss",
-                    ],
-                    "possible_causes": [
-                        "Main distribution manifold seal compromise or burst quick-disconnect fitting",
-                        "Compressor unloader solenoid valve stuck in permanent loaded bypass state",
-                    ],
-                    "recommended_action": "Isolate header sector B and scan distribution trunk lines with ultrasonic leak detector.",
-                    "sensor_readings": {
-                        "power_consumption_kw": p_kw,
-                        "discharge_pressure_bar": press,
-                        "airflow_cfm": cfm,
-                        "vibration_mm_s": vib,
-                        "temperature_c": temp,
-                    },
-                    "data_provenance": "simulated_scada_stream",
-                }
-
-        elif eq_id == "FURNACE-01":
-            if is_faulted:
-                p_kw = round(78.4 + random.uniform(-1.0, 1.8), 2)
-                temp = round(871.2 + random.uniform(-1.5, 2.0), 1)
-                vib = round(0.42 + random.uniform(-0.02, 0.04), 2)
-                status_label = "ANOMALY"
-            else:
-                p_kw = round(cfg["base_power_kw"] + cycle * 2.1 + noise, 2)
-                temp = round(cfg["base_temp_c"] + cycle * 1.5 + random.uniform(-0.4, 0.4), 1)
-                vib = round(cfg["base_vibration_mm_s"] + random.uniform(-0.02, 0.03), 2)
-                status_label = "NORMAL"
+            def _flt(col, dec=1):
+                v = r.get(col)
+                if pd.notna(v):
+                    try:
+                        return round(float(v), dec)
+                    except Exception:
+                        return None
+                return None
 
             reading = {
                 "equipment_id": eq_id,
                 "name": cfg["name"],
                 "equipment_type": cfg["equipment_type"],
-                "status": status_label,
+                "status": "ANOMALY" if is_anom else "NORMAL",
                 "power_kw": p_kw,
-                "expected_power_kw": cfg["base_power_kw"],
-                "temperature_c": temp,
-                "temp_setpoint_c": 850.0,
-                "vibration_mm_s": vib,
+                "expected_power_kw": exp_kw,
+                "operating_mode": op_mode,
+                "temperature_c": _flt("temperature_c", 1) or _flt("discharge_temp_c", 1),
+                "temp_setpoint_c": _flt("temp_setpoint_c", 1) or (850.0 if "FURN" in eq_id else None),
+                "discharge_pressure_bar": _flt("discharge_pressure_bar", 2),
+                "airflow_cfm": _flt("airflow_cfm", 1),
+                "vibration_mm_s": _flt("vibration_mm_s", 3),
+                "spindle_rpm": _flt("spindle_rpm", 0),
+                "spindle_load_pct": _flt("spindle_load_pct", 1),
+                "supply_temp_c": _flt("supply_temp_c", 1),
+                "delta_t_c": _flt("delta_t_c", 1),
+                "water_flow_m3h": _flt("water_flow_m3h", 1),
             }
-
-            if is_faulted:
-                active_detected_incident = {
-                    "incident_id": f"INC-LIVE-FURNACE-{now_dt.strftime('%Y%m%d_%H%M%S')}",
-                    "timestamp": now_iso,
-                    "equipment_id": eq_id,
-                    "machine_type": "furnace",
-                    "operating_mode": "thermal_soak",
-                    "anomaly_type": "excessive_power_consumption",
-                    "detection_method": "supervised_random_forest",
-                    "model_name": "Supervised Random Forest",
-                    "model_score": 0.965,
-                    "confidence": 0.965,
-                    "confidence_available": True,
-                    "severity": "high",
-                    "status": "New",
-                    "is_live": True,
-                    "actual_power_kw": p_kw,
-                    "expected_power_kw": cfg["base_power_kw"],
-                    "deviation_kw": round(p_kw - cfg["base_power_kw"], 2),
-                    "deviation_pct": round(((p_kw - cfg["base_power_kw"]) / cfg["base_power_kw"]) * 100, 1),
-                    "estimated_excess_energy_kwh": round((p_kw - cfg["base_power_kw"]) * (2.0 / 3600.0) * 150, 3),
-                    "evidence": [
-                        f"Active power {p_kw} kW exceeding nominal 48.5 kW soak baseline by +61.6%",
-                        f"Chamber heat chamber temp elevated to {temp}°C during soak cycle",
-                        "Zone 2 heating elements running at 94% continuous firing angle",
-                    ],
-                    "possible_causes": [
-                        "Vestibule door seal degradation or micro-switch alignment displacement",
-                        "Thermal insulation refractory wall micro-fissure allowing radiant energy escape",
-                    ],
-                    "recommended_action": "Perform immediate infrared thermography on door perimeter and verify pneumatic seal interlock.",
-                    "sensor_readings": {
-                        "power_consumption_kw": p_kw,
-                        "temperature_c": temp,
-                        "temp_setpoint_c": 850.0,
-                        "vibration_mm_s": vib,
-                    },
-                    "data_provenance": "simulated_scada_stream",
-                }
-
-        elif eq_id == "CNC-01":
-            if is_faulted:
-                p_kw = round(18.5 + random.uniform(-0.5, 0.7), 2)
-                rpm = round(3950.0 + random.uniform(-40, 50), 0)
-                load_pct = round(86.5 + random.uniform(-2, 3), 1)
-                vib = round(3.42 + random.uniform(-0.15, 0.25), 2)
-                temp = round(28.4 + random.uniform(-0.3, 0.5), 1)
-                status_label = "ANOMALY"
-            else:
-                p_kw = round(cfg["base_power_kw"] + cycle * 0.8 + noise, 2)
-                rpm = round(cfg["base_rpm"] + cycle * 30.0 + random.uniform(-10, 10), 0)
-                load_pct = round(cfg["base_load_pct"] + cycle * 2.5 + random.uniform(-1, 1), 1)
-                vib = round(cfg["base_vibration_mm_s"] + random.uniform(-0.03, 0.04), 2)
-                temp = round(cfg["base_temp_c"] + random.uniform(-0.2, 0.2), 1)
-                status_label = "NORMAL"
-
+        else:
+            p_kw = cfg["base_kw"]
             reading = {
                 "equipment_id": eq_id,
                 "name": cfg["name"],
                 "equipment_type": cfg["equipment_type"],
-                "status": status_label,
+                "status": "NORMAL",
                 "power_kw": p_kw,
-                "expected_power_kw": cfg["base_power_kw"],
-                "spindle_rpm": rpm,
-                "spindle_load_pct": load_pct,
-                "vibration_mm_s": vib,
-                "coolant_temp_c": temp,
+                "expected_power_kw": p_kw,
             }
-
-            if is_faulted:
-                active_detected_incident = {
-                    "incident_id": f"INC-LIVE-CNC-{now_dt.strftime('%Y%m%d_%H%M%S')}",
-                    "timestamp": now_iso,
-                    "equipment_id": eq_id,
-                    "machine_type": "cnc_machine",
-                    "operating_mode": "profile_milling",
-                    "anomaly_type": "spindle_bearing_wear",
-                    "detection_method": "supervised_random_forest",
-                    "model_name": "Supervised Random Forest",
-                    "model_score": 0.918,
-                    "confidence": 0.918,
-                    "confidence_available": True,
-                    "severity": "medium",
-                    "status": "New",
-                    "is_live": True,
-                    "actual_power_kw": p_kw,
-                    "expected_power_kw": cfg["base_power_kw"],
-                    "deviation_kw": round(p_kw - cfg["base_power_kw"], 2),
-                    "deviation_pct": round(((p_kw - cfg["base_power_kw"]) / cfg["base_power_kw"]) * 100, 1),
-                    "estimated_excess_energy_kwh": round((p_kw - cfg["base_power_kw"]) * (2.0 / 3600.0) * 100, 3),
-                    "evidence": [
-                        f"Spindle vibration velocity {vib} mm/s violates ISO 10816 threshold (1.8 mm/s)",
-                        f"Spindle motor load sustained at {load_pct}% exceeding roughing baseline",
-                        f"Active power {p_kw} kW (+77.9% deviation)",
-                    ],
-                    "possible_causes": [
-                        "Tool insert micro-chipping inducing cutting harmonic imbalance",
-                        "Spindle ceramic front bearing race fatigue or lubrication starvation",
-                    ],
-                    "recommended_action": "Pause cycle at next toolchange; inspect insert edge for flank wear and record FFT vibration spectrum.",
-                    "sensor_readings": {
-                        "power_consumption_kw": p_kw,
-                        "spindle_rpm": rpm,
-                        "spindle_load_pct": load_pct,
-                        "vibration_mm_s": vib,
-                        "coolant_temp_c": temp,
-                    },
-                    "data_provenance": "simulated_scada_stream",
-                }
-
-        else:  # CHILLER-01
-            if is_faulted:
-                p_kw = round(34.2 + random.uniform(-0.7, 1.0), 2)
-                supply_t = round(9.3 + random.uniform(-0.2, 0.3), 1)
-                delta_t = round(2.1 + random.uniform(-0.1, 0.2), 1)
-                flow = round(44.2 + random.uniform(-1, 1), 1)
-                vib = round(1.22 + random.uniform(-0.05, 0.08), 2)
-                status_label = "ANOMALY"
-            else:
-                p_kw = round(cfg["base_power_kw"] + cycle * 1.4 + noise, 2)
-                supply_t = round(cfg["base_supply_temp_c"] + cycle * 0.2 + random.uniform(-0.1, 0.1), 1)
-                delta_t = round(cfg["base_delta_t_c"] + cycle * 0.15 + random.uniform(-0.1, 0.1), 1)
-                flow = round(cfg["base_flow_m3h"] + random.uniform(-0.5, 0.5), 1)
-                vib = round(cfg["base_vibration_mm_s"] + random.uniform(-0.03, 0.03), 2)
-                status_label = "NORMAL"
-
-            reading = {
-                "equipment_id": eq_id,
-                "name": cfg["name"],
-                "equipment_type": cfg["equipment_type"],
-                "status": status_label,
-                "power_kw": p_kw,
-                "expected_power_kw": cfg["base_power_kw"],
-                "supply_temp_c": supply_t,
-                "delta_t_c": delta_t,
-                "water_flow_m3h": flow,
-                "vibration_mm_s": vib,
-            }
-
-            if is_faulted:
-                active_detected_incident = {
-                    "incident_id": f"INC-LIVE-CHILLER-{now_dt.strftime('%Y%m%d_%H%M%S')}",
-                    "timestamp": now_iso,
-                    "equipment_id": eq_id,
-                    "machine_type": "chiller",
-                    "operating_mode": "cooling_demand",
-                    "anomaly_type": "low_delta_t_syndrome",
-                    "detection_method": "supervised_random_forest",
-                    "model_name": "Supervised Random Forest",
-                    "model_score": 0.895,
-                    "confidence": 0.895,
-                    "confidence_available": True,
-                    "severity": "medium",
-                    "status": "New",
-                    "is_live": True,
-                    "actual_power_kw": p_kw,
-                    "expected_power_kw": cfg["base_power_kw"],
-                    "deviation_kw": round(p_kw - cfg["base_power_kw"], 2),
-                    "deviation_pct": round(((p_kw - cfg["base_power_kw"]) / cfg["base_power_kw"]) * 100, 1),
-                    "estimated_excess_energy_kwh": round((p_kw - cfg["base_power_kw"]) * (2.0 / 3600.0) * 110, 3),
-                    "evidence": [
-                        f"Supply/return Delta-T collapsed to {delta_t}°C (minimum nominal >= 5.0°C)",
-                        f"Compressor power surging to {p_kw} kW unable to pull down supply temp to setpoint",
-                        f"Water circulation rate {flow} m3/h indicates excessive bypass pumping",
-                    ],
-                    "possible_causes": [
-                        "Air handling unit 2-way control valve seized open, driving excessive flow bypass",
-                        "Evaporator plate heat exchanger surface scale fouling reducing heat transfer coefficient",
-                    ],
-                    "recommended_action": "Check AHU chilled water coil bypass valves and inspect evaporator differential pressure.",
-                    "sensor_readings": {
-                        "power_consumption_kw": p_kw,
-                        "supply_temp_c": supply_t,
-                        "delta_t_c": delta_t,
-                        "water_flow_m3h": flow,
-                        "vibration_mm_s": vib,
-                    },
-                    "data_provenance": "simulated_scada_stream",
-                }
 
         machine_readings.append(reading)
         total_plant_kw += p_kw
 
-    # If an anomaly was detected on this tick, normalize and persist it
-    if active_detected_incident:
-        norm_inc = normalize_incident_dict(active_detected_incident)
-        store.incidents[active_detected_incident["incident_id"]] = norm_inc
-        # Save incident to disk store
-        try:
-            store.save_incidents()
-        except Exception:
-            pass
+    active_detected_incident = detected_incidents_list[0] if detected_incidents_list else None
 
     # Store rolling history
     _simulation_state["last_timestamp"] = now_iso
     history_entry = {
         "tick": t,
         "timestamp": now_iso,
+        "csv_timestamp": str(curr_ts),
         "plant_power_kw": round(total_plant_kw, 2),
         "has_anomaly": active_detected_incident is not None,
     }
@@ -835,10 +775,12 @@ def get_live_simulation_tick():
     return {
         "tick": t,
         "timestamp": now_iso,
+        "csv_timestamp": str(curr_ts),
         "interval_seconds": 2.0,
         "plant_power_kw": round(total_plant_kw, 2),
         "machines": machine_readings,
         "active_anomaly": active_detected_incident,
+        "new_anomalies": detected_incidents_list,
         "total_incidents": len(store.incidents),
     }
 
@@ -855,10 +797,14 @@ def get_live_simulation_history():
 @router.post("/api/anomalies/live-stream/reset")
 def reset_live_simulation():
     """Reset simulation tick counter."""
+    global _csv_stream_pointer
     _simulation_state["tick"] = 0
     _simulation_state["history"] = []
     _simulation_state["injected_anomaly"] = None
+    _csv_stream_pointer = 980
     return {"status": "reset", "tick": 0}
+
+
 
 
 @router.get("/api/equipment/registry")

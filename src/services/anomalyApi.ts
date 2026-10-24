@@ -9,9 +9,9 @@ export const API_BASE_URL: string =
     ? `http://${window.location.hostname}:8000`
     : '');
 
-const FETCH_TIMEOUT_MS = 8000;
+const FETCH_TIMEOUT_MS = 12000;
 
-async function fetchWithTimeout(url: string, options: RequestInit = {}): Promise<Response> {
+async function fetchWithTimeout(url: string, options: RequestInit = {}, retries = 1): Promise<Response> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
@@ -20,8 +20,12 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}): Promise
     return res;
   } catch (err: any) {
     clearTimeout(timeoutId);
+    if (retries > 0 && err.name !== 'AbortError') {
+      await new Promise((r) => setTimeout(r, 350));
+      return fetchWithTimeout(url, options, retries - 1);
+    }
     if (err.name === 'AbortError') {
-      throw new Error(`API request timed out after ${FETCH_TIMEOUT_MS / 1000}s. Verify backend service is running on port 8000.`);
+      throw new Error(`API request timed out (${FETCH_TIMEOUT_MS / 1000}s). Retrying or verify backend on port 8000.`);
     }
     throw new Error(err.message || 'Network error connecting to backend API');
   }

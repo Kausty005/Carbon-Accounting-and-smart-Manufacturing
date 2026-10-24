@@ -6,6 +6,7 @@ filtering, pagination, episode grouping, and telemetry extraction for pre/post-i
 
 import os
 import json
+import math
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple, Union
@@ -187,6 +188,38 @@ def normalize_incident_dict(inc: Dict[str, Any]) -> Dict[str, Any]:
 
     # Ensure model_score is preserved for any legacy test referencing it
     res["model_score"] = raw_score
+
+    # Sanitize any NaN or Inf floats across all fields and sensor_readings to prevent JSON encoding errors
+    def _sanitize(val):
+        if val is None:
+            return None
+        if isinstance(val, float):
+            if math.isnan(val) or math.isinf(val):
+                return None
+        elif isinstance(val, (np.floating, np.integer)):
+            if np.isnan(val) or np.isinf(val):
+                return None
+            return float(val) if isinstance(val, np.floating) else int(val)
+        elif isinstance(val, str) and val.lower() in ["nan", "none", "null"]:
+            return None
+        return val
+
+    # Sanitize top-level float values
+    for k in [
+        "actual_power_kw", "expected_power_kw", "deviation_kw", "deviation_pct",
+        "observed_value", "expected_value", "deviation_percent", "model_score",
+        "confidence", "anomaly_score", "estimated_excess_energy_kwh", "residual_kwh",
+        "abs_residual_kwh", "relative_deviation_pct", "detector_score"
+    ]:
+        if k in res:
+            res[k] = _sanitize(res[k])
+
+    if "sensor_readings" in res and isinstance(res["sensor_readings"], dict):
+        res["sensor_readings"] = {
+            sk: _sanitize(sv)
+            for sk, sv in res["sensor_readings"].items()
+            if _sanitize(sv) is not None
+        }
 
     return res
 

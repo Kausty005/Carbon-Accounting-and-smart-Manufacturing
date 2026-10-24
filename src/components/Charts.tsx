@@ -121,7 +121,7 @@ export function AssetEnergyBar({ assets }: { assets: { name: string; energyKwh: 
 }
 
 // ─── Scope Pie ────────────────────────────────────────────────────────────────
-const SCOPE_COLORS = ['#ef4444', '#22d3ee'];
+const SCOPE_COLORS = ['#DC2626', '#0284C7'];
 export function ScopePie({ scope1, scope2 }: { scope1: number; scope2: number }) {
   const data = [
     { name: 'Scope 1 (LPG)', value: scope1 },
@@ -130,19 +130,218 @@ export function ScopePie({ scope1, scope2 }: { scope1: number; scope2: number })
   return (
     <ResponsiveContainer width="100%" height={160}>
       <PieChart>
-        <Pie data={data} cx="50%" cy="50%" innerRadius={45} outerRadius={65}
-          paddingAngle={3} dataKey="value"
+        <Pie
+          data={data}
+          cx="50%"
+          cy="50%"
+          innerRadius={45}
+          outerRadius={65}
+          paddingAngle={3}
+          dataKey="value"
           label={({ name, percent }: { name?: string; percent?: number }) =>
             `${(name || '').split(' ')[0]} ${((percent || 0) * 100).toFixed(0)}%`
           }
-          labelLine={{ stroke: '#334155', strokeWidth: 0.7 }}
+          labelLine={{ stroke: '#78716C', strokeWidth: 0.8 }}
         >
           {data.map((_, i) => (
-            <Cell key={i} fill={SCOPE_COLORS[i]} opacity={0.85} />
+            <Cell key={i} fill={SCOPE_COLORS[i]} opacity={0.9} />
           ))}
         </Pie>
         <Tooltip content={<ScadaTooltip />} />
       </PieChart>
     </ResponsiveContainer>
+  );
+}
+
+// ─── Machine Energy & Cost Share Donut Chart ────────────────────────────────
+export function MachineEnergyDonut({
+  assets,
+}: {
+  assets: { id: string; name: string; energyKwh: number; currentKw: number; color: string }[];
+}) {
+  const totalKwh = assets.reduce((s, a) => s + a.energyKwh, 0);
+  const data = assets.map(a => ({
+    name: a.name.split(' (')[0],
+    fullName: a.name,
+    value: a.energyKwh,
+    percent: totalKwh > 0 ? (a.energyKwh / totalKwh) * 100 : 0,
+    color: a.color,
+    kw: a.currentKw,
+  }));
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 16, width: '100%' }}>
+      <div style={{ width: 170, height: 170, position: 'relative', flexShrink: 0 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={data}
+              cx="50%"
+              cy="50%"
+              innerRadius={52}
+              outerRadius={74}
+              paddingAngle={4}
+              dataKey="value"
+              stroke="none"
+            >
+              {data.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.color} />
+              ))}
+            </Pie>
+            <Tooltip
+              content={({ active, payload }) => {
+                if (!active || !payload?.length) return null;
+                const d = payload[0].payload;
+                return (
+                  <div
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.96)',
+                      border: '1px solid rgba(0,0,0,0.12)',
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                      borderRadius: 8,
+                      padding: '8px 12px',
+                      fontFamily: MONO,
+                      fontSize: 11,
+                    }}
+                  >
+                    <div style={{ fontWeight: 700, color: d.color, marginBottom: 4 }}>{d.fullName}</div>
+                    <div style={{ color: '#334155' }}>
+                      Energy: <strong>{d.value.toLocaleString()} kWh</strong> ({d.percent.toFixed(1)}%)
+                    </div>
+                    <div style={{ color: '#64748b', fontSize: 10 }}>Current Draw: {d.kw} kW</div>
+                  </div>
+                );
+              }}
+            />
+          </PieChart>
+        </ResponsiveContainer>
+        {/* Center Readout */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            textAlign: 'center',
+            pointerEvents: 'none',
+          }}
+        >
+          <div style={{ fontSize: 13, fontWeight: 800, fontFamily: MONO, color: 'var(--charcoal-900, #1c1917)' }}>
+            {(totalKwh / 1000).toFixed(1)}k
+          </div>
+          <div style={{ fontSize: 8.5, letterSpacing: '0.08em', color: '#78716c', textTransform: 'uppercase', fontWeight: 600 }}>
+            kWh Total
+          </div>
+        </div>
+      </div>
+
+      {/* Legend & Stat Breakdown */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1, minWidth: 0 }}>
+        {data.map((item, idx) => (
+          <div
+            key={idx}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '4px 8px',
+              borderRadius: 6,
+              background: 'rgba(0,0,0,0.025)',
+              border: '1px solid rgba(0,0,0,0.04)',
+              fontSize: 11,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+              <span
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: 2,
+                  backgroundColor: item.color,
+                  flexShrink: 0,
+                }}
+              />
+              <span
+                style={{
+                  fontWeight: 600,
+                  color: 'var(--charcoal-800, #292524)',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                {item.name}
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: MONO, flexShrink: 0 }}>
+              <span style={{ color: '#78716c', fontSize: 10 }}>{item.value.toLocaleString()} kWh</span>
+              <span style={{ fontWeight: 700, color: item.color, minWidth: 38, textAlign: 'right' }}>
+                {item.percent.toFixed(0)}%
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Productive vs Idle Waste Horizontal Progress Bar ───────────────────────
+export function ProductiveVsWasteBar({
+  productiveKwh = 11481.6,
+  wasteKwh = 998.4,
+}: {
+  productiveKwh?: number;
+  wasteKwh?: number;
+}) {
+  const total = productiveKwh + wasteKwh;
+  const prodPct = total > 0 ? (productiveKwh / total) * 100 : 92;
+  const wastePct = total > 0 ? (wasteKwh / total) * 100 : 8;
+
+  return (
+    <div style={{ width: '100%' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, fontSize: 11 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#10b981' }} />
+          <span style={{ fontWeight: 700, color: '#166534' }}>Productive Base</span>
+          <span style={{ fontFamily: MONO, color: '#4b5563' }}>({productiveKwh.toLocaleString(undefined, { maximumFractionDigits: 0 })} kWh — {prodPct.toFixed(1)}%)</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#ef4444' }} />
+          <span style={{ fontWeight: 700, color: '#991b1b' }}>Avoidable Idle Waste</span>
+          <span style={{ fontFamily: MONO, color: '#ef4444', fontWeight: 800 }}>({wasteKwh.toFixed(1)} kWh — {wastePct.toFixed(1)}%)</span>
+        </div>
+      </div>
+
+      {/* Visual Stacked Bar */}
+      <div
+        style={{
+          height: 14,
+          borderRadius: 9999,
+          display: 'flex',
+          overflow: 'hidden',
+          backgroundColor: '#e2e8f0',
+          boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)',
+        }}
+      >
+        <div
+          style={{
+            width: `${prodPct}%`,
+            background: 'linear-gradient(90deg, #10b981 0%, #059669 100%)',
+            transition: 'width 0.4s ease',
+          }}
+          title={`Productive Load: ${prodPct.toFixed(1)}%`}
+        />
+        <div
+          style={{
+            width: `${wastePct}%`,
+            background: 'linear-gradient(90deg, #f59e0b 0%, #ef4444 100%)',
+            transition: 'width 0.4s ease',
+            position: 'relative',
+          }}
+          title={`Avoidable Idle Waste: ${wastePct.toFixed(1)}%`}
+        />
+      </div>
+    </div>
   );
 }

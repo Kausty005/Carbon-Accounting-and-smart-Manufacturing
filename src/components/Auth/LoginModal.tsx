@@ -41,7 +41,7 @@ export default function LoginModal({ onLogin, onBackToHome }: LoginModalProps) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#f2f0eb',
+        background: '#E4D9C8',
         padding: 20,
       }}
     >
@@ -50,8 +50,8 @@ export default function LoginModal({ onLogin, onBackToHome }: LoginModalProps) {
         style={{
           position: 'absolute',
           inset: 0,
-          backgroundImage: `linear-gradient(to right, rgba(0,0,0,0.03) 1px, transparent 1px),
-                            linear-gradient(to bottom, rgba(0,0,0,0.03) 1px, transparent 1px)`,
+          backgroundImage: `linear-gradient(to right, rgba(90,75,55,0.05) 1px, transparent 1px),
+                            linear-gradient(to bottom, rgba(90,75,55,0.05) 1px, transparent 1px)`,
           backgroundSize: '40px 40px',
           pointerEvents: 'none',
         }}
@@ -63,12 +63,12 @@ export default function LoginModal({ onLogin, onBackToHome }: LoginModalProps) {
           position: 'relative',
           width: '100%',
           maxWidth: 440,
-          background: 'rgba(255, 255, 255, 0.88)',
+          background: 'rgba(235, 226, 212, 0.94)',
           backdropFilter: 'blur(20px)',
-          border: '1px solid rgba(0, 0, 0, 0.08)',
+          border: '1px solid rgba(255, 255, 255, 0.85)',
           borderRadius: 20,
           padding: '36px 36px 32px',
-          boxShadow: '0 20px 45px -10px rgba(0, 0, 0, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.04)',
+          boxShadow: '8px 8px 30px #BCB09E, -8px -8px 30px #FFFFFF',
         }}
       >
         {/* Top Header */}

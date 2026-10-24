@@ -438,6 +438,134 @@ class FleetForecastRequest(BaseModel):
     machines: List[EnergyForecastInput] = Field(description="Telemetry inputs for the fleet machines")
 
 
+# ─── International-Standard Corporate Carbon Audit & Credit Ledger Schemas ───
+
+class CompanyFacilityProfile(BaseModel):
+    """Company and manufacturing facility identity and reporting boundary."""
+    company_id: str
+    company_name: str
+    facility_name: str
+    facility_location: str
+    grid_region: str = "Western Regional Grid (NEWNE), India"
+    reporting_boundary: str = "Operational Control (GHG Protocol Corporate Standard & ISO 14064-1:2018)"
+    statutory_allowance_tco2e_monthly: float = 18.0
+    statutory_allowance_tco2e_daily: float = 0.60
+    industry_sector: str = "Precision Machining & Industrial Manufacturing"
+    contact_person: str = "Chief Sustainability Officer & Plant Energy Head"
+
+
+class CarbonCreditTransaction(BaseModel):
+    """Auditable carbon credit issuance, acquisition, retirement, or transfer."""
+    transaction_id: str
+    registry_program: str = Field(description="e.g., 'Verra VCS', 'Gold Standard', 'CDM'")
+    project_id: str = Field(description="Project name and reference ID")
+    serial_number: str = Field(description="Unique registry batch serial number")
+    vintage_year: int
+    transaction_type: str = Field(description="'ACQUIRED' | 'RETIRED' | 'TRANSFERRED_OUT'")
+    quantity_tco2e: float = Field(gt=0.0, description="Quantity of certified carbon credits (1 credit = 1 tCO2e)")
+    transaction_date: str = Field(description="ISO 8601 transaction date (YYYY-MM-DD)")
+    retirement_beneficiary: Optional[str] = None
+    status: str = "VERIFIED_REGISTRY_RECORD"
+
+
+class AllowanceReconciliation(BaseModel):
+    """Reconciliation of facility emissions against statutory carbon allowance/quota."""
+    initial_allocation_tco2e: float
+    additional_allocation_tco2e: float = 0.0
+    transfers_received_tco2e: float = 0.0
+    transfers_sent_tco2e: float = 0.0
+    net_available_allowance_tco2e: float
+    gross_emissions_counted_tco2e: float
+    remaining_allowance_tco2e: float
+    utilization_pct: float
+    remaining_pct: float
+    status: str = Field(description="'WITHIN_ALLOWANCE' | 'NEAR_LIMIT' | 'EXCEEDED'")
+    status_color: str = Field(description="'green' | 'amber' | 'red'")
+    reporting_period_rules: str
+    accounting_rule_disclaimer: str = (
+        "Per GHG Protocol Corporate Standard & ISO 14064-1, gross emissions are reported unreduced by carbon credits. "
+        "Allowance balances reflect statutory facility allocations only."
+    )
+
+
+class CreditReconciliation(BaseModel):
+    """Reconciliation of voluntary or compliance carbon credit holdings."""
+    is_configured: bool = True
+    opening_balance_tco2e: float = 0.0
+    credits_acquired_tco2e: float = 0.0
+    credits_transferred_out_tco2e: float = 0.0
+    credits_retired_tco2e: float = 0.0
+    closing_available_balance_tco2e: float = 0.0
+    registry_summary: List[Dict[str, Any]] = Field(default_factory=list)
+    transactions: List[CarbonCreditTransaction] = Field(default_factory=list)
+    accounting_note: str = (
+        "Carbon credit holdings are tracked independently from gross operational emissions in accordance with "
+        "GHG Protocol Corporate Standard Clause 9.5 and ISO 14064-1:2018 Clause 5.2.4."
+    )
+
+
+class InventorySourceItem(BaseModel):
+    """Single line-item greenhouse gas source in the emissions inventory."""
+    source_category: str
+    source_name: str
+    activity_amount: float
+    activity_unit: str
+    provenance: ProvenanceType
+    emission_factor: float
+    emission_factor_unit: str
+    emission_factor_source: str
+    emissions_kg_co2e: float
+    emissions_t_co2e: float
+    percentage_of_gross: float
+    verification_grade: str = "GRADE_A"
+
+
+class AuditReportMetadata(BaseModel):
+    """Audit report metadata, verification statements, and cryptographic references."""
+    report_id: str
+    report_version: str = "v2.4-ISO14064"
+    generated_at: str
+    report_type: str = "COMPREHENSIVE_AUDIT"
+    company: CompanyFacilityProfile
+    reporting_period: PeriodDetails
+    hash_chain_verified: bool
+    total_audit_blocks: int
+    latest_merkle_root: str
+    lead_auditor: str = "WattWise AI Verification System (Automated Real-Time Core)"
+    verification_statement: str
+
+
+class CorporateAuditReport(BaseModel):
+    """Complete corporate carbon accounting & emissions audit report."""
+    metadata: AuditReportMetadata
+    gross_emissions_tco2e: float
+    scope1_total_tco2e: float
+    scope2_total_tco2e: float
+    biogenic_co2_separate_tco2e: float = 0.0
+    avoided_scenario_savings_tco2e: float = 0.0
+    inventory_breakdown: List[InventorySourceItem]
+    allowance_reconciliation: AllowanceReconciliation
+    credit_reconciliation: CreditReconciliation
+    methodology_disclosures: List[Dict[str, Any]]
+    data_quality_and_boundaries: Dict[str, Any]
+    cryptographic_audit_trail: Dict[str, Any]
+    executive_summary_text: str
+
+
+class AuditReportGenerateRequest(BaseModel):
+    """Request payload to generate a corporate audit report and PDF."""
+    company_id: str = Field(default="precisionworks", description="Unique company/facility identifier")
+    period_type: ReportingPeriodType = Field(default=ReportingPeriodType.CALENDAR_MONTH)
+    calendar_year: Optional[int] = Field(default=2026, ge=2000, le=2100)
+    calendar_month: Optional[int] = Field(default=10, ge=1, le=12)
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+    duration_days: Optional[float] = None
+    report_type: str = Field(default="COMPREHENSIVE_AUDIT", description="'COMPREHENSIVE_AUDIT' | 'EXECUTIVE_SUMMARY' | 'STATUTORY_RECONCILIATION'")
+    include_simulated_scenarios: bool = False
+    include_credit_holdings: bool = True
+
+
 # Re-export AI schemas for unified access
 from backend.app.schemas.ai import (
     ExplainContext,

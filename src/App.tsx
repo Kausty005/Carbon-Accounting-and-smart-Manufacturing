@@ -28,6 +28,7 @@ import { AssetLibraryConfigurator } from './components/Library/AssetLibraryConfi
 import { CarbonQuotaInterlock } from './components/Carbon/CarbonQuotaInterlock';
 import { ExecutivePresentationView } from './components/Executive/ExecutivePresentationView';
 import { EngineeringDiagnosticView } from './components/Diagnostics/EngineeringDiagnosticView';
+import { CarbonAuditReportView } from './components/Carbon/CarbonAuditReportView';
 
 import { AIExplainProvider } from './components/AIExplain/AIExplainContext';
 import { AIExplainPopover } from './components/AIExplain/AIExplainPopover';
@@ -3148,14 +3149,14 @@ export default function App() {
           )}
           {view === 'reports' && (
             <motion.div key="reports" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%' }}>
-              <ReportView params={params} carbonData={carbonData} activeSimulation={activeSimulation} />
+              <CarbonAuditReportView />
             </motion.div>
           )}
         </AnimatePresence>
       </main>
 
       {/* Inspector (Shown on SCADA / Digital Twin workbench views) */}
-      {view !== 'overview' && view !== 'forecast' && view !== 'executive' && view !== 'diagnostics' && view !== 'configurator' && view !== 'quota' && showInspector && (
+      {view !== 'overview' && view !== 'forecast' && view !== 'executive' && view !== 'diagnostics' && view !== 'configurator' && view !== 'quota' && view !== 'reports' && showInspector && (
         <InspectorPanel
           selectedId={selectedAsset}
           setView={setView}

@@ -2190,5 +2190,37 @@
       "total": 1.191
     },
     "audit_signature": "b2266d1eddb9f3306ad38e5bb48dac0eceee7f20085f708fe88078036dd93b88"
+  },
+  {
+    "block_height": 101,
+    "timestamp": "2026-10-24T20:47:00.691383+00:00",
+    "prev_hash": "b2266d1eddb9f3306ad38e5bb48dac0eceee7f20085f708fe88078036dd93b88",
+    "merkle_root": "9166cc6ad43b83271671e1f235f27f715fc7cbb83e5bed10311ebbd340b7890a",
+    "telemetry_summary": {
+      "grid_electricity_kwh": 1450.0,
+      "diesel_liters": 50.0
+    },
+    "gross_carbon_tco2e": {
+      "scope1_combustion": 0.134,
+      "scope2_grid": 1.057,
+      "total": 1.191
+    },
+    "audit_signature": "22e5f9ba6179b36138c78b6c0674e995e4b49c3f2c1594de30c20ab7e8524eef"
+  },
+  {
+    "block_height": 102,
+    "timestamp": "2026-10-24T20:52:37.948062+00:00",
+    "prev_hash": "22e5f9ba6179b36138c78b6c0674e995e4b49c3f2c1594de30c20ab7e8524eef",
+    "merkle_root": "9166cc6ad43b83271671e1f235f27f715fc7cbb83e5bed10311ebbd340b7890a",
+    "telemetry_summary": {
+      "grid_electricity_kwh": 1450.0,
+      "diesel_liters": 50.0
+    },
+    "gross_carbon_tco2e": {
+      "scope1_combustion": 0.134,
+      "scope2_grid": 1.057,
+      "total": 1.191
+    },
+    "audit_signature": "fdb59488e3005b4f773047a6a32bcdde7bf9cbe569f78d6a3373be2199bdc971"
   }
 ]

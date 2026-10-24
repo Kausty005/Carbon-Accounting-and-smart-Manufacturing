@@ -1,0 +1,1636 @@
+{
+  "report_metadata": {
+    "report_id": "REP-20261024-095921",
+    "generated_at": "2026-10-24T09:59:21.333864Z",
+    "system": "PrecisionWorks AI Energy Intelligence",
+    "version": "1.1.0"
+  },
+  "model_metadata": {
+    "version": "1.1.0",
+    "training_timestamp": "2026-10-24T09:59:21.213495Z",
+    "selected_model": "Supervised Random Forest Classifier",
+    "random_seed": 42,
+    "feature_names": [
+      "equipment_id",
+      "equipment_type",
+      "operating_mode",
+      "production_demand",
+      "temperature_c",
+      "temp_setpoint_c",
+      "power_consumption_kw",
+      "door_open",
+      "heating_element_active",
+      "ambient_temp_c",
+      "discharge_pressure_bar",
+      "airflow_cfm",
+      "discharge_temp_c",
+      "vibration_mm_s",
+      "spindle_rpm",
+      "spindle_load_pct",
+      "spindle_temp_c",
+      "supply_temp_c",
+      "return_temp_c",
+      "delta_t_c",
+      "water_flow_m3h",
+      "cooling_demand_pct",
+      "cooling_output_kw_th",
+      "cop_proxy",
+      "hour_of_day",
+      "day_of_week",
+      "temp_gradient",
+      "coolant_efficiency",
+      "power_rpm_ratio",
+      "vib_acoustic_interaction",
+      "flow_pressure_ratio",
+      "temp_dev_30m",
+      "press_dev_30m",
+      "vib_dev_30m",
+      "power_dev_30m",
+      "press_diff_5m",
+      "exp_press_mean",
+      "exp_press_std",
+      "press_cond_dev",
+      "press_cond_z"
+    ],
+    "decision_threshold": 0.16,
+    "tuning_results": {
+      "optimal_threshold": 0.16,
+      "val_f1": 0.325,
+      "val_precision": 0.9286,
+      "val_recall": 0.197
+    },
+    "leakage_columns_excluded": [
+      "is_anomaly",
+      "anomaly_type",
+      "is_energy_waste",
+      "severity",
+      "rolling_anomaly_rate",
+      "maintenance_priority_score",
+      "alert_code",
+      "reading_id",
+      "event_id",
+      "data_provenance"
+    ],
+    "configuration": {
+      "grid_emission_factor": {
+        "value": 0.82,
+        "unit": "kg CO2e / kWh",
+        "source": "CEA India CO2 Baseline Database v18 (2023), User Guide Table 1"
+      },
+      "electricity_tariff": {
+        "value": 8.0,
+        "unit": "INR / kWh",
+        "source": "PrecisionWorks Manufacturing SCADA Baseline Contract (mockData.ts)"
+      },
+      "integration_rules": {
+        "default_sampling_interval_hours": 0.016666666666666666,
+        "max_integration_gap_hours": 0.25
+      },
+      "energy_thresholds": {
+        "z_score_threshold": 2.5,
+        "pct_deviation_threshold": 20.0,
+        "persistent_steps_threshold": 3
+      },
+      "disclaimer": "Note: Avoidable excess energy, cost savings, and Scope 2 carbon footprint reductions are model estimates based on operating-condition power baselines and configured CEA India grid emission factors. Scope 1 direct fossil fuel emissions are excluded as this telemetry stream meters electrical power only."
+    },
+    "test_metrics": {
+      "dummy_baseline": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1_score": 0.0,
+        "accuracy": 0.9907,
+        "false_positive_rate": 0.0,
+        "roc_auc": null,
+        "pr_auc": null,
+        "confusion_matrix": {
+          "true_negatives": 5136,
+          "false_positives": 0,
+          "false_negatives": 48,
+          "true_positives": 0
+        }
+      },
+      "supervised_random_forest": {
+        "precision": 0.6087,
+        "recall": 0.2917,
+        "f1_score": 0.3944,
+        "accuracy": 0.9917,
+        "false_positive_rate": 0.0018,
+        "roc_auc": 0.998,
+        "pr_auc": 0.6278,
+        "confusion_matrix": {
+          "true_negatives": 5127,
+          "false_positives": 9,
+          "false_negatives": 34,
+          "true_positives": 14
+        }
+      },
+      "unsupervised_isolation_forest": {
+        "precision": 0.1765,
+        "recall": 1.0,
+        "f1_score": 0.3,
+        "accuracy": 0.9568,
+        "false_positive_rate": 0.0436,
+        "roc_auc": 0.9681,
+        "pr_auc": 0.1213,
+        "confusion_matrix": {
+          "true_negatives": 4912,
+          "false_positives": 224,
+          "false_negatives": 0,
+          "true_positives": 48
+        }
+      },
+      "energy_baseline_detector": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1_score": 0.0,
+        "accuracy": 0.8843,
+        "false_positive_rate": 0.1075,
+        "roc_auc": null,
+        "pr_auc": null,
+        "confusion_matrix": {
+          "true_negatives": 4584,
+          "false_positives": 552,
+          "false_negatives": 48,
+          "true_positives": 0
+        }
+      }
+    }
+  },
+  "evaluation_metrics": {
+    "dummy_baseline": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1_score": 0.0,
+      "accuracy": 0.9907,
+      "false_positive_rate": 0.0,
+      "roc_auc": null,
+      "pr_auc": null,
+      "confusion_matrix": {
+        "true_negatives": 5136,
+        "false_positives": 0,
+        "false_negatives": 48,
+        "true_positives": 0
+      }
+    },
+    "supervised_random_forest": {
+      "precision": 0.6087,
+      "recall": 0.2917,
+      "f1_score": 0.3944,
+      "accuracy": 0.9917,
+      "false_positive_rate": 0.0018,
+      "roc_auc": 0.998,
+      "pr_auc": 0.6278,
+      "confusion_matrix": {
+        "true_negatives": 5127,
+        "false_positives": 9,
+        "false_negatives": 34,
+        "true_positives": 14
+      }
+    },
+    "unsupervised_isolation_forest": {
+      "precision": 0.1765,
+      "recall": 1.0,
+      "f1_score": 0.3,
+      "accuracy": 0.9568,
+      "false_positive_rate": 0.0436,
+      "roc_auc": 0.9681,
+      "pr_auc": 0.1213,
+      "confusion_matrix": {
+        "true_negatives": 4912,
+        "false_positives": 224,
+        "false_negatives": 0,
+        "true_positives": 48
+      }
+    },
+    "energy_baseline_detector": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1_score": 0.0,
+      "accuracy": 0.8843,
+      "false_positive_rate": 0.1075,
+      "roc_auc": null,
+      "pr_auc": null,
+      "confusion_matrix": {
+        "true_negatives": 4584,
+        "false_positives": 552,
+        "false_negatives": 48,
+        "true_positives": 0
+      }
+    },
+    "rf_per_anomaly_type": {
+      "normal": {
+        "total_occurrences": 5136,
+        "detected_count": 9,
+        "detection_rate": 0.0018
+      },
+      "slow_heating": {
+        "total_occurrences": 48,
+        "detected_count": 14,
+        "detection_rate": 0.2917
+      }
+    },
+    "rf_per_equipment": {
+      "AIR-COMP-01": {
+        "total_readings": 1296,
+        "actual_anomalies": 0,
+        "predicted_anomalies": 0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1_score": 0.0
+      },
+      "CHILLER-01": {
+        "total_readings": 1296,
+        "actual_anomalies": 0,
+        "predicted_anomalies": 9,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1_score": 0.0
+      },
+      "CNC-01": {
+        "total_readings": 1296,
+        "actual_anomalies": 0,
+        "predicted_anomalies": 0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1_score": 0.0
+      },
+      "FURNACE-01": {
+        "total_readings": 1296,
+        "actual_anomalies": 48,
+        "predicted_anomalies": 14,
+        "precision": 1.0,
+        "recall": 0.2917,
+        "f1_score": 0.4516
+      }
+    }
+  },
+  "energy_and_carbon_kpis": {
+    "plant_kpis": {
+      "total_measured_energy_kwh": 19684.2,
+      "average_power_kw": 45.64,
+      "peak_power_kw": 268.65,
+      "min_power_kw": 0.04,
+      "total_readings": 5184,
+      "equipment_health_anomalies": 48,
+      "equipment_health_anomaly_rate_pct": 0.93,
+      "excess_energy_anomalies": 552,
+      "excess_energy_anomaly_rate_pct": 10.65,
+      "estimated_excess_energy_kwh": 1176.7,
+      "estimated_excess_energy_cost_inr": 9413.61
+    },
+    "carbon_accounting": {
+      "scope_2_electricity_emissions_kg_co2e": 16141.04,
+      "scope_2_avoidable_excess_emissions_kg_co2e": 964.89,
+      "grid_emission_factor_used": "0.82 kg CO2e / kWh (CEA India CO2 Baseline Database v18 (2023), User Guide Table 1)",
+      "electricity_tariff_used": "INR 8.0 / kWh",
+      "scope_1_note": "Scope 1 direct emissions are excluded as this dataset tracks electrical metering only.",
+      "disclaimer": "Note: Avoidable excess energy, cost savings, and Scope 2 carbon footprint reductions are model estimates based on operating-condition power baselines and configured CEA India grid emission factors. Scope 1 direct fossil fuel emissions are excluded as this telemetry stream meters electrical power only."
+    },
+    "equipment_breakdown": {
+      "AIR-COMP-01": {
+        "total_energy_kwh": 2625.33,
+        "energy_share_pct": 13.34,
+        "avg_power_kw": 24.35,
+        "peak_power_kw": 79.37,
+        "total_readings": 1296,
+        "equipment_health_anomalies": 0,
+        "health_anomaly_rate_pct": 0.0,
+        "energy_excess_anomalies": 79,
+        "estimated_excess_energy_kwh": 65.84,
+        "estimated_excess_cost_inr": 526.73
+      },
+      "CHILLER-01": {
+        "total_energy_kwh": 12967.29,
+        "energy_share_pct": 65.88,
+        "avg_power_kw": 120.2,
+        "peak_power_kw": 268.65,
+        "total_readings": 1296,
+        "equipment_health_anomalies": 0,
+        "health_anomaly_rate_pct": 0.0,
+        "energy_excess_anomalies": 37,
+        "estimated_excess_energy_kwh": 469.36,
+        "estimated_excess_cost_inr": 3754.88
+      },
+      "CNC-01": {
+        "total_energy_kwh": 817.89,
+        "energy_share_pct": 4.16,
+        "avg_power_kw": 7.59,
+        "peak_power_kw": 33.83,
+        "total_readings": 1296,
+        "equipment_health_anomalies": 0,
+        "health_anomaly_rate_pct": 0.0,
+        "energy_excess_anomalies": 119,
+        "estimated_excess_energy_kwh": 28.85,
+        "estimated_excess_cost_inr": 230.83
+      },
+      "FURNACE-01": {
+        "total_energy_kwh": 3273.69,
+        "energy_share_pct": 16.63,
+        "avg_power_kw": 30.4,
+        "peak_power_kw": 244.65,
+        "total_readings": 1296,
+        "equipment_health_anomalies": 48,
+        "health_anomaly_rate_pct": 3.7,
+        "energy_excess_anomalies": 317,
+        "estimated_excess_energy_kwh": 612.65,
+        "estimated_excess_cost_inr": 4901.17
+      }
+    },
+    "operating_mode_breakdown": {
+      "cooling": {
+        "total_energy_kwh": 42.79,
+        "energy_share_pct": 0.22,
+        "avg_power_kw": 3.57,
+        "reading_count": 144
+      },
+      "cutting": {
+        "total_energy_kwh": 709.79,
+        "energy_share_pct": 3.61,
+        "avg_power_kw": 26.36,
+        "reading_count": 324
+      },
+      "heating": {
+        "total_energy_kwh": 1683.08,
+        "energy_share_pct": 8.55,
+        "avg_power_kw": 210.38,
+        "reading_count": 96
+      },
+      "holding": {
+        "total_energy_kwh": 1357.7,
+        "energy_share_pct": 6.9,
+        "avg_power_kw": 62.15,
+        "reading_count": 264
+      },
+      "idle": {
+        "total_energy_kwh": 223.39,
+        "energy_share_pct": 1.13,
+        "avg_power_kw": 4.32,
+        "reading_count": 620
+      },
+      "load": {
+        "total_energy_kwh": 1791.93,
+        "energy_share_pct": 9.1,
+        "avg_power_kw": 68.42,
+        "reading_count": 315
+      },
+      "low_load": {
+        "total_energy_kwh": 6467.32,
+        "energy_share_pct": 32.86,
+        "avg_power_kw": 134.97,
+        "reading_count": 575
+      },
+      "off": {
+        "total_energy_kwh": 26.59,
+        "energy_share_pct": 0.14,
+        "avg_power_kw": 0.3,
+        "reading_count": 1078
+      },
+      "running": {
+        "total_energy_kwh": 6132.82,
+        "energy_share_pct": 31.16,
+        "avg_power_kw": 209.57,
+        "reading_count": 352
+      },
+      "setup": {
+        "total_energy_kwh": 48.81,
+        "energy_share_pct": 0.25,
+        "avg_power_kw": 5.8,
+        "reading_count": 101
+      },
+      "standby": {
+        "total_energy_kwh": 496.34,
+        "energy_share_pct": 2.52,
+        "avg_power_kw": 6.01,
+        "reading_count": 991
+      },
+      "unload": {
+        "total_energy_kwh": 703.63,
+        "energy_share_pct": 3.57,
+        "avg_power_kw": 26.06,
+        "reading_count": 324
+      }
+    },
+    "highest_priority_equipment": [
+      "FURNACE-01",
+      "CHILLER-01",
+      "AIR-COMP-01",
+      "CNC-01"
+    ]
+  },
+  "sample_detected_anomalies": [
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-26T12:30:00",
+      "is_anomaly": true,
+      "anomaly_type": "bearing_degradation",
+      "severity": "high",
+      "actual_power_kw": 65.77,
+      "expected_power_kw": 68.56,
+      "deviation_kw": -2.79,
+      "deviation_pct": -4.07,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.1684,
+      "evidence": [
+        "Power consumption (65.77 kW) is within nominal limits for load mode (no excess energy waste).",
+        "Mechanical vibration level (1.585 mm/s) is elevated above baseline."
+      ],
+      "possible_causes": [
+        "Synthetic compressor lube oil breakdown, varnish buildup, or particulate contamination",
+        "Male/female rotor thrust bearing sub-surface fatigue spalling",
+        "Motor-compressor flexible coupling elastomeric element wear"
+      ],
+      "recommended_action": "Perform acoustic & vibration spectrum inspection.",
+      "is_energy_waste": false,
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-26T20:30:00",
+      "is_anomaly": true,
+      "anomaly_type": "bearing_degradation",
+      "severity": "high",
+      "actual_power_kw": 68.3,
+      "expected_power_kw": 68.56,
+      "deviation_kw": -0.26,
+      "deviation_pct": -0.38,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.1684,
+      "evidence": [
+        "Power consumption (68.30 kW) is within nominal limits for load mode (no excess energy waste).",
+        "Mechanical vibration level (1.639 mm/s) is elevated above baseline."
+      ],
+      "possible_causes": [
+        "Synthetic compressor lube oil breakdown, varnish buildup, or particulate contamination",
+        "Male/female rotor thrust bearing sub-surface fatigue spalling",
+        "Motor-compressor flexible coupling elastomeric element wear"
+      ],
+      "recommended_action": "Perform acoustic & vibration spectrum inspection.",
+      "is_energy_waste": false,
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-26T20:55:00",
+      "is_anomaly": true,
+      "anomaly_type": "bearing_degradation",
+      "severity": "high",
+      "actual_power_kw": 29.57,
+      "expected_power_kw": 25.98,
+      "deviation_kw": 3.59,
+      "deviation_pct": 13.83,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.1684,
+      "evidence": [
+        "Power consumption (29.57 kW) is within nominal limits for unload mode (no excess energy waste).",
+        "Mechanical vibration level (1.397 mm/s) is elevated above baseline."
+      ],
+      "possible_causes": [
+        "Synthetic compressor lube oil breakdown, varnish buildup, or particulate contamination",
+        "Male/female rotor thrust bearing sub-surface fatigue spalling",
+        "Motor-compressor flexible coupling elastomeric element wear"
+      ],
+      "recommended_action": "Perform acoustic & vibration spectrum inspection.",
+      "is_energy_waste": false,
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-26T22:10:00",
+      "is_anomaly": true,
+      "anomaly_type": "bearing_degradation",
+      "severity": "high",
+      "actual_power_kw": 69.87,
+      "expected_power_kw": 68.56,
+      "deviation_kw": 1.31,
+      "deviation_pct": 1.91,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.1684,
+      "evidence": [
+        "Power consumption (69.87 kW) is within nominal limits for load mode (no excess energy waste).",
+        "Mechanical vibration level (1.425 mm/s) is elevated above baseline."
+      ],
+      "possible_causes": [
+        "Synthetic compressor lube oil breakdown, varnish buildup, or particulate contamination",
+        "Male/female rotor thrust bearing sub-surface fatigue spalling",
+        "Motor-compressor flexible coupling elastomeric element wear"
+      ],
+      "recommended_action": "Perform acoustic & vibration spectrum inspection.",
+      "is_energy_waste": false,
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-26T22:20:00",
+      "is_anomaly": true,
+      "anomaly_type": "bearing_degradation",
+      "severity": "high",
+      "actual_power_kw": 27.41,
+      "expected_power_kw": 25.98,
+      "deviation_kw": 1.43,
+      "deviation_pct": 5.52,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.1684,
+      "evidence": [
+        "Power consumption (27.41 kW) is within nominal limits for unload mode (no excess energy waste).",
+        "Mechanical vibration level (1.346 mm/s) is elevated above baseline."
+      ],
+      "possible_causes": [
+        "Synthetic compressor lube oil breakdown, varnish buildup, or particulate contamination",
+        "Male/female rotor thrust bearing sub-surface fatigue spalling",
+        "Motor-compressor flexible coupling elastomeric element wear"
+      ],
+      "recommended_action": "Perform acoustic & vibration spectrum inspection.",
+      "is_energy_waste": false,
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-26T22:55:00",
+      "is_anomaly": true,
+      "anomaly_type": "bearing_degradation",
+      "severity": "high",
+      "actual_power_kw": 28.09,
+      "expected_power_kw": 25.98,
+      "deviation_kw": 2.11,
+      "deviation_pct": 8.14,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.1684,
+      "evidence": [
+        "Power consumption (28.09 kW) is within nominal limits for unload mode (no excess energy waste).",
+        "Mechanical vibration level (1.136 mm/s) is elevated above baseline."
+      ],
+      "possible_causes": [
+        "Synthetic compressor lube oil breakdown, varnish buildup, or particulate contamination",
+        "Male/female rotor thrust bearing sub-surface fatigue spalling",
+        "Motor-compressor flexible coupling elastomeric element wear"
+      ],
+      "recommended_action": "Perform acoustic & vibration spectrum inspection.",
+      "is_energy_waste": false,
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-26T23:00:00",
+      "is_anomaly": true,
+      "anomaly_type": "excessive_power_consumption",
+      "severity": "high",
+      "actual_power_kw": 0.27,
+      "expected_power_kw": 0.2,
+      "deviation_kw": 0.07,
+      "deviation_pct": 34.62,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Active electrical power (0.27 kW) is 34.6% above calibrated condition baseline (0.20 kW) for off mode."
+      ],
+      "possible_causes": [
+        "Multivariate operating point excursion beyond nominal historical envelope",
+        "Sensor transducer drift or electrical noise coupling on analog signal loop"
+      ],
+      "recommended_action": "Inspect operating demand, motor loading, and recent process recipe setpoints.",
+      "is_energy_waste": true,
+      "estimated_excess_energy_kwh": 0.0058
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-26T23:20:00",
+      "is_anomaly": true,
+      "anomaly_type": "multivariate_sensor_anomaly",
+      "severity": "medium",
+      "actual_power_kw": 1.61,
+      "expected_power_kw": 2.49,
+      "deviation_kw": -0.88,
+      "deviation_pct": -35.38,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.1684,
+      "evidence": [
+        "Active electrical power (1.61 kW) is 35.4% below expected baseline (2.49 kW) for standby mode."
+      ],
+      "possible_causes": [
+        "Multivariate operating point excursion beyond nominal historical envelope",
+        "Sensor transducer drift or electrical noise coupling on analog signal loop"
+      ],
+      "recommended_action": "Conduct visual and diagnostic inspection of equipment subsystems.",
+      "is_energy_waste": false,
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-26T23:50:00",
+      "is_anomaly": true,
+      "anomaly_type": "multivariate_sensor_anomaly",
+      "severity": "low",
+      "actual_power_kw": 2.73,
+      "expected_power_kw": 2.49,
+      "deviation_kw": 0.24,
+      "deviation_pct": 9.58,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.1684,
+      "evidence": [
+        "Power consumption (2.73 kW) is within nominal limits for standby mode (no excess energy waste)."
+      ],
+      "possible_causes": [
+        "Multivariate operating point excursion beyond nominal historical envelope",
+        "Sensor transducer drift or electrical noise coupling on analog signal loop"
+      ],
+      "recommended_action": "Conduct visual and diagnostic inspection of equipment subsystems.",
+      "is_energy_waste": false,
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-26T23:55:00",
+      "is_anomaly": true,
+      "anomaly_type": "excessive_power_consumption",
+      "severity": "medium",
+      "actual_power_kw": 3.12,
+      "expected_power_kw": 2.49,
+      "deviation_kw": 0.63,
+      "deviation_pct": 25.23,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Active electrical power (3.12 kW) is 25.2% above calibrated condition baseline (2.49 kW) for standby mode."
+      ],
+      "possible_causes": [
+        "Multivariate operating point excursion beyond nominal historical envelope",
+        "Sensor transducer drift or electrical noise coupling on analog signal loop"
+      ],
+      "recommended_action": "Inspect operating demand, motor loading, and recent process recipe setpoints.",
+      "is_energy_waste": true,
+      "estimated_excess_energy_kwh": 0.0524
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-27T00:00:00",
+      "is_anomaly": true,
+      "anomaly_type": "excessive_power_consumption",
+      "severity": "medium",
+      "actual_power_kw": 3.14,
+      "expected_power_kw": 2.49,
+      "deviation_kw": 0.65,
+      "deviation_pct": 26.03,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Active electrical power (3.14 kW) is 26.0% above calibrated condition baseline (2.49 kW) for standby mode."
+      ],
+      "possible_causes": [
+        "Multivariate operating point excursion beyond nominal historical envelope",
+        "Sensor transducer drift or electrical noise coupling on analog signal loop"
+      ],
+      "recommended_action": "Inspect operating demand, motor loading, and recent process recipe setpoints.",
+      "is_energy_waste": true,
+      "estimated_excess_energy_kwh": 0.0541
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-27T00:15:00",
+      "is_anomaly": true,
+      "anomaly_type": "multivariate_sensor_anomaly",
+      "severity": "low",
+      "actual_power_kw": 2.48,
+      "expected_power_kw": 2.49,
+      "deviation_kw": -0.01,
+      "deviation_pct": -0.46,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.1684,
+      "evidence": [
+        "Power consumption (2.48 kW) is within nominal limits for standby mode (no excess energy waste)."
+      ],
+      "possible_causes": [
+        "Multivariate operating point excursion beyond nominal historical envelope",
+        "Sensor transducer drift or electrical noise coupling on analog signal loop"
+      ],
+      "recommended_action": "Conduct visual and diagnostic inspection of equipment subsystems.",
+      "is_energy_waste": false,
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-27T00:20:00",
+      "is_anomaly": true,
+      "anomaly_type": "excessive_power_consumption",
+      "severity": "medium",
+      "actual_power_kw": 3.14,
+      "expected_power_kw": 2.49,
+      "deviation_kw": 0.65,
+      "deviation_pct": 26.03,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Active electrical power (3.14 kW) is 26.0% above calibrated condition baseline (2.49 kW) for standby mode."
+      ],
+      "possible_causes": [
+        "Multivariate operating point excursion beyond nominal historical envelope",
+        "Sensor transducer drift or electrical noise coupling on analog signal loop"
+      ],
+      "recommended_action": "Inspect operating demand, motor loading, and recent process recipe setpoints.",
+      "is_energy_waste": true,
+      "estimated_excess_energy_kwh": 0.0541
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-27T00:45:00",
+      "is_anomaly": true,
+      "anomaly_type": "multivariate_sensor_anomaly",
+      "severity": "low",
+      "actual_power_kw": 2.04,
+      "expected_power_kw": 2.49,
+      "deviation_kw": -0.45,
+      "deviation_pct": -18.12,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.1684,
+      "evidence": [
+        "Active electrical power (2.04 kW) is 18.1% below expected baseline (2.49 kW) for standby mode."
+      ],
+      "possible_causes": [
+        "Multivariate operating point excursion beyond nominal historical envelope",
+        "Sensor transducer drift or electrical noise coupling on analog signal loop"
+      ],
+      "recommended_action": "Conduct visual and diagnostic inspection of equipment subsystems.",
+      "is_energy_waste": false,
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-27T01:30:00",
+      "is_anomaly": true,
+      "anomaly_type": "multivariate_sensor_anomaly",
+      "severity": "low",
+      "actual_power_kw": 2.54,
+      "expected_power_kw": 2.49,
+      "deviation_kw": 0.05,
+      "deviation_pct": 1.95,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.1684,
+      "evidence": [
+        "Power consumption (2.54 kW) is within nominal limits for standby mode (no excess energy waste)."
+      ],
+      "possible_causes": [
+        "Multivariate operating point excursion beyond nominal historical envelope",
+        "Sensor transducer drift or electrical noise coupling on analog signal loop"
+      ],
+      "recommended_action": "Conduct visual and diagnostic inspection of equipment subsystems.",
+      "is_energy_waste": false,
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-27T02:00:00",
+      "is_anomaly": true,
+      "anomaly_type": "excessive_power_consumption",
+      "severity": "high",
+      "actual_power_kw": 3.29,
+      "expected_power_kw": 2.49,
+      "deviation_kw": 0.8,
+      "deviation_pct": 32.05,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Active electrical power (3.29 kW) is 32.1% above calibrated condition baseline (2.49 kW) for standby mode."
+      ],
+      "possible_causes": [
+        "Multivariate operating point excursion beyond nominal historical envelope",
+        "Sensor transducer drift or electrical noise coupling on analog signal loop"
+      ],
+      "recommended_action": "Inspect operating demand, motor loading, and recent process recipe setpoints.",
+      "is_energy_waste": true,
+      "estimated_excess_energy_kwh": 0.0666
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-27T02:10:00",
+      "is_anomaly": true,
+      "anomaly_type": "multivariate_sensor_anomaly",
+      "severity": "low",
+      "actual_power_kw": 2.59,
+      "expected_power_kw": 2.49,
+      "deviation_kw": 0.1,
+      "deviation_pct": 3.96,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.1784,
+      "evidence": [
+        "Power consumption (2.59 kW) is within nominal limits for standby mode (no excess energy waste)."
+      ],
+      "possible_causes": [
+        "Multivariate operating point excursion beyond nominal historical envelope",
+        "Sensor transducer drift or electrical noise coupling on analog signal loop"
+      ],
+      "recommended_action": "Conduct visual and diagnostic inspection of equipment subsystems.",
+      "is_energy_waste": false,
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-27T02:55:00",
+      "is_anomaly": true,
+      "anomaly_type": "multivariate_sensor_anomaly",
+      "severity": "low",
+      "actual_power_kw": 2.61,
+      "expected_power_kw": 2.49,
+      "deviation_kw": 0.12,
+      "deviation_pct": 4.76,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.1684,
+      "evidence": [
+        "Power consumption (2.61 kW) is within nominal limits for standby mode (no excess energy waste)."
+      ],
+      "possible_causes": [
+        "Multivariate operating point excursion beyond nominal historical envelope",
+        "Sensor transducer drift or electrical noise coupling on analog signal loop"
+      ],
+      "recommended_action": "Conduct visual and diagnostic inspection of equipment subsystems.",
+      "is_energy_waste": false,
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-27T03:50:00",
+      "is_anomaly": true,
+      "anomaly_type": "multivariate_sensor_anomaly",
+      "severity": "low",
+      "actual_power_kw": 2.85,
+      "expected_power_kw": 2.49,
+      "deviation_kw": 0.36,
+      "deviation_pct": 14.39,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.1784,
+      "evidence": [
+        "Power consumption (2.85 kW) is within nominal limits for standby mode (no excess energy waste)."
+      ],
+      "possible_causes": [
+        "Multivariate operating point excursion beyond nominal historical envelope",
+        "Sensor transducer drift or electrical noise coupling on analog signal loop"
+      ],
+      "recommended_action": "Conduct visual and diagnostic inspection of equipment subsystems.",
+      "is_energy_waste": false,
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-27T04:35:00",
+      "is_anomaly": true,
+      "anomaly_type": "excessive_power_consumption",
+      "severity": "medium",
+      "actual_power_kw": 3.03,
+      "expected_power_kw": 2.49,
+      "deviation_kw": 0.54,
+      "deviation_pct": 21.62,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Active electrical power (3.03 kW) is 21.6% above calibrated condition baseline (2.49 kW) for standby mode."
+      ],
+      "possible_causes": [
+        "Multivariate operating point excursion beyond nominal historical envelope",
+        "Sensor transducer drift or electrical noise coupling on analog signal loop"
+      ],
+      "recommended_action": "Inspect operating demand, motor loading, and recent process recipe setpoints.",
+      "is_energy_waste": true,
+      "estimated_excess_energy_kwh": 0.0449
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-27T05:45:00",
+      "is_anomaly": true,
+      "anomaly_type": "excessive_power_consumption",
+      "severity": "medium",
+      "actual_power_kw": 3.05,
+      "expected_power_kw": 2.49,
+      "deviation_kw": 0.56,
+      "deviation_pct": 22.42,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Active electrical power (3.05 kW) is 22.4% above calibrated condition baseline (2.49 kW) for standby mode."
+      ],
+      "possible_causes": [
+        "Multivariate operating point excursion beyond nominal historical envelope",
+        "Sensor transducer drift or electrical noise coupling on analog signal loop"
+      ],
+      "recommended_action": "Inspect operating demand, motor loading, and recent process recipe setpoints.",
+      "is_energy_waste": true,
+      "estimated_excess_energy_kwh": 0.0466
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-27T06:30:00",
+      "is_anomaly": true,
+      "anomaly_type": "excessive_power_consumption",
+      "severity": "medium",
+      "actual_power_kw": 2.99,
+      "expected_power_kw": 2.49,
+      "deviation_kw": 0.5,
+      "deviation_pct": 20.01,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Active electrical power (2.99 kW) is 20.0% above calibrated condition baseline (2.49 kW) for standby mode."
+      ],
+      "possible_causes": [
+        "Multivariate operating point excursion beyond nominal historical envelope",
+        "Sensor transducer drift or electrical noise coupling on analog signal loop"
+      ],
+      "recommended_action": "Inspect operating demand, motor loading, and recent process recipe setpoints.",
+      "is_energy_waste": true,
+      "estimated_excess_energy_kwh": 0.0416
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-27T06:45:00",
+      "is_anomaly": true,
+      "anomaly_type": "excessive_power_consumption",
+      "severity": "medium",
+      "actual_power_kw": 3.06,
+      "expected_power_kw": 2.49,
+      "deviation_kw": 0.57,
+      "deviation_pct": 22.82,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Active electrical power (3.06 kW) is 22.8% above calibrated condition baseline (2.49 kW) for standby mode."
+      ],
+      "possible_causes": [
+        "Multivariate operating point excursion beyond nominal historical envelope",
+        "Sensor transducer drift or electrical noise coupling on analog signal loop"
+      ],
+      "recommended_action": "Inspect operating demand, motor loading, and recent process recipe setpoints.",
+      "is_energy_waste": true,
+      "estimated_excess_energy_kwh": 0.0474
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-27T08:00:00",
+      "is_anomaly": true,
+      "anomaly_type": "excessive_power_consumption",
+      "severity": "medium",
+      "actual_power_kw": 3.14,
+      "expected_power_kw": 2.49,
+      "deviation_kw": 0.65,
+      "deviation_pct": 26.03,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Active electrical power (3.14 kW) is 26.0% above calibrated condition baseline (2.49 kW) for standby mode."
+      ],
+      "possible_causes": [
+        "Multivariate operating point excursion beyond nominal historical envelope",
+        "Sensor transducer drift or electrical noise coupling on analog signal loop"
+      ],
+      "recommended_action": "Inspect operating demand, motor loading, and recent process recipe setpoints.",
+      "is_energy_waste": true,
+      "estimated_excess_energy_kwh": 0.0541
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-27T08:20:00",
+      "is_anomaly": true,
+      "anomaly_type": "excessive_power_consumption",
+      "severity": "medium",
+      "actual_power_kw": 3.15,
+      "expected_power_kw": 2.49,
+      "deviation_kw": 0.66,
+      "deviation_pct": 26.44,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Active electrical power (3.15 kW) is 26.4% above calibrated condition baseline (2.49 kW) for standby mode."
+      ],
+      "possible_causes": [
+        "Multivariate operating point excursion beyond nominal historical envelope",
+        "Sensor transducer drift or electrical noise coupling on analog signal loop"
+      ],
+      "recommended_action": "Inspect operating demand, motor loading, and recent process recipe setpoints.",
+      "is_energy_waste": true,
+      "estimated_excess_energy_kwh": 0.0549
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-27T09:45:00",
+      "is_anomaly": true,
+      "anomaly_type": "excessive_power_consumption",
+      "severity": "medium",
+      "actual_power_kw": 2.99,
+      "expected_power_kw": 2.49,
+      "deviation_kw": 0.5,
+      "deviation_pct": 20.01,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Active electrical power (2.99 kW) is 20.0% above calibrated condition baseline (2.49 kW) for standby mode."
+      ],
+      "possible_causes": [
+        "Multivariate operating point excursion beyond nominal historical envelope",
+        "Sensor transducer drift or electrical noise coupling on analog signal loop"
+      ],
+      "recommended_action": "Inspect operating demand, motor loading, and recent process recipe setpoints.",
+      "is_energy_waste": true,
+      "estimated_excess_energy_kwh": 0.0416
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-27T10:45:00",
+      "is_anomaly": true,
+      "anomaly_type": "excessive_power_consumption",
+      "severity": "medium",
+      "actual_power_kw": 3.23,
+      "expected_power_kw": 2.49,
+      "deviation_kw": 0.74,
+      "deviation_pct": 29.65,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Active electrical power (3.23 kW) is 29.6% above calibrated condition baseline (2.49 kW) for standby mode."
+      ],
+      "possible_causes": [
+        "Multivariate operating point excursion beyond nominal historical envelope",
+        "Sensor transducer drift or electrical noise coupling on analog signal loop"
+      ],
+      "recommended_action": "Inspect operating demand, motor loading, and recent process recipe setpoints.",
+      "is_energy_waste": true,
+      "estimated_excess_energy_kwh": 0.0616
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-27T12:05:00",
+      "is_anomaly": true,
+      "anomaly_type": "excessive_power_consumption",
+      "severity": "medium",
+      "actual_power_kw": 3.13,
+      "expected_power_kw": 2.49,
+      "deviation_kw": 0.64,
+      "deviation_pct": 25.63,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Active electrical power (3.13 kW) is 25.6% above calibrated condition baseline (2.49 kW) for standby mode."
+      ],
+      "possible_causes": [
+        "Multivariate operating point excursion beyond nominal historical envelope",
+        "Sensor transducer drift or electrical noise coupling on analog signal loop"
+      ],
+      "recommended_action": "Inspect operating demand, motor loading, and recent process recipe setpoints.",
+      "is_energy_waste": true,
+      "estimated_excess_energy_kwh": 0.0532
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-27T12:20:00",
+      "is_anomaly": true,
+      "anomaly_type": "excessive_power_consumption",
+      "severity": "medium",
+      "actual_power_kw": 3.17,
+      "expected_power_kw": 2.49,
+      "deviation_kw": 0.68,
+      "deviation_pct": 27.24,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Active electrical power (3.17 kW) is 27.2% above calibrated condition baseline (2.49 kW) for standby mode."
+      ],
+      "possible_causes": [
+        "Multivariate operating point excursion beyond nominal historical envelope",
+        "Sensor transducer drift or electrical noise coupling on analog signal loop"
+      ],
+      "recommended_action": "Inspect operating demand, motor loading, and recent process recipe setpoints.",
+      "is_energy_waste": true,
+      "estimated_excess_energy_kwh": 0.0566
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-27T14:00:00",
+      "is_anomaly": true,
+      "anomaly_type": "excessive_power_consumption",
+      "severity": "high",
+      "actual_power_kw": 3.33,
+      "expected_power_kw": 2.49,
+      "deviation_kw": 0.84,
+      "deviation_pct": 33.66,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Active electrical power (3.33 kW) is 33.7% above calibrated condition baseline (2.49 kW) for standby mode."
+      ],
+      "possible_causes": [
+        "Multivariate operating point excursion beyond nominal historical envelope",
+        "Sensor transducer drift or electrical noise coupling on analog signal loop"
+      ],
+      "recommended_action": "Inspect operating demand, motor loading, and recent process recipe setpoints.",
+      "is_energy_waste": true,
+      "estimated_excess_energy_kwh": 0.0699
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-27T15:05:00",
+      "is_anomaly": true,
+      "anomaly_type": "bearing_degradation",
+      "severity": "high",
+      "actual_power_kw": 31.4,
+      "expected_power_kw": 25.98,
+      "deviation_kw": 5.42,
+      "deviation_pct": 20.88,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Active electrical power (31.40 kW) is 20.9% above calibrated condition baseline (25.98 kW) for unload mode.",
+        "Mechanical vibration level (1.115 mm/s) is elevated above baseline."
+      ],
+      "possible_causes": [
+        "Synthetic compressor lube oil breakdown, varnish buildup, or particulate contamination",
+        "Male/female rotor thrust bearing sub-surface fatigue spalling",
+        "Motor-compressor flexible coupling elastomeric element wear"
+      ],
+      "recommended_action": "Inspect operating demand, motor loading, and recent process recipe setpoints.; Perform acoustic & vibration spectrum inspection.",
+      "is_energy_waste": true,
+      "estimated_excess_energy_kwh": 0.4519
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-27T15:40:00",
+      "is_anomaly": true,
+      "anomaly_type": "excessive_power_consumption",
+      "severity": "high",
+      "actual_power_kw": 3.73,
+      "expected_power_kw": 2.49,
+      "deviation_kw": 1.24,
+      "deviation_pct": 49.72,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Active electrical power (3.73 kW) is 49.7% above calibrated condition baseline (2.49 kW) for standby mode."
+      ],
+      "possible_causes": [
+        "Multivariate operating point excursion beyond nominal historical envelope",
+        "Sensor transducer drift or electrical noise coupling on analog signal loop"
+      ],
+      "recommended_action": "Inspect operating demand, motor loading, and recent process recipe setpoints.",
+      "is_energy_waste": true,
+      "estimated_excess_energy_kwh": 0.1032
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-27T15:50:00",
+      "is_anomaly": true,
+      "anomaly_type": "excessive_power_consumption",
+      "severity": "medium",
+      "actual_power_kw": 3.15,
+      "expected_power_kw": 2.49,
+      "deviation_kw": 0.66,
+      "deviation_pct": 26.44,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Active electrical power (3.15 kW) is 26.4% above calibrated condition baseline (2.49 kW) for standby mode."
+      ],
+      "possible_causes": [
+        "Multivariate operating point excursion beyond nominal historical envelope",
+        "Sensor transducer drift or electrical noise coupling on analog signal loop"
+      ],
+      "recommended_action": "Inspect operating demand, motor loading, and recent process recipe setpoints.",
+      "is_energy_waste": true,
+      "estimated_excess_energy_kwh": 0.0549
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-27T17:05:00",
+      "is_anomaly": true,
+      "anomaly_type": "excessive_power_consumption",
+      "severity": "medium",
+      "actual_power_kw": 3.13,
+      "expected_power_kw": 2.49,
+      "deviation_kw": 0.64,
+      "deviation_pct": 25.63,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Active electrical power (3.13 kW) is 25.6% above calibrated condition baseline (2.49 kW) for standby mode."
+      ],
+      "possible_causes": [
+        "Multivariate operating point excursion beyond nominal historical envelope",
+        "Sensor transducer drift or electrical noise coupling on analog signal loop"
+      ],
+      "recommended_action": "Inspect operating demand, motor loading, and recent process recipe setpoints.",
+      "is_energy_waste": true,
+      "estimated_excess_energy_kwh": 0.0532
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-27T17:40:00",
+      "is_anomaly": true,
+      "anomaly_type": "excessive_power_consumption",
+      "severity": "medium",
+      "actual_power_kw": 3.07,
+      "expected_power_kw": 2.49,
+      "deviation_kw": 0.58,
+      "deviation_pct": 23.22,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Active electrical power (3.07 kW) is 23.2% above calibrated condition baseline (2.49 kW) for standby mode."
+      ],
+      "possible_causes": [
+        "Multivariate operating point excursion beyond nominal historical envelope",
+        "Sensor transducer drift or electrical noise coupling on analog signal loop"
+      ],
+      "recommended_action": "Inspect operating demand, motor loading, and recent process recipe setpoints.",
+      "is_energy_waste": true,
+      "estimated_excess_energy_kwh": 0.0482
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-27T17:55:00",
+      "is_anomaly": true,
+      "anomaly_type": "excessive_power_consumption",
+      "severity": "high",
+      "actual_power_kw": 3.3,
+      "expected_power_kw": 2.49,
+      "deviation_kw": 0.81,
+      "deviation_pct": 32.46,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Active electrical power (3.30 kW) is 32.5% above calibrated condition baseline (2.49 kW) for standby mode."
+      ],
+      "possible_causes": [
+        "Multivariate operating point excursion beyond nominal historical envelope",
+        "Sensor transducer drift or electrical noise coupling on analog signal loop"
+      ],
+      "recommended_action": "Inspect operating demand, motor loading, and recent process recipe setpoints.",
+      "is_energy_waste": true,
+      "estimated_excess_energy_kwh": 0.0674
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-27T18:25:00",
+      "is_anomaly": true,
+      "anomaly_type": "excessive_power_consumption",
+      "severity": "medium",
+      "actual_power_kw": 3.04,
+      "expected_power_kw": 2.49,
+      "deviation_kw": 0.55,
+      "deviation_pct": 22.02,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Active electrical power (3.04 kW) is 22.0% above calibrated condition baseline (2.49 kW) for standby mode."
+      ],
+      "possible_causes": [
+        "Multivariate operating point excursion beyond nominal historical envelope",
+        "Sensor transducer drift or electrical noise coupling on analog signal loop"
+      ],
+      "recommended_action": "Inspect operating demand, motor loading, and recent process recipe setpoints.",
+      "is_energy_waste": true,
+      "estimated_excess_energy_kwh": 0.0457
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-27T19:00:00",
+      "is_anomaly": true,
+      "anomaly_type": "excessive_power_consumption",
+      "severity": "medium",
+      "actual_power_kw": 3.02,
+      "expected_power_kw": 2.49,
+      "deviation_kw": 0.53,
+      "deviation_pct": 21.22,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Active electrical power (3.02 kW) is 21.2% above calibrated condition baseline (2.49 kW) for standby mode."
+      ],
+      "possible_causes": [
+        "Multivariate operating point excursion beyond nominal historical envelope",
+        "Sensor transducer drift or electrical noise coupling on analog signal loop"
+      ],
+      "recommended_action": "Inspect operating demand, motor loading, and recent process recipe setpoints.",
+      "is_energy_waste": true,
+      "estimated_excess_energy_kwh": 0.0441
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-27T19:30:00",
+      "is_anomaly": true,
+      "anomaly_type": "excessive_power_consumption",
+      "severity": "medium",
+      "actual_power_kw": 3.21,
+      "expected_power_kw": 2.49,
+      "deviation_kw": 0.72,
+      "deviation_pct": 28.84,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Active electrical power (3.21 kW) is 28.8% above calibrated condition baseline (2.49 kW) for standby mode."
+      ],
+      "possible_causes": [
+        "Multivariate operating point excursion beyond nominal historical envelope",
+        "Sensor transducer drift or electrical noise coupling on analog signal loop"
+      ],
+      "recommended_action": "Inspect operating demand, motor loading, and recent process recipe setpoints.",
+      "is_energy_waste": true,
+      "estimated_excess_energy_kwh": 0.0599
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-27T19:55:00",
+      "is_anomaly": true,
+      "anomaly_type": "excessive_power_consumption",
+      "severity": "medium",
+      "actual_power_kw": 3.05,
+      "expected_power_kw": 2.49,
+      "deviation_kw": 0.56,
+      "deviation_pct": 22.42,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Active electrical power (3.05 kW) is 22.4% above calibrated condition baseline (2.49 kW) for standby mode."
+      ],
+      "possible_causes": [
+        "Multivariate operating point excursion beyond nominal historical envelope",
+        "Sensor transducer drift or electrical noise coupling on analog signal loop"
+      ],
+      "recommended_action": "Inspect operating demand, motor loading, and recent process recipe setpoints.",
+      "is_energy_waste": true,
+      "estimated_excess_energy_kwh": 0.0466
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-27T20:50:00",
+      "is_anomaly": true,
+      "anomaly_type": "excessive_power_consumption",
+      "severity": "medium",
+      "actual_power_kw": 3.01,
+      "expected_power_kw": 2.49,
+      "deviation_kw": 0.52,
+      "deviation_pct": 20.82,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Active electrical power (3.01 kW) is 20.8% above calibrated condition baseline (2.49 kW) for standby mode."
+      ],
+      "possible_causes": [
+        "Multivariate operating point excursion beyond nominal historical envelope",
+        "Sensor transducer drift or electrical noise coupling on analog signal loop"
+      ],
+      "recommended_action": "Inspect operating demand, motor loading, and recent process recipe setpoints.",
+      "is_energy_waste": true,
+      "estimated_excess_energy_kwh": 0.0432
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-27T22:25:00",
+      "is_anomaly": true,
+      "anomaly_type": "excessive_power_consumption",
+      "severity": "medium",
+      "actual_power_kw": 3.22,
+      "expected_power_kw": 2.49,
+      "deviation_kw": 0.73,
+      "deviation_pct": 29.24,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Active electrical power (3.22 kW) is 29.2% above calibrated condition baseline (2.49 kW) for standby mode."
+      ],
+      "possible_causes": [
+        "Multivariate operating point excursion beyond nominal historical envelope",
+        "Sensor transducer drift or electrical noise coupling on analog signal loop"
+      ],
+      "recommended_action": "Inspect operating demand, motor loading, and recent process recipe setpoints.",
+      "is_energy_waste": true,
+      "estimated_excess_energy_kwh": 0.0607
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-27T22:55:00",
+      "is_anomaly": true,
+      "anomaly_type": "excessive_power_consumption",
+      "severity": "medium",
+      "actual_power_kw": 3.03,
+      "expected_power_kw": 2.49,
+      "deviation_kw": 0.54,
+      "deviation_pct": 21.62,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Active electrical power (3.03 kW) is 21.6% above calibrated condition baseline (2.49 kW) for standby mode."
+      ],
+      "possible_causes": [
+        "Multivariate operating point excursion beyond nominal historical envelope",
+        "Sensor transducer drift or electrical noise coupling on analog signal loop"
+      ],
+      "recommended_action": "Inspect operating demand, motor loading, and recent process recipe setpoints.",
+      "is_energy_waste": true,
+      "estimated_excess_energy_kwh": 0.0449
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-27T23:10:00",
+      "is_anomaly": true,
+      "anomaly_type": "excessive_power_consumption",
+      "severity": "medium",
+      "actual_power_kw": 3.01,
+      "expected_power_kw": 2.49,
+      "deviation_kw": 0.52,
+      "deviation_pct": 20.82,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Active electrical power (3.01 kW) is 20.8% above calibrated condition baseline (2.49 kW) for standby mode."
+      ],
+      "possible_causes": [
+        "Multivariate operating point excursion beyond nominal historical envelope",
+        "Sensor transducer drift or electrical noise coupling on analog signal loop"
+      ],
+      "recommended_action": "Inspect operating demand, motor loading, and recent process recipe setpoints.",
+      "is_energy_waste": true,
+      "estimated_excess_energy_kwh": 0.0432
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-28T00:05:00",
+      "is_anomaly": true,
+      "anomaly_type": "excessive_power_consumption",
+      "severity": "medium",
+      "actual_power_kw": 3.15,
+      "expected_power_kw": 2.49,
+      "deviation_kw": 0.66,
+      "deviation_pct": 26.44,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Active electrical power (3.15 kW) is 26.4% above calibrated condition baseline (2.49 kW) for standby mode."
+      ],
+      "possible_causes": [
+        "Multivariate operating point excursion beyond nominal historical envelope",
+        "Sensor transducer drift or electrical noise coupling on analog signal loop"
+      ],
+      "recommended_action": "Inspect operating demand, motor loading, and recent process recipe setpoints.",
+      "is_energy_waste": true,
+      "estimated_excess_energy_kwh": 0.0549
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-28T02:45:00",
+      "is_anomaly": true,
+      "anomaly_type": "excessive_power_consumption",
+      "severity": "high",
+      "actual_power_kw": 3.54,
+      "expected_power_kw": 2.49,
+      "deviation_kw": 1.05,
+      "deviation_pct": 42.09,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Active electrical power (3.54 kW) is 42.1% above calibrated condition baseline (2.49 kW) for standby mode."
+      ],
+      "possible_causes": [
+        "Multivariate operating point excursion beyond nominal historical envelope",
+        "Sensor transducer drift or electrical noise coupling on analog signal loop"
+      ],
+      "recommended_action": "Inspect operating demand, motor loading, and recent process recipe setpoints.",
+      "is_energy_waste": true,
+      "estimated_excess_energy_kwh": 0.0874
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-28T03:00:00",
+      "is_anomaly": true,
+      "anomaly_type": "excessive_power_consumption",
+      "severity": "medium",
+      "actual_power_kw": 3.05,
+      "expected_power_kw": 2.49,
+      "deviation_kw": 0.56,
+      "deviation_pct": 22.42,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Active electrical power (3.05 kW) is 22.4% above calibrated condition baseline (2.49 kW) for standby mode."
+      ],
+      "possible_causes": [
+        "Multivariate operating point excursion beyond nominal historical envelope",
+        "Sensor transducer drift or electrical noise coupling on analog signal loop"
+      ],
+      "recommended_action": "Inspect operating demand, motor loading, and recent process recipe setpoints.",
+      "is_energy_waste": true,
+      "estimated_excess_energy_kwh": 0.0466
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-28T03:15:00",
+      "is_anomaly": true,
+      "anomaly_type": "excessive_power_consumption",
+      "severity": "medium",
+      "actual_power_kw": 3.13,
+      "expected_power_kw": 2.49,
+      "deviation_kw": 0.64,
+      "deviation_pct": 25.63,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Active electrical power (3.13 kW) is 25.6% above calibrated condition baseline (2.49 kW) for standby mode."
+      ],
+      "possible_causes": [
+        "Multivariate operating point excursion beyond nominal historical envelope",
+        "Sensor transducer drift or electrical noise coupling on analog signal loop"
+      ],
+      "recommended_action": "Inspect operating demand, motor loading, and recent process recipe setpoints.",
+      "is_energy_waste": true,
+      "estimated_excess_energy_kwh": 0.0532
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-28T05:35:00",
+      "is_anomaly": true,
+      "anomaly_type": "excessive_power_consumption",
+      "severity": "medium",
+      "actual_power_kw": 3.21,
+      "expected_power_kw": 2.49,
+      "deviation_kw": 0.72,
+      "deviation_pct": 28.84,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Active electrical power (3.21 kW) is 28.8% above calibrated condition baseline (2.49 kW) for standby mode."
+      ],
+      "possible_causes": [
+        "Multivariate operating point excursion beyond nominal historical envelope",
+        "Sensor transducer drift or electrical noise coupling on analog signal loop"
+      ],
+      "recommended_action": "Inspect operating demand, motor loading, and recent process recipe setpoints.",
+      "is_energy_waste": true,
+      "estimated_excess_energy_kwh": 0.0599
+    },
+    {
+      "equipment_id": "AIR-COMP-01",
+      "equipment_type": "air_compressor",
+      "timestamp": "2024-01-28T07:05:00",
+      "is_anomaly": true,
+      "anomaly_type": "excessive_power_consumption",
+      "severity": "medium",
+      "actual_power_kw": 3.0,
+      "expected_power_kw": 2.49,
+      "deviation_kw": 0.51,
+      "deviation_pct": 20.41,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Active electrical power (3.00 kW) is 20.4% above calibrated condition baseline (2.49 kW) for standby mode."
+      ],
+      "possible_causes": [
+        "Multivariate operating point excursion beyond nominal historical envelope",
+        "Sensor transducer drift or electrical noise coupling on analog signal loop"
+      ],
+      "recommended_action": "Inspect operating demand, motor loading, and recent process recipe setpoints.",
+      "is_energy_waste": true,
+      "estimated_excess_energy_kwh": 0.0424
+    }
+  ]
+}

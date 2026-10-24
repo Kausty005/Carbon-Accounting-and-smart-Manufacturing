@@ -1,0 +1,72 @@
+{
+  "generated_at": "2026-10-24T09:52:28.499201Z",
+  "simulation_version": "v1.0-synthetic-hackathon",
+  "seed": 42,
+  "duration_days": 30,
+  "sampling_interval_minutes": 5,
+  "total_rows": 34560,
+  "total_timestamps": 8640,
+  "equipment_counts": {
+    "AIR-COMP-01": 8640,
+    "CHILLER-01": 8640,
+    "CNC-01": 8640,
+    "FURNACE-01": 8640
+  },
+  "operating_modes": {
+    "AIR-COMP-01": [
+      "standby",
+      "off",
+      "load",
+      "unload"
+    ],
+    "CHILLER-01": [
+      "standby",
+      "low_load",
+      "running"
+    ],
+    "CNC-01": [
+      "off",
+      "idle",
+      "setup",
+      "cutting"
+    ],
+    "FURNACE-01": [
+      "idle",
+      "heating",
+      "holding",
+      "cooling",
+      "off"
+    ]
+  },
+  "anomaly_distribution": {
+    "normal": 33473,
+    "bearing_degradation": 168,
+    "sensor_malfunction": 156,
+    "excessive_low_demand_operation": 120,
+    "excessive_unload_operation": 96,
+    "excessive_idle_energy": 84,
+    "reduced_cooling_effectiveness": 72,
+    "low_delta_t_syndrome": 72,
+    "pressure_loss_leak": 72,
+    "slow_heating": 60,
+    "temperature_overshoot": 55,
+    "excessive_idle_heating": 48,
+    "tool_wear_chatter": 48,
+    "door_open_heat_loss": 36
+  },
+  "severity_distribution": {
+    "normal": 33473,
+    "medium": 456,
+    "high": 336,
+    "critical": 295
+  },
+  "energy_waste_rows": 763,
+  "distinct_events_count": 17,
+  "events_by_equipment": {
+    "FURNACE-01": 5,
+    "AIR-COMP-01": 4,
+    "CHILLER-01": 4,
+    "CNC-01": 4
+  },
+  "missing_values_count": 457973
+}

@@ -30,8 +30,13 @@ import { FloatingChatbot } from './components/AIChat/FloatingChatbot';
 import { DemandAreaChart, ComparisonLineChart, ScopePie, MachineEnergyDonut, ProductiveVsWasteBar } from './components/Charts';
 import {
   PLANT, ASSETS, HOURLY_BASE, CARBON,
-  calcSimResult, DEFAULT_SIM_PARAMS, type SimParams, type Asset,
+  calcSimResult, DEFAULT_SIM_PARAMS, type SimParams, type Asset, type AssetStatus,
 } from './data/mockData';
+import {
+  fetchLiveSimulationTick,
+  type LiveSimulationTickResponse,
+  type AnomalyIncident,
+} from './services/anomalyApi';
 import {
   calculateCarbonFootprint,
   checkBackendHealth,
@@ -119,12 +124,16 @@ function TeleBar({
   carbonData,
   backendStatus,
   activeSimulation,
+  livePlantPower,
+  liveTick,
 }: {
   simOn: boolean;
   simParams: SimParams;
   carbonData: CarbonCalculateResponse | null;
   backendStatus: 'CONNECTED' | 'OFFLINE (DEMO)';
   activeSimulation?: SimulationResult;
+  livePlantPower?: number;
+  liveTick?: number;
 }) {
   const [time, setTime] = useState(new Date());
   useEffect(() => {
@@ -156,7 +165,15 @@ function TeleBar({
         <span className="tele-label">Plant Mode</span>
         <span className={`live-badge ${simOn ? 'sim' : ''}`}>
           <span className="pulse-dot" />
-          {simOn ? 'DIGITAL TWIN SIM' : 'LIVE TELEMETRY'}
+          {simOn ? 'DIGITAL TWIN SIM' : 'LIVE SCADA STREAM'}
+        </span>
+      </div>
+
+      <div className="tele-item">
+        <span className="tele-label">Real-Time Demand</span>
+        <span className="tele-val text-cyan" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <Zap size={11} color="var(--cyan)" />
+          {livePlantPower != null ? `${livePlantPower.toFixed(1)} kW` : `${PLANT.baselineDemandKva} kVA`}
         </span>
       </div>
 
@@ -209,7 +226,7 @@ function TeleBar({
       <div className="tele-item" style={{ marginLeft: 'auto' }}>
         <span className="tele-label">SCADA Sync</span>
         <span className="tele-val tele-dim">
-          {pad(time.getHours())}:{pad(time.getMinutes())}:{pad(time.getSeconds())} IST
+          {liveTick ? `Tick #${liveTick} • ` : ''}{pad(time.getHours())}:{pad(time.getMinutes())}:{pad(time.getSeconds())} IST
         </span>
       </div>
     </div>
@@ -237,14 +254,64 @@ function OverviewView({
   setView,
   carbonData,
   gridEF,
+  onSelectAsset,
+  assets,
+  livePlantPower,
+  activeAnomaly,
+  liveTick,
 }: {
   setView: (v: View) => void;
   carbonData: CarbonCalculateResponse | null;
   gridEF: number;
+  onSelectAsset?: (id: string) => void;
+  assets?: Asset[];
+  livePlantPower?: number;
+  activeAnomaly?: AnomalyIncident | null;
+  liveTick?: number;
 }) {
+  const currentAssetList = assets || ASSETS;
+  const compAsset = currentAssetList.find(a => a.id === 'compressor') || ASSETS[0];
+  const cncAsset = currentAssetList.find(a => a.id === 'cnc') || ASSETS[1];
+  const furnAsset = currentAssetList.find(a => a.id === 'furnace') || ASSETS[2];
+  const chillAsset = currentAssetList.find(a => a.id === 'cooling') || ASSETS[3];
+
+  const scope2Emissions = carbonData?.gross_footprint.scope2?.emissions_total_co2e_t.toFixed(2) ?? '14.47';
+  const factorUsed = (carbonData?.gross_footprint.scope2?.factor_metadata.selected_factor ?? gridEF).toFixed(2);
+
+  const totalLiveKw = livePlantPower ?? currentAssetList.reduce((s, a) => s + (a.currentKw || 0), 0);
+  const totalPlantEnergyKwh = currentAssetList.reduce((s, a) => s + (a.energyKwh || 0), 0);
+  const avgPf = +(currentAssetList.reduce((s, a) => s + (a.pf || 0.9), 0) / currentAssetList.length).toFixed(2);
+  const flaggedAssets = currentAssetList.filter(a => a.status === 'WARNING' || a.status === 'PEAK');
+
+  const compLoadPct = Math.min(100, Math.round((compAsset.currentKw / compAsset.ratedKw) * 100));
+  const cncLoadPct = Math.min(100, Math.round((cncAsset.currentKw / cncAsset.ratedKw) * 100));
+  const furnLoadPct = Math.min(100, Math.round((furnAsset.currentKw / furnAsset.ratedKw) * 100));
+  const chillLoadPct = Math.min(100, Math.round((chillAsset.currentKw / chillAsset.ratedKw) * 100));
+
+  const anomalySavingsInr = activeAnomaly?.action_recommendations?.[0]?.estimated_savings_inr ?? 7987;
+  const anomalySavingsKwh = activeAnomaly?.action_recommendations?.[0]?.estimated_savings_kwh ?? activeAnomaly?.estimated_excess_energy_kwh ?? 998;
+
+  // Dynamic hourly demand chart with current hour reflecting real-time telemetry
+  const dynamicHourlyData = useMemo(() => {
+    const currentHour = new Date().getHours();
+    return OVERVIEW_24H_DEMAND.map((item, idx) => {
+      const itemHour = idx * 2;
+      if (Math.abs(itemHour - currentHour) < 2) {
+        return {
+          ...item,
+          compressor: compAsset.currentKw,
+          cnc: cncAsset.currentKw,
+          furnace: furnAsset.currentKw,
+          cooling: chillAsset.currentKw,
+        };
+      }
+      return item;
+    });
+  }, [compAsset.currentKw, cncAsset.currentKw, furnAsset.currentKw, chillAsset.currentKw]);
+
   return (
     <div className="scroll-area" style={{ background: '#F4EEE5', minHeight: '100%', padding: '16px 22px 32px' }}>
-      {/* â”€â”€â”€ Top Header: Title & Time Controls â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ─── Top Header: Title & Time Controls ───────────────────────────── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
         <div>
           <h1 style={{ fontSize: 25, fontWeight: 700, color: '#1E252D', margin: 0, letterSpacing: '-0.015em' }}>
@@ -265,26 +332,30 @@ function OverviewView({
           }}>
             <Calendar size={14} color="#64748B" />
             <div style={{ display: 'flex', flexDirection: 'column', fontSize: 11, fontWeight: 600, color: '#1E252D', lineHeight: 1.25 }}>
-              <span>Tue, 30 Jan 2024</span>
-              <span style={{ fontSize: 9.5, color: '#64748B', fontWeight: 500 }}>19:32:58 IST</span>
+              <span>PrecisionWorks Factory</span>
+              <span style={{ fontSize: 9.5, color: '#64748B', fontWeight: 500 }}>
+                {liveTick ? `Tick #${liveTick} • Live SCADA` : 'Real-Time SCADA'}
+              </span>
             </div>
           </div>
 
-          {/* Timeframe Dropdown */}
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            background: '#FFFFFF', border: '1px solid #EAE3D7',
-            borderRadius: 8, padding: '8px 14px',
-            fontSize: 12, fontWeight: 500, color: '#334155',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.03)', cursor: 'pointer'
-          }}>
-            <span>Last 24 Hours</span>
-            <ChevronDown size={12} color="#64748B" />
-          </div>
+          <span style={{ fontSize: 9.5, padding: '4px 10px', borderRadius: 9999, backgroundColor: 'rgba(16, 185, 129, 0.12)', color: '#059669', border: '1px solid rgba(16, 185, 129, 0.25)', fontWeight: 700, fontFamily: 'var(--font-mono)', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+            <span className="pulse-dot" style={{ width: 6, height: 6 }} />
+            4 ASSETS ONLINE ({totalLiveKw.toFixed(1)} kW)
+          </span>
+
+          <button className={`btn ${flaggedAssets.length > 0 || activeAnomaly ? 'btn-amber' : 'btn-outline'} btn-sm`} onClick={() => setView('anomalies')}>
+            <AlertTriangle size={11} />
+            <span>{activeAnomaly ? `1 Live Anomaly (${activeAnomaly.equipment_id})` : `${flaggedAssets.length} Critical Anomaly`}</span>
+          </button>
+          <button className="btn btn-cyan btn-sm" onClick={() => setView('simulator')}>
+            <Sliders size={11} />
+            <span>Open Simulator</span>
+          </button>
         </div>
       </div>
 
-      {/* â”€â”€â”€ Row 1: Top 4 KPI Metric Cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ─── Row 1: Top 4 KPI Metric Cards ─────────────────────────────── */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(4, 1fr)',
@@ -297,13 +368,13 @@ function OverviewView({
             component_type: 'kpi',
             title: 'Energy today',
             identifier: 'kpi_energy_today',
-            value: '12,480',
+            value: totalPlantEnergyKwh.toLocaleString(),
             unit: 'kWh',
-            trend: '+8.4% vs yesterday',
+            trend: `${totalLiveKw.toFixed(1)} kW Live Draw`,
             time_range: 'Last 24 Hours',
-            timestamp: '19:32:58 IST',
+            timestamp: liveTick ? `Tick #${liveTick}` : 'Live SCADA',
             site: 'PrecisionWorks Mfg',
-            evidence: { energy_kwh: 12480, delta_pct: 8.4 },
+            evidence: { energy_kwh: totalPlantEnergyKwh, live_kw: totalLiveKw },
           }}
         >
           <div style={{ background: '#FFFFFF', border: '1px solid #EAE3D7', borderRadius: 12, padding: '14px 16px', boxShadow: '0 1px 3px rgba(0,0,0,0.03)', height: '100%' }}>
@@ -314,11 +385,12 @@ function OverviewView({
               <span style={{ fontSize: 12, fontWeight: 500, color: '#64748B' }}>Energy today</span>
             </div>
             <div style={{ fontSize: 24, fontWeight: 700, color: '#1E252D', marginBottom: 8 }}>
-              12,480 <span style={{ fontSize: 13, fontWeight: 500, color: '#1E252D' }}>kWh</span>
+              {totalPlantEnergyKwh.toLocaleString()} <span style={{ fontSize: 13, fontWeight: 500, color: '#1E252D' }}>kWh</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: 11, fontWeight: 600, color: '#10B981', display: 'flex', alignItems: 'center', gap: 2 }}>
-                â†‘ +8.4% vs yesterday
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#059669', display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'var(--font-mono)' }}>
+                <span className="pulse-dot" style={{ width: 6, height: 6, backgroundColor: '#10B981', display: 'inline-block' }} />
+                {totalLiveKw.toFixed(1)} kW Live Draw
               </span>
               <BarChart2 size={14} color="#0284C7" />
             </div>
@@ -331,11 +403,11 @@ function OverviewView({
             component_type: 'kpi',
             title: 'Energy cost',
             identifier: 'kpi_energy_cost',
-            value: 'â‚¹23,044',
+            value: '₹23,044',
             unit: 'INR',
             trend: '+6.1% vs yesterday',
             time_range: 'Last 24 Hours',
-            timestamp: '19:32:58 IST',
+            timestamp: liveTick ? `Tick #${liveTick}` : 'Live SCADA',
             site: 'PrecisionWorks Mfg',
             evidence: { cost_inr: 23044, avg_tariff_inr: 9.0 },
           }}
@@ -348,11 +420,11 @@ function OverviewView({
               <span style={{ fontSize: 12, fontWeight: 500, color: '#64748B' }}>Energy cost</span>
             </div>
             <div style={{ fontSize: 24, fontWeight: 700, color: '#1E252D', marginBottom: 8 }}>
-              â‚¹23,044
+              ₹23,044
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: 11, fontWeight: 600, color: '#EF4444', display: 'flex', alignItems: 'center', gap: 2 }}>
-                â†‘ +6.1% vs yesterday
+                ↑ +6.1% vs yesterday
               </span>
               <BarChart2 size={14} color="#0284C7" />
             </div>
@@ -365,12 +437,12 @@ function OverviewView({
             component_type: 'kpi',
             title: 'Potential savings',
             identifier: 'kpi_potential_savings',
-            value: 'â‚¹7,987',
+            value: `₹${Math.round(anomalySavingsInr).toLocaleString()}`,
             unit: 'INR / period',
-            trend: '998 kWh (8% reduction)',
+            trend: activeAnomaly ? `${anomalySavingsKwh} kWh reduction` : '998 kWh (8% reduction)',
             time_range: 'Last 24 Hours',
             site: 'PrecisionWorks Mfg',
-            evidence: { savings_inr: 7987, savings_kwh: 998, reduction_pct: 8.0 },
+            evidence: { savings_inr: anomalySavingsInr, savings_kwh: anomalySavingsKwh, reduction_pct: 8.0 },
           }}
         >
           <div style={{ background: '#FFFFFF', border: '1px solid #EAE3D7', borderRadius: 12, padding: '14px 16px', boxShadow: '0 1px 3px rgba(0,0,0,0.03)', height: '100%' }}>
@@ -381,11 +453,12 @@ function OverviewView({
               <span style={{ fontSize: 12, fontWeight: 500, color: '#64748B' }}>Potential savings</span>
             </div>
             <div style={{ fontSize: 24, fontWeight: 700, color: '#1E252D', marginBottom: 8 }}>
-              â‚¹7,987 <span style={{ fontSize: 11, fontWeight: 400, color: '#64748B' }}>/ period</span>
+              ₹{Math.round(anomalySavingsInr).toLocaleString()}{' '}
+              <span style={{ fontSize: 11, fontWeight: 400, color: '#64748B' }}>/ period</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: 11, fontWeight: 600, color: '#16A34A' }}>
-                998 kWh (8% reduction)
+                {activeAnomaly ? `${anomalySavingsKwh} kWh reduction` : '998 kWh (8% reduction)'}
               </span>
               <BarChart2 size={14} color="#16A34A" />
             </div>
@@ -398,12 +471,12 @@ function OverviewView({
             component_type: 'kpi',
             title: 'Carbon footprint',
             identifier: 'kpi_carbon_footprint',
-            value: '14.47',
-            unit: 'tCOâ‚‚e',
+            value: scope2Emissions,
+            unit: 'tCO₂e',
             trend: '-12.6% vs baseline',
             time_range: 'Last 24 Hours',
             site: 'PrecisionWorks Mfg',
-            evidence: { footprint_tco2e: 14.47, cea_grid_factor: 0.716 },
+            evidence: { footprint_tco2e: parseFloat(scope2Emissions), cea_grid_factor: parseFloat(factorUsed) },
           }}
         >
           <div style={{ background: '#FFFFFF', border: '1px solid #EAE3D7', borderRadius: 12, padding: '14px 16px', boxShadow: '0 1px 3px rgba(0,0,0,0.03)', height: '100%' }}>
@@ -414,7 +487,7 @@ function OverviewView({
               <span style={{ fontSize: 12, fontWeight: 500, color: '#64748B' }}>Carbon footprint</span>
             </div>
             <div style={{ fontSize: 24, fontWeight: 700, color: '#1E252D', marginBottom: 8 }}>
-              14.47 <span style={{ fontSize: 13, fontWeight: 500, color: '#1E252D' }}>tCOâ‚‚e</span>
+              {scope2Emissions} <span style={{ fontSize: 13, fontWeight: 500, color: '#1E252D' }}>tCO₂e</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: 11, fontWeight: 500, color: '#475569' }}>
@@ -426,7 +499,7 @@ function OverviewView({
         </Explainable>
       </div>
 
-      {/* â”€â”€â”€ Row 2: Dual Charts + Priority Alerts (3 Columns) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ─── Row 2: Dual Charts + Priority Alerts (3 Columns) ───────────── */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: '40% 35% 25%',
@@ -443,10 +516,10 @@ function OverviewView({
             time_range: 'Last 24 Hours (00:00 - 24:00 IST)',
             site: 'PrecisionWorks Mfg',
             series: [
-              { name: 'Furnace', peak_value: 162, unit: 'kW', color: '#EF4444', summary_note: 'Daytime heating peak (08:00 - 18:00)' },
-              { name: 'CNC', peak_value: 94, unit: 'kW', color: '#0EA5E9', summary_note: 'Shift machining cycle' },
-              { name: 'Compressor', peak_value: 48, unit: 'kW', color: '#F59E0B', summary_note: 'Idle draw plateau during breaks' },
-              { name: 'Cooling', peak_value: 39, unit: 'kW', color: '#10B981', summary_note: 'Continuous thermal loop' },
+              { name: 'Furnace', peak_value: furnAsset.currentKw, unit: 'kW', color: '#EF4444', summary_note: 'Daytime heating loop' },
+              { name: 'CNC', peak_value: cncAsset.currentKw, unit: 'kW', color: '#0EA5E9', summary_note: 'Shift machining cycle' },
+              { name: 'Compressor', peak_value: compAsset.currentKw, unit: 'kW', color: '#F59E0B', summary_note: 'Pneumatics line draw' },
+              { name: 'Cooling', peak_value: chillAsset.currentKw, unit: 'kW', color: '#10B981', summary_note: 'Continuous thermal loop' },
             ],
           }}
           style={{ height: '100%' }}
@@ -470,17 +543,17 @@ function OverviewView({
                 display: 'flex', alignItems: 'center', gap: 6,
                 background: '#FFFFFF', border: '1px solid #EAE3D7',
                 borderRadius: 6, padding: '3px 9px',
-                fontSize: 11, fontWeight: 500, color: '#334155', cursor: 'pointer'
+                fontSize: 11, fontWeight: 700, color: '#0284C7'
               }}>
-                <span>All Assets</span>
-                <ChevronDown size={11} color="#64748B" />
+                <span className="pulse-dot" style={{ width: 5, height: 5 }} />
+                <span>{totalLiveKw.toFixed(1)} kW Live</span>
               </div>
             </div>
 
             {/* Area Chart with Monotone Smooth Splines */}
             <div style={{ width: '100%', height: 165 }}>
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={OVERVIEW_24H_DEMAND} margin={{ top: 8, right: 10, left: -22, bottom: 0 }}>
+                <AreaChart data={dynamicHourlyData} margin={{ top: 8, right: 10, left: -22, bottom: 0 }}>
                   <defs>
                     <linearGradient id="gFurn" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#EF4444" stopOpacity={0.22} />
@@ -511,37 +584,37 @@ function OverviewView({
               </ResponsiveContainer>
             </div>
 
-            {/* Legend Matching Image */}
+            {/* Legend */}
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 14, marginTop: 6, fontSize: 11, color: '#334155' }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#F59E0B' }} /> Compressor
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#F59E0B' }} /> Compressor ({compAsset.currentKw} kW)
               </span>
               <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#0EA5E9' }} /> CNC
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#0EA5E9' }} /> CNC ({cncAsset.currentKw} kW)
               </span>
               <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#EF4444' }} /> Furnace
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#EF4444' }} /> Furnace ({furnAsset.currentKw} kW)
               </span>
               <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#10B981' }} /> Cooling
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#10B981' }} /> Cooling ({chillAsset.currentKw} kW)
               </span>
             </div>
           </div>
         </Explainable>
 
-        {/* Chart 2: Asset energy distribution */}
+        {/* Chart 2: Asset energy distribution (Donut) */}
         <Explainable
           context={{
             component_type: 'chart',
             title: 'Asset energy distribution',
             identifier: 'chart_asset_distribution',
-            value: '12,480 kWh Total',
+            value: `${totalLiveKw.toFixed(1)} kW Live Total`,
             site: 'PrecisionWorks Mfg',
             series: [
-              { name: 'Air Compressor', current_value: 3120, unit: 'kWh', summary_note: '25%' },
-              { name: 'CNC Machining Center', current_value: 4200, unit: 'kWh', summary_note: '34%' },
-              { name: 'Industrial Heat Furnace', current_value: 3600, unit: 'kWh', summary_note: '29%' },
-              { name: 'Chilled Water Cooling', current_value: 1560, unit: 'kWh', summary_note: '13%' },
+              { name: 'Air Compressor', current_value: compAsset.currentKw, unit: 'kW', summary_note: `${Math.round((compAsset.currentKw / (totalLiveKw || 1)) * 100)}%` },
+              { name: 'CNC Machining Center', current_value: cncAsset.currentKw, unit: 'kW', summary_note: `${Math.round((cncAsset.currentKw / (totalLiveKw || 1)) * 100)}%` },
+              { name: 'Industrial Heat Furnace', current_value: furnAsset.currentKw, unit: 'kW', summary_note: `${Math.round((furnAsset.currentKw / (totalLiveKw || 1)) * 100)}%` },
+              { name: 'Chilled Water Cooling', current_value: chillAsset.currentKw, unit: 'kW', summary_note: `${Math.round((chillAsset.currentKw / (totalLiveKw || 1)) * 100)}%` },
             ],
           }}
           style={{ height: '100%' }}
@@ -556,16 +629,16 @@ function OverviewView({
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <BarChart2 size={15} color="#0284C7" />
-                <span style={{ fontSize: 14, fontWeight: 700, color: '#1E252D' }}>Asset energy distribution</span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: '#1E252D' }}>Asset power distribution</span>
               </div>
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 6,
                 background: '#FFFFFF', border: '1px solid #EAE3D7',
                 borderRadius: 6, padding: '3px 9px',
-                fontSize: 11, fontWeight: 500, color: '#334155', cursor: 'pointer'
+                fontSize: 11, fontWeight: 700, color: '#0284C7'
               }}>
-                <span>Today</span>
-                <ChevronDown size={11} color="#64748B" />
+                <span className="pulse-dot" style={{ width: 5, height: 5 }} />
+                <span>Live Share</span>
               </div>
             </div>
 
@@ -576,10 +649,10 @@ function OverviewView({
                   <PieChart>
                     <Pie
                       data={[
-                        { name: 'CNC Machining Center', value: 4200, color: '#0EA5E9' },
-                        { name: 'Industrial Heat Furnace', value: 3600, color: '#EF4444' },
-                        { name: 'Air Compressor', value: 3120, color: '#F59E0B' },
-                        { name: 'Chilled Water Cooling', value: 1560, color: '#10B981' },
+                        { name: 'CNC Machining Center', value: Math.max(1, cncAsset.currentKw), color: '#0EA5E9' },
+                        { name: 'Industrial Heat Furnace', value: Math.max(1, furnAsset.currentKw), color: '#EF4444' },
+                        { name: 'Air Compressor', value: Math.max(1, compAsset.currentKw), color: '#F59E0B' },
+                        { name: 'Chilled Water Cooling', value: Math.max(1, chillAsset.currentKw), color: '#10B981' },
                       ]}
                       cx="50%" cy="50%"
                       innerRadius={46} outerRadius={68}
@@ -601,19 +674,19 @@ function OverviewView({
                   transform: 'translate(-50%, -50%)',
                   textAlign: 'center', pointerEvents: 'none', lineHeight: 1.15
                 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#1E252D' }}>12,480</div>
-                  <div style={{ fontSize: 9.5, color: '#64748B' }}>kWh</div>
-                  <div style={{ fontSize: 9.5, color: '#94A3B8' }}>Total</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#1E252D' }}>{totalLiveKw.toFixed(1)}</div>
+                  <div style={{ fontSize: 9.5, color: '#64748B' }}>kW</div>
+                  <div style={{ fontSize: 9, color: '#059669', fontWeight: 600 }}>Live</div>
                 </div>
               </div>
 
-              {/* Table Breakdown matching screenshot */}
+              {/* Table Breakdown */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 7, flex: 1 }}>
                 {[
-                  { label: 'Air Compressor', kwh: '3,120 kWh', pct: '25%', color: '#F59E0B', pctColor: '#D97706' },
-                  { label: 'CNC Machining Center', kwh: '4,200 kWh', pct: '34%', color: '#0EA5E9', pctColor: '#0EA5E9' },
-                  { label: 'Industrial Heat Furnace', kwh: '3,600 kWh', pct: '29%', color: '#EF4444', pctColor: '#EF4444' },
-                  { label: 'Chilled Water Cooling', kwh: '1,560 kWh', pct: '13%', color: '#10B981', pctColor: '#10B981' },
+                  { label: 'Air Compressor', kw: `${compAsset.currentKw} kW`, pct: `${Math.round((compAsset.currentKw / (totalLiveKw || 1)) * 100)}%`, color: '#F59E0B', pctColor: '#D97706' },
+                  { label: 'CNC Machining', kw: `${cncAsset.currentKw} kW`, pct: `${Math.round((cncAsset.currentKw / (totalLiveKw || 1)) * 100)}%`, color: '#0EA5E9', pctColor: '#0EA5E9' },
+                  { label: 'Heat Furnace', kw: `${furnAsset.currentKw} kW`, pct: `${Math.round((furnAsset.currentKw / (totalLiveKw || 1)) * 100)}%`, color: '#EF4444', pctColor: '#EF4444' },
+                  { label: 'Cooling Loop', kw: `${chillAsset.currentKw} kW`, pct: `${Math.round((chillAsset.currentKw / (totalLiveKw || 1)) * 100)}%`, color: '#10B981', pctColor: '#10B981' },
                 ].map((item, idx) => (
                   <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 10.5 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
@@ -621,8 +694,8 @@ function OverviewView({
                       <span style={{ color: '#334155', fontWeight: 500, whiteSpace: 'nowrap' }}>{item.label}</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                      <span style={{ color: '#64748B', fontSize: 10 }}>{item.kwh}</span>
-                      <span style={{ color: item.pctColor, fontWeight: 700, width: 26, textAlign: 'right' }}>{item.pct}</span>
+                      <span style={{ color: '#64748B', fontSize: 10, fontFamily: 'var(--font-mono)' }}>{item.kw}</span>
+                      <span style={{ color: item.pctColor, fontWeight: 700, width: 28, textAlign: 'right' }}>{item.pct}</span>
                     </div>
                   </div>
                 ))}
@@ -644,49 +717,94 @@ function OverviewView({
               <span style={{ fontSize: 13.5, fontWeight: 700, color: '#1E252D' }}>Priority alerts</span>
             </div>
             <span onClick={() => setView('anomalies')} style={{ fontSize: 11, fontWeight: 600, color: '#0284C7', cursor: 'pointer' }}>
-              View all â†’
+              View all →
             </span>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {/* Alert 1 */}
-            <Explainable
-              context={{
-                component_type: 'alert',
-                title: 'Air compressor running unloaded',
-                identifier: 'alert_compressor_unloaded',
-                asset_id: 'AIR-COMP-01',
-                asset_name: 'Air Compressor (ELGi)',
-                severity: 'critical',
-                value: '18 kW idle draw',
-                evidence: { idle_draw_kw: 18, idle_hrs_per_day: 3.2, waste_kwh: 998, cost_inr: 7987 },
-              }}
-            >
-              <div
-                style={{
-                  background: '#FEF2F2', border: '1px solid #FECACA',
-                  borderRadius: 8, padding: '9px 10px', cursor: 'pointer'
+            {/* Alert 1: Dynamic active anomaly or Compressor unloaded */}
+            {activeAnomaly ? (
+              <Explainable
+                context={{
+                  component_type: 'alert',
+                  title: `${activeAnomaly.equipment_id} — ${activeAnomaly.anomaly_type.replace(/_/g, ' ')}`,
+                  identifier: 'alert_live_scada_anomaly',
+                  asset_id: activeAnomaly.equipment_id,
+                  severity: activeAnomaly.severity === 'critical' ? 'critical' : 'high',
+                  value: `${activeAnomaly.actual_power_kw ?? activeAnomaly.observed_value} kW draw`,
+                  evidence: {
+                    expected_kw: activeAnomaly.expected_power_kw ?? activeAnomaly.expected_value,
+                    deviation_kw: activeAnomaly.deviation_kw,
+                    confidence: activeAnomaly.confidence,
+                  },
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <AlertTriangle size={13} color="#EF4444" />
-                    <span style={{ fontSize: 11, fontWeight: 700, color: '#991B1B' }}>Air compressor running unloaded</span>
+                <div
+                  onClick={() => setView('anomalies')}
+                  style={{
+                    background: '#FEF2F2', border: '1px solid #FECACA',
+                    borderRadius: 8, padding: '9px 10px', cursor: 'pointer'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <AlertTriangle size={13} color="#EF4444" />
+                      <span style={{ fontSize: 11, fontWeight: 700, color: '#991B1B' }}>
+                        {activeAnomaly.equipment_id}: {activeAnomaly.anomaly_type.replace(/_/g, ' ')}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span style={{ fontSize: 8.5, fontWeight: 700, background: '#EF4444', color: '#FFFFFF', padding: '1px 5px', borderRadius: 3 }}>
+                        {activeAnomaly.severity?.toUpperCase() || 'CRITICAL'}
+                      </span>
+                      <ChevronRight size={12} color="#991B1B" />
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <span style={{ fontSize: 8.5, fontWeight: 700, background: '#EF4444', color: '#FFFFFF', padding: '1px 5px', borderRadius: 3 }}>
-                      CRITICAL
-                    </span>
-                    <ChevronRight size={12} color="#991B1B" />
+                  <div style={{ fontSize: 10, color: '#7F1D1D', lineHeight: 1.35 }}>
+                    {activeAnomaly.actual_power_kw ?? activeAnomaly.observed_value} kW (vs {activeAnomaly.expected_power_kw ?? activeAnomaly.expected_value} kW). {activeAnomaly.recommended_action || 'Inspect parameters.'}
                   </div>
                 </div>
-                <div style={{ fontSize: 10, color: '#7F1D1D', lineHeight: 1.35 }}>
-                  18 kW idle draw during 3.2 hrs/day break periods. Estimated waste: 998 kWh/period (â‚¹7,987).
+              </Explainable>
+            ) : (
+              <Explainable
+                context={{
+                  component_type: 'alert',
+                  title: 'Air compressor running unloaded',
+                  identifier: 'alert_compressor_unloaded',
+                  asset_id: 'AIR-COMP-01',
+                  asset_name: 'Air Compressor (ELGi)',
+                  severity: 'critical',
+                  value: `${compAsset.idleKw || 18} kW idle draw`,
+                  evidence: { idle_draw_kw: compAsset.idleKw || 18, idle_hrs_per_day: 3.2, waste_kwh: 998, cost_inr: 7987 },
+                }}
+              >
+                <div
+                  onClick={() => setView('anomalies')}
+                  style={{
+                    background: '#FEF2F2', border: '1px solid #FECACA',
+                    borderRadius: 8, padding: '9px 10px', cursor: 'pointer'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <AlertTriangle size={13} color="#EF4444" />
+                      <span style={{ fontSize: 11, fontWeight: 700, color: '#991B1B' }}>Air compressor running unloaded</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span style={{ fontSize: 8.5, fontWeight: 700, background: '#EF4444', color: '#FFFFFF', padding: '1px 5px', borderRadius: 3 }}>
+                        CRITICAL
+                      </span>
+                      <ChevronRight size={12} color="#991B1B" />
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 10, color: '#7F1D1D', lineHeight: 1.35 }}>
+                    {compAsset.idleKw || 18} kW idle draw during break periods. Estimated waste: 998 kWh/period (₹7,987).
+                  </div>
                 </div>
-              </div>
-            </Explainable>
+              </Explainable>
+            )}
 
-            {/* Alert 2 */}
+            {/* Alert 2: Furnace */}
             <Explainable
               context={{
                 component_type: 'alert',
@@ -695,11 +813,12 @@ function OverviewView({
                 asset_id: 'FURNACE-01',
                 asset_name: 'Industrial Heat Furnace',
                 severity: 'high',
-                value: '85 kW concurrent peak',
-                evidence: { peak_kw: 85, peak_window: '09:00-12:00 IST', reduction_potential_pct: 18 },
+                value: `${furnAsset.currentKw} kW draw`,
+                evidence: { peak_kw: furnAsset.currentKw, temp_c: furnAsset.tempC, reduction_potential_pct: 18 },
               }}
             >
               <div
+                onClick={() => setView('anomalies')}
                 style={{
                   background: '#FFFBEB', border: '1px solid #FDE68A',
                   borderRadius: 8, padding: '9px 10px', cursor: 'pointer'
@@ -708,35 +827,36 @@ function OverviewView({
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                     <AlertTriangle size={13} color="#F59E0B" />
-                    <span style={{ fontSize: 11, fontWeight: 700, color: '#92400E' }}>Furnace high peak demand</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: '#92400E' }}>Furnace heating thermal load</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                     <span style={{ fontSize: 8.5, fontWeight: 700, background: '#F59E0B', color: '#FFFFFF', padding: '1px 5px', borderRadius: 3 }}>
-                      HIGH
+                      {furnAsset.status}
                     </span>
                     <ChevronRight size={12} color="#92400E" />
                   </div>
                 </div>
                 <div style={{ fontSize: 10, color: '#92400E', lineHeight: 1.35 }}>
-                  85 kW concurrent with compressor peak (09:00-12:00). Staggering preheat by 45 min can reduce peak demand by 18%.
+                  {furnAsset.currentKw} kW at {furnAsset.tempC || 850}°C. Staggering preheat by 45 min can reduce coincident peak draw by 18%.
                 </div>
               </div>
             </Explainable>
 
-            {/* Alert 3 */}
+            {/* Alert 3: CNC Machining Center */}
             <Explainable
               context={{
                 component_type: 'alert',
-                title: 'CNC machining center optimal',
+                title: 'CNC machining center operational status',
                 identifier: 'alert_cnc_optimal',
                 asset_id: 'CNC-01',
                 asset_name: 'CNC Machining Center',
-                severity: 'optimal',
-                value: '85% load',
-                evidence: { power_factor: 0.94, anomalies: 0 },
+                severity: cncAsset.status === 'OPTIMAL' ? 'optimal' : 'warning',
+                value: `${cncLoadPct}% load`,
+                evidence: { power_factor: cncAsset.pf, current_kw: cncAsset.currentKw },
               }}
             >
               <div
+                onClick={() => setView('scada')}
                 style={{
                   background: '#EFF6FF', border: '1px solid #BFDBFE',
                   borderRadius: 8, padding: '9px 10px', cursor: 'pointer'
@@ -745,14 +865,14 @@ function OverviewView({
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                     <Info size={13} color="#3B82F6" />
-                    <span style={{ fontSize: 11, fontWeight: 700, color: '#1E40AF' }}>CNC machining center optimal</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: '#1E40AF' }}>CNC Machining Center ({cncAsset.status})</span>
                   </div>
                   <span style={{ fontSize: 8.5, fontWeight: 700, background: '#3B82F6', color: '#FFFFFF', padding: '1px 5px', borderRadius: 3 }}>
                     INFO
                   </span>
                 </div>
                 <div style={{ fontSize: 10, color: '#1E40AF', lineHeight: 1.35 }}>
-                  Stable operation. Power factor 0.94. No anomalies detected.
+                  {cncAsset.currentKw} kW draw. Power factor {cncAsset.pf}. SEC {cncAsset.secKwhPerPart || 2.1} kWh/part.
                 </div>
               </div>
             </Explainable>
@@ -760,170 +880,294 @@ function OverviewView({
         </div>
       </div>
 
-      {/* â”€â”€â”€ Row 3: Action Needed Golden Banner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-      <Explainable
-        context={{
-          component_type: 'banner',
-          title: 'Action Needed: Air compressor running unloaded',
-          identifier: 'banner_action_compressor',
-          asset_id: 'AIR-COMP-01',
-          asset_name: 'Air Compressor (ELGi)',
-          severity: 'critical',
-          value: '18 kW idle draw, 3.2 hrs/day',
-          evidence: {
-            idle_kw: 18,
-            idle_hours: 3.2,
-            waste_kwh: 998,
-            cost_inr: 7987,
-            avoided_co2_kg: 727.7,
-          },
-        }}
-      >
-        <div style={{
-          background: '#FFFBEB',
-          border: '1.5px solid #FCD34D',
-          borderRadius: 12,
-          padding: '12px 18px',
-          marginBottom: 14,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          gap: 16
-        }}>
-          {/* Left: icon & text */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1 }}>
-            <div style={{
-              width: 32, height: 32, borderRadius: 8,
-              background: '#FEF3C7', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              flexShrink: 0
-            }}>
-              <AlertTriangle size={18} color="#D97706" />
+      {/* ─── Row 3: Action Needed / Anomaly Banner ───────────────────────── */}
+      {activeAnomaly ? (
+        <Explainable
+          context={{
+            component_type: 'banner',
+            title: `Action Needed: ${activeAnomaly.equipment_id} ${activeAnomaly.anomaly_type.replace(/_/g, ' ')}`,
+            identifier: 'banner_live_anomaly',
+            asset_id: activeAnomaly.equipment_id,
+            severity: activeAnomaly.severity === 'critical' ? 'critical' : 'high',
+            value: `${activeAnomaly.actual_power_kw ?? activeAnomaly.observed_value} kW draw`,
+            evidence: {
+              expected_kw: activeAnomaly.expected_power_kw ?? activeAnomaly.expected_value,
+              deviation_kw: activeAnomaly.deviation_kw,
+              savings_inr: anomalySavingsInr,
+            },
+          }}
+        >
+          <div style={{
+            background: '#FEF2F2',
+            border: '1.5px solid #FCA5A5',
+            borderRadius: 12,
+            padding: '12px 18px',
+            marginBottom: 14,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 16
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1 }}>
+              <div style={{
+                width: 32, height: 32, borderRadius: 8,
+                background: '#FEE2E2', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0
+              }}>
+                <AlertTriangle size={18} color="#DC2626" />
+              </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                  <span style={{
+                    background: '#DC2626', color: '#FFFFFF',
+                    fontSize: 9, fontWeight: 800, padding: '2px 6px', borderRadius: 4, letterSpacing: '0.04em'
+                  }}>
+                    LIVE SCADA INCIDENT
+                  </span>
+                  <span style={{ fontSize: 13.5, fontWeight: 700, color: '#1E252D' }}>
+                    {activeAnomaly.equipment_id} — {activeAnomaly.anomaly_type.replace(/_/g, ' ').toUpperCase()}
+                  </span>
+                </div>
+                <div style={{ fontSize: 11.5, color: '#475569' }}>
+                  Measured draw: <strong>{activeAnomaly.actual_power_kw ?? activeAnomaly.observed_value} kW</strong> vs expected <strong>{activeAnomaly.expected_power_kw ?? activeAnomaly.expected_value} kW</strong> ({activeAnomaly.deviation_kw != null && activeAnomaly.deviation_kw > 0 ? `+${activeAnomaly.deviation_kw} kW excess` : 'significant deviation'}). Action: <strong>{activeAnomaly.recommended_action || 'Inspect parameters'}</strong>.
+                </div>
+              </div>
             </div>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-                <span style={{
-                  background: '#EA580C', color: '#FFFFFF',
-                  fontSize: 9, fontWeight: 800, padding: '2px 6px', borderRadius: 4, letterSpacing: '0.04em'
-                }}>
-                  ACTION NEEDED
-                </span>
-                <span style={{ fontSize: 13.5, fontWeight: 700, color: '#1E252D' }}>
-                  Air compressor running unloaded
-                </span>
+
+            {/* Metric Chips */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Zap size={14} color="#DC2626" />
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#1E252D', lineHeight: 1.1 }}>{activeAnomaly.actual_power_kw ?? activeAnomaly.observed_value} kW</div>
+                  <div style={{ fontSize: 9.5, color: '#64748B' }}>Live draw</div>
+                </div>
               </div>
-              <div style={{ fontSize: 11.5, color: '#475569' }}>
-                18 kW idle draw during shift handover and lunch breaks (3.2 hrs/day). Estimated waste: <strong>998 kWh/period (â‚¹7,987 / 727.7 kg COâ‚‚e)</strong>.
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Activity size={14} color="#0284C7" />
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#1E252D', lineHeight: 1.1 }}>{activeAnomaly.confidence ? `${Math.round(activeAnomaly.confidence * 100)}%` : '96%'}</div>
+                  <div style={{ fontSize: 9.5, color: '#64748B' }}>AI confidence</div>
+                </div>
               </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Coins size={14} color="#9333EA" />
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#1E252D', lineHeight: 1.1 }}>
+                    ₹{Math.round(anomalySavingsInr).toLocaleString()}
+                  </div>
+                  <div style={{ fontSize: 9.5, color: '#64748B' }}>Est. waste</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Action buttons */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+              <button
+                onClick={() => setView('anomalies')}
+                style={{
+                  background: '#DC2626', color: '#FFFFFF', border: 'none',
+                  borderRadius: 8, padding: '8px 14px', fontSize: 11.5, fontWeight: 600,
+                  display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer',
+                  boxShadow: '0 1px 2px rgba(220, 38, 38, 0.2)'
+                }}
+              >
+                <AlertTriangle size={13} />
+                <span>Investigate</span>
+              </button>
+              <button
+                onClick={() => setView('simulator')}
+                style={{
+                  background: '#FFFFFF', color: '#0284C7', border: '1.5px solid #0284C7',
+                  borderRadius: 8, padding: '7px 14px', fontSize: 11.5, fontWeight: 600,
+                  display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer'
+                }}
+              >
+                <Sliders size={13} />
+                <span>Simulate fix</span>
+              </button>
             </div>
           </div>
+        </Explainable>
+      ) : (
+        <Explainable
+          context={{
+            component_type: 'banner',
+            title: 'Action Needed: Air compressor running unloaded',
+            identifier: 'banner_action_compressor',
+            asset_id: 'AIR-COMP-01',
+            asset_name: 'Air Compressor (ELGi)',
+            severity: 'critical',
+            value: `${compAsset.idleKw || 18} kW idle draw, 3.2 hrs/day`,
+            evidence: {
+              idle_kw: compAsset.idleKw || 18,
+              idle_hours: 3.2,
+              waste_kwh: 998,
+              cost_inr: 7987,
+              avoided_co2_kg: 727.7,
+            },
+          }}
+        >
+          <div style={{
+            background: '#FFFBEB',
+            border: '1.5px solid #FCD34D',
+            borderRadius: 12,
+            padding: '12px 18px',
+            marginBottom: 14,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 16
+          }}>
+            {/* Left: icon & text */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1 }}>
+              <div style={{
+                width: 32, height: 32, borderRadius: 8,
+                background: '#FEF3C7', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0
+              }}>
+                <AlertTriangle size={18} color="#D97706" />
+              </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                  <span style={{
+                    background: '#EA580C', color: '#FFFFFF',
+                    fontSize: 9, fontWeight: 800, padding: '2px 6px', borderRadius: 4, letterSpacing: '0.04em'
+                  }}>
+                    ACTION NEEDED
+                  </span>
+                  <span style={{ fontSize: 13.5, fontWeight: 700, color: '#1E252D' }}>
+                    Air compressor running unloaded
+                  </span>
+                </div>
+                <div style={{ fontSize: 11.5, color: '#475569' }}>
+                  {compAsset.idleKw || 18} kW idle draw during shift handover and lunch breaks (3.2 hrs/day). Estimated waste: <strong>998 kWh/period (₹7,987 / 727.7 kg CO₂e)</strong>.
+                </div>
+              </div>
+            </div>
 
-          {/* Middle: 3 Metric Chips */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Zap size={14} color="#D97706" />
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#1E252D', lineHeight: 1.1 }}>18 kW</div>
-                <div style={{ fontSize: 9.5, color: '#64748B' }}>Idle draw</div>
+            {/* Middle: 3 Metric Chips */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Zap size={14} color="#D97706" />
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#1E252D', lineHeight: 1.1 }}>{compAsset.idleKw || 18} kW</div>
+                  <div style={{ fontSize: 9.5, color: '#64748B' }}>Idle draw</div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: 13 }}>⏱</span>
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#1E252D', lineHeight: 1.1 }}>3.2 hrs/day</div>
+                  <div style={{ fontSize: 9.5, color: '#64748B' }}>Idle time</div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Coins size={14} color="#9333EA" />
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#1E252D', lineHeight: 1.1 }}>998 kWh</div>
+                  <div style={{ fontSize: 9.5, color: '#64748B' }}>Estimated waste</div>
+                </div>
               </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ fontSize: 13 }}>â±</span>
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#1E252D', lineHeight: 1.1 }}>3.2 hrs/day</div>
-                <div style={{ fontSize: 9.5, color: '#64748B' }}>Idle time</div>
-              </div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Coins size={14} color="#9333EA" />
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#1E252D', lineHeight: 1.1 }}>998 kWh</div>
-                <div style={{ fontSize: 9.5, color: '#64748B' }}>Estimated waste</div>
-              </div>
+
+            {/* Right: action buttons */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+              <button
+                onClick={() => setView('scada')}
+                style={{
+                  background: '#0284C7', color: '#FFFFFF', border: 'none',
+                  borderRadius: 8, padding: '8px 14px', fontSize: 11.5, fontWeight: 600,
+                  display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer',
+                  boxShadow: '0 1px 2px rgba(2, 132, 199, 0.2)'
+                }}
+              >
+                <Wrench size={13} />
+                <span>Inspect issue</span>
+              </button>
+              <button
+                onClick={() => setView('simulator')}
+                style={{
+                  background: '#FFFFFF', color: '#0284C7', border: '1.5px solid #0284C7',
+                  borderRadius: 8, padding: '7px 14px', fontSize: 11.5, fontWeight: 600,
+                  display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer'
+                }}
+              >
+                <BarChart2 size={13} />
+                <span>Simulate fix</span>
+              </button>
             </div>
           </div>
+        </Explainable>
+      )}
 
-          {/* Right: action buttons */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-            <button
-              onClick={() => setView('scada')}
-              style={{
-                background: '#0284C7', color: '#FFFFFF', border: 'none',
-                borderRadius: 8, padding: '8px 14px', fontSize: 11.5, fontWeight: 600,
-                display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer',
-                boxShadow: '0 1px 2px rgba(2, 132, 199, 0.2)'
-              }}
-            >
-              <Wrench size={13} />
-              <span>Inspect issue</span>
-            </button>
-            <button
-              onClick={() => setView('simulator')}
-              style={{
-                background: '#FFFFFF', color: '#0284C7', border: '1.5px solid #0284C7',
-                borderRadius: 8, padding: '7px 14px', fontSize: 11.5, fontWeight: 600,
-                display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer'
-              }}
-            >
-              <BarChart2 size={13} />
-              <span>Simulate fix</span>
-            </button>
-          </div>
-        </div>
-      </Explainable>
-
-      {/* â”€â”€â”€ Row 4: Asset Operational Status Cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ─── Row 4: Asset Operational Status Cards ──────────────────────── */}
       <div style={{ background: '#FFFFFF', border: '1px solid #EAE3D7', borderRadius: 12, padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <TrendingUp size={15} color="#0284C7" />
             <div>
               <span style={{ fontSize: 14, fontWeight: 700, color: '#1E252D' }}>Asset operational status</span>
-              <span style={{ fontSize: 11, color: '#64748B', marginLeft: 8 }}>Real-time load, energy and power factor</span>
+              <span style={{ fontSize: 11, color: '#64748B', marginLeft: 8 }}>Real-time telemetry, load, energy and power factor</span>
             </div>
           </div>
           <span onClick={() => setView('scada')} style={{ fontSize: 11, fontWeight: 600, color: '#0284C7', cursor: 'pointer' }}>
-            View all assets â†’
+            View in SCADA Twin →
           </span>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 16 }}>
           {/* Machine 1: Air Compressor */}
           <Explainable
             context={{
               component_type: 'machine_card',
-              title: 'Air Compressor (ELGi)',
+              title: compAsset.name,
               identifier: 'machine_air_compressor',
-              asset_id: 'AIR-COMP-01',
-              asset_name: 'Air Compressor (ELGi)',
-              severity: 'warning',
-              value: '40% Load',
-              evidence: { energy_today_kwh: 3120, power_factor: 0.78, status: 'WARNING' },
+              asset_id: compAsset.id,
+              asset_name: compAsset.name,
+              severity: compAsset.status === 'OPTIMAL' ? 'optimal' : compAsset.status === 'WARNING' ? 'warning' : 'critical',
+              value: `${compLoadPct}% Load (${compAsset.currentKw} kW)`,
+              evidence: { energy_today_kwh: compAsset.energyKwh, power_factor: compAsset.pf, status: compAsset.status, pressure: compAsset.dischargePressureBar },
             }}
           >
-            <div style={{ border: '1px solid #EAE3D7', borderRadius: 8, padding: '12px 14px', background: '#FAFAF9', height: '100%' }}>
+            <div
+              onClick={() => { onSelectAsset?.('compressor'); setView('scada'); }}
+              style={{ border: '1px solid #EAE3D7', borderRadius: 8, padding: '12px 14px', background: '#FAFAF9', height: '100%', cursor: 'pointer' }}
+            >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <Server size={14} color="#64748B" />
-                  <span style={{ fontSize: 11.5, fontWeight: 700, color: '#1E252D' }}>Air Compressor (ELGi)</span>
+                  <Server size={14} color="#F59E0B" />
+                  <span style={{ fontSize: 11.5, fontWeight: 700, color: '#1E252D' }}>{compAsset.name}</span>
                 </div>
-                <span style={{ fontSize: 8.5, fontWeight: 700, background: '#FEF3C7', color: '#D97706', padding: '1px 6px', borderRadius: 3, border: '1px solid #FDE68A' }}>
-                  WARNING
+                <span style={{
+                  fontSize: 8.5, fontWeight: 700,
+                  background: compAsset.status === 'OPTIMAL' ? '#DCFCE7' : compAsset.status === 'WARNING' ? '#FEF3C7' : '#FEE2E2',
+                  color: compAsset.status === 'OPTIMAL' ? '#15803D' : compAsset.status === 'WARNING' ? '#D97706' : '#DC2626',
+                  padding: '1px 6px', borderRadius: 3,
+                  border: `1px solid ${compAsset.status === 'OPTIMAL' ? '#BBF7D0' : compAsset.status === 'WARNING' ? '#FDE68A' : '#FECACA'}`
+                }}>
+                  {compAsset.status}
                 </span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 4 }}>
-                <span style={{ fontSize: 16, fontWeight: 700, color: '#1E252D' }}>40%</span>
-                <span style={{ fontSize: 10, color: '#64748B' }}>Load</span>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 4 }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                  <span style={{ fontSize: 16, fontWeight: 700, color: '#1E252D' }}>{compLoadPct}%</span>
+                  <span style={{ fontSize: 10, color: '#64748B' }}>Load</span>
+                </div>
+                <span style={{ fontSize: 10.5, fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#F59E0B' }}>
+                  {compAsset.currentKw} kW
+                </span>
               </div>
               <div style={{ width: '100%', height: 5, background: '#E2E8F0', borderRadius: 9999, overflow: 'hidden', marginBottom: 8 }}>
-                <div style={{ width: '40%', height: '100%', background: '#F59E0B' }} />
+                <div style={{ width: `${compLoadPct}%`, height: '100%', background: '#F59E0B', transition: 'width 0.4s ease' }} />
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#64748B' }}>
                 <div>
-                  <div style={{ fontWeight: 700, color: '#1E252D' }}>3,120 kWh</div>
+                  <div style={{ fontWeight: 700, color: '#1E252D' }}>{compAsset.energyKwh.toLocaleString()} kWh</div>
                   <div style={{ fontSize: 9 }}>Energy (today)</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontWeight: 700, color: '#D97706' }}>0.78</div>
+                  <div style={{ fontWeight: 700, color: compAsset.pf < 0.85 ? '#D97706' : '#1E252D' }}>{compAsset.pf}</div>
                   <div style={{ fontSize: 9 }}>Power factor</div>
                 </div>
               </div>
@@ -934,39 +1178,53 @@ function OverviewView({
           <Explainable
             context={{
               component_type: 'machine_card',
-              title: 'CNC Machining Center',
+              title: cncAsset.name,
               identifier: 'machine_cnc',
-              asset_id: 'CNC-01',
-              asset_name: 'CNC Machining Center',
-              severity: 'optimal',
-              value: '85% Load',
-              evidence: { energy_today_kwh: 4200, power_factor: 0.94, status: 'OPTIMAL' },
+              asset_id: cncAsset.id,
+              asset_name: cncAsset.name,
+              severity: cncAsset.status === 'OPTIMAL' ? 'optimal' : cncAsset.status === 'WARNING' ? 'warning' : 'critical',
+              value: `${cncLoadPct}% Load (${cncAsset.currentKw} kW)`,
+              evidence: { energy_today_kwh: cncAsset.energyKwh, power_factor: cncAsset.pf, status: cncAsset.status },
             }}
           >
-            <div style={{ border: '1px solid #EAE3D7', borderRadius: 8, padding: '12px 14px', background: '#FAFAF9', height: '100%' }}>
+            <div
+              onClick={() => { onSelectAsset?.('cnc'); setView('scada'); }}
+              style={{ border: '1px solid #EAE3D7', borderRadius: 8, padding: '12px 14px', background: '#FAFAF9', height: '100%', cursor: 'pointer' }}
+            >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <Cpu size={14} color="#64748B" />
-                  <span style={{ fontSize: 11.5, fontWeight: 700, color: '#1E252D' }}>CNC Machining Center</span>
+                  <Cpu size={14} color="#0EA5E9" />
+                  <span style={{ fontSize: 11.5, fontWeight: 700, color: '#1E252D' }}>{cncAsset.name}</span>
                 </div>
-                <span style={{ fontSize: 8.5, fontWeight: 700, background: '#DCFCE7', color: '#15803D', padding: '1px 6px', borderRadius: 3, border: '1px solid #BBF7D0' }}>
-                  OPTIMAL
+                <span style={{
+                  fontSize: 8.5, fontWeight: 700,
+                  background: cncAsset.status === 'OPTIMAL' ? '#DCFCE7' : cncAsset.status === 'WARNING' ? '#FEF3C7' : '#FEE2E2',
+                  color: cncAsset.status === 'OPTIMAL' ? '#15803D' : cncAsset.status === 'WARNING' ? '#D97706' : '#DC2626',
+                  padding: '1px 6px', borderRadius: 3,
+                  border: `1px solid ${cncAsset.status === 'OPTIMAL' ? '#BBF7D0' : cncAsset.status === 'WARNING' ? '#FDE68A' : '#FECACA'}`
+                }}>
+                  {cncAsset.status}
                 </span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 4 }}>
-                <span style={{ fontSize: 16, fontWeight: 700, color: '#1E252D' }}>85%</span>
-                <span style={{ fontSize: 10, color: '#64748B' }}>Load</span>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 4 }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                  <span style={{ fontSize: 16, fontWeight: 700, color: '#1E252D' }}>{cncLoadPct}%</span>
+                  <span style={{ fontSize: 10, color: '#64748B' }}>Load</span>
+                </div>
+                <span style={{ fontSize: 10.5, fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#0EA5E9' }}>
+                  {cncAsset.currentKw} kW
+                </span>
               </div>
               <div style={{ width: '100%', height: 5, background: '#E2E8F0', borderRadius: 9999, overflow: 'hidden', marginBottom: 8 }}>
-                <div style={{ width: '85%', height: '100%', background: '#0EA5E9' }} />
+                <div style={{ width: `${cncLoadPct}%`, height: '100%', background: '#0EA5E9', transition: 'width 0.4s ease' }} />
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#64748B' }}>
                 <div>
-                  <div style={{ fontWeight: 700, color: '#1E252D' }}>4,200 kWh</div>
+                  <div style={{ fontWeight: 700, color: '#1E252D' }}>{cncAsset.energyKwh.toLocaleString()} kWh</div>
                   <div style={{ fontSize: 9 }}>Energy (today)</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontWeight: 700, color: '#1E252D' }}>0.94</div>
+                  <div style={{ fontWeight: 700, color: '#1E252D' }}>{cncAsset.pf}</div>
                   <div style={{ fontSize: 9 }}>Power factor</div>
                 </div>
               </div>
@@ -977,39 +1235,53 @@ function OverviewView({
           <Explainable
             context={{
               component_type: 'machine_card',
-              title: 'Industrial Heat Furnace',
+              title: furnAsset.name,
               identifier: 'machine_furnace',
-              asset_id: 'FURNACE-01',
-              asset_name: 'Industrial Heat Furnace',
-              severity: 'high',
-              value: '100% Load',
-              evidence: { energy_today_kwh: 3600, power_factor: 0.88, status: 'HIGH DEMAND' },
+              asset_id: furnAsset.id,
+              asset_name: furnAsset.name,
+              severity: furnAsset.status === 'OPTIMAL' ? 'optimal' : furnAsset.status === 'WARNING' ? 'warning' : 'high',
+              value: `${furnLoadPct}% Load (${furnAsset.currentKw} kW)`,
+              evidence: { energy_today_kwh: furnAsset.energyKwh, power_factor: furnAsset.pf, status: furnAsset.status, temp: furnAsset.tempC },
             }}
           >
-            <div style={{ border: '1px solid #EAE3D7', borderRadius: 8, padding: '12px 14px', background: '#FAFAF9', height: '100%' }}>
+            <div
+              onClick={() => { onSelectAsset?.('furnace'); setView('scada'); }}
+              style={{ border: '1px solid #EAE3D7', borderRadius: 8, padding: '12px 14px', background: '#FAFAF9', height: '100%', cursor: 'pointer' }}
+            >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <Flame size={14} color="#DC2626" />
-                  <span style={{ fontSize: 11.5, fontWeight: 700, color: '#1E252D' }}>Industrial Heat Furnace</span>
+                  <span style={{ fontSize: 11.5, fontWeight: 700, color: '#1E252D' }}>{furnAsset.name}</span>
                 </div>
-                <span style={{ fontSize: 8.5, fontWeight: 700, background: '#FEE2E2', color: '#DC2626', padding: '1px 6px', borderRadius: 3, border: '1px solid #FECACA' }}>
-                  HIGH DEMAND
+                <span style={{
+                  fontSize: 8.5, fontWeight: 700,
+                  background: furnAsset.status === 'OPTIMAL' ? '#DCFCE7' : furnAsset.status === 'WARNING' ? '#FEF3C7' : '#FEE2E2',
+                  color: furnAsset.status === 'OPTIMAL' ? '#15803D' : furnAsset.status === 'WARNING' ? '#D97706' : '#DC2626',
+                  padding: '1px 6px', borderRadius: 3,
+                  border: `1px solid ${furnAsset.status === 'OPTIMAL' ? '#BBF7D0' : furnAsset.status === 'WARNING' ? '#FDE68A' : '#FECACA'}`
+                }}>
+                  {furnAsset.status}
                 </span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 4 }}>
-                <span style={{ fontSize: 16, fontWeight: 700, color: '#1E252D' }}>100%</span>
-                <span style={{ fontSize: 10, color: '#64748B' }}>Load</span>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 4 }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                  <span style={{ fontSize: 16, fontWeight: 700, color: '#1E252D' }}>{furnLoadPct}%</span>
+                  <span style={{ fontSize: 10, color: '#64748B' }}>Load</span>
+                </div>
+                <span style={{ fontSize: 10.5, fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#DC2626' }}>
+                  {furnAsset.currentKw} kW
+                </span>
               </div>
               <div style={{ width: '100%', height: 5, background: '#E2E8F0', borderRadius: 9999, overflow: 'hidden', marginBottom: 8 }}>
-                <div style={{ width: '100%', height: '100%', background: '#EF4444' }} />
+                <div style={{ width: `${furnLoadPct}%`, height: '100%', background: '#EF4444', transition: 'width 0.4s ease' }} />
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#64748B' }}>
                 <div>
-                  <div style={{ fontWeight: 700, color: '#1E252D' }}>3,600 kWh</div>
+                  <div style={{ fontWeight: 700, color: '#1E252D' }}>{furnAsset.energyKwh.toLocaleString()} kWh</div>
                   <div style={{ fontSize: 9 }}>Energy (today)</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontWeight: 700, color: '#1E252D' }}>0.88</div>
+                  <div style={{ fontWeight: 700, color: '#1E252D' }}>{furnAsset.pf}</div>
                   <div style={{ fontSize: 9 }}>Power factor</div>
                 </div>
               </div>
@@ -1020,51 +1292,128 @@ function OverviewView({
           <Explainable
             context={{
               component_type: 'machine_card',
-              title: 'Chilled Water Cooling',
+              title: chillAsset.name,
               identifier: 'machine_chiller',
-              asset_id: 'CHILLER-01',
-              asset_name: 'Chilled Water Cooling System',
-              severity: 'optimal',
-              value: '79% Load',
-              evidence: { energy_today_kwh: 1560, power_factor: 0.92, status: 'OPTIMAL' },
+              asset_id: chillAsset.id,
+              asset_name: chillAsset.name,
+              severity: chillAsset.status === 'OPTIMAL' ? 'optimal' : chillAsset.status === 'WARNING' ? 'warning' : 'critical',
+              value: `${chillLoadPct}% Load (${chillAsset.currentKw} kW)`,
+              evidence: { energy_today_kwh: chillAsset.energyKwh, power_factor: chillAsset.pf, status: chillAsset.status, cop: chillAsset.cop },
             }}
           >
-            <div style={{ border: '1px solid #EAE3D7', borderRadius: 8, padding: '12px 14px', background: '#FAFAF9', height: '100%' }}>
+            <div
+              onClick={() => { onSelectAsset?.('cooling'); setView('scada'); }}
+              style={{ border: '1px solid #EAE3D7', borderRadius: 8, padding: '12px 14px', background: '#FAFAF9', height: '100%', cursor: 'pointer' }}
+            >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <Fan size={14} color="#059669" />
-                  <span style={{ fontSize: 11.5, fontWeight: 700, color: '#1E252D' }}>Chilled Water Cooling</span>
+                  <span style={{ fontSize: 11.5, fontWeight: 700, color: '#1E252D' }}>{chillAsset.name}</span>
                 </div>
-                <span style={{ fontSize: 8.5, fontWeight: 700, background: '#DCFCE7', color: '#15803D', padding: '1px 6px', borderRadius: 3, border: '1px solid #BBF7D0' }}>
-                  OPTIMAL
+                <span style={{
+                  fontSize: 8.5, fontWeight: 700,
+                  background: chillAsset.status === 'OPTIMAL' ? '#DCFCE7' : chillAsset.status === 'WARNING' ? '#FEF3C7' : '#FEE2E2',
+                  color: chillAsset.status === 'OPTIMAL' ? '#15803D' : chillAsset.status === 'WARNING' ? '#D97706' : '#DC2626',
+                  padding: '1px 6px', borderRadius: 3,
+                  border: `1px solid ${chillAsset.status === 'OPTIMAL' ? '#BBF7D0' : chillAsset.status === 'WARNING' ? '#FDE68A' : '#FECACA'}`
+                }}>
+                  {chillAsset.status}
                 </span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 4 }}>
-                <span style={{ fontSize: 16, fontWeight: 700, color: '#1E252D' }}>79%</span>
-                <span style={{ fontSize: 10, color: '#64748B' }}>Load</span>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 4 }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                  <span style={{ fontSize: 16, fontWeight: 700, color: '#1E252D' }}>{chillLoadPct}%</span>
+                  <span style={{ fontSize: 10, color: '#64748B' }}>Load</span>
+                </div>
+                <span style={{ fontSize: 10.5, fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#059669' }}>
+                  {chillAsset.currentKw} kW
+                </span>
               </div>
               <div style={{ width: '100%', height: 5, background: '#E2E8F0', borderRadius: 9999, overflow: 'hidden', marginBottom: 8 }}>
-                <div style={{ width: '79%', height: '100%', background: '#10B981' }} />
+                <div style={{ width: `${chillLoadPct}%`, height: '100%', background: '#10B981', transition: 'width 0.4s ease' }} />
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#64748B' }}>
                 <div>
-                  <div style={{ fontWeight: 700, color: '#1E252D' }}>1,560 kWh</div>
+                  <div style={{ fontWeight: 700, color: '#1E252D' }}>{chillAsset.energyKwh.toLocaleString()} kWh</div>
                   <div style={{ fontSize: 9 }}>Energy (today)</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontWeight: 700, color: '#1E252D' }}>0.92</div>
+                  <div style={{ fontWeight: 700, color: '#1E252D' }}>{chillAsset.pf}</div>
                   <div style={{ fontSize: 9 }}>Power factor</div>
                 </div>
               </div>
             </div>
           </Explainable>
         </div>
+
+        {/* Tactical asset telemetry table */}
+        <div style={{ overflowX: 'auto', borderTop: '1px solid #EAE3D7', paddingTop: 12 }}>
+          <table className="compare-table" style={{ width: '100%' }}>
+            <thead>
+              <tr>
+                <th>Asset</th>
+                <th>Model</th>
+                <th>Live Draw</th>
+                <th>Active Load</th>
+                <th>Telemetry Sensor</th>
+                <th>Energy (Today)</th>
+                <th>P.F.</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {currentAssetList.map(a => {
+                const load = Math.min(100, Math.round((a.currentKw / a.ratedKw) * 100));
+                return (
+                  <tr
+                    key={a.id}
+                    onClick={() => { onSelectAsset?.(a.id); setView('scada'); }}
+                    style={{ cursor: 'pointer' }}
+                    title={`Click to open ${a.name} in SCADA Twin`}
+                  >
+                    <td className="td-label" style={{ fontWeight: 700 }}>{a.name}</td>
+                    <td style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--slate-500)' }}>{a.model}</td>
+                    <td className="td-proposed" style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#0284C7' }}>{a.currentKw} kW</td>
+                    <td style={{ fontFamily: 'var(--font-mono)', fontSize: 11 }}>{load}% ({a.currentKw}/{a.ratedKw} kW)</td>
+                    <td style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5 }}>
+                      {a.dischargePressureBar != null ? `💨 ${a.dischargePressureBar} bar` :
+                       a.tempC != null ? `🌡️ ${a.tempC} °C` :
+                       a.secKwhPerPart != null ? `⚙️ ${a.secKwhPerPart} kWh/part` :
+                       a.cop != null ? `❄️ ${a.cop} COP` : '—'}
+                    </td>
+                    <td style={{ fontFamily: 'var(--font-mono)', fontSize: 11 }}>{a.energyKwh.toLocaleString()} kWh</td>
+                    <td style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: a.pf < 0.85 ? 'var(--amber)' : 'var(--emerald)' }}>{a.pf}</td>
+                    <td>
+                      <span className={`badge badge-${a.status === 'OPTIMAL' ? 'emerald' : a.status === 'WARNING' ? 'amber' : 'red'}`}>
+                        {a.status}
+                      </span>
+                    </td>
+                    <td>
+                      <button
+                        className="btn btn-outline btn-sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelectAsset?.(a.id);
+                          setView('scada');
+                        }}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                      >
+                        <Activity size={10} color="var(--cyan)" />
+                        Inspect in Twin
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
 }
 
-// â”€â”€â”€ SCADA & 3D Factory View â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function ScadaView({
   assets,
   selectedId,
@@ -2040,6 +2389,30 @@ export default function App() {
 
   const [params, setParams] = useState<SimParams>(DEFAULT_SIM_PARAMS);
   const [showInspector, setShowInspector] = useState<boolean>(true);
+  const [liveTick, setLiveTick] = useState<LiveSimulationTickResponse | null>(null);
+
+  // Poll live SCADA telemetry stream from backend at 2s interval
+  useEffect(() => {
+    let isMounted = true;
+    async function pollLiveStream() {
+      try {
+        const tickData = await fetchLiveSimulationTick();
+        if (isMounted && tickData) {
+          setLiveTick(tickData);
+          setBackendStatus('CONNECTED');
+        }
+      } catch (err) {
+        // Fallback gracefully if backend is temporarily offline
+      }
+    }
+
+    pollLiveStream();
+    const interval = setInterval(pollLiveStream, 2000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
 
   // WattWise AI Digital Twin State (Idea A, B, C)
   const [baselineRecords] = useState<TelemetryRecord[]>(() => get24HourBaseline(6));
@@ -2151,19 +2524,72 @@ export default function App() {
   }, [triggerCalculation]);
 
   const simulatedAssets = useMemo(() => {
+    const liveMachines = liveTick?.machines || [];
+    const compLive = liveMachines.find(m => m.equipment_id === 'AIR-COMP-01');
+    const cncLive = liveMachines.find(m => m.equipment_id === 'CNC-01');
+    const furnLive = liveMachines.find(m => m.equipment_id === 'FURNACE-01');
+    const chillLive = liveMachines.find(m => m.equipment_id === 'CHILLER-01');
+
     return ASSETS.map(a => {
-      if (a.id === 'compressor' && params.autoIdleCutoff) {
-        return { ...a, currentKw: 0, status: 'OPTIMAL' as const, pf: 0.96 };
+      let kw = a.currentKw;
+      let st: AssetStatus = a.status;
+      let pf = a.pf;
+      let dischargePressure = a.dischargePressureBar;
+      let tempC = a.tempC;
+      let cop = a.cop;
+      let sec = a.secKwhPerPart;
+      let idleKw = a.idleKw;
+
+      // 1. Live SCADA stream injection
+      if (a.id === 'compressor' && compLive) {
+        kw = compLive.power_kw;
+        st = compLive.status === 'ANOMALY' ? 'WARNING' : (compLive.power_kw < 5 ? 'IDLE' : 'OPTIMAL');
+        if (compLive.discharge_pressure_bar != null) dischargePressure = compLive.discharge_pressure_bar;
+        idleKw = compLive.power_kw < 20 ? compLive.power_kw : 18;
+      } else if (a.id === 'cnc' && cncLive) {
+        kw = cncLive.power_kw;
+        st = cncLive.status === 'ANOMALY' ? 'WARNING' : (cncLive.power_kw < 5 ? 'IDLE' : 'OPTIMAL');
+        if (cncLive.spindle_load_pct != null) sec = +(cncLive.spindle_load_pct / 25).toFixed(2);
+      } else if (a.id === 'furnace' && furnLive) {
+        kw = furnLive.power_kw;
+        st = furnLive.status === 'ANOMALY' ? 'PEAK' : (furnLive.power_kw > 75 ? 'PEAK' : 'OPTIMAL');
+        if (furnLive.temperature_c != null) tempC = furnLive.temperature_c;
+      } else if (a.id === 'cooling' && chillLive) {
+        kw = chillLive.power_kw;
+        st = chillLive.status === 'ANOMALY' ? 'WARNING' : 'OPTIMAL';
+        if (chillLive.delta_t_c != null) cop = +(3.0 + chillLive.delta_t_c * 0.2).toFixed(1);
       }
-      if (a.id === 'compressor' && params.pressureSetpoint < 7.5) {
-        return { ...a, dischargePressureBar: params.pressureSetpoint };
+
+      // 2. Digital Twin simulation override
+      if (simMode) {
+        if (a.id === 'compressor' && params.autoIdleCutoff) {
+          kw = 0;
+          st = 'OPTIMAL';
+          pf = 0.96;
+        }
+        if (a.id === 'compressor' && params.pressureSetpoint < 7.5) {
+          dischargePressure = params.pressureSetpoint;
+        }
+        if (a.id === 'furnace' && params.staggerFurnace) {
+          kw = Math.min(kw, 70);
+          st = 'OPTIMAL';
+        }
       }
-      if (a.id === 'furnace' && params.staggerFurnace) {
-        return { ...a, currentKw: 70, status: 'OPTIMAL' as const };
-      }
-      return a;
+
+      return {
+        ...a,
+        currentKw: kw,
+        apparentKva: +(kw / pf).toFixed(1),
+        status: st,
+        pf,
+        dischargePressureBar: dischargePressure,
+        tempC,
+        cop,
+        secKwhPerPart: sec,
+        idleKw,
+      };
     });
-  }, [params]);
+  }, [liveTick, simMode, params]);
 
   const handleSelectAsset = useCallback((id: string | null) => {
     setSelectedAsset(id);
@@ -2324,16 +2750,16 @@ export default function App() {
         </div>
       </header>
 
-      {/* Telemetry bar (Shown on simulation / scada views) */}
-      {view !== 'overview' && (
-        <TeleBar
-          simOn={simMode}
-          simParams={params}
-          carbonData={carbonData}
-          backendStatus={backendStatus}
-          activeSimulation={activeSimulation}
-        />
-      )}
+      {/* Telemetry bar */}
+      <TeleBar
+        simOn={simMode}
+        simParams={params}
+        carbonData={carbonData}
+        backendStatus={backendStatus}
+        activeSimulation={activeSimulation}
+        livePlantPower={liveTick?.plant_power_kw}
+        liveTick={liveTick?.tick}
+      />
 
       {/* Sidebar matching reference screenshot */}
       <nav className="sidebar" style={{ background: '#F0EAE1', borderRight: '1px solid #EAE3D7' }}>
@@ -2384,12 +2810,7 @@ export default function App() {
           </div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 3, padding: '0 8px' }}>
-          {[
-            { id: 'compressor', name: 'Air Compressor (ELGi)', color: '#F59E0B' },
-            { id: 'cnc', name: 'CNC Machining Center', color: '#0EA5E9' },
-            { id: 'furnace', name: 'Industrial Heat Furnace', color: '#EF4444' },
-            { id: 'cooling', name: 'Chilled Water Cooling', color: '#10B981' },
-          ].map(a => (
+          {simulatedAssets.map(a => (
             <div
               key={a.id}
               className={`nav-item ${selectedAsset === a.id ? 'active' : ''}`}
@@ -2400,8 +2821,9 @@ export default function App() {
                 cursor: 'pointer', fontSize: 11.5, color: '#334155', fontWeight: 500
               }}
             >
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: a.color, flexShrink: 0 }} />
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: ASSET_COLORS[a.id] || '#0284c7', flexShrink: 0 }} />
               <span>{a.name}</span>
+              {(a.status === 'WARNING' || a.status === 'PEAK') && <AlertTriangle size={9} color="#f59e0b" style={{ marginLeft: 'auto' }} />}
             </div>
           ))}
         </div>
@@ -2436,7 +2858,16 @@ export default function App() {
         <AnimatePresence mode="wait">
           {view === 'overview' && (
             <motion.div key="overview" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%' }}>
-              <OverviewView setView={setView} carbonData={carbonData} gridEF={gridEF} />
+              <OverviewView
+                setView={setView}
+                carbonData={carbonData}
+                gridEF={gridEF}
+                onSelectAsset={handleSelectAsset}
+                assets={simulatedAssets}
+                livePlantPower={liveTick?.plant_power_kw}
+                activeAnomaly={liveTick?.active_anomaly}
+                liveTick={liveTick?.tick}
+              />
             </motion.div>
           )}
           {view === 'scada' && (

@@ -304,23 +304,23 @@ export default function Factory3DScene({
   };
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%', background: '#edeae4', overflow: 'hidden' }}>
+    <div style={{ position: 'relative', width: '100%', height: '100%', background: '#E4D9C8', overflow: 'hidden' }}>
       {/* 3D WebGL Canvas */}
       <Canvas
         shadows
         camera={{ position: [12, 11, 15], fov: 38, near: 0.1, far: 350 }}
         gl={{ antialias: true, alpha: false, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.05 }}
         onPointerMissed={() => onSelect(null)}
-        style={{ width: '100%', height: '100%', background: '#edeae4' }}
+        style={{ width: '100%', height: '100%', background: '#E4D9C8' }}
         onCreated={({ scene }) => {
-          scene.background = new THREE.Color('#edeae4');
-          scene.fog = new THREE.FogExp2('#edeae4', 0.018);
+          scene.background = new THREE.Color('#E4D9C8');
+          scene.fog = new THREE.FogExp2('#E4D9C8', 0.016);
         }}
       >
         {/* Warm Sky Hemisphere Dome */}
-        <hemisphereLight args={['#fdf8ef', '#e5e1d7', 0.5]} />
+        <hemisphereLight args={['#FFFDF8', '#D6CBB8', 0.65]} />
         {/* Primary Soft Architectural Lighting */}
-        <ambientLight intensity={0.7} color="#faf7f2" />
+        <ambientLight intensity={0.75} color="#FFF8EE" />
         <directionalLight
           position={[14, 20, 14]}
           intensity={1.25}
@@ -400,16 +400,16 @@ export default function Factory3DScene({
             display: 'flex',
             alignItems: 'center',
             gap: 6,
-            background: 'rgba(255, 255, 255, 0.88)',
+            background: 'rgba(235, 226, 212, 0.94)',
             backdropFilter: 'blur(12px)',
-            border: '1px solid rgba(0, 0, 0, 0.08)',
+            border: '1px solid rgba(255, 255, 255, 0.85)',
             borderRadius: 8,
             padding: '5px 8px',
             pointerEvents: 'auto',
-            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.05)',
+            boxShadow: '4px 4px 14px rgba(188, 176, 158, 0.35)',
           }}
         >
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--slate-400)', padding: '0 6px', letterSpacing: 1, fontWeight: 700 }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--slate-500)', padding: '0 6px', letterSpacing: 1, fontWeight: 700 }}>
             CAMERA:
           </span>
           <motion.button
@@ -420,10 +420,10 @@ export default function Factory3DScene({
             style={{
               background: 'transparent',
               border: 'none',
-              color: '#0f172a',
+              color: '#1C1917',
               fontSize: 11,
               fontFamily: 'var(--font-mono)',
-              fontWeight: 600,
+              fontWeight: 700,
               padding: '3px 8px',
               borderRadius: 4,
               cursor: 'pointer',
@@ -439,7 +439,7 @@ export default function Factory3DScene({
             style={{
               background: 'transparent',
               border: 'none',
-              color: '#64748b',
+              color: 'var(--slate-400)',
               fontSize: 11,
               fontFamily: 'var(--font-mono)',
               padding: '3px 8px',
@@ -449,19 +449,19 @@ export default function Factory3DScene({
           >
             Top-Down
           </motion.button>
-          <span style={{ color: 'rgba(0, 0, 0, 0.15)' }}>|</span>
+          <span style={{ color: 'rgba(90, 75, 55, 0.2)' }}>|</span>
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="cam-btn"
             onClick={() => setPreset('compressor')}
             style={{
-              background: selectedId === 'compressor' ? 'rgba(234, 88, 12, 0.12)' : 'transparent',
+              background: selectedId === 'compressor' ? 'rgba(217, 119, 6, 0.16)' : 'transparent',
               border: 'none',
-              color: '#ea580c',
+              color: '#d97706',
               fontSize: 11,
               fontFamily: 'var(--font-mono)',
-              fontWeight: 600,
+              fontWeight: 700,
               padding: '3px 8px',
               borderRadius: 4,
               cursor: 'pointer',
@@ -475,12 +475,12 @@ export default function Factory3DScene({
             className="cam-btn"
             onClick={() => setPreset('cnc')}
             style={{
-              background: selectedId === 'cnc' ? 'rgba(2, 132, 199, 0.12)' : 'transparent',
+              background: selectedId === 'cnc' ? 'rgba(2, 132, 199, 0.16)' : 'transparent',
               border: 'none',
               color: '#0284c7',
               fontSize: 11,
               fontFamily: 'var(--font-mono)',
-              fontWeight: 600,
+              fontWeight: 700,
               padding: '3px 8px',
               borderRadius: 4,
               cursor: 'pointer',
@@ -494,12 +494,12 @@ export default function Factory3DScene({
             className="cam-btn"
             onClick={() => setPreset('furnace')}
             style={{
-              background: selectedId === 'furnace' ? 'rgba(220, 38, 38, 0.12)' : 'transparent',
+              background: selectedId === 'furnace' ? 'rgba(220, 38, 38, 0.16)' : 'transparent',
               border: 'none',
               color: '#dc2626',
               fontSize: 11,
               fontFamily: 'var(--font-mono)',
-              fontWeight: 600,
+              fontWeight: 700,
               padding: '3px 8px',
               borderRadius: 4,
               cursor: 'pointer',
@@ -513,12 +513,12 @@ export default function Factory3DScene({
             className="cam-btn"
             onClick={() => setPreset('cooling')}
             style={{
-              background: selectedId === 'cooling' ? 'rgba(16, 185, 129, 0.12)' : 'transparent',
+              background: selectedId === 'cooling' ? 'rgba(5, 150, 105, 0.16)' : 'transparent',
               border: 'none',
-              color: '#10b981',
+              color: '#059669',
               fontSize: 11,
               fontFamily: 'var(--font-mono)',
-              fontWeight: 600,
+              fontWeight: 700,
               padding: '3px 8px',
               borderRadius: 4,
               cursor: 'pointer',
@@ -534,13 +534,13 @@ export default function Factory3DScene({
             display: 'flex',
             alignItems: 'center',
             gap: 6,
-            background: 'rgba(255, 255, 255, 0.88)',
+            background: 'rgba(235, 226, 212, 0.94)',
             backdropFilter: 'blur(12px)',
-            border: '1px solid rgba(0, 0, 0, 0.08)',
+            border: '1px solid rgba(255, 255, 255, 0.85)',
             borderRadius: 8,
             padding: '5px 8px',
             pointerEvents: 'auto',
-            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.05)',
+            boxShadow: '4px 4px 14px rgba(188, 176, 158, 0.35)',
           }}
         >
           <motion.button
@@ -551,9 +551,9 @@ export default function Factory3DScene({
               display: 'flex',
               alignItems: 'center',
               gap: 4,
-              background: showConduits ? 'rgba(2, 132, 199, 0.12)' : 'transparent',
+              background: showConduits ? 'rgba(2, 132, 199, 0.15)' : 'transparent',
               border: `1px solid ${showConduits ? '#0284c7' : 'transparent'}`,
-              color: showConduits ? '#0284c7' : '#64748b',
+              color: showConduits ? '#0284c7' : 'var(--slate-500)',
               fontSize: 11,
               fontFamily: 'var(--font-mono)',
               fontWeight: 600,
@@ -572,9 +572,9 @@ export default function Factory3DScene({
               display: 'flex',
               alignItems: 'center',
               gap: 4,
-              background: showSafetyZones ? 'rgba(234, 88, 12, 0.12)' : 'transparent',
-              border: `1px solid ${showSafetyZones ? '#ea580c' : 'transparent'}`,
-              color: showSafetyZones ? '#ea580c' : '#64748b',
+              background: showSafetyZones ? 'rgba(217, 119, 6, 0.15)' : 'transparent',
+              border: `1px solid ${showSafetyZones ? '#d97706' : 'transparent'}`,
+              color: showSafetyZones ? '#d97706' : 'var(--slate-500)',
               fontSize: 11,
               fontFamily: 'var(--font-mono)',
               fontWeight: 600,
@@ -593,9 +593,9 @@ export default function Factory3DScene({
               display: 'flex',
               alignItems: 'center',
               gap: 4,
-              background: showHud ? 'rgba(16, 185, 129, 0.12)' : 'transparent',
-              border: `1px solid ${showHud ? '#10b981' : 'transparent'}`,
-              color: showHud ? '#10b981' : '#64748b',
+              background: showHud ? 'rgba(5, 150, 105, 0.15)' : 'transparent',
+              border: `1px solid ${showHud ? '#059669' : 'transparent'}`,
+              color: showHud ? '#059669' : 'var(--slate-500)',
               fontSize: 11,
               fontFamily: 'var(--font-mono)',
               fontWeight: 600,
@@ -618,23 +618,23 @@ export default function Factory3DScene({
           display: 'flex',
           alignItems: 'center',
           gap: 12,
-          background: 'rgba(255, 255, 255, 0.88)',
+          background: 'rgba(235, 226, 212, 0.94)',
           backdropFilter: 'blur(12px)',
-          border: '1px solid rgba(0, 0, 0, 0.08)',
+          border: '1px solid rgba(255, 255, 255, 0.85)',
           borderRadius: 8,
-          padding: '5px 12px',
+          padding: '6px 14px',
           fontFamily: 'var(--font-mono)',
           fontSize: 10,
-          color: '#475569',
-          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.05)',
+          color: 'var(--slate-400)',
+          boxShadow: '4px 4px 14px rgba(188, 176, 158, 0.35)',
           pointerEvents: 'none',
         }}
       >
-        <span style={{ fontWeight: 700, color: '#0f172a' }}>PRECISIONWORKS DIGITAL TWIN</span>
-        <span style={{ color: 'rgba(0, 0, 0, 0.15)' }}>|</span>
+        <span style={{ fontWeight: 800, color: '#1C1917' }}>PRECISIONWORKS DIGITAL TWIN</span>
+        <span style={{ color: 'rgba(90, 75, 55, 0.2)' }}>|</span>
         <span>DRAG TO ROTATE · SCROLL TO ZOOM · CLICK ASSET TO INSPECT</span>
-        <span style={{ color: 'rgba(0, 0, 0, 0.15)' }}>|</span>
-        <span style={{ color: '#10b981', fontWeight: 600 }}>● 60 FPS WEBGL</span>
+        <span style={{ color: 'rgba(90, 75, 55, 0.2)' }}>|</span>
+        <span style={{ color: '#059669', fontWeight: 700 }}>● 60 FPS WEBGL</span>
       </div>
     </div>
   );

@@ -23,12 +23,32 @@ dist-ssr
 *.sln
 *.sw?
 
-# Python cache & test files
+# Python cache & virtualenvs
 __pycache__/
 *.py[cod]
 *$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
 .pytest_cache/
+.coverage
+htmlcov/
 
 # Large dataset files (>100MB)
 industrial_energy_forecasting_synthetic.csv
 
+# Temporary generated reports and uploads
+backend/ai_intelligence/data/uploads/*
+!backend/ai_intelligence/data/uploads/.gitkeep
+backend/ai_intelligence/reports/generated_downloads/*
+!backend/ai_intelligence/reports/generated_downloads/.gitkeep
+
+# Duplicate local dataset copy (canonical source is tracked at src/data/data.csv)
+backend/ai_intelligence/data/data.csv
+
+# Environment variables & secrets
+.env
+.env.*
+!.env.example

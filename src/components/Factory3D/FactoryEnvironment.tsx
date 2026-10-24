@@ -258,16 +258,16 @@ export default function FactoryEnvironment({
 }) {
   return (
     <group>
-      {/* Expansive Architectural Alabaster Ceramic Floor */}
+      {/* Expansive Architectural Warm Beige Ceramic Floor */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
         <planeGeometry args={[120, 120]} />
-        <meshStandardMaterial color="#edeae4" metalness={0.04} roughness={0.9} />
+        <meshStandardMaterial color="#E4D9C8" metalness={0.03} roughness={0.88} />
       </mesh>
 
-      {/* Primary Plant Floor Bay */}
+      {/* Primary Plant Floor Bay in Warm Sand Dune Ceramic */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.005, 0]} receiveShadow>
         <planeGeometry args={[26, 20]} />
-        <meshStandardMaterial color="#e5e1d7" metalness={0.08} roughness={0.75} />
+        <meshStandardMaterial color="#D8CCBA" metalness={0.06} roughness={0.74} />
       </mesh>
 
       {/* Precision Blueprint Subgrid */}
@@ -276,10 +276,10 @@ export default function FactoryEnvironment({
         position={[0, 0, 0]}
         cellSize={1}
         cellThickness={0.6}
-        cellColor="#c9c5b8"
+        cellColor="#C4B7A3"
         sectionSize={4}
         sectionThickness={1.2}
-        sectionColor="#a8a395"
+        sectionColor="#A99B85"
         fadeDistance={38}
         fadeStrength={1.2}
         infiniteGrid={false}

@@ -1,0 +1,82 @@
+{
+  "CNC-01": {
+    "machine_id": "CNC-01",
+    "name": "CNC Machining Center",
+    "process": "machining",
+    "rated_power_kw": 25.0,
+    "expected_idle_power_kw": 3.0,
+    "off_power_kw": 0.8,
+    "permitted_states": [
+      "running",
+      "idle",
+      "off",
+      "maintenance"
+    ],
+    "constraints": {
+      "production_target_required": true,
+      "min_daily_production_units": 140,
+      "max_continuous_run_hours": 8
+    },
+    "data_source": "simulated_profile"
+  },
+  "COMP-01": {
+    "machine_id": "COMP-01",
+    "name": "Air Compressor",
+    "process": "compressed_air",
+    "rated_power_kw": 30.0,
+    "expected_idle_power_kw": 8.0,
+    "off_power_kw": 1.0,
+    "permitted_states": [
+      "running",
+      "idle",
+      "off",
+      "maintenance"
+    ],
+    "constraints": {
+      "min_service_required": true,
+      "idle_shutdown_requires_operator_approval": true,
+      "min_pressure_bar": 6.5,
+      "rated_pressure_bar": 7.5
+    },
+    "data_source": "simulated_profile"
+  },
+  "FURN-01": {
+    "machine_id": "FURN-01",
+    "name": "Heat-Treatment Furnace",
+    "process": "heat_treatment",
+    "rated_power_kw": 50.0,
+    "expected_idle_power_kw": 15.0,
+    "off_power_kw": 2.0,
+    "permitted_states": [
+      "running",
+      "idle",
+      "off",
+      "maintenance"
+    ],
+    "constraints": {
+      "protected_process_block": true,
+      "min_continuous_cycle_hours": 4,
+      "cannot_interrupt_holding_cycle": true
+    },
+    "data_source": "simulated_profile"
+  },
+  "PAINT-01": {
+    "machine_id": "PAINT-01",
+    "name": "Painting Line",
+    "process": "painting",
+    "rated_power_kw": 20.0,
+    "expected_idle_power_kw": 5.0,
+    "off_power_kw": 0.5,
+    "permitted_states": [
+      "running",
+      "idle",
+      "off",
+      "maintenance"
+    ],
+    "constraints": {
+      "ventilation_mandatory_during_paint": true,
+      "voc_compliance_active": true
+    },
+    "data_source": "simulated_profile"
+  }
+}

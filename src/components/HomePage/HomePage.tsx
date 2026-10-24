@@ -1,17 +1,23 @@
 import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { ContactShadows, Html, OrbitControls } from '@react-three/drei';
+import { ContactShadows, OrbitControls } from '@react-three/drei';
+import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import * as THREE from 'three';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowRight, X, Printer, Download, CheckCircle2,
-  AlertTriangle, Sliders, Leaf, Activity, Sparkles
+  AlertTriangle, Sliders, Leaf, Activity, Sparkles,
+  ChevronLeft, ChevronRight, Zap, ShieldCheck, Gauge
 } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts';
 import { PLANT, SimParams, calcSimResult } from '../../data/mockData';
 
-// ─── PALETTE ──────────────────────────────────────────────────────────────────
-const BG_COLOR = '#E5E6E1';
+// ─── WARM EDITORIAL BEIGE PALETTE (Exact Match to Reference Aesthetic) ─────────
+const BG_COLOR = '#E4D9C8'; // Rich, unmistakable warm architectural beige
+const NEUMORPHIC_BG = 'rgba(232, 222, 207, 0.90)';
+const CARD_SHADOW = '8px 8px 24px #BCB09E, -8px -8px 24px #FFFFFF';
+const PILL_SHADOW = '4px 4px 12px #BCB09E, -4px -4px 12px #FFFFFF';
+const BORDER_WHITE = '1px solid rgba(255, 255, 255, 0.85)';
 
 export interface MachineStation {
   id: string;
@@ -19,6 +25,10 @@ export interface MachineStation {
   name: string;
   shortName: string;
   subTitle: string;
+  adEyebrow: string;
+  adHeadline: [string, string];
+  adHook: string;
+  adMetrics: { label: string; value: string; hint: string }[];
   tag: string;
   tagWarning: string;
   pos: [number, number, number];
@@ -40,16 +50,25 @@ export const STATIONS: MachineStation[] = [
   {
     id: 'compressor',
     code: '01',
-    name: 'AIR COMPRESSOR (ELGi)',
+    name: 'AIR COMPRESSOR (ELGi EG-55)',
     shortName: '01 / Compressor',
-    subTitle: 'Diagnostic telemetry card',
-    tag: '01 / AIR COMPRESSOR (ELGi)',
-    tagWarning: '— Warning: High Idle (45 kW)',
-    pos: [-2.1, 0.42, 1.4],
-    cameraPos: [1.8, 6.8, 9.2],
-    targetPos: [-0.6, 0.2, 0.4],
+    subTitle: 'Pneumatics Telemetry & Leak Shield',
+    adEyebrow: 'INTELLIGENT PNEUMATIC OPTIMIZATION // UNLOADED LEAK DETECTION',
+    adHeadline: ['STOP LEAKING POWER.', 'RECLAIM ₹4.2L / MONTH.'],
+    adHook:
+      '95% of industrial energy meters only report bulk kilowatt-hours. WattWise AI isolates unloaded idle degradation in real-time, enforcing sub-second auto-cutoffs and recovering ₹95,840/year per pneumatic line without pressure drop.',
+    adMetrics: [
+      { label: 'IDLE LOSS', value: '18 kW', hint: '3.2 hrs unmetered waste daily' },
+      { label: 'WEEKLY LEAK', value: '₹7,987', hint: 'Directly recoverable capital' },
+      { label: 'POWER FACTOR', value: '0.78', hint: 'Avoids utility penalty tier' },
+    ],
+    tag: '01 / AIR COMPRESSOR (ELGi EG-55)',
+    tagWarning: '— Warning: High Idle Detected (45 kW)',
+    pos: [-3.5, 0.42, 2.5],
+    cameraPos: [-0.2, 3.8, 6.4], // Elevated front-right zoomed-out angle (~5.6 units distance)
+    targetPos: [-3.5, 0.6, 2.5], // Points directly to compressor center
     glowColor: '#F59E0B',
-    activeLabel: '01: COMPRESSOR (45 kW)',
+    activeLabel: '01: COMPRESSOR (45 kW LOAD)',
     powerKw: 45,
     energyKwh: 3120,
     idleWasteKw: '18 kW (3.2h/day)',
@@ -70,16 +89,25 @@ export const STATIONS: MachineStation[] = [
   {
     id: 'cnc',
     code: '02',
-    name: 'CNC MACHINING',
-    shortName: '02 / CNC',
-    subTitle: 'Diagnostic telemetry card',
-    tag: '02 / CNC MACHINING',
+    name: 'CNC MACHINING (5-AXIS)',
+    shortName: '02 / CNC Spindle',
+    subTitle: 'Spindle Load & Specific Energy (SEC)',
+    adEyebrow: 'PHYSICS-INFORMED TELEMETRY // SPINDLE CYCLE EFFICIENCY',
+    adHeadline: ['PRECISION MACHINING.', 'ZERO UNPRODUCTIVE WATTS.'],
+    adHook:
+      'Eliminate the gap between machine uptime and wasted energy. WattWise synchronizes CNC G-code cycle telemetry with high-frequency power draw, maintaining optimal Specific Energy Consumption (1.82 kWh/part) while cutting baseload draw 14%.',
+    adMetrics: [
+      { label: 'SPINDLE LOAD', value: '32 kW', hint: 'Synced high-speed cutting' },
+      { label: 'SPECIFIC ENERGY', value: '1.82 kWh', hint: 'Per verified finished part' },
+      { label: 'POWER FACTOR', value: '0.94', hint: 'Near-unity grid efficiency' },
+    ],
+    tag: '02 / CNC MACHINING (5-AXIS)',
     tagWarning: '— Optimal: SEC 1.82 kWh/part',
-    pos: [1.2, 0.42, -0.6],
-    cameraPos: [3.8, 6.2, 7.8],
-    targetPos: [1.2, 0.2, -0.6],
+    pos: [2.2, 0.42, -1.8],
+    cameraPos: [-1.6, 2.6, 2.2], // Low dynamic front-left zoomed-out angle (~5.8 units distance)
+    targetPos: [2.2, 0.65, -1.8], // Points directly to CNC spindle
     glowColor: '#10B981',
-    activeLabel: '02: CNC MACHINING (32 kW)',
+    activeLabel: '02: CNC MACHINING (32 kW ACTIVE)',
     powerKw: 32,
     energyKwh: 4200,
     idleWasteKw: '1.2 kW (Standby)',
@@ -100,16 +128,25 @@ export const STATIONS: MachineStation[] = [
   {
     id: 'furnace',
     code: '03',
-    name: 'INDUSTRIAL FURNACE',
+    name: 'INDUSTRIAL INDUCTION FURNACE',
     shortName: '03 / Furnace',
-    subTitle: 'Thermal telemetry card',
+    subTitle: 'Thermal Demand & ToD Arbitrage',
+    adEyebrow: 'PEAK DEMAND ARBITRAGE // TOD TARIFF PREEMPTION',
+    adHeadline: ['PREEMPT GRID SPIKES.', 'CRUSH kVA SURCHARGES.'],
+    adHook:
+      'Heavy 840°C metallurgical ramp-ups during evening peak ToD hours trigger severe maximum demand penalties. WattWise predicts thermal draw 45 minutes ahead, automatically staggering batch heating cycles to shave 18% off peak kVA.',
+    adMetrics: [
+      { label: 'THERMAL RATING', value: '85 kW', hint: '840°C continuous heat batch' },
+      { label: 'PEAK DEMAND', value: '147.2 kVA', hint: 'Preemptively managed limit' },
+      { label: 'BILLING SHAVED', value: '₹41,040', hint: 'Per monthly billing cycle' },
+    ],
     tag: '03 / INDUSTRIAL FURNACE',
-    tagWarning: '— Peak Alert: 840°C Batch',
-    pos: [2.3, 0.42, -4.2],
-    cameraPos: [4.9, 6.5, 4.5],
-    targetPos: [2.3, 0.2, -4.2],
+    tagWarning: '— Peak Alert: 840°C Batch Heating',
+    pos: [4.2, 0.42, -8.6],
+    cameraPos: [7.2, 4.8, -4.6], // High-angle top-down dramatic view (~5.8 units distance)
+    targetPos: [4.2, 0.7, -8.6], // Points directly to furnace body & hatch
     glowColor: '#F97316',
-    activeLabel: '03: INDUSTRIAL FURNACE (85 kW)',
+    activeLabel: '03: INDUCTION FURNACE (85 kW)',
     powerKw: 85,
     energyKwh: 3600,
     idleWasteKw: 'Peak Overlap (147.2 kVA)',
@@ -130,16 +167,25 @@ export const STATIONS: MachineStation[] = [
   {
     id: 'cooling',
     code: '04',
-    name: 'COOLING SYSTEM',
-    shortName: '04 / Cooling',
-    subTitle: 'Chiller loop telemetry card',
-    tag: '04 / COOLING SYSTEM',
+    name: 'CHILLER LOOP & COOLING TOWER',
+    shortName: '04 / Chiller Loop',
+    subTitle: 'COP Efficiency & Scope 2 Auditing',
+    adEyebrow: 'REAL-TIME CARBON ACCOUNTING // ISO 50001 READY',
+    adHeadline: ['AUTOMATED NET-ZERO.', 'CEA BASELINE V22 AUDIT.'],
+    adHook:
+      'Replace retrospective spreadsheets and static emission estimates with sub-second accuracy. WattWise links variable chiller COP (4.1) directly with official CEA Baseline v22 emission factors, delivering certified Scope 1 & 2 audit reports in seconds.',
+    adMetrics: [
+      { label: 'BASELOAD DRAW', value: '28 kW', hint: 'Continuous variable chiller loop' },
+      { label: 'LOOP EFFICIENCY', value: '4.1 COP', hint: 'Verified thermal coefficient' },
+      { label: 'EMISSION FACTOR', value: '0.716', hint: 'tCO2e/MWh CEA Certified Grid' },
+    ],
+    tag: '04 / COOLING SYSTEM (CHILLER)',
     tagWarning: '— Optimal: COP 4.1 Chiller Loop',
-    pos: [5.4, 0.42, -7.6],
-    cameraPos: [7.2, 6.2, 1.2],
-    targetPos: [5.4, 0.2, -7.6],
+    pos: [10.2, 0.42, -15.8],
+    cameraPos: [14.2, 3.8, -11.6], // Wide 3/4 side profile zoomed-out angle (~5.8 units distance)
+    targetPos: [10.2, 0.65, -15.8], // Points directly to chiller & fan deck
     glowColor: '#06B6D4',
-    activeLabel: '04: COOLING SYSTEM (28 kW)',
+    activeLabel: '04: CHILLER COOLING (28 kW)',
     powerKw: 28,
     energyKwh: 1560,
     idleWasteKw: '0.8 kW (Baseload)',
@@ -159,28 +205,28 @@ export const STATIONS: MachineStation[] = [
   },
 ];
 
-// ─── S-CURVE INDUSTRIAL BUSWAY SPLINE ──────────────────────────────────────────
+// ─── S-CURVE INDUSTRIAL BUSWAY SPLINE (Extended Grand Spacing) ─────────────────
 const SPLINE_POINTS = [
-  new THREE.Vector3(-4.0, 0, 2.8),
-  new THREE.Vector3(-2.1, 0, 1.4),   // 01 Compressor
-  new THREE.Vector3(-0.3, 0, 0.3),
-  new THREE.Vector3(1.2, 0, -0.6),    // 02 CNC
-  new THREE.Vector3(1.5, 0, -2.4),
-  new THREE.Vector3(2.3, 0, -4.2),    // 03 Furnace
-  new THREE.Vector3(3.8, 0, -5.9),
-  new THREE.Vector3(5.4, 0, -7.6),    // 04 Cooling
-  new THREE.Vector3(7.2, 0, -9.2),
+  new THREE.Vector3(-6.2, 0, 4.8),
+  new THREE.Vector3(-3.5, 0, 2.5),   // 01 Compressor
+  new THREE.Vector3(-0.6, 0, 0.6),
+  new THREE.Vector3(2.2, 0, -1.8),    // 02 CNC Spindle
+  new THREE.Vector3(2.8, 0, -5.2),
+  new THREE.Vector3(4.2, 0, -8.6),    // 03 Industrial Furnace
+  new THREE.Vector3(7.2, 0, -12.2),
+  new THREE.Vector3(10.2, 0, -15.8),  // 04 Cooling System
+  new THREE.Vector3(13.5, 0, -19.5),
 ];
 
 const SPLINE_CURVE = new THREE.CatmullRomCurve3(SPLINE_POINTS, false, 'catmullrom', 0.22);
 
-// Standard Materials for Clean Industrial Alabaster Look
-const MAT_PATH = new THREE.MeshStandardMaterial({ color: '#D6D8D2', roughness: 0.65, metalness: 0.1 });
-const MAT_PATH_BORDER = new THREE.MeshStandardMaterial({ color: '#C8CAC3', roughness: 0.55, metalness: 0.2 });
-const MAT_CONDUIT = new THREE.MeshStandardMaterial({ color: '#B2B5AC', roughness: 0.45, metalness: 0.5 });
-const MAT_MACHINE_WHITE = new THREE.MeshStandardMaterial({ color: '#EDEDE8', roughness: 0.48, metalness: 0.12 });
-const MAT_MACHINE_DARK = new THREE.MeshStandardMaterial({ color: '#3A3E45', roughness: 0.65, metalness: 0.3 });
-const MAT_CHROME = new THREE.MeshStandardMaterial({ color: '#D2D5CE', roughness: 0.2, metalness: 0.85 });
+// Standard Materials for Warm Beige Alabaster Industrial Look
+const MAT_PATH = new THREE.MeshStandardMaterial({ color: '#D4C9B7', roughness: 0.68, metalness: 0.08 });
+const MAT_PATH_BORDER = new THREE.MeshStandardMaterial({ color: '#C6BAA7', roughness: 0.55, metalness: 0.18 });
+const MAT_CONDUIT = new THREE.MeshStandardMaterial({ color: '#B2A591', roughness: 0.42, metalness: 0.5 });
+const MAT_MACHINE_WHITE = new THREE.MeshStandardMaterial({ color: '#FAF7F0', roughness: 0.38, metalness: 0.12 });
+const MAT_MACHINE_DARK = new THREE.MeshStandardMaterial({ color: '#2B2F36', roughness: 0.65, metalness: 0.35 });
+const MAT_CHROME = new THREE.MeshStandardMaterial({ color: '#D6D3CB', roughness: 0.18, metalness: 0.88 });
 
 // ─── Winding Pathway with Outer Parallel Conduits ──────────────────────────────
 function WindingEnergyPathway() {
@@ -216,7 +262,7 @@ function WindingEnergyPathway() {
   );
 }
 
-// ─── Circular Station Platform with Glowing Neon Ring ─────────────────────────
+// ─── Circular Station Platform with High-Luminance Glowing Neon Ring ──────────
 function StationPlatform({
   pos,
   glowColor,
@@ -228,110 +274,191 @@ function StationPlatform({
   isSelected: boolean;
   onClick: () => void;
 }) {
-  const lightRef = useRef<THREE.PointLight>(null);
+  const upwardLightRef = useRef<THREE.PointLight>(null);
+  const coreLightRef = useRef<THREE.PointLight>(null);
 
   useFrame(({ clock }) => {
-    if (lightRef.current) {
-      const t = clock.getElapsedTime() * 3.5;
-      lightRef.current.intensity = isSelected ? 4.2 + Math.sin(t) * 1.0 : 0.8;
+    const t = clock.getElapsedTime() * 3.0;
+    const breath = Math.sin(t) * 2.2;
+
+    if (upwardLightRef.current) {
+      // Powerful, bright colored light shining directly up on the underside of the component
+      upwardLightRef.current.intensity = isSelected ? 19.0 + breath : 11.5 + Math.sin(t * 0.8) * 1.0;
+    }
+    if (coreLightRef.current) {
+      coreLightRef.current.intensity = isSelected ? 8.0 : 4.5;
     }
   });
 
   return (
-    <group position={[pos[0], 0.06, pos[2]]} onClick={onClick}>
-      {/* Circular stepped base disk */}
+    <group position={[pos[0], 0.05, pos[2]]} onClick={onClick}>
+      {/* Compact Circular stepped base disk */}
       <mesh receiveShadow castShadow>
-        <cylinderGeometry args={[1.42, 1.54, 0.18, 48]} />
+        <cylinderGeometry args={[1.15, 1.25, 0.14, 48]} />
         <primitive object={MAT_PATH_BORDER} attach="material" />
       </mesh>
 
-      {/* Recessed inner pad */}
-      <mesh position={[0, 0.1, 0]} receiveShadow>
-        <cylinderGeometry args={[1.28, 1.28, 0.05, 36]} />
+      {/* Recessed inner pad in clean beige path material */}
+      <mesh position={[0, 0.08, 0]} receiveShadow>
+        <cylinderGeometry args={[1.05, 1.05, 0.04, 36]} />
         <primitive object={MAT_PATH} attach="material" />
       </mesh>
 
-      {/* Circular Glowing Ring */}
-      <mesh position={[0, 0.115, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[1.12, 1.26, 48]} />
+      {/* 1. PRIMARY HIGH-LUMINANCE NEON RING (Crisp, vivid, un-tonemapped color) */}
+      <mesh position={[0, 0.106, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.96, 1.08, 64]} />
         <meshBasicMaterial
           color={glowColor}
           toneMapped={false}
           transparent
-          opacity={isSelected ? 0.95 : 0.4}
+          opacity={isSelected ? 1.0 : 0.85}
         />
       </mesh>
 
-      {/* Point light shining upward on machine undercarriage */}
-      <pointLight ref={lightRef} position={[0, 0.35, 0]} color={glowColor} distance={3.5} decay={2} />
+      {/* 2. RADIANT ADDITIVE LIGHT AURA RING (Feathered pure photon light, NOT a solid disk or flat color) */}
+      <mesh position={[0, 0.108, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.90, 1.16, 64]} />
+        <meshBasicMaterial
+          color={glowColor}
+          toneMapped={false}
+          transparent
+          opacity={isSelected ? 0.65 : 0.38}
+          blending={THREE.AdditiveBlending}
+        />
+      </mesh>
+
+      {/* 3. INNER CORE HIGHLIGHT THREAD */}
+      <mesh position={[0, 0.109, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[1.00, 1.04, 64]} />
+        <meshBasicMaterial
+          color="#FFFFFF"
+          toneMapped={false}
+          transparent
+          opacity={isSelected ? 0.95 : 0.65}
+          blending={THREE.AdditiveBlending}
+        />
+      </mesh>
+
+      {/* Intense upward light illuminating machine undercarriage and pipes with bright glow */}
+      <pointLight
+        ref={upwardLightRef}
+        position={[0, 0.38, 0]}
+        color={glowColor}
+        distance={4.8}
+        decay={1.4}
+      />
+
+      {/* Close-range component bottom rim wash */}
+      <pointLight
+        ref={coreLightRef}
+        position={[0, 0.18, 0]}
+        color={glowColor}
+        distance={2.4}
+        decay={1.8}
+      />
     </group>
   );
 }
 
 // ─── 01 / Air Compressor (ELGi) 3D Model ──────────────────────────────────────
-function AirCompressorModel({ isSelected, onClick }: { isSelected: boolean; onClick: () => void }) {
+function AirCompressorModel({
+  pos,
+  isSelected,
+  onClick,
+}: {
+  pos: [number, number, number];
+  isSelected: boolean;
+  onClick: () => void;
+}) {
   const groupRef = useRef<THREE.Group>(null);
 
   useFrame(({ clock }) => {
-    if (groupRef.current && isSelected) {
-      groupRef.current.position.y = 0.42 + Math.sin(clock.getElapsedTime() * 4) * 0.012;
+    if (groupRef.current) {
+      // Subtle industrial machine vibration when selected/running
+      const shake = isSelected ? Math.sin(clock.getElapsedTime() * 28) * 0.003 : 0;
+      groupRef.current.position.y = pos[1] + shake;
     }
   });
 
   return (
     <group
       ref={groupRef}
-      position={[-2.1, 0.42, 1.4]}
+      position={pos}
       rotation={[0, -Math.PI / 3.2, 0]}
       onClick={onClick}
     >
       {/* Horizontal Pressure Tank */}
       <mesh rotation={[0, 0, Math.PI / 2]} castShadow receiveShadow>
-        <cylinderGeometry args={[0.52, 0.52, 1.6, 32]} />
+        <cylinderGeometry args={[0.54, 0.54, 1.65, 32]} />
         <primitive object={MAT_MACHINE_WHITE} attach="material" />
       </mesh>
 
       {/* Hemispherical tank endcaps */}
-      <mesh position={[-0.8, 0, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
-        <sphereGeometry args={[0.52, 24, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
+      <mesh position={[-0.82, 0, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+        <sphereGeometry args={[0.54, 24, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
         <primitive object={MAT_MACHINE_WHITE} attach="material" />
       </mesh>
-      <mesh position={[0.8, 0, 0]} rotation={[0, 0, -Math.PI / 2]} castShadow>
-        <sphereGeometry args={[0.52, 24, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
+      <mesh position={[0.82, 0, 0]} rotation={[0, 0, -Math.PI / 2]} castShadow>
+        <sphereGeometry args={[0.54, 24, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
         <primitive object={MAT_MACHINE_WHITE} attach="material" />
       </mesh>
 
-      {/* Front Circular Endcap Fan Grill (matches reference image) */}
-      <mesh position={[0.88, 0, 0]} rotation={[0, Math.PI / 2, 0]} castShadow>
-        <cylinderGeometry args={[0.26, 0.26, 0.05, 24]} />
+      {/* Front Circular Endcap Fan Grill */}
+      <mesh position={[0.91, 0, 0]} rotation={[0, Math.PI / 2, 0]} castShadow>
+        <cylinderGeometry args={[0.28, 0.28, 0.06, 24]} />
         <primitive object={MAT_MACHINE_DARK} attach="material" />
       </mesh>
 
       {/* Support Feet */}
       <mesh position={[-0.45, -0.38, 0]} castShadow>
-        <boxGeometry args={[0.16, 0.2, 0.85]} />
+        <boxGeometry args={[0.16, 0.22, 0.88]} />
         <primitive object={MAT_MACHINE_DARK} attach="material" />
       </mesh>
       <mesh position={[0.45, -0.38, 0]} castShadow>
-        <boxGeometry args={[0.16, 0.2, 0.85]} />
+        <boxGeometry args={[0.16, 0.22, 0.88]} />
         <primitive object={MAT_MACHINE_DARK} attach="material" />
       </mesh>
 
       {/* Top Compressor Pump Housing */}
-      <mesh position={[0, 0.62, 0]} castShadow receiveShadow>
-        <boxGeometry args={[1.05, 0.45, 0.62]} />
+      <mesh position={[0, 0.64, 0]} castShadow receiveShadow>
+        <boxGeometry args={[1.08, 0.48, 0.65]} />
         <primitive object={MAT_MACHINE_WHITE} attach="material" />
       </mesh>
 
+      {/* Heat Sink Cooling Fins across top pump */}
+      {[-0.32, -0.16, 0, 0.16, 0.32].map((x, idx) => (
+        <mesh key={idx} position={[x, 0.9, 0]} castShadow>
+          <boxGeometry args={[0.04, 0.1, 0.58]} />
+          <primitive object={MAT_MACHINE_DARK} attach="material" />
+        </mesh>
+      ))}
+
       {/* Top Circular Air Intake Bell */}
-      <mesh position={[0.2, 0.62, 0.35]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+      <mesh position={[0.2, 0.64, 0.38]} rotation={[Math.PI / 2, 0, 0]} castShadow>
         <cylinderGeometry args={[0.14, 0.14, 0.1, 20]} />
         <primitive object={MAT_CHROME} attach="material" />
       </mesh>
 
+      {/* Analog Pressure Gauge with Amber Rim */}
+      <group position={[-0.2, 0.92, 0.35]} rotation={[0.2, 0, 0]}>
+        <mesh castShadow>
+          <cylinderGeometry args={[0.11, 0.11, 0.05, 24]} />
+          <primitive object={MAT_MACHINE_DARK} attach="material" />
+        </mesh>
+        <mesh position={[0, 0.03, 0]}>
+          <cylinderGeometry args={[0.095, 0.095, 0.02, 24]} />
+          <meshBasicMaterial color="#FFFFFF" />
+        </mesh>
+        {/* Needle */}
+        <mesh position={[0, 0.045, 0]} rotation={[0, 0, -0.7]}>
+          <boxGeometry args={[0.015, 0.06, 0.005]} />
+          <meshBasicMaterial color="#EF4444" />
+        </mesh>
+      </group>
+
       {/* Curved U-pipe connecting pump to receiver */}
-      <mesh position={[-0.32, 0.42, 0.36]} castShadow>
-        <torusGeometry args={[0.18, 0.035, 12, 24, Math.PI]} />
+      <mesh position={[-0.34, 0.42, 0.36]} castShadow>
+        <torusGeometry args={[0.18, 0.038, 12, 24, Math.PI]} />
         <primitive object={MAT_CHROME} attach="material" />
       </mesh>
     </group>
@@ -339,73 +466,152 @@ function AirCompressorModel({ isSelected, onClick }: { isSelected: boolean; onCl
 }
 
 // ─── 02 / CNC Machining Center 3D Model ────────────────────────────────────────
-function CncMachiningModel({ isSelected, onClick }: { isSelected: boolean; onClick: () => void }) {
+function CncMachiningModel({
+  pos,
+  isSelected,
+  onClick,
+}: {
+  pos: [number, number, number];
+  isSelected: boolean;
+  onClick: () => void;
+}) {
+  const spindleRef = useRef<THREE.Group>(null);
+
+  useFrame(({ clock }) => {
+    if (spindleRef.current && isSelected) {
+      spindleRef.current.position.y = 0.5 + Math.sin(clock.getElapsedTime() * 8) * 0.06;
+    }
+  });
+
   return (
-    <group position={[1.2, 0.44, -0.6]} rotation={[0, -0.35, 0]} onClick={onClick}>
+    <group
+      position={pos}
+      rotation={[0, -0.35, 0]}
+      onClick={onClick}
+    >
       {/* Sculpted enclosure */}
-      <mesh position={[0, 0.4, 0]} castShadow receiveShadow>
-        <boxGeometry args={[1.25, 1.2, 1.1]} />
+      <mesh position={[0, 0.42, 0]} castShadow receiveShadow>
+        <boxGeometry args={[1.3, 1.25, 1.15]} />
         <primitive object={MAT_MACHINE_WHITE} attach="material" />
       </mesh>
 
-      {/* Dark tinted front inspection glass */}
-      <mesh position={[0, 0.45, 0.56]} castShadow>
-        <boxGeometry args={[0.76, 0.72, 0.04]} />
-        <meshStandardMaterial color="#1E232A" metalness={0.7} roughness={0.2} />
+      {/* Dark tinted front inspection glass window */}
+      <mesh position={[0, 0.48, 0.59]} castShadow>
+        <boxGeometry args={[0.78, 0.74, 0.04]} />
+        <meshStandardMaterial color="#1E232A" metalness={0.7} roughness={0.15} />
       </mesh>
 
+      {/* Interior Illuminated Spindle Toolhead */}
+      <group ref={spindleRef} position={[0, 0.5, 0.35]}>
+        <mesh castShadow>
+          <cylinderGeometry args={[0.06, 0.09, 0.3, 18]} />
+          <primitive object={MAT_CHROME} attach="material" />
+        </mesh>
+        {/* Tool chuck */}
+        <mesh position={[0, -0.18, 0]} castShadow>
+          <coneGeometry args={[0.04, 0.1, 16]} />
+          <primitive object={MAT_CHROME} attach="material" />
+        </mesh>
+      </group>
+
+      {/* Interior Cyan/Green Chamber Illumination */}
+      <pointLight position={[0, 0.8, 0.3]} color="#10B981" intensity={isSelected ? 3.0 : 1.2} distance={1.8} />
+
       {/* Operator side console */}
-      <mesh position={[0.5, 0.45, 0.46]} rotation={[0, -0.35, 0]} castShadow>
-        <boxGeometry args={[0.3, 0.54, 0.16]} />
+      <mesh position={[0.52, 0.48, 0.48]} rotation={[0, -0.35, 0]} castShadow>
+        <boxGeometry args={[0.32, 0.56, 0.18]} />
         <primitive object={MAT_MACHINE_DARK} attach="material" />
       </mesh>
 
-      {/* Status tower light */}
-      <mesh position={[0.48, 1.08, 0]} castShadow>
-        <cylinderGeometry args={[0.035, 0.035, 0.2, 16]} />
-        <meshBasicMaterial color="#10B981" toneMapped={false} />
+      {/* CNC HMI Touchscreen Display */}
+      <mesh position={[0.55, 0.54, 0.57]} rotation={[0, -0.35, 0]}>
+        <planeGeometry args={[0.22, 0.18]} />
+        <meshBasicMaterial color="#0284C7" toneMapped={false} />
       </mesh>
+
+      {/* Status 3-Tier Tower Light */}
+      <group position={[0.5, 1.15, 0]}>
+        <mesh castShadow>
+          <cylinderGeometry args={[0.02, 0.02, 0.15, 12]} />
+          <primitive object={MAT_MACHINE_DARK} attach="material" />
+        </mesh>
+        {/* Green optimal lamp */}
+        <mesh position={[0, 0.1, 0]}>
+          <cylinderGeometry args={[0.038, 0.038, 0.06, 16]} />
+          <meshBasicMaterial color="#10B981" toneMapped={false} />
+        </mesh>
+      </group>
     </group>
   );
 }
 
 // ─── 03 / Industrial Furnace 3D Model ──────────────────────────────────────────
-function IndustrialFurnaceModel({ isSelected, onClick }: { isSelected: boolean; onClick: () => void }) {
+function IndustrialFurnaceModel({
+  pos,
+  isSelected,
+  onClick,
+}: {
+  pos: [number, number, number];
+  isSelected: boolean;
+  onClick: () => void;
+}) {
+  const glowLightRef = useRef<THREE.PointLight>(null);
+
+  useFrame(({ clock }) => {
+    if (glowLightRef.current) {
+      // Heat shimmer pulsation from 840°C refractory chamber
+      glowLightRef.current.intensity = 5.0 + Math.sin(clock.getElapsedTime() * 7) * 1.5;
+    }
+  });
+
   return (
-    <group position={[2.3, 0.44, -4.2]} rotation={[0, -0.25, 0]} onClick={onClick}>
+    <group
+      position={pos}
+      rotation={[0, -0.25, 0]}
+      onClick={onClick}
+    >
       {/* Horizontal Cylindrical Body */}
       <mesh rotation={[0, 0, Math.PI / 2]} castShadow receiveShadow>
-        <cylinderGeometry args={[0.68, 0.68, 1.45, 32]} />
+        <cylinderGeometry args={[0.7, 0.7, 1.5, 32]} />
         <primitive object={MAT_MACHINE_WHITE} attach="material" />
       </mesh>
 
       {/* Heat containment bands */}
-      {[-0.4, 0, 0.4].map((x, i) => (
+      {[-0.42, 0, 0.42].map((x, i) => (
         <mesh key={i} position={[x, 0, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
-          <cylinderGeometry args={[0.7, 0.7, 0.08, 32]} />
+          <cylinderGeometry args={[0.73, 0.73, 0.09, 32]} />
           <primitive object={MAT_MACHINE_DARK} attach="material" />
         </mesh>
       ))}
 
-      {/* Rear Terminal Cube */}
-      <mesh position={[0.88, 0, 0]} castShadow receiveShadow>
-        <boxGeometry args={[0.6, 1.05, 1.05]} />
+      {/* Rear Terminal Cube & Transformer Box */}
+      <mesh position={[0.9, 0, 0]} castShadow receiveShadow>
+        <boxGeometry args={[0.62, 1.1, 1.1]} />
         <primitive object={MAT_MACHINE_WHITE} attach="material" />
       </mesh>
 
-      {/* Front Glowing Inspection Port */}
-      <mesh position={[-0.74, 0, 0]} rotation={[0, -Math.PI / 2, 0]}>
-        <cylinderGeometry args={[0.24, 0.24, 0.05, 24]} />
+      {/* Exhaust Chimney Stack */}
+      <mesh position={[0.75, 0.85, 0]} castShadow>
+        <cylinderGeometry args={[0.14, 0.16, 0.6, 20]} />
+        <primitive object={MAT_MACHINE_DARK} attach="material" />
+      </mesh>
+
+      {/* Front Glowing Inspection Hatch Port (840°C Heat Core) */}
+      <mesh position={[-0.76, 0, 0]} rotation={[0, -Math.PI / 2, 0]}>
+        <cylinderGeometry args={[0.26, 0.26, 0.06, 24]} />
         <meshBasicMaterial color="#F97316" toneMapped={false} />
       </mesh>
 
+      {/* Inner hatch refractory glow point light */}
+      <pointLight ref={glowLightRef} position={[-0.9, 0, 0]} color="#FF6B00" distance={3.2} />
+
       {/* Base Cradles */}
-      <mesh position={[-0.32, -0.52, 0]} castShadow>
-        <boxGeometry args={[0.2, 0.32, 1.15]} />
+      <mesh position={[-0.32, -0.54, 0]} castShadow>
+        <boxGeometry args={[0.22, 0.34, 1.18]} />
         <primitive object={MAT_MACHINE_DARK} attach="material" />
       </mesh>
-      <mesh position={[0.32, -0.52, 0]} castShadow>
-        <boxGeometry args={[0.2, 0.32, 1.15]} />
+      <mesh position={[0.32, -0.54, 0]} castShadow>
+        <boxGeometry args={[0.22, 0.34, 1.18]} />
         <primitive object={MAT_MACHINE_DARK} attach="material" />
       </mesh>
     </group>
@@ -413,47 +619,89 @@ function IndustrialFurnaceModel({ isSelected, onClick }: { isSelected: boolean; 
 }
 
 // ─── 04 / Cooling System 3D Model ─────────────────────────────────────────────
-function CoolingSystemModel({ isSelected, onClick }: { isSelected: boolean; onClick: () => void }) {
+function CoolingSystemModel({
+  pos,
+  isSelected,
+  onClick,
+}: {
+  pos: [number, number, number];
+  isSelected: boolean;
+  onClick: () => void;
+}) {
+  const fan1Ref = useRef<THREE.Group>(null);
+  const fan2Ref = useRef<THREE.Group>(null);
+
+  useFrame(({ clock }) => {
+    const rotSpeed = isSelected ? 18.0 : 8.0;
+    if (fan1Ref.current) fan1Ref.current.rotation.y = clock.getElapsedTime() * rotSpeed;
+    if (fan2Ref.current) fan2Ref.current.rotation.y = -clock.getElapsedTime() * rotSpeed;
+  });
+
   return (
-    <group position={[5.4, 0.44, -7.6]} onClick={onClick}>
+    <group position={pos} onClick={onClick}>
       {/* Main Chiller Enclosure */}
-      <mesh position={[0, 0.38, 0]} castShadow receiveShadow>
-        <boxGeometry args={[1.4, 0.9, 1.1]} />
+      <mesh position={[0, 0.4, 0]} castShadow receiveShadow>
+        <boxGeometry args={[1.45, 0.95, 1.15]} />
         <primitive object={MAT_MACHINE_WHITE} attach="material" />
       </mesh>
 
-      {/* Dual top circular cooling fans */}
-      {[-0.38, 0.38].map((x, i) => (
-        <group key={i} position={[x, 0.85, 0]}>
+      {/* Side Radiator Slats */}
+      {[-0.25, -0.1, 0.05, 0.2].map((y, idx) => (
+        <mesh key={idx} position={[0, y + 0.4, 0.59]} castShadow>
+          <boxGeometry args={[1.15, 0.05, 0.03]} />
+          <primitive object={MAT_MACHINE_DARK} attach="material" />
+        </mesh>
+      ))}
+
+      {/* Dual top circular cooling fans with spinning blades */}
+      {[-0.4, 0.4].map((x, i) => (
+        <group key={i} position={[x, 0.9, 0]}>
+          {/* Fan Housing Shroud */}
           <mesh castShadow>
-            <cylinderGeometry args={[0.32, 0.35, 0.1, 28]} />
+            <cylinderGeometry args={[0.33, 0.36, 0.12, 28]} />
             <primitive object={MAT_MACHINE_DARK} attach="material" />
           </mesh>
-          <mesh position={[0, 0.06, 0]}>
-            <cylinderGeometry args={[0.28, 0.28, 0.02, 28]} />
-            <meshStandardMaterial color="#06B6D4" roughness={0.3} />
-          </mesh>
+
+          {/* Rotating Aerofoil Blades */}
+          <group ref={i === 0 ? fan1Ref : fan2Ref} position={[0, 0.05, 0]}>
+            <mesh>
+              <cylinderGeometry args={[0.08, 0.08, 0.04, 16]} />
+              <primitive object={MAT_MACHINE_DARK} attach="material" />
+            </mesh>
+            {[0, 1, 2, 3].map((bladeIdx) => (
+              <mesh key={bladeIdx} rotation={[0, (bladeIdx * Math.PI) / 2, 0.25]} position={[0.14, 0, 0]}>
+                <boxGeometry args={[0.18, 0.015, 0.07]} />
+                <meshStandardMaterial color="#06B6D4" roughness={0.3} metalness={0.6} />
+              </mesh>
+            ))}
+          </group>
         </group>
       ))}
+
+      {/* Chiller Loop Digital Controller Panel */}
+      <mesh position={[-0.55, 0.55, 0.59]}>
+        <planeGeometry args={[0.22, 0.16]} />
+        <meshBasicMaterial color="#06B6D4" toneMapped={false} />
+      </mesh>
     </group>
   );
 }
 
 // ─── Flowing Energy Particles Along Spline ─────────────────────────────────────
 function EnergyFlowParticles() {
-  const count = 16;
+  const count = 18;
   const meshRef = useRef<THREE.InstancedMesh>(null);
   const dummy = useMemo(() => new THREE.Object3D(), []);
 
   useFrame(({ clock }) => {
     if (!meshRef.current) return;
-    const time = clock.getElapsedTime() * 0.075;
+    const time = clock.getElapsedTime() * 0.085;
 
     for (let i = 0; i < count; i++) {
       const u = (time + i / count) % 1;
       const pt = SPLINE_CURVE.getPoint(u);
-      dummy.position.set(pt.x, 0.3, pt.z);
-      dummy.scale.setScalar(0.65 + Math.sin(time * 6 + i) * 0.2);
+      dummy.position.set(pt.x, 0.32, pt.z);
+      dummy.scale.setScalar(0.7 + Math.sin(time * 6 + i) * 0.25);
       dummy.updateMatrix();
       meshRef.current.setMatrixAt(i, dummy.matrix);
     }
@@ -462,19 +710,127 @@ function EnergyFlowParticles() {
 
   return (
     <instancedMesh ref={meshRef} args={[undefined, undefined, count]}>
-      <sphereGeometry args={[0.065, 12, 12]} />
+      <sphereGeometry args={[0.068, 12, 12]} />
       <meshBasicMaterial color="#38BDF8" toneMapped={false} />
     </instancedMesh>
   );
 }
 
-// ─── Dynamic Camera Glider ─────────────────────────────────────────────────────
-function CameraRig({ activeIndex }: { activeIndex: number }) {
+// ─── Dynamic Camera Glider with Organic Zigzag Traversal & Left/Right/Up/Down Angle Sway ───
+function CameraRig({
+  activeIndex,
+  controlsRef,
+}: {
+  activeIndex: number;
+  controlsRef: React.RefObject<OrbitControlsImpl | null>;
+}) {
   const { camera } = useThree();
   const current = STATIONS[activeIndex];
 
+  // Zigzag transition burst state
+  const prevIndexRef = useRef(activeIndex);
+  const transitionTimeRef = useRef(1.0); // 1.0 = settled, 0.0 = just triggered
+  const zigzagDirRef = useRef(1); // Alternates zigzag sweep direction
+
+  useEffect(() => {
+    if (prevIndexRef.current !== activeIndex) {
+      const stepDir = activeIndex > prevIndexRef.current ? 1 : -1;
+      zigzagDirRef.current = (activeIndex % 2 === 0 ? 1 : -1) * stepDir;
+      prevIndexRef.current = activeIndex;
+      transitionTimeRef.current = 0.0; // Trigger dynamic zigzag swoop
+    }
+  }, [activeIndex]);
+
+  useFrame(({ clock }, delta) => {
+    const time = clock.getElapsedTime();
+
+    // Advance zigzag transition swoop gradually (smooth, cinematic pacing)
+    if (transitionTimeRef.current < 1.0) {
+      transitionTimeRef.current = Math.min(1.0, transitionTimeRef.current + delta * 0.85);
+    }
+    const t = transitionTimeRef.current;
+    // Cubic smoothstep easing for gradual acceleration and deceleration
+    const tSmooth = t * t * (3 - 2 * t);
+
+    // 1. DYNAMIC TRAVERSAL ZIGZAG SWOOP (sweeps out along conduit perpendiculars)
+    const swoopIntensity = Math.sin(tSmooth * Math.PI) * (1.0 - tSmooth * 0.3);
+    const traversalZigzagX = Math.sin(tSmooth * Math.PI * 2) * 2.2 * zigzagDirRef.current * swoopIntensity;
+    const traversalZigzagZ = Math.cos(tSmooth * Math.PI * 2.5) * 1.6 * swoopIntensity;
+    const traversalZigzagY = Math.sin(tSmooth * Math.PI) * 0.75 * swoopIntensity;
+
+    // 2. ORGANIC CAMERA ANGLE SWAY: Shifts Left, Right, Up, and Down smoothly around the component
+    const angleShiftLeftRight = Math.sin(time * 1.4) * 0.52 + Math.cos(time * 2.7) * 0.22;
+    const angleShiftUpDown = Math.sin(time * 1.1) * 0.38 + Math.cos(time * 2.3) * 0.14;
+    const angleShiftDepth = Math.cos(time * 1.3) * 0.38;
+
+    const baseCam = new THREE.Vector3(...current.cameraPos);
+    const targetCam = baseCam.clone().add(
+      new THREE.Vector3(
+        angleShiftLeftRight + traversalZigzagX,
+        angleShiftUpDown + traversalZigzagY,
+        angleShiftDepth + traversalZigzagZ
+      )
+    );
+
+    // 3. TARGET ALWAYS POINTS STRICTLY & PRECISELY TO THE COMPONENT CENTER
+    const componentTarget = new THREE.Vector3(...current.targetPos);
+
+    // Gradual, cinematic damping (smooth rotation without snapping)
+    const step = Math.min(1, delta * 1.65);
+    camera.position.lerp(targetCam, step);
+
+    if (controlsRef.current) {
+      controlsRef.current.target.lerp(componentTarget, step);
+      controlsRef.current.update();
+    } else {
+      camera.lookAt(componentTarget);
+    }
+  });
+
+  return null;
+}
+
+// ─── 3D to 2D Label Projector Synchronizer (60 FPS, No React Render overhead) ──
+function StationLabelSynchronizer({
+  labelRefs,
+}: {
+  labelRefs: React.RefObject<(HTMLDivElement | null)[]>;
+}) {
+  const { camera, size } = useThree();
+  const v = useMemo(() => new THREE.Vector3(), []);
+
   useFrame(() => {
-    camera.position.lerp(new THREE.Vector3(...current.cameraPos), 0.045);
+    if (!labelRefs.current) return;
+
+    STATIONS.forEach((s, idx) => {
+      const el = labelRefs.current[idx];
+      if (!el) return;
+
+      // Position slightly above machine geometry
+      const yOffset = idx === 0 ? 1.48 : idx === 1 ? 1.35 : idx === 2 ? 1.55 : 1.35;
+      v.set(s.pos[0], s.pos[1] + yOffset, s.pos[2]);
+      v.project(camera);
+
+      // Check if station is in front of camera
+      const isVisible = v.z < 1.0;
+      if (!isVisible) {
+        el.style.display = 'none';
+        return;
+      }
+
+      const x = (v.x * 0.5 + 0.5) * size.width;
+      const y = (-v.y * 0.5 + 0.5) * size.height;
+
+      // Off-screen culling
+      if (x < -100 || x > size.width + 100 || y < -100 || y > size.height + 100) {
+        el.style.display = 'none';
+        return;
+      }
+
+      el.style.display = 'flex';
+      el.style.left = `${x}px`;
+      el.style.top = `${y}px`;
+    });
   });
 
   return null;
@@ -490,6 +846,13 @@ export default function HomePage({ onLaunchPlatform, onOpenLogin }: HomePageProp
   const [activeIndex, setActiveIndex] = useState(0);
   const [isWhatIfOpen, setIsWhatIfOpen] = useState(false);
   const [isReportsOpen, setIsReportsOpen] = useState(false);
+  const controlsRef = useRef<OrbitControlsImpl | null>(null);
+  const labelRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  // Wheel traversal accumulator & debounce
+  const scrollDeltaRef = useRef(0);
+  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isThrottledRef = useRef(false);
 
   // What-If Simulation Controls
   const [simParams, setSimParams] = useState<SimParams>({
@@ -501,24 +864,51 @@ export default function HomePage({ onLaunchPlatform, onOpenLogin }: HomePageProp
   const simResult = useMemo(() => calcSimResult(simParams), [simParams]);
   const currentStation = STATIONS[activeIndex];
 
-  // Mouse wheel scroll to glide between stops smoothly
+  // Silky Smooth Mouse Wheel & Trackpad Traversal Between Machines
   useEffect(() => {
-    let throttled = false;
     const onWheel = (e: WheelEvent) => {
-      if (Math.abs(e.deltaY) < 22 || throttled || isWhatIfOpen || isReportsOpen) return;
-      throttled = true;
-      const dir = e.deltaY > 0 ? 1 : -1;
-      setActiveIndex((prev) => {
-        const next = prev + dir;
-        return THREE.MathUtils.clamp(next, 0, STATIONS.length - 1);
-      });
-      setTimeout(() => {
-        throttled = false;
-      }, 550);
+      if (isWhatIfOpen || isReportsOpen) return;
+
+      // Accumulate scroll
+      scrollDeltaRef.current += e.deltaY;
+
+      if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+      scrollTimeoutRef.current = setTimeout(() => {
+        scrollDeltaRef.current = 0;
+      }, 250);
+
+      // Trigger gradual machine transition once threshold is passed
+      if (Math.abs(scrollDeltaRef.current) > 65 && !isThrottledRef.current) {
+        isThrottledRef.current = true;
+        const dir = scrollDeltaRef.current > 0 ? 1 : -1;
+        scrollDeltaRef.current = 0;
+
+        setActiveIndex((prev) => {
+          const next = prev + dir;
+          return THREE.MathUtils.clamp(next, 0, STATIONS.length - 1);
+        });
+
+        setTimeout(() => {
+          isThrottledRef.current = false;
+        }, 750);
+      }
+    };
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (isWhatIfOpen || isReportsOpen) return;
+      if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+        setActiveIndex((prev) => THREE.MathUtils.clamp(prev + 1, 0, STATIONS.length - 1));
+      } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+        setActiveIndex((prev) => THREE.MathUtils.clamp(prev - 1, 0, STATIONS.length - 1));
+      }
     };
 
     window.addEventListener('wheel', onWheel, { passive: true });
-    return () => window.removeEventListener('wheel', onWheel);
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('wheel', onWheel);
+      window.removeEventListener('keydown', onKeyDown);
+    };
   }, [isWhatIfOpen, isReportsOpen]);
 
   return (
@@ -536,50 +926,51 @@ export default function HomePage({ onLaunchPlatform, onOpenLogin }: HomePageProp
       {/* ─── 3D INDUSTRIAL ENERGY GRID CANVAS ───────────────────────────────── */}
       <Canvas
         shadows
-        camera={{ position: [1.8, 6.8, 9.2], fov: 34 }}
+        camera={{ position: [-0.2, 3.8, 6.4], fov: 36 }}
         style={{ width: '100%', height: '100%', display: 'block' }}
       >
         <color attach="background" args={[BG_COLOR]} />
-        <fog attach="fog" args={[BG_COLOR, 16, 42]} />
+        <fog attach="fog" args={[BG_COLOR, 18, 56]} />
 
-        {/* Studio Lighting */}
-        <ambientLight intensity={0.68} />
+        {/* Studio Lighting - Warm Editorial Beige Ambient & Key Lighting */}
+        <ambientLight intensity={0.68} color="#FFF8EE" />
         <directionalLight
-          position={[-6, 14, 8]}
-          intensity={1.8}
+          position={[-8, 16, 10]}
+          intensity={2.0}
+          color="#FFF6EB"
           castShadow
           shadow-mapSize-width={2048}
           shadow-mapSize-height={2048}
           shadow-bias={-0.0001}
           shadow-camera-near={0.5}
-          shadow-camera-far={38}
-          shadow-camera-left={-12}
-          shadow-camera-right={12}
-          shadow-camera-top={12}
-          shadow-camera-bottom={-12}
+          shadow-camera-far={65}
+          shadow-camera-left={-22}
+          shadow-camera-right={22}
+          shadow-camera-top={22}
+          shadow-camera-bottom={-22}
         />
-        <directionalLight position={[8, 6, -6]} intensity={0.65} color="#C4D4ED" />
-        <hemisphereLight args={['#FFFFFF', '#D8DAD3', 0.5]} />
+        <directionalLight position={[10, 8, -8]} intensity={0.85} color="#ECDDC7" />
+        <hemisphereLight args={['#FFFDF8', '#D6CBB8', 0.58]} />
 
-        {/* Real Ground Plane & Contact Shadows */}
+        {/* Real Ground Plane in Rich Warm Beige */}
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
-          <planeGeometry args={[100, 100]} />
-          <meshStandardMaterial color={BG_COLOR} roughness={0.9} metalness={0.05} />
+          <planeGeometry args={[180, 180]} />
+          <meshStandardMaterial color={BG_COLOR} roughness={0.88} metalness={0.03} />
         </mesh>
         <ContactShadows
           position={[0, 0.01, 0]}
-          opacity={0.38}
-          scale={32}
-          blur={1.6}
-          far={9}
-          color="#181A1E"
+          opacity={0.42}
+          scale={55}
+          blur={1.8}
+          far={14}
+          color="#22201D"
         />
 
         {/* Industrial Pathway & Particles */}
         <WindingEnergyPathway />
         <EnergyFlowParticles />
 
-        {/* 4 Station Platforms */}
+        {/* 4 Station Platforms with Bright Bottom Constant Glow */}
         {STATIONS.map((s, idx) => (
           <StationPlatform
             key={s.id}
@@ -590,64 +981,150 @@ export default function HomePage({ onLaunchPlatform, onOpenLogin }: HomePageProp
           />
         ))}
 
-        {/* 4 Machine Models */}
+        {/* 4 Machine Models with Custom Placements */}
         <AirCompressorModel
+          pos={STATIONS[0].pos}
           isSelected={activeIndex === 0}
           onClick={() => setActiveIndex(0)}
         />
         <CncMachiningModel
+          pos={STATIONS[1].pos}
           isSelected={activeIndex === 1}
           onClick={() => setActiveIndex(1)}
         />
         <IndustrialFurnaceModel
+          pos={STATIONS[2].pos}
           isSelected={activeIndex === 2}
           onClick={() => setActiveIndex(2)}
         />
         <CoolingSystemModel
+          pos={STATIONS[3].pos}
           isSelected={activeIndex === 3}
           onClick={() => setActiveIndex(3)}
         />
 
-        {/* In-Scene Floating 3D Tooltip for Active Machine (Matches Reference Image) */}
-        <Html
-          position={[currentStation.pos[0], currentStation.pos[1] + 1.25, currentStation.pos[2]]}
-          center
-          distanceFactor={10}
-        >
-          <div
-            style={{
-              padding: '6px 14px',
-              borderRadius: '20px',
-              background: 'rgba(255, 255, 255, 0.88)',
-              backdropFilter: 'blur(10px)',
-              border: '1px solid rgba(255, 255, 255, 0.9)',
-              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.08)',
-              whiteSpace: 'nowrap',
-              pointerEvents: 'none',
-              transform: 'translateY(-14px)',
-            }}
-          >
-            <span style={{ fontSize: '11px', fontWeight: 700, color: '#18191B', letterSpacing: '0.4px' }}>
-              {currentStation.tag}
-            </span>
-            <span style={{ fontSize: '10px', color: '#6E7278', marginLeft: '6px' }}>
-              {currentStation.tagWarning}
-            </span>
-          </div>
-        </Html>
+        {/* High-Performance 60FPS Label Synchronizer */}
+        <StationLabelSynchronizer labelRefs={labelRefs} />
 
-        {/* Dynamic Camera Animation & Controls */}
-        <CameraRig activeIndex={activeIndex} />
+
+        {/* Dynamic Camera Traversal Rig with OrbitControls Sync */}
+        <CameraRig activeIndex={activeIndex} controlsRef={controlsRef} />
         <OrbitControls
+          ref={controlsRef}
           enablePan={false}
           maxPolarAngle={Math.PI / 2.15}
-          minDistance={4}
-          maxDistance={24}
-          dampingFactor={0.05}
+          minDistance={1.8}
+          maxDistance={12}
+          dampingFactor={0.06}
         />
       </Canvas>
 
-      {/* ─── TOP NAVIGATION BAR (Exact Match to Reference Screenshot) ───────── */}
+      {/* ─── 3D PINNED COMPACT MACHINE LABELS (Rendered at 60fps in DOM) ─────── */}
+      <div
+        style={{
+          position: 'fixed',
+          inset: 0,
+          pointerEvents: 'none',
+          zIndex: 18,
+          overflow: 'hidden',
+        }}
+      >
+        {STATIONS.map((s, idx) => {
+          const isPointed = idx === activeIndex;
+          const machineCleanName = s.shortName.split('/')[1]?.trim() || s.name;
+
+          return (
+            <div
+              key={s.id}
+              ref={(el) => {
+                labelRefs.current[idx] = el;
+              }}
+              onClick={() => setActiveIndex(idx)}
+              style={{
+                position: 'absolute',
+                display: 'none',
+                transform: 'translate(-50%, -100%)',
+                pointerEvents: 'auto',
+                cursor: isPointed ? 'default' : 'pointer',
+                flexDirection: 'column',
+                alignItems: 'center',
+                transition: 'opacity 0.25s, transform 0.25s',
+                opacity: isPointed ? 1 : 0.65,
+                transformOrigin: 'bottom center',
+              }}
+            >
+              <div
+                style={{
+                  padding: isPointed ? '3px 8px' : '2px 6px',
+                  borderRadius: '9999px',
+                  backgroundColor: isPointed ? 'rgba(247, 241, 231, 0.95)' : 'rgba(235, 226, 212, 0.82)',
+                  backdropFilter: 'blur(8px)',
+                  border: isPointed ? `1px solid ${s.glowColor}` : '1px solid rgba(255, 255, 255, 0.75)',
+                  boxShadow: isPointed
+                    ? `0 2px 8px rgba(0, 0, 0, 0.1), 0 0 8px ${s.glowColor}40`
+                    : '0 1px 4px rgba(0, 0, 0, 0.05)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {/* Status Dot */}
+                <span
+                  style={{
+                    width: isPointed ? '5px' : '4px',
+                    height: isPointed ? '5px' : '4px',
+                    borderRadius: '50%',
+                    backgroundColor: s.glowColor,
+                    boxShadow: isPointed ? `0 0 6px ${s.glowColor}` : 'none',
+                  }}
+                />
+                <span
+                  style={{
+                    fontSize: isPointed ? '8.5px' : '7.5px',
+                    fontWeight: 700,
+                    fontFamily: "'IBM Plex Mono', monospace",
+                    color: '#1C1917',
+                    letterSpacing: '0.04em',
+                  }}
+                >
+                  {s.code} · {machineCleanName}
+                </span>
+                {isPointed && (
+                  <span
+                    style={{
+                      fontSize: '7px',
+                      fontWeight: 600,
+                      padding: '1px 3.5px',
+                      borderRadius: '3px',
+                      backgroundColor:
+                        s.status === 'OPTIMAL' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.18)',
+                      color: s.status === 'OPTIMAL' ? '#047857' : '#B45309',
+                      fontFamily: "'IBM Plex Mono', monospace",
+                    }}
+                  >
+                    {s.powerKw} kW
+                  </span>
+                )}
+              </div>
+
+              {/* Tiny downward stem */}
+              {isPointed && (
+                <div
+                  style={{
+                    width: '1px',
+                    height: '5px',
+                    background: `linear-gradient(to bottom, ${s.glowColor}, transparent)`,
+                  }}
+                />
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+
+      {/* ─── TOP NAVIGATION BAR ────────────────────────────────────────────── */}
       <header
         style={{
           position: 'fixed',
@@ -659,34 +1136,53 @@ export default function HomePage({ onLaunchPlatform, onOpenLogin }: HomePageProp
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '24px 44px',
-          pointerEvents: 'auto',
+          pointerEvents: 'none',
         }}
       >
-        <span
-          style={{
-            fontSize: '17px',
-            fontWeight: 700,
-            letterSpacing: '0.2em',
-            color: '#18191B',
-            textTransform: 'uppercase',
-          }}
-        >
-          WATTWISE AI
-        </span>
+        {/* Left Logo */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', pointerEvents: 'auto' }}>
+          <div
+            style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '9px',
+              backgroundColor: '#18191B',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#EDE7DC',
+              boxShadow: PILL_SHADOW,
+            }}
+          >
+            <Zap size={18} />
+          </div>
+          <span
+            style={{
+              fontFamily: "'Inter', sans-serif",
+              fontSize: '15px',
+              fontWeight: 800,
+              letterSpacing: '0.12em',
+              color: '#18191B',
+            }}
+          >
+            WATTWISE AI
+          </span>
+        </div>
 
-        <nav style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        {/* Right Navigation Pills */}
+        <nav style={{ display: 'flex', alignItems: 'center', gap: '12px', pointerEvents: 'auto' }}>
           <button
-            onClick={() => setActiveIndex(0)}
+            onClick={() => setActiveIndex((prev) => (prev + 1) % STATIONS.length)}
             style={{
               padding: '8px 18px',
               borderRadius: '9999px',
               fontSize: '12px',
-              fontWeight: 500,
+              fontWeight: 600,
               color: '#18191B',
-              backgroundColor: 'rgba(229, 230, 225, 0.85)',
+              backgroundColor: NEUMORPHIC_BG,
               backdropFilter: 'blur(12px)',
-              border: '1px solid rgba(255, 255, 255, 0.7)',
-              boxShadow: '4px 4px 10px #c5c6c1, -4px -4px 10px #ffffff',
+              border: BORDER_WHITE,
+              boxShadow: PILL_SHADOW,
               cursor: 'pointer',
               transition: 'all 0.2s',
             }}
@@ -700,12 +1196,12 @@ export default function HomePage({ onLaunchPlatform, onOpenLogin }: HomePageProp
               padding: '8px 18px',
               borderRadius: '9999px',
               fontSize: '12px',
-              fontWeight: 500,
+              fontWeight: 600,
               color: '#18191B',
-              backgroundColor: 'rgba(229, 230, 225, 0.85)',
+              backgroundColor: NEUMORPHIC_BG,
               backdropFilter: 'blur(12px)',
-              border: '1px solid rgba(255, 255, 255, 0.7)',
-              boxShadow: '4px 4px 10px #c5c6c1, -4px -4px 10px #ffffff',
+              border: BORDER_WHITE,
+              boxShadow: PILL_SHADOW,
               cursor: 'pointer',
               transition: 'all 0.2s',
             }}
@@ -719,12 +1215,12 @@ export default function HomePage({ onLaunchPlatform, onOpenLogin }: HomePageProp
               padding: '8px 18px',
               borderRadius: '9999px',
               fontSize: '12px',
-              fontWeight: 500,
+              fontWeight: 600,
               color: '#18191B',
-              backgroundColor: 'rgba(229, 230, 225, 0.85)',
+              backgroundColor: NEUMORPHIC_BG,
               backdropFilter: 'blur(12px)',
-              border: '1px solid rgba(255, 255, 255, 0.7)',
-              boxShadow: '4px 4px 10px #c5c6c1, -4px -4px 10px #ffffff',
+              border: BORDER_WHITE,
+              boxShadow: PILL_SHADOW,
               cursor: 'pointer',
               transition: 'all 0.2s',
             }}
@@ -733,17 +1229,36 @@ export default function HomePage({ onLaunchPlatform, onOpenLogin }: HomePageProp
           </button>
 
           <button
+            onClick={onOpenLogin}
+            style={{
+              padding: '8px 18px',
+              borderRadius: '9999px',
+              fontSize: '12px',
+              fontWeight: 600,
+              color: '#18191B',
+              backgroundColor: NEUMORPHIC_BG,
+              backdropFilter: 'blur(12px)',
+              border: BORDER_WHITE,
+              boxShadow: PILL_SHADOW,
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+          >
+            Sign In
+          </button>
+
+          <button
             onClick={onLaunchPlatform}
             style={{
-              padding: '9px 22px',
+              padding: '9px 24px',
               borderRadius: '9999px',
               fontSize: '12px',
               fontWeight: 700,
               letterSpacing: '0.08em',
-              color: '#18191B',
-              backgroundColor: '#B8BCB5',
-              border: '1px solid rgba(255, 255, 255, 0.6)',
-              boxShadow: '4px 4px 12px #c5c6c1, -2px -2px 8px #ffffff',
+              color: '#EDE7DC',
+              backgroundColor: '#18191B',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              boxShadow: '4px 4px 14px rgba(0,0,0,0.25), -2px -2px 8px #ffffff',
               cursor: 'pointer',
               transition: 'all 0.2s',
               marginLeft: '4px',
@@ -754,247 +1269,374 @@ export default function HomePage({ onLaunchPlatform, onOpenLogin }: HomePageProp
         </nav>
       </header>
 
-      {/* ─── LEFT EDITORIAL COLUMN (Exact Match to Reference Screenshot) ───── */}
+      {/* ─── LEFT EDITORIAL COLUMN: PROFESSIONAL CREATIVE ADVERTISEMENT ─────── */}
       <div
         style={{
           position: 'fixed',
           left: '44px',
-          top: '22%',
+          top: '18%',
           zIndex: 20,
-          maxWidth: '430px',
+          maxWidth: '460px',
           pointerEvents: 'none',
         }}
       >
-        <h1
-          style={{
-            fontFamily: "'Cinzel', 'Playfair Display', Georgia, serif",
-            fontSize: '48px',
-            lineHeight: 1.08,
-            letterSpacing: '-0.02em',
-            color: '#18191B',
-            fontWeight: 700,
-            marginBottom: '18px',
-          }}
-        >
-          GLIDE &amp; TRAVEL
-          <br />
-          THE ENERGY GRID
-        </h1>
-
-        <p
-          style={{
-            fontSize: '13px',
-            color: '#4A4D52',
-            lineHeight: 1.6,
-            marginBottom: '32px',
-            maxWidth: '340px',
-          }}
-        >
-          Explore where power is lost. Scroll to travel from machine to machine along our interactive energy bus.
-        </p>
-
-        <div>
-          <p
-            style={{
-              fontSize: '10px',
-              textTransform: 'uppercase',
-              letterSpacing: '0.18em',
-              color: '#6E7278',
-              fontWeight: 600,
-              marginBottom: '4px',
-            }}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentStation.id}
+            initial={{ opacity: 0, y: 20, filter: 'blur(6px)' }}
+            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            exit={{ opacity: 0, y: -20, filter: 'blur(6px)' }}
+            transition={{ duration: 0.44, ease: [0.16, 1, 0.3, 1] }}
           >
-            ACTIVE POINT
-          </p>
-          <p
-            style={{
-              fontSize: '15px',
-              fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
-              fontWeight: 700,
-              color: '#18191B',
-            }}
-          >
-            {currentStation.activeLabel}
-          </p>
-        </div>
+            {/* Category Domain Badge with Glowing Dot */}
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '5px 14px',
+                borderRadius: '9999px',
+                backgroundColor: 'rgba(237, 231, 220, 0.95)',
+                border: BORDER_WHITE,
+                boxShadow: PILL_SHADOW,
+                marginBottom: '14px',
+              }}
+            >
+              <span
+                style={{
+                  width: '7px',
+                  height: '7px',
+                  borderRadius: '50%',
+                  backgroundColor: currentStation.glowColor,
+                  boxShadow: `0 0 8px ${currentStation.glowColor}`,
+                }}
+              />
+              <span
+                style={{
+                  fontSize: '9.5px',
+                  fontFamily: "'IBM Plex Mono', monospace",
+                  fontWeight: 700,
+                  letterSpacing: '0.14em',
+                  color: '#26282C',
+                }}
+              >
+                {currentStation.adEyebrow}
+              </span>
+            </div>
+
+            {/* Editorial Serif Advertising Headline */}
+            <h1
+              style={{
+                fontFamily: "'Cinzel', 'Playfair Display', Georgia, serif",
+                fontSize: '44px',
+                lineHeight: 1.06,
+                letterSpacing: '-0.025em',
+                color: '#18191B',
+                fontWeight: 700,
+                marginBottom: '16px',
+              }}
+            >
+              {currentStation.adHeadline[0]}
+              <br />
+              {currentStation.adHeadline[1]}
+            </h1>
+
+            {/* Creative Grabbing Value Pitch */}
+            <p
+              style={{
+                fontSize: '13px',
+                color: '#4A463F',
+                lineHeight: 1.62,
+                marginBottom: '20px',
+                maxWidth: '410px',
+              }}
+            >
+              {currentStation.adHook}
+            </p>
+
+            {/* Quantified Business ROI Micro-Cards */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, 1fr)',
+                gap: '8px',
+                marginBottom: '22px',
+                maxWidth: '430px',
+              }}
+            >
+              {currentStation.adMetrics.map((m, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    padding: '10px 12px',
+                    borderRadius: '14px',
+                    backgroundColor: NEUMORPHIC_BG,
+                    border: BORDER_WHITE,
+                    boxShadow: PILL_SHADOW,
+                  }}
+                >
+                  <p
+                    style={{
+                      fontSize: '8.5px',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.12em',
+                      color: '#68645C',
+                      fontWeight: 700,
+                      marginBottom: '2px',
+                    }}
+                  >
+                    {m.label}
+                  </p>
+                  <p
+                    style={{
+                      fontSize: '13px',
+                      fontFamily: "'IBM Plex Mono', monospace",
+                      fontWeight: 800,
+                      color: '#18191B',
+                    }}
+                  >
+                    {m.value}
+                  </p>
+                  <p style={{ fontSize: '8.5px', color: '#7E796E', marginTop: '2px', lineHeight: 1.2 }}>
+                    {m.hint}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            {/* Interactive Action Buttons */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', pointerEvents: 'auto' }}>
+              <button
+                onClick={onLaunchPlatform}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '10px 20px',
+                  borderRadius: '12px',
+                  backgroundColor: '#18191B',
+                  color: '#EDE7DC',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  letterSpacing: '0.04em',
+                  border: 'none',
+                  boxShadow: '0 6px 16px rgba(0,0,0,0.18)',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+              >
+                <span>Launch Digital Twin</span>
+                <ArrowRight size={14} />
+              </button>
+
+              <button
+                onClick={() => setIsWhatIfOpen(true)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '10px 18px',
+                  borderRadius: '12px',
+                  backgroundColor: NEUMORPHIC_BG,
+                  color: '#18191B',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  border: BORDER_WHITE,
+                  boxShadow: PILL_SHADOW,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+              >
+                <Sliders size={13} />
+                <span>Simulate Savings</span>
+              </button>
+            </div>
+          </motion.div>
+        </AnimatePresence>
       </div>
 
-      {/* Bottom Left Micro-Typography Annotation */}
+      {/* Bottom Left Authoritative Annotation */}
       <div
         style={{
           position: 'fixed',
           left: '44px',
-          bottom: '36px',
+          bottom: '32px',
           zIndex: 20,
           pointerEvents: 'none',
         }}
       >
         <p
           style={{
-            fontSize: '11px',
-            color: '#5A5D62',
+            fontSize: '10.5px',
+            color: '#6E695E',
             lineHeight: 1.5,
-            marginBottom: '14px',
-            maxWidth: '220px',
+            marginBottom: '4px',
+            maxWidth: '300px',
           }}
         >
-          UI razor-sharp with natural shadow diffusion, matte-injected look, micro-typography
+          Sub-second IoT telemetry across industrial busway. Physics-informed idle cutoff &amp; CEA carbon verification.
         </p>
         <p
           style={{
             fontSize: '9px',
-            textTransform: 'uppercase',
-            letterSpacing: '0.16em',
-            color: '#6E7278',
-            marginBottom: '2px',
-          }}
-        >
-          ACTIVE POINT
-        </p>
-        <p
-          style={{
-            fontSize: '12px',
             fontFamily: "'IBM Plex Mono', monospace",
+            letterSpacing: '0.12em',
+            color: '#8A857A',
             fontWeight: 700,
-            color: '#18191B',
           }}
         >
-          {currentStation.activeLabel}
+          ACTIVE FOCUS // {currentStation.activeLabel}
         </p>
       </div>
 
-      {/* ─── RIGHT FLOATING DIAGNOSTIC CARD (Exact Match to Screenshot) ───────── */}
+      {/* ─── RIGHT FLOATING DIAGNOSTIC TELEMETRY CARD ──────────────────────── */}
       <aside
         style={{
           position: 'fixed',
-          right: '44px',
+          right: '40px',
           top: '52%',
           transform: 'translateY(-50%)',
           zIndex: 25,
-          width: '310px',
-          padding: '24px',
-          borderRadius: '26px',
-          backgroundColor: 'rgba(229, 230, 225, 0.88)',
+          width: '290px',
+          padding: '20px',
+          borderRadius: '24px',
+          backgroundColor: NEUMORPHIC_BG,
           backdropFilter: 'blur(16px)',
-          border: '1px solid rgba(255, 255, 255, 0.75)',
-          boxShadow: '8px 8px 24px #c5c6c1, -8px -8px 24px #ffffff',
+          border: BORDER_WHITE,
+          boxShadow: CARD_SHADOW,
         }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div>
-            <h3
-              style={{
-                fontFamily: "'IBM Plex Mono', monospace",
-                fontSize: '13px',
-                fontWeight: 700,
-                letterSpacing: '0.04em',
-                color: '#18191B',
-              }}
-            >
-              {currentStation.code} / {currentStation.name.split(' ')[0]} {currentStation.name.split(' ')[1] || ''}
-            </h3>
-            <p
-              style={{
-                fontSize: '11px',
-                color: '#5A5D62',
-                marginTop: '2px',
-                marginBottom: '16px',
-              }}
-            >
-              {currentStation.subTitle}
-            </p>
-          </div>
-          <span
-            style={{
-              padding: '3px 10px',
-              borderRadius: '9999px',
-              fontSize: '10px',
-              fontWeight: 600,
-              backgroundColor: 'rgba(255, 255, 255, 0.8)',
-              color: '#18191B',
-              boxShadow: '2px 2px 6px #c5c6c1',
-            }}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentStation.id}
+            initial={{ opacity: 0, x: 12 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -12 }}
+            transition={{ duration: 0.35 }}
           >
-            Vitals
-          </span>
-        </div>
-
-        <div style={{ marginBottom: '14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-            <span style={{ color: '#5A5D62' }}>Idle waste:</span>
-            <span style={{ fontWeight: 600, color: '#18191B', fontFamily: "'IBM Plex Mono', monospace" }}>
-              {currentStation.idleWasteKw}
-            </span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-            <span style={{ color: '#5A5D62' }}>Waste cost:</span>
-            <span style={{ fontWeight: 700, color: '#D97706', fontFamily: "'IBM Plex Mono', monospace" }}>
-              {currentStation.wasteCost}
-            </span>
-          </div>
-        </div>
-
-        {/* Diagnostic Energy Sparkline Curve */}
-        <div style={{ height: '70px', width: '100%', margin: '14px 0 16px' }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={currentStation.chartData}>
-              <defs>
-                <linearGradient id="sparklineGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.4} />
-                  <stop offset="95%" stopColor="#F59E0B" stopOpacity={0.0} />
-                </linearGradient>
-              </defs>
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: '#18191B',
-                  borderRadius: '6px',
-                  border: 'none',
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <h3
+                  style={{
+                    fontFamily: "'IBM Plex Mono', monospace",
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    letterSpacing: '0.04em',
+                    color: '#18191B',
+                  }}
+                >
+                  {currentStation.code} / {currentStation.shortName.split('/')[1] || currentStation.name}
+                </h3>
+                <p
+                  style={{
+                    fontSize: '11px',
+                    color: '#68645C',
+                    marginTop: '2px',
+                    marginBottom: '16px',
+                  }}
+                >
+                  {currentStation.subTitle}
+                </p>
+              </div>
+              <span
+                style={{
+                  padding: '3px 10px',
+                  borderRadius: '9999px',
                   fontSize: '10px',
-                  color: '#fff',
-                  fontFamily: "'IBM Plex Mono', monospace",
+                  fontWeight: 700,
+                  backgroundColor: currentStation.status === 'OPTIMAL' ? '#D1FAE5' : '#FEF3C7',
+                  color: currentStation.status === 'OPTIMAL' ? '#065F46' : '#92400E',
+                  boxShadow: '1px 1px 4px rgba(0,0,0,0.06)',
                 }}
-              />
-              <Area
-                type="monotone"
-                dataKey="kw"
-                stroke="#D97706"
-                strokeWidth={2}
-                fillOpacity={1}
-                fill="url(#sparklineGrad)"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
+              >
+                {currentStation.status}
+              </span>
+            </div>
 
-        {/* Inspect Component CTA */}
-        <button
-          onClick={onLaunchPlatform}
-          style={{
-            width: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '10px 16px',
-            borderRadius: '14px',
-            fontSize: '12px',
-            fontWeight: 600,
-            color: '#18191B',
-            backgroundColor: '#D8DAD3',
-            border: '1px solid rgba(255, 255, 255, 0.6)',
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-          }}
-        >
-          <span>Inspect Component</span>
-          <ArrowRight size={14} />
-        </button>
+            <div style={{ marginBottom: '14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                <span style={{ color: '#68645C' }}>Idle Draw:</span>
+                <span style={{ fontWeight: 600, color: '#18191B', fontFamily: "'IBM Plex Mono', monospace" }}>
+                  {currentStation.idleWasteKw}
+                </span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                <span style={{ color: '#68645C' }}>Waste Cost:</span>
+                <span style={{ fontWeight: 800, color: '#D97706', fontFamily: "'IBM Plex Mono', monospace" }}>
+                  {currentStation.wasteCost}
+                </span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                <span style={{ color: '#68645C' }}>Power Factor:</span>
+                <span style={{ fontWeight: 600, color: '#18191B', fontFamily: "'IBM Plex Mono', monospace" }}>
+                  {currentStation.pf}
+                </span>
+              </div>
+            </div>
+
+            {/* Diagnostic Energy Sparkline Curve */}
+            <div style={{ height: '70px', width: '100%', margin: '14px 0 16px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={currentStation.chartData}>
+                  <defs>
+                    <linearGradient id="sparklineGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={currentStation.glowColor} stopOpacity={0.45} />
+                      <stop offset="95%" stopColor={currentStation.glowColor} stopOpacity={0.0} />
+                    </linearGradient>
+                  </defs>
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#18191B',
+                      borderRadius: '6px',
+                      border: 'none',
+                      fontSize: '10px',
+                      color: '#fff',
+                      fontFamily: "'IBM Plex Mono', monospace",
+                    }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="kw"
+                    stroke={currentStation.glowColor}
+                    strokeWidth={2.2}
+                    fillOpacity={1}
+                    fill="url(#sparklineGrad)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Inspect Component CTA */}
+            <button
+              onClick={onLaunchPlatform}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '11px 16px',
+                borderRadius: '14px',
+                fontSize: '12px',
+                fontWeight: 700,
+                color: '#18191B',
+                backgroundColor: '#DCD6C9',
+                border: BORDER_WHITE,
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+            >
+              <span>Inspect {currentStation.shortName}</span>
+              <ArrowRight size={14} />
+            </button>
+          </motion.div>
+        </AnimatePresence>
       </aside>
 
-      {/* ─── BOTTOM FLOATING SCRUBBER (Exact Match to Screenshot) ─────────────── */}
+      {/* ─── BOTTOM FLOATING SCRUBBER & MACHINE TRAVERSAL BAR ────────────────── */}
       <div
         style={{
           position: 'fixed',
-          bottom: '24px',
+          bottom: '22px',
           left: '50%',
           transform: 'translateX(-50%)',
           zIndex: 30,
@@ -1006,55 +1648,75 @@ export default function HomePage({ onLaunchPlatform, onOpenLogin }: HomePageProp
       >
         <div
           style={{
-            padding: '12px 28px',
+            padding: '10px 24px',
             borderRadius: '9999px',
-            backgroundColor: 'rgba(229, 230, 225, 0.92)',
+            backgroundColor: NEUMORPHIC_BG,
             backdropFilter: 'blur(16px)',
-            border: '1px solid rgba(255, 255, 255, 0.8)',
-            boxShadow: '6px 6px 18px #c5c6c1, -6px -6px 18px #ffffff',
+            border: BORDER_WHITE,
+            boxShadow: CARD_SHADOW,
             display: 'flex',
             alignItems: 'center',
-            gap: '20px',
+            gap: '18px',
           }}
         >
+          {/* Previous Machine Arrow */}
+          <button
+            onClick={() => setActiveIndex((prev) => THREE.MathUtils.clamp(prev - 1, 0, STATIONS.length - 1))}
+            disabled={activeIndex === 0}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: activeIndex === 0 ? 'default' : 'pointer',
+              color: activeIndex === 0 ? '#C2BCB0' : '#18191B',
+              display: 'flex',
+              alignItems: 'center',
+              padding: '2px',
+            }}
+          >
+            <ChevronLeft size={16} />
+          </button>
+
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span
               style={{
                 fontSize: '10px',
                 fontFamily: "'IBM Plex Mono', monospace",
                 letterSpacing: '0.14em',
-                color: '#5A5D62',
-                fontWeight: 600,
+                color: '#68645C',
+                fontWeight: 700,
               }}
             >
               SCROLL TO TRAVEL
             </span>
             <div
               style={{
-                width: '32px',
-                height: '2px',
-                backgroundColor: '#B8BCB5',
+                width: '36px',
+                height: '3px',
+                borderRadius: '2px',
+                backgroundColor: '#CEC6B6',
                 position: 'relative',
               }}
             >
               <div
                 style={{
                   position: 'absolute',
-                  top: '-3px',
-                  left: `${(activeIndex / (STATIONS.length - 1)) * 26}px`,
-                  width: '8px',
-                  height: '8px',
+                  top: '-3.5px',
+                  left: `${(activeIndex / (STATIONS.length - 1)) * 28}px`,
+                  width: '9px',
+                  height: '9px',
                   borderRadius: '50%',
                   backgroundColor: '#18191B',
-                  transition: 'left 0.3s ease-out',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
+                  transition: 'left 0.35s ease-out',
                 }}
               />
             </div>
           </div>
 
-          <div style={{ width: '1px', height: '18px', backgroundColor: '#C8CBC2' }} />
+          <div style={{ width: '1px', height: '18px', backgroundColor: '#CEC6B6' }} />
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          {/* Machine Station Chips */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
             {STATIONS.map((s, idx) => (
               <button
                 key={s.id}
@@ -1067,24 +1729,43 @@ export default function HomePage({ onLaunchPlatform, onOpenLogin }: HomePageProp
                   border: 'none',
                   fontSize: '11px',
                   fontFamily: "'IBM Plex Mono', monospace",
-                  fontWeight: idx === activeIndex ? 700 : 500,
-                  color: idx === activeIndex ? '#18191B' : '#7A7D82',
+                  fontWeight: idx === activeIndex ? 800 : 500,
+                  color: idx === activeIndex ? '#18191B' : '#7E796E',
                   cursor: 'pointer',
                   transition: 'color 0.2s',
                 }}
               >
                 <span
                   style={{
-                    width: '6px',
-                    height: '6px',
+                    width: idx === activeIndex ? '8px' : '6px',
+                    height: idx === activeIndex ? '8px' : '6px',
                     borderRadius: '50%',
-                    backgroundColor: idx === activeIndex ? '#18191B' : '#B8BCB5',
+                    backgroundColor: idx === activeIndex ? s.glowColor : '#CEC6B6',
+                    boxShadow: idx === activeIndex ? `0 0 8px ${s.glowColor}` : 'none',
+                    transition: 'all 0.25s',
                   }}
                 />
                 {s.shortName}
               </button>
             ))}
           </div>
+
+          {/* Next Machine Arrow */}
+          <button
+            onClick={() => setActiveIndex((prev) => THREE.MathUtils.clamp(prev + 1, 0, STATIONS.length - 1))}
+            disabled={activeIndex === STATIONS.length - 1}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: activeIndex === STATIONS.length - 1 ? 'default' : 'pointer',
+              color: activeIndex === STATIONS.length - 1 ? '#C2BCB0' : '#18191B',
+              display: 'flex',
+              alignItems: 'center',
+              padding: '2px',
+            }}
+          >
+            <ChevronRight size={16} />
+          </button>
         </div>
 
         <span
@@ -1092,11 +1773,11 @@ export default function HomePage({ onLaunchPlatform, onOpenLogin }: HomePageProp
             fontSize: '9px',
             fontFamily: "'IBM Plex Mono', monospace",
             letterSpacing: '0.18em',
-            color: '#6E7278',
+            color: '#7E796E',
             fontWeight: 600,
           }}
         >
-          &#8744; SCROLL TO GLIDE PATH &#8744;
+          &#8744; SCROLL OR ARROWS TO GLIDE CLOSER TO EACH COMPONENT &#8744;
         </span>
       </div>
 
@@ -1127,8 +1808,8 @@ export default function HomePage({ onLaunchPlatform, onOpenLogin }: HomePageProp
                 width: '100%',
                 maxWidth: '680px',
                 borderRadius: '24px',
-                backgroundColor: '#E5E6E1',
-                border: '1px solid rgba(255, 255, 255, 0.8)',
+                backgroundColor: '#E4D9C8',
+                border: BORDER_WHITE,
                 boxShadow: '12px 12px 36px rgba(0, 0, 0, 0.25)',
                 padding: '32px',
                 color: '#18191B',
@@ -1136,10 +1817,10 @@ export default function HomePage({ onLaunchPlatform, onOpenLogin }: HomePageProp
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <div>
-                  <h2 style={{ fontSize: '18px', fontWeight: 700, letterSpacing: '0.04em' }}>
+                  <h2 style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '0.04em' }}>
                     What-If Energy Optimization Lab
                   </h2>
-                  <p style={{ fontSize: '12px', color: '#5A5D62' }}>
+                  <p style={{ fontSize: '12px', color: '#68645C' }}>
                     Interactive mathematical simulator for PrecisionWorks Manufacturing baseline (12,480 kWh)
                   </p>
                 </div>
@@ -1149,7 +1830,7 @@ export default function HomePage({ onLaunchPlatform, onOpenLogin }: HomePageProp
                     background: 'none',
                     border: 'none',
                     cursor: 'pointer',
-                    color: '#5A5D62',
+                    color: '#68645C',
                     padding: '4px',
                   }}
                 >
@@ -1164,12 +1845,12 @@ export default function HomePage({ onLaunchPlatform, onOpenLogin }: HomePageProp
                   style={{
                     padding: '16px',
                     borderRadius: '16px',
-                    backgroundColor: '#D8DAD3',
-                    border: '1px solid rgba(255, 255, 255, 0.5)',
+                    backgroundColor: '#DDD0BC',
+                    border: '1px solid rgba(255, 255, 255, 0.6)',
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 600 }}>5-min Auto Idle Cutoff</span>
+                    <span style={{ fontSize: '12px', fontWeight: 700 }}>5-min Auto Idle Cutoff</span>
                     <button
                       onClick={() => setSimParams((p) => ({ ...p, autoIdleCutoff: !p.autoIdleCutoff }))}
                       style={{
@@ -1177,7 +1858,7 @@ export default function HomePage({ onLaunchPlatform, onOpenLogin }: HomePageProp
                         borderRadius: '9999px',
                         fontSize: '11px',
                         fontWeight: 700,
-                        backgroundColor: simParams.autoIdleCutoff ? '#10B981' : '#B8BCB5',
+                        backgroundColor: simParams.autoIdleCutoff ? '#10B981' : '#CEC6B6',
                         color: simParams.autoIdleCutoff ? '#fff' : '#18191B',
                         border: 'none',
                         cursor: 'pointer',
@@ -1186,7 +1867,7 @@ export default function HomePage({ onLaunchPlatform, onOpenLogin }: HomePageProp
                       {simParams.autoIdleCutoff ? 'ACTIVE' : 'OFF'}
                     </button>
                   </div>
-                  <p style={{ fontSize: '11px', color: '#5A5D62', marginTop: '6px' }}>
+                  <p style={{ fontSize: '11px', color: '#68645C', marginTop: '6px' }}>
                     Eliminates 18 kW unloaded compressor waste across 3.2 hours daily.
                   </p>
                 </div>
@@ -1196,12 +1877,12 @@ export default function HomePage({ onLaunchPlatform, onOpenLogin }: HomePageProp
                   style={{
                     padding: '16px',
                     borderRadius: '16px',
-                    backgroundColor: '#D8DAD3',
-                    border: '1px solid rgba(255, 255, 255, 0.5)',
+                    backgroundColor: '#DDD0BC',
+                    border: '1px solid rgba(255, 255, 255, 0.6)',
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 600 }}>+45m Furnace Stagger</span>
+                    <span style={{ fontSize: '12px', fontWeight: 700 }}>+45m Furnace Stagger</span>
                     <button
                       onClick={() => setSimParams((p) => ({ ...p, staggerFurnace: !p.staggerFurnace }))}
                       style={{
@@ -1209,7 +1890,7 @@ export default function HomePage({ onLaunchPlatform, onOpenLogin }: HomePageProp
                         borderRadius: '9999px',
                         fontSize: '11px',
                         fontWeight: 700,
-                        backgroundColor: simParams.staggerFurnace ? '#10B981' : '#B8BCB5',
+                        backgroundColor: simParams.staggerFurnace ? '#10B981' : '#CEC6B6',
                         color: simParams.staggerFurnace ? '#fff' : '#18191B',
                         border: 'none',
                         cursor: 'pointer',
@@ -1218,7 +1899,7 @@ export default function HomePage({ onLaunchPlatform, onOpenLogin }: HomePageProp
                       {simParams.staggerFurnace ? 'ACTIVE' : 'OFF'}
                     </button>
                   </div>
-                  <p style={{ fontSize: '11px', color: '#5A5D62', marginTop: '6px' }}>
+                  <p style={{ fontSize: '11px', color: '#68645C', marginTop: '6px' }}>
                     Avoids evening ToD peak tariff coincidence, cutting peak demand 18%.
                   </p>
                 </div>
@@ -1229,14 +1910,14 @@ export default function HomePage({ onLaunchPlatform, onOpenLogin }: HomePageProp
                 style={{
                   padding: '16px',
                   borderRadius: '16px',
-                  backgroundColor: '#D8DAD3',
-                  border: '1px solid rgba(255, 255, 255, 0.5)',
+                  backgroundColor: '#DDD0BC',
+                  border: '1px solid rgba(255, 255, 255, 0.6)',
                   marginBottom: '24px',
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '12px', fontWeight: 600 }}>Air Pressure Setpoint</span>
-                  <span style={{ fontSize: '12px', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700 }}>
+                  <span style={{ fontSize: '12px', fontWeight: 700 }}>Air Pressure Setpoint</span>
+                  <span style={{ fontSize: '12px', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 800 }}>
                     {simParams.pressureSetpoint.toFixed(1)} bar
                   </span>
                 </div>
@@ -1249,7 +1930,7 @@ export default function HomePage({ onLaunchPlatform, onOpenLogin }: HomePageProp
                   onChange={(e) => setSimParams((p) => ({ ...p, pressureSetpoint: parseFloat(e.target.value) }))}
                   style={{ width: '100%', accentColor: '#D97706', cursor: 'pointer' }}
                 />
-                <p style={{ fontSize: '10px', color: '#5A5D62', marginTop: '4px' }}>
+                <p style={{ fontSize: '10px', color: '#68645C', marginTop: '4px' }}>
                   Rule of thumb: Each 0.1 bar reduction saves ~1% compressor energy without violating 6.2 bar CNC threshold.
                 </p>
               </div>
@@ -1260,14 +1941,14 @@ export default function HomePage({ onLaunchPlatform, onOpenLogin }: HomePageProp
                   display: 'grid',
                   gridTemplateColumns: 'repeat(3, 1fr)',
                   gap: '12px',
-                  padding: '16px',
+                  padding: '18px',
                   borderRadius: '16px',
                   backgroundColor: '#18191B',
-                  color: '#F4F1EA',
+                  color: '#EDE7DC',
                 }}
               >
                 <div>
-                  <span style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.14em', color: '#81848B' }}>
+                  <span style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.14em', color: '#9E9A90' }}>
                     SAVINGS (kWh)
                   </span>
                   <p style={{ fontSize: '20px', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, color: '#10B981' }}>
@@ -1275,7 +1956,7 @@ export default function HomePage({ onLaunchPlatform, onOpenLogin }: HomePageProp
                   </p>
                 </div>
                 <div>
-                  <span style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.14em', color: '#81848B' }}>
+                  <span style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.14em', color: '#9E9A90' }}>
                     FINANCIAL GAIN
                   </span>
                   <p style={{ fontSize: '20px', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, color: '#F59E0B' }}>
@@ -1283,7 +1964,7 @@ export default function HomePage({ onLaunchPlatform, onOpenLogin }: HomePageProp
                   </p>
                 </div>
                 <div>
-                  <span style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.14em', color: '#81848B' }}>
+                  <span style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.14em', color: '#9E9A90' }}>
                     CARBON ABATEMENT
                   </span>
                   <p style={{ fontSize: '20px', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, color: '#38BDF8' }}>
@@ -1299,12 +1980,12 @@ export default function HomePage({ onLaunchPlatform, onOpenLogin }: HomePageProp
                     onLaunchPlatform();
                   }}
                   style={{
-                    padding: '10px 20px',
+                    padding: '10px 22px',
                     borderRadius: '12px',
                     backgroundColor: '#18191B',
-                    color: '#fff',
+                    color: '#EDE7DC',
                     fontSize: '12px',
-                    fontWeight: 600,
+                    fontWeight: 700,
                     border: 'none',
                     cursor: 'pointer',
                   }}
@@ -1344,8 +2025,8 @@ export default function HomePage({ onLaunchPlatform, onOpenLogin }: HomePageProp
                 width: '100%',
                 maxWidth: '620px',
                 borderRadius: '24px',
-                backgroundColor: '#F4F3EE',
-                border: '1px solid rgba(255, 255, 255, 0.8)',
+                backgroundColor: '#E4D9C8',
+                border: BORDER_WHITE,
                 boxShadow: '12px 12px 36px rgba(0, 0, 0, 0.25)',
                 padding: '32px',
                 color: '#18191B',
@@ -1353,10 +2034,10 @@ export default function HomePage({ onLaunchPlatform, onOpenLogin }: HomePageProp
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <div>
-                  <h2 style={{ fontSize: '18px', fontWeight: 700, letterSpacing: '0.04em' }}>
+                  <h2 style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '0.04em' }}>
                     ISO 50001 Energy &amp; Carbon Audit Dossier
                   </h2>
-                  <p style={{ fontSize: '11px', color: '#5A5D62' }}>
+                  <p style={{ fontSize: '11px', color: '#68645C' }}>
                     Prepared for PrecisionWorks Manufacturing Plant · KPCL Standards
                   </p>
                 </div>
@@ -1366,7 +2047,7 @@ export default function HomePage({ onLaunchPlatform, onOpenLogin }: HomePageProp
                     background: 'none',
                     border: 'none',
                     cursor: 'pointer',
-                    color: '#5A5D62',
+                    color: '#68645C',
                   }}
                 >
                   <X size={20} />
@@ -1376,10 +2057,10 @@ export default function HomePage({ onLaunchPlatform, onOpenLogin }: HomePageProp
               {/* Dossier Preview Document */}
               <div
                 style={{
-                  backgroundColor: '#ffffff',
+                  backgroundColor: '#FAF6EE',
                   borderRadius: '12px',
                   padding: '20px',
-                  border: '1px solid rgba(0, 0, 0, 0.08)',
+                  border: '1px solid rgba(90, 75, 55, 0.12)',
                   fontSize: '12px',
                   lineHeight: 1.6,
                   fontFamily: "'IBM Plex Mono', monospace",
@@ -1388,7 +2069,7 @@ export default function HomePage({ onLaunchPlatform, onOpenLogin }: HomePageProp
               >
                 <div style={{ borderBottom: '1px solid #eee', paddingBottom: '10px', marginBottom: '12px' }}>
                   <p style={{ fontWeight: 700 }}>FACILITY: PrecisionWorks Manufacturing (VIT Pune)</p>
-                  <p style={{ color: '#5A5D62', fontSize: '11px' }}>AUDIT PERIOD: October 2026 · CEA Emission Factor 0.82 kg/kWh</p>
+                  <p style={{ color: '#68645C', fontSize: '11px' }}>AUDIT PERIOD: October 2026 · CEA Emission Factor 0.82 kg/kWh</p>
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
@@ -1418,9 +2099,10 @@ export default function HomePage({ onLaunchPlatform, onOpenLogin }: HomePageProp
                     gap: '6px',
                     padding: '8px 16px',
                     borderRadius: '10px',
-                    backgroundColor: '#E5E6E1',
-                    border: '1px solid #ccc',
+                    backgroundColor: '#DCD6C9',
+                    border: '1px solid #bbb',
                     fontSize: '12px',
+                    fontWeight: 600,
                     cursor: 'pointer',
                   }}
                 >
@@ -1448,9 +2130,10 @@ export default function HomePage({ onLaunchPlatform, onOpenLogin }: HomePageProp
                     padding: '8px 18px',
                     borderRadius: '10px',
                     backgroundColor: '#18191B',
-                    color: '#fff',
+                    color: '#EDE7DC',
                     border: 'none',
                     fontSize: '12px',
+                    fontWeight: 700,
                     cursor: 'pointer',
                   }}
                 >

@@ -1,32 +1,32 @@
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap');
 
 :root {
-  /* Ceramic Alabaster Theme Tokens (Matches Reference Image) */
-  --bg-root: #f4f3ee;
-  --bg-panel: rgba(255, 255, 255, 0.85);
-  --bg-surface: #ffffff;
-  --bg-elevated: #eae8e1;
-  --bg-input: rgba(255, 255, 255, 0.95);
+  /* Rich Architectural Warm Beige Theme Tokens */
+  --bg-root: #E4D9C8;
+  --bg-panel: rgba(235, 226, 212, 0.90);
+  --bg-surface: #EFE6D7;
+  --bg-elevated: #DDD0BC;
+  --bg-input: rgba(245, 238, 228, 0.95);
 
-  --border: rgba(0, 0, 0, 0.08);
-  --border-muted: rgba(0, 0, 0, 0.04);
-  --border-active: rgba(0, 0, 0, 0.18);
+  --border: rgba(90, 75, 55, 0.12);
+  --border-muted: rgba(90, 75, 55, 0.06);
+  --border-active: rgba(90, 75, 55, 0.24);
 
   --cyan: #0284c7;
-  --cyan-dim: rgba(2, 132, 199, 0.1);
-  --emerald: #10b981;
-  --emerald-dim: rgba(16, 185, 129, 0.1);
-  --amber: #ea580c;
-  --amber-dim: rgba(234, 88, 12, 0.1);
+  --cyan-dim: rgba(2, 132, 199, 0.12);
+  --emerald: #059669;
+  --emerald-dim: rgba(5, 150, 105, 0.12);
+  --amber: #d97706;
+  --amber-dim: rgba(217, 119, 6, 0.12);
   --red: #dc2626;
-  --red-dim: rgba(220, 38, 38, 0.1);
+  --red-dim: rgba(220, 38, 38, 0.12);
   --violet: #7c3aed;
 
   /* Typography Colors */
-  --white: #0f172a; /* Main text is deep charcoal */
-  --slate-300: #1e293b;
-  --slate-400: #475569;
-  --slate-500: #64748b;
+  --white: #1C1917; /* Main text is deep warm charcoal/espresso */
+  --slate-300: #292524;
+  --slate-400: #57534E;
+  --slate-500: #78716C;
 
   --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
   --font-ui: 'Inter', system-ui, sans-serif;
@@ -91,7 +91,7 @@ html, body, #root {
   align-items: center;
   justify-content: space-between;
   padding: 0 20px;
-  background: rgba(255, 255, 255, 0.88);
+  background: rgba(235, 226, 212, 0.92);
   backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border);
   z-index: 200;
@@ -214,7 +214,7 @@ html, body, #root {
   grid-area: telebar;
   display: flex;
   align-items: center;
-  background: rgba(255, 255, 255, 0.65);
+  background: rgba(228, 217, 200, 0.85);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
   padding: 0 12px;
@@ -262,7 +262,7 @@ html, body, #root {
   grid-area: sidebar;
   display: flex;
   flex-direction: column;
-  background: rgba(255, 255, 255, 0.75);
+  background: rgba(235, 226, 212, 0.88);
   backdrop-filter: blur(16px);
   border-right: 1px solid var(--border);
   overflow-y: auto;
@@ -335,7 +335,7 @@ html, body, #root {
 /* ─── Inspector Panel ───────────────────────────────────────────────────────── */
 .inspector-panel {
   grid-area: inspector;
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(235, 226, 212, 0.90);
   backdrop-filter: blur(16px);
   border-left: 1px solid var(--border);
   display: flex;
@@ -396,12 +396,12 @@ html, body, #root {
 
 /* ─── Glassmorphic Panels & Cards ─────────────────────────────────────────── */
 .panel {
-  background: rgba(255, 255, 255, 0.82);
+  background: rgba(238, 230, 218, 0.92);
   backdrop-filter: blur(16px);
   border: 1px solid var(--border);
   border-radius: var(--r);
   margin-bottom: 14px;
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 20px -2px rgba(60, 45, 25, 0.06);
 }
 
 .panel-hdr {
@@ -462,13 +462,13 @@ html, body, #root {
   cursor: pointer;
   transition: all 0.15s;
   border: 1px solid var(--border-active);
-  background: #ffffff;
-  color: #0f172a;
+  background: #EFE6D7;
+  color: #1C1917;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 .btn:hover {
-  background: #f8fafc;
-  border-color: rgba(0, 0, 0, 0.3);
+  background: #E8DDCA;
+  border-color: rgba(90, 75, 55, 0.35);
 }
 
 .btn-cyan {

@@ -298,6 +298,14 @@ class AnomalyAlert:
     missing_inputs: List[str] = field(default_factory=list)
     quality_warnings: List[str] = field(default_factory=list)
     sensor_readings: Dict[str, Any] = field(default_factory=dict)
+    confidence: Optional[float] = None
+    confidence_available: bool = False
+    anomaly_score: Optional[float] = None
+    detection_method: str = "rule_based"
+    detection_method_label: str = "Rule-based"
+    observed_value: Optional[float] = None
+    expected_value: Optional[float] = None
+    deviation_percent: Optional[float] = None
 
 
 class DualPathAnomalyDetector:
@@ -360,6 +368,14 @@ class DualPathAnomalyDetector:
                 missing_inputs=missing,
                 quality_warnings=q_warnings,
                 sensor_readings=telemetry,
+                confidence=None,
+                confidence_available=False,
+                anomaly_score=None,
+                detection_method="sensor_data_quality",
+                detection_method_label="Sensor Data Quality Validation",
+                observed_value=power_kw,
+                expected_value=None,
+                deviation_percent=None,
             )
             alerts.append(alert)
 
@@ -447,6 +463,14 @@ class DualPathAnomalyDetector:
                     missing_inputs=[],
                     quality_warnings=q_warnings,
                     sensor_readings=telemetry,
+                    confidence=None,
+                    confidence_available=False,
+                    anomaly_score=z_score,
+                    detection_method="forecast_residual",
+                    detection_method_label="Forecast Residual Deviation (MAD Calibrated)",
+                    observed_value=actual_kwh,
+                    expected_value=pred_kwh,
+                    deviation_percent=rel_pct,
                 )
                 alerts.append(alert)
 
@@ -539,6 +563,14 @@ class DualPathAnomalyDetector:
                 missing_inputs=missing,
                 quality_warnings=q_warnings,
                 sensor_readings=telemetry,
+                confidence=None,
+                confidence_available=False,
+                anomaly_score=iso_score,
+                detection_method="unsupervised_isolation_forest" if iso_score is not None else "rule_based",
+                detection_method_label="Unsupervised Isolation Forest" if iso_score is not None else "Physical Envelope Rule",
+                observed_value=power_kw,
+                expected_value=None,
+                deviation_percent=None,
             )
             alerts.append(alert)
 

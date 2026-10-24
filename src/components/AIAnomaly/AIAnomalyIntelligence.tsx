@@ -655,8 +655,23 @@ export default function AIAnomalyIntelligence() {
                           </span>
                         )}
                       </td>
-                      <td style={{ padding: '10px 14px', fontFamily: 'var(--font-mono)', color: 'var(--slate-500)' }}>
-                        {item.model_score !== undefined ? `${(item.model_score * 100).toFixed(0)}%` : '--'}
+                      <td style={{ padding: '10px 14px', fontFamily: 'var(--font-mono)' }}>
+                        {item.confidence_available && item.confidence != null ? (
+                          <span style={{ color: 'var(--cyan)', fontWeight: 600 }}>
+                            {(item.confidence * 100).toFixed(1)}%
+                          </span>
+                        ) : item.anomaly_score != null ? (
+                          <span title={`Raw detector margin score: ${item.anomaly_score}`} style={{ color: 'var(--slate-300)', fontSize: 11 }}>
+                            {typeof item.anomaly_score === 'number' ? item.anomaly_score.toFixed(3) : item.anomaly_score}
+                          </span>
+                        ) : (
+                          <span
+                            title={item.detection_method_label || 'Deterministic threshold baseline (Confidence not calibrated)'}
+                            style={{ color: 'var(--slate-400)', fontSize: 10, background: 'rgba(255,255,255,0.03)', padding: '2px 6px', borderRadius: 4 }}
+                          >
+                            Not calibrated
+                          </span>
+                        )}
                       </td>
                       <td style={{ padding: '10px 14px' }}>
                         <span
@@ -812,8 +827,32 @@ export default function AIAnomalyIntelligence() {
                       </div>
                       <div>
                         <div style={{ fontSize: 10, color: 'var(--slate-400)', fontFamily: 'var(--font-mono)' }}>Model Confidence</div>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--cyan)', marginTop: 2 }}>
-                          {selectedInc?.model_score !== undefined ? `${(selectedInc.model_score * 100).toFixed(1)}%` : '--'}
+                        <div
+                          style={{
+                            fontSize: 12,
+                            fontWeight: 700,
+                            color: selectedInc?.confidence_available && selectedInc?.confidence != null ? 'var(--cyan)' : 'var(--slate-400)',
+                            marginTop: 2,
+                          }}
+                        >
+                          {selectedInc?.confidence_available && selectedInc?.confidence != null
+                            ? `${(selectedInc.confidence * 100).toFixed(1)}%`
+                            : 'Not calibrated'}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 9,
+                            color: 'var(--slate-500)',
+                            fontFamily: 'var(--font-mono)',
+                            marginTop: 2,
+                            maxWidth: 150,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                          title={selectedInc?.detection_method_label || selectedInc?.model_name || 'Condition-Aware Energy Baseline'}
+                        >
+                          {selectedInc?.detection_method_label || selectedInc?.model_name || 'Condition-Aware Baseline'}
                         </div>
                       </div>
                       <div>
@@ -868,9 +907,16 @@ export default function AIAnomalyIntelligence() {
 
                   {/* Sensor Measurements Grid */}
                   <div>
-                    <h4 style={{ fontSize: 12, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 8, color: 'var(--white)' }}>
-                      Active Sensor Telemetry
-                    </h4>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, flexWrap: 'wrap', gap: 6 }}>
+                      <h4 style={{ fontSize: 12, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: 'var(--white)', margin: 0 }}>
+                        Active Sensor Telemetry
+                      </h4>
+                      {selectedInc?.anomaly_score != null && (
+                        <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--cyan)', background: 'rgba(2, 132, 199, 0.1)', padding: '2px 8px', borderRadius: 4, border: '1px solid rgba(2, 132, 199, 0.2)' }}>
+                          Detector Score: {typeof selectedInc.anomaly_score === 'number' ? selectedInc.anomaly_score.toFixed(3) : selectedInc.anomaly_score}
+                        </span>
+                      )}
+                    </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
                       <div style={{ background: 'var(--bg-panel)', padding: 10, borderRadius: 6, border: '1px solid var(--border)' }}>
                         <span style={{ fontSize: 10, color: 'var(--slate-400)', fontFamily: 'var(--font-mono)' }}>Active Electrical Power</span>
@@ -878,7 +924,7 @@ export default function AIAnomalyIntelligence() {
                           {selectedInc?.actual_power_kw ?? selectedInc?.sensor_readings?.power_consumption_kw ?? '--'} kW
                         </div>
                         <div style={{ fontSize: 10, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)' }}>
-                          Expected: {selectedInc?.expected_power_kw ?? '--'} kW ({selectedInc?.deviation_pct ?? 0}%)
+                          Expected: {selectedInc?.expected_power_kw ?? '--'} kW ({selectedInc?.deviation_pct ? `${selectedInc.deviation_pct > 0 ? '+' : ''}${selectedInc.deviation_pct}% deviation` : 'nominal'})
                         </div>
                       </div>
 

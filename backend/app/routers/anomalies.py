@@ -31,7 +31,7 @@ from backend.ai_intelligence.src.incident_report_generator import (
     generate_docx_incident_report,
     generate_pdf_incident_report,
 )
-from backend.ai_intelligence.src.incident_store import IncidentStore
+from backend.ai_intelligence.src.incident_store import IncidentStore, normalize_incident_dict
 from backend.ai_intelligence.src.inference import EnergyIntelligencePipeline
 from backend.ai_intelligence.src.forecast_adapter import (
     ForecastServiceAdapter,
@@ -515,16 +515,17 @@ async def upload_telemetry(
         if excess_kwh is not None:
             excess_kwh = round(float(excess_kwh), 2)
 
+        raw_score = anom.get("model_score")
         incident_obj = {
             "incident_id": inc_id,
             "timestamp": str(anom.get("timestamp")),
             "equipment_id": str(anom.get("equipment_id")),
             "operating_mode": str(anom.get("operating_mode", "normal")),
             "anomaly_type": str(anom.get("anomaly_type", "operational_deviation")),
-            "detection_method": str(anom.get("detection_method", "AI Model")),
-            "model_name": str(anom.get("model_name", "Supervised RF")),
-            "model_score": float(anom.get("model_score", 0.85)),
-            "confidence": float(anom.get("model_score", 0.85)),
+            "detection_method": str(anom.get("detection_method", "supervised_random_forest" if anom.get("model_name") == "Supervised RF" else "condition_aware_baseline")),
+            "model_name": str(anom.get("model_name", "Supervised Random Forest")),
+            "model_score": raw_score,
+            "confidence": raw_score if anom.get("model_name") == "Supervised RF" else None,
             "severity": str(anom.get("severity", "medium")),
             "status": "New",
             "actual_power_kw": round(float(anom.get("actual_power_kw", anom.get("power_consumption_kw", 0))), 2),
@@ -539,7 +540,8 @@ async def upload_telemetry(
             "data_provenance": "user_uploaded_telemetry",
             "source_file": filename,
         }
-        store.incidents.insert(0, incident_obj)
+        normalized_inc = normalize_incident_dict(incident_obj)
+        store.incidents[inc_id] = normalized_inc
         new_incidents_count += 1
 
     if new_incidents_count > 0:

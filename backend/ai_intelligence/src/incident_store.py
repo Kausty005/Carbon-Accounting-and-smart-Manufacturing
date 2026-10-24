@@ -59,6 +59,138 @@ SENSOR_METADATA = {
 }
 
 
+def normalize_incident_dict(inc: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Establish consistent schema with defensible confidence & score semantics.
+    Separates severity from confidence, and preserves raw detector margins
+    without misinterpreting them as probabilities.
+    """
+    res = dict(inc)
+
+    # Equipment / Machine IDs
+    if "machine_id" not in res or not res["machine_id"]:
+        res["machine_id"] = res.get("equipment_id", "UNKNOWN")
+    if "equipment_id" not in res or not res["equipment_id"]:
+        res["equipment_id"] = res.get("machine_id", "UNKNOWN")
+    if "machine_type" not in res or not res["machine_type"]:
+        res["machine_type"] = res.get("equipment_type", "GENERAL")
+    if "equipment_type" not in res or not res["equipment_type"]:
+        res["equipment_type"] = str(res.get("machine_type", "GENERAL")).lower()
+    if "site_id" not in res or not res["site_id"]:
+        res["site_id"] = "SITE-01"
+    if "first_detected" not in res or not res["first_detected"]:
+        res["first_detected"] = res.get("timestamp")
+    if "latest_occurrence" not in res or not res["latest_occurrence"]:
+        res["latest_occurrence"] = res.get("timestamp")
+    if "recurrence_count" not in res:
+        res["recurrence_count"] = 1
+
+    raw_model_name = str(res.get("model_name", "")).strip()
+    raw_method = str(res.get("detection_method", "")).strip()
+    cat = str(res.get("alert_category", "")).strip()
+    inc_id = str(res.get("incident_id", ""))
+
+    # Identify detection method & human-friendly label
+    if (
+        "Supervised" in raw_model_name
+        or "Random Forest" in raw_model_name
+        or raw_method in ["supervised_rf", "supervised_random_forest", "supervised_learning"]
+    ):
+        det_method = "supervised_random_forest"
+        det_label = "Supervised Random Forest"
+    elif (
+        "Isolation Forest" in raw_model_name
+        or raw_method in ["isolation_forest", "unsupervised_isolation_forest"]
+    ):
+        det_method = "unsupervised_isolation_forest"
+        det_label = "Unsupervised Isolation Forest"
+    elif (
+        "Baseline" in raw_model_name
+        or "Condition-Aware" in raw_model_name
+        or raw_method in ["condition_aware_baseline", "energy_baseline", "statistical_baseline"]
+    ):
+        det_method = "condition_aware_baseline"
+        det_label = "Condition-Aware Energy Baseline"
+    elif (
+        "forecast_residual" in cat.lower()
+        or "INC-RES" in inc_id
+        or raw_method in ["forecast_residual", "residual_mad"]
+        or res.get("residual_kwh") is not None
+    ):
+        det_method = "forecast_residual"
+        det_label = "Forecast Residual Deviation"
+    elif "sensor_data_quality" in cat.lower() or "WARN-DQ" in inc_id:
+        det_method = "sensor_data_quality"
+        det_label = "Sensor Data Quality Validation"
+    else:
+        det_method = "rule_based"
+        det_label = "Physical Envelope Rule"
+
+    res["detection_method"] = det_method
+    res["detection_method_label"] = det_label
+
+    # Defensible Confidence Calculation:
+    # Only calibrated/valid probabilistic detectors have numeric confidence.
+    # Deterministic rules (condition-aware baseline, physical rules) and uncalibrated Isolation Forest
+    # scores do NOT represent probabilities -> confidence is None, confidence_available is False.
+    conf = None
+    conf_avail = False
+    raw_score = res.get("model_score")
+
+    if det_method == "supervised_random_forest":
+        candidate_conf = res.get("confidence") if res.get("confidence") is not None else raw_score
+        if candidate_conf is not None:
+            try:
+                c_val = float(candidate_conf)
+                if not (np.isnan(c_val) if np else False) and 0.0 <= c_val <= 1.0:
+                    conf = round(c_val, 4)
+                    conf_avail = True
+            except (ValueError, TypeError):
+                conf = None
+                conf_avail = False
+    else:
+        # Never interpret Isolation Forest margins or rule results as probabilities
+        conf = None
+        conf_avail = False
+
+    res["confidence"] = conf
+    res["confidence_available"] = conf_avail
+    res["model_confidence"] = conf
+
+    # Preserve raw detector score
+    raw_anomaly_sc = res.get("anomaly_score")
+    if raw_anomaly_sc is None:
+        if det_method == "unsupervised_isolation_forest":
+            raw_anomaly_sc = res.get("detector_score") if res.get("detector_score") is not None else raw_score
+        elif det_method == "forecast_residual":
+            raw_anomaly_sc = res.get("detector_score")
+        elif det_method == "supervised_random_forest":
+            raw_anomaly_sc = conf if conf is not None else raw_score
+
+    if raw_anomaly_sc is not None:
+        try:
+            sc_val = float(raw_anomaly_sc)
+            res["anomaly_score"] = round(sc_val, 4) if not (np.isnan(sc_val) if np else False) else None
+        except (ValueError, TypeError):
+            res["anomaly_score"] = None
+    else:
+        res["anomaly_score"] = None
+
+    # Observed & Expected values and deviation
+    obs_val = res.get("actual_power_kw") if res.get("actual_power_kw") is not None else res.get("actual_energy_kwh")
+    exp_val = res.get("expected_power_kw") if res.get("expected_power_kw") is not None else res.get("predicted_energy_kwh")
+    dev_pct = res.get("deviation_pct") if res.get("deviation_pct") is not None else res.get("relative_deviation_pct")
+
+    res["observed_value"] = obs_val
+    res["expected_value"] = exp_val
+    res["deviation_percent"] = dev_pct
+
+    # Ensure model_score is preserved for any legacy test referencing it
+    res["model_score"] = raw_score
+
+    return res
+
+
 class IncidentStore:
     """
     Manages detected anomaly incidents, persists technician investigation status,
@@ -161,26 +293,9 @@ class IncidentStore:
                 "data_provenance": "historical_baseline",
             }
 
-        # Backfill schema fields on loaded records
-        for inc in self.incidents.values():
-            if "machine_id" not in inc:
-                inc["machine_id"] = inc.get("equipment_id", "UNKNOWN")
-            if "equipment_id" not in inc:
-                inc["equipment_id"] = inc.get("machine_id", "UNKNOWN")
-            if "machine_type" not in inc:
-                inc["machine_type"] = inc.get("equipment_type", "GENERAL")
-            if "equipment_type" not in inc:
-                inc["equipment_type"] = inc.get("machine_type", "GENERAL").lower()
-            if "site_id" not in inc:
-                inc["site_id"] = "SITE-01"
-            if "first_detected" not in inc:
-                inc["first_detected"] = inc.get("timestamp")
-            if "latest_occurrence" not in inc:
-                inc["latest_occurrence"] = inc.get("timestamp")
-            if "recurrence_count" not in inc:
-                inc["recurrence_count"] = 1
-            if "alert_category" not in inc:
-                inc["alert_category"] = "energy_waste_event" if inc.get("is_energy_waste") else "sensor_pattern_anomaly"
+        # Backfill schema fields and apply unified confidence/score normalization
+        for inc_id, inc in list(self.incidents.items()):
+            self.incidents[inc_id] = normalize_incident_dict(inc)
 
     def _load_or_initialize_incidents(self) -> None:
         """Load persistent incident store from JSON, or initialize from detected_anomalies.csv."""
@@ -404,7 +519,16 @@ class IncidentStore:
             "quality_warnings": a_dict.get("quality_warnings", []),
             "is_energy_waste": (a_dict.get("direction") == "excess_energy" or category == "energy_waste_event"),
             "estimated_excess_energy_kwh": a_dict.get("residual_kwh") if (a_dict.get("residual_kwh") or 0) > 0 else a_dict.get("estimated_excess_energy_kwh"),
+            "confidence": a_dict.get("confidence"),
+            "confidence_available": a_dict.get("confidence_available", False),
+            "anomaly_score": a_dict.get("anomaly_score") or a_dict.get("detector_score"),
+            "detection_method": a_dict.get("detection_method"),
+            "detection_method_label": a_dict.get("detection_method_label"),
+            "observed_value": a_dict.get("observed_value"),
+            "expected_value": a_dict.get("expected_value"),
+            "deviation_percent": a_dict.get("deviation_percent"),
         }
+        new_inc = normalize_incident_dict(new_inc)
         self.incidents[inc_id] = new_inc
         self.save_incidents()
         return new_inc
@@ -456,7 +580,7 @@ class IncidentStore:
         total_count = len(filtered)
         start_idx = (page - 1) * page_size
         end_idx = start_idx + page_size
-        items = filtered[start_idx:end_idx]
+        items = [normalize_incident_dict(x) for x in filtered[start_idx:end_idx]]
 
         return {
             "total": total_count,
@@ -471,8 +595,7 @@ class IncidentStore:
         inc = self.incidents.get(incident_id)
         if not inc:
             return None
-        res = dict(inc)
-        res["confidence"] = res.get("model_score")
+        res = normalize_incident_dict(inc)
         res["recommended_actions"] = res.get("recommended_action")
         if "sensor_readings" in res and isinstance(res["sensor_readings"], dict):
             if "power_consumption_kw" not in res["sensor_readings"] and res.get("actual_power_kw") is not None:

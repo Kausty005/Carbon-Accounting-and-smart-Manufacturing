@@ -56,8 +56,16 @@ export interface AnomalyIncident {
   is_energy_waste?: boolean;
   status: string;
   model_name?: string;
-  model_score?: number;
-  confidence?: number;
+  model_score?: number | null;
+  confidence?: number | null;
+  model_confidence?: number | null;
+  confidence_available?: boolean;
+  anomaly_score?: number | null;
+  detection_method?: string;
+  detection_method_label?: string;
+  observed_value?: number | null;
+  expected_value?: number | null;
+  deviation_percent?: number | null;
   actual_power_kw?: number;
   expected_power_kw?: number;
   deviation_kw?: number;

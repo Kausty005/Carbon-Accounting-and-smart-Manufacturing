@@ -263,3 +263,93 @@ def test_incident_missing_optional_fields_and_decoupling(client):
                 import math
                 assert not math.isnan(v)
                 assert not math.isinf(v)
+
+
+def test_confidence_semantics_and_defensible_mapping(client):
+    """
+    Verify defensible model confidence semantics across detection methods:
+    1. Condition-aware baseline threshold rules must NOT report 0.0% confidence;
+       they must report confidence=None, confidence_available=False, and detection_method='condition_aware_baseline'.
+    2. Supervised Random Forest with validated predict_proba reports calibrated confidence.
+    3. Unsupervised Isolation Forest preserves raw decision margin in anomaly_score, but confidence is None.
+    """
+    # 1. Condition-aware baseline rule incident (e.g. FURNACE idle excess power)
+    furnace_id = "INC-FURNACE-01-20240130_232500"
+    res1 = client.get(f"/api/anomalies/{furnace_id}")
+    if res1.status_code == 200:
+        d1 = res1.json()
+        inc1 = d1.get("incident") or d1
+        assert inc1["confidence"] is None
+        assert inc1["confidence_available"] is False
+        assert inc1["detection_method"] == "condition_aware_baseline"
+        assert inc1["observed_value"] == 5.93
+        assert inc1["expected_value"] == 4.52
+        assert abs(inc1["deviation_percent"] - 31.18) < 0.1
+
+    # 2. Supervised Random Forest incident (INC-EQ-002)
+    supervised_id = "INC-EQ-002-20240107_223300"
+    res2 = client.get(f"/api/anomalies/{supervised_id}")
+    assert res2.status_code == 200
+    d2 = res2.json()
+    inc2 = d2.get("incident") or d2
+    assert inc2["confidence"] == 0.39
+    assert inc2["confidence_available"] is True
+    assert inc2["detection_method"] == "supervised_random_forest"
+    assert inc2["model_score"] == 0.39
+
+    # 3. List endpoint schema consistency
+    res_list = client.get("/api/anomalies?page=1&page_size=20")
+    assert res_list.status_code == 200
+    list_data = res_list.json()
+    items = list_data.get("items", [])
+    assert len(items) > 0
+    for item in items:
+        assert "confidence" in item
+        assert "confidence_available" in item
+        assert "detection_method" in item
+        assert "detection_method_label" in item
+        # If confidence is provided, it must be a valid float between 0.0 and 1.0
+        if item["confidence_available"]:
+            assert item["confidence"] is not None
+            assert 0.0 <= item["confidence"] <= 1.0
+        else:
+            assert item["confidence"] is None
+
+
+def test_old_persisted_incidents_never_default_to_zero_confidence():
+    """
+    Directly verify that normalize_incident_dict never turns a null/missing
+    confidence on a baseline detection into 0.0.
+    """
+    from backend.ai_intelligence.src.incident_store import normalize_incident_dict
+
+    legacy_raw = {
+        "incident_id": "INC-TEST-001",
+        "equipment_id": "FURNACE-01",
+        "model_name": "Condition-Aware Energy Baseline",
+        "model_score": None,
+        "actual_power_kw": 5.93,
+        "expected_power_kw": 4.52,
+        "deviation_pct": 31.18,
+    }
+    normalized = normalize_incident_dict(legacy_raw)
+    assert normalized["confidence"] is None
+    assert normalized["confidence_available"] is False
+    assert normalized["detection_method"] == "condition_aware_baseline"
+    assert normalized["observed_value"] == 5.93
+    assert normalized["expected_value"] == 4.52
+    assert normalized["deviation_percent"] == 31.18
+
+    # Isolation Forest raw score must not be interpreted as probability
+    iso_raw = {
+        "incident_id": "INC-TEST-002",
+        "equipment_id": "CNC-01",
+        "model_name": "Unsupervised Isolation Forest",
+        "model_score": 0.1684,
+    }
+    normalized_iso = normalize_incident_dict(iso_raw)
+    assert normalized_iso["confidence"] is None
+    assert normalized_iso["confidence_available"] is False
+    assert normalized_iso["anomaly_score"] == 0.1684
+    assert normalized_iso["detection_method"] == "unsupervised_isolation_forest"
+

@@ -308,9 +308,15 @@ def generate_docx_incident_report(
 
     th = incident.get("threshold")
     th_basis = incident.get("threshold_basis", "Robust Validation MAD Calibration")
-    z_sc = incident.get("detector_score")
+    z_sc = incident.get("anomaly_score") if incident.get("anomaly_score") is not None else incident.get("detector_score")
+    det_label = incident.get("detection_method_label", incident.get("model_name", "Condition-Aware Energy Baseline"))
 
     p_ev = doc.add_paragraph()
+    p_ev.add_run(f"• Detection Method: {det_label}\n")
+    if incident.get("confidence_available") and incident.get("confidence") is not None:
+        p_ev.add_run(f"• Calibrated Model Confidence: {incident['confidence'] * 100:.1f}%\n")
+    else:
+        p_ev.add_run("• Model Confidence: Not calibrated (deterministic physical rule / uncalibrated detector)\n")
     p_ev.add_run(f"• Calibrated Threshold: {th} kWh\n" if th is not None else "• Calibrated Threshold: Condition-calibrated prior\n")
     p_ev.add_run(f"• Threshold Calibration Basis: {th_basis}\n")
     if z_sc is not None:
@@ -579,7 +585,16 @@ def generate_pdf_incident_report(
     page1.insert_text(pymupdf.Point(36, y), "4. Residual Thresholds & Algorithmic Evidence", fontsize=10.5, color=col_primary)
     y += 13
     th_basis = incident.get("threshold_basis", "Robust MAD Prior")
-    page1.insert_text(pymupdf.Point(42, y), f"• Calibration Basis: {th_basis}        • Recurrence: {incident.get('recurrence_count', 1)} episode(s)", fontsize=7.8, color=col_dark)
+    det_label = incident.get("detection_method_label", incident.get("model_name", "Condition-Aware Energy Baseline"))
+    conf_str = f"{incident['confidence'] * 100:.1f}% (Calibrated)" if (incident.get("confidence_available") and incident.get("confidence") is not None) else "Not calibrated (Rule-based / Uncalibrated)"
+    page1.insert_text(pymupdf.Point(42, y), f"• Detection Method: {det_label}", fontsize=7.8, color=col_dark)
+    y += 11
+    page1.insert_text(pymupdf.Point(42, y), f"• Model Confidence: {conf_str}        • Recurrence: {incident.get('recurrence_count', 1)} episode(s)", fontsize=7.8, color=col_dark)
+    y += 11
+    if incident.get("anomaly_score") is not None:
+        page1.insert_text(pymupdf.Point(42, y), f"• Detector Anomaly Score: {incident.get('anomaly_score')}", fontsize=7.8, color=col_dark)
+        y += 11
+    page1.insert_text(pymupdf.Point(42, y), f"• Calibration Basis: {th_basis}", fontsize=7.8, color=col_dark)
     y += 11
     for ev in incident.get("evidence", [])[:2]:
         page1.insert_text(pymupdf.Point(42, y), f"• {ev}", fontsize=7.8, color=col_dark)

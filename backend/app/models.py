@@ -60,12 +60,26 @@ class Scope1Input(BaseModel):
     """Scope 1 direct combustion activity input."""
     fuel_id: str = Field(default="lpg", description="Fuel identifier (e.g., 'lpg' or custom)")
     activity_value: float = Field(ge=0.0, description="Fuel quantity consumed in reporting period")
-    activity_unit: str = Field(default="kg", description="Unit of measure (e.g., 'kg', 'L', 'm3')")
+    activity_unit: str = Field(default="kg", description="Unit of measure (e.g., 'kg', 'L', 't')")
     provenance: ProvenanceType = Field(default=ProvenanceType.ESTIMATED)
     include_non_co2_ghg: bool = Field(default=True, description="Include CH4 and N2O AR6 equivalents")
-    custom_emission_factor: Optional[float] = Field(default=None, ge=0.0, description="Custom kg CO2e / unit factor")
+    custom_emission_factor: Optional[float] = Field(default=None, ge=0.0, description="Custom kg CO2e / unit factor (backward compatible)")
+    custom_direct_co2_factor: Optional[float] = Field(default=None, ge=0.0, description="Separate direct kg CO2 / unit factor")
+    custom_total_co2e_factor: Optional[float] = Field(default=None, ge=0.0, description="Separate total kg CO2e / unit factor")
+    custom_factor_unit: Optional[str] = Field(default=None, description="Unit of measure for custom factor (e.g. 'kg CO2e/kg')")
+    custom_factor_provenance: Optional[str] = Field(default=None, description="Source/provenance of custom factor (e.g. 'Supplier Lab Assay')")
     custom_ncv_mj_per_unit: Optional[float] = Field(default=None, ge=0.0, description="Net Calorific Value in MJ/unit")
     activity_period: Optional[ReportingPeriodInput] = Field(default=None, description="Temporal period if different from root")
+
+    @model_validator(mode="after")
+    def validate_custom_factors(self) -> "Scope1Input":
+        total_ef = self.custom_total_co2e_factor if self.custom_total_co2e_factor is not None else self.custom_emission_factor
+        if total_ef is not None and self.custom_direct_co2_factor is not None:
+            if self.custom_direct_co2_factor > total_ef + 1e-6:
+                raise ValueError(
+                    f"Direct CO2 factor ({self.custom_direct_co2_factor}) cannot exceed total CO2e factor ({total_ef})"
+                )
+        return self
 
 
 class Scope2Input(BaseModel):
@@ -103,15 +117,15 @@ class CarbonCalculateRequest(BaseModel):
 
 class Scope1FactorBreakdown(BaseModel):
     """Detailed IPCC emission factor breakdown with verified unit conversions."""
-    direct_co2_kg_per_kg: float
-    ch4_emitted_g_per_kg: float
-    ch4_converted_kg_per_kg: float
-    ch4_gwp_ar6: float
-    ch4_co2e_kg_per_kg: float
-    n2o_emitted_g_per_kg: float
-    n2o_converted_kg_per_kg: float
-    n2o_gwp_ar6: float
-    n2o_co2e_kg_per_kg: float
+    direct_co2_kg_per_kg: Optional[float] = None
+    ch4_emitted_g_per_kg: float = 0.0
+    ch4_converted_kg_per_kg: float = 0.0
+    ch4_gwp_ar6: float = 27.9
+    ch4_co2e_kg_per_kg: float = 0.0
+    n2o_emitted_g_per_kg: float = 0.0
+    n2o_converted_kg_per_kg: float = 0.0
+    n2o_gwp_ar6: float = 273.0
+    n2o_co2e_kg_per_kg: float = 0.0
     total_co2e_kg_per_kg: float
 
 
@@ -121,7 +135,7 @@ class Scope1CalculationResult(BaseModel):
     fuel_name: str
     activity: Dict[str, Any]
     factor_breakdown: Scope1FactorBreakdown
-    emissions_direct_co2_t: float
+    emissions_direct_co2_t: Optional[float] = None
     emissions_total_co2e_t: float
     emissions_evaluated_t_co2e: float
     formula: str
@@ -142,6 +156,7 @@ class CeaFactorMetadata(BaseModel):
     database_version: str
     includes_imports: bool
     is_recommended_location_based: bool
+    accounting_approach: str = "Scope 2 Location-Based (Grid Average with RES & Captive)"
 
 
 class Scope2CalculationResult(BaseModel):
@@ -167,7 +182,7 @@ class GrossFootprintResult(BaseModel):
     scope1: Optional[Scope1CalculationResult] = None
     scope2: Optional[Scope2CalculationResult] = None
     total_gross_co2e_t: float
-    direct_co2_only_total_t: float
+    direct_co2_only_total_t: Optional[float] = None
 
 
 class ScenarioComparisonResult(BaseModel):
@@ -180,6 +195,8 @@ class ScenarioComparisonResult(BaseModel):
     proposed_electricity_kwh: Optional[float] = None
     electricity_savings_kwh: Optional[float] = None
     avoided_emissions_t_co2e: Optional[float] = None
+    scope1_t_co2e: Optional[float] = None
+    proposed_scope2_t_co2e: Optional[float] = None
     provenance: ProvenanceType = ProvenanceType.SIMULATED
     accounting_note: Optional[str] = None
 
@@ -207,3 +224,58 @@ class FactorQueryResponse(BaseModel):
     available_years: List[str]
     scope2_grid_factors: List[CeaFactorMetadata]
     scope1_fuel_factors: List[Dict[str, Any]]
+
+
+# ─── Machine-Level Energy Forecasting Schemas ─────────────────────────────────
+
+class EnergyForecastInput(BaseModel):
+    """Input payload for machine-level next 15-minute energy consumption forecasting."""
+    machine_id: str = Field(description="Unique machine identifier (e.g., 'MACHINE_001')")
+    machine_type: str = Field(description="Machine taxonomy (e.g., 'AIR_COMPRESSOR', 'CNC_MILL')")
+    site_id: str = Field(default="SITE_01", description="Industrial site/facility identifier")
+    shift_pattern: str = Field(default="3_shift", description="Active factory shift pattern")
+    rated_power_kw: float = Field(ge=0.0, description="Nameplate rated electrical power in kW")
+    power_kw: float = Field(ge=0.0, description="Current electrical power demand in kW")
+    energy_kwh: Optional[float] = Field(default=None, ge=0.0, description="Energy consumed in current 15-min interval (if omitted, power*0.25 is used)")
+    operating_state: int = Field(default=2, ge=0, le=3, description="0=Off, 1=Idle, 2=Running, 3=Maintenance")
+    load_factor: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    operating_minutes: Optional[float] = Field(default=15.0, ge=0.0, le=15.0)
+    production_units: Optional[float] = Field(default=1.0, ge=0.0)
+    ambient_temp_c: Optional[float] = Field(default=27.5)
+    process_temp_c: Optional[float] = Field(default=35.0)
+    relative_humidity_pct: Optional[float] = Field(default=58.0, ge=0.0, le=100.0)
+    hour: Optional[int] = Field(default=None, ge=0, le=23)
+    day_of_week: Optional[int] = Field(default=None, ge=0, le=6)
+    input_provenance: ProvenanceType = Field(default=ProvenanceType.SIMULATED, description="Activity data provenance classification")
+    # Historical lags if available from SCADA telemetry buffer
+    energy_kwh_lag1: Optional[float] = Field(default=None, ge=0.0)
+    energy_kwh_lag2: Optional[float] = Field(default=None, ge=0.0)
+    energy_kwh_lag3: Optional[float] = Field(default=None, ge=0.0)
+    energy_kwh_lag4: Optional[float] = Field(default=None, ge=0.0)
+    power_kw_lag1: Optional[float] = Field(default=None, ge=0.0)
+    power_kw_lag2: Optional[float] = Field(default=None, ge=0.0)
+    energy_same_hour_prev_day: Optional[float] = Field(default=None, ge=0.0)
+
+
+class EnergyForecastResponse(BaseModel):
+    """Prediction result for next 15-minute machine energy consumption."""
+    machine_id: str
+    machine_type: str
+    forecast_target: str = Field(default="next_15min_energy_kwh", description="Forecasting target definition")
+    forecast_horizon_minutes: int = Field(default=15, description="Prediction time horizon in minutes")
+    predicted_next_15min_energy_kwh: float = Field(description="Expected electrical energy in kWh for next 15-min interval")
+    energy_unit: str = Field(default="kWh", description="Energy metric unit")
+    equivalent_average_power_kw: float = Field(description="Equivalent average electrical power demand in kW (predicted_energy / 0.25h)")
+    power_unit: str = Field(default="kW", description="Power metric unit")
+    current_power_kw: float
+    current_energy_kwh: float
+    delta_kwh: float = Field(description="Predicted energy delta relative to current interval (predicted - current)")
+    delta_percentage: float = Field(description="Percentage change relative to current interval")
+    input_provenance: ProvenanceType = Field(default=ProvenanceType.SIMULATED)
+    prediction_timestamp: str = Field(description="ISO UTC timestamp when prediction was generated")
+    target_interval_start: str = Field(description="ISO UTC start timestamp of forecasted 15-min window")
+    target_interval_end: str = Field(description="ISO UTC end timestamp of forecasted 15-min window")
+    target_interval: str = Field(description="Human-readable forecast interval window")
+    physical_constraint_applied: bool = Field(default=False, description="True if negative or above-capacity forecast was clamped")
+    model_metadata: Dict[str, Any]
+    data_provenance: str = "PREDICTED_HIST_GB_MODEL"

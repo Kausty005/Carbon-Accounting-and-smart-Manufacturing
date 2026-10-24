@@ -460,3 +460,262 @@ def test_digital_twin_electricity_savings_never_affect_scope1():
     # Scope 1 direct and total CO2e must remain untouched
     assert res.gross_footprint.scope1.emissions_direct_co2_t == pytest.approx(5.3723, rel=1e-3)
     assert res.gross_footprint.scope1.emissions_total_co2e_t == pytest.approx(5.3770, rel=1e-3)
+    assert res.scenario_comparison.scope1_t_co2e == pytest.approx(5.3770, rel=1e-3)
+
+
+# ─── 10. Scope 1 Fuel-Unit Safety Tests ────────────────────────────────────────
+
+def test_lpg_fuel_unit_safety_and_conversion():
+    """Verify that LPG calculations enforce unit safety: kg, tonnes, and IS 4576 litres."""
+    # 1. Standard kg
+    req_kg = CarbonCalculateRequest(
+        period=ReportingPeriodInput(period_type=ReportingPeriodType.SIMULATED_DEMO_30D),
+        scope1=Scope1Input(fuel_id="lpg", activity_value=1800.0, activity_unit="kg")
+    )
+    res_kg = carbon_service.calculate(req_kg)
+    s1_kg = res_kg.gross_footprint.scope1
+    assert s1_kg.activity["effective_mass_kg"] == 1800.0
+    assert s1_kg.activity["conversion_applied"] is None
+    assert s1_kg.emissions_total_co2e_t == pytest.approx(5.3770, rel=1e-3)
+
+    # 2. Metric tonnes (1.8 t = 1,800 kg)
+    req_t = CarbonCalculateRequest(
+        period=ReportingPeriodInput(period_type=ReportingPeriodType.SIMULATED_DEMO_30D),
+        scope1=Scope1Input(fuel_id="lpg", activity_value=1.8, activity_unit="t")
+    )
+    res_t = carbon_service.calculate(req_t)
+    s1_t = res_t.gross_footprint.scope1
+    assert s1_t.activity["effective_mass_kg"] == 1800.0
+    assert "1 tonne = 1,000 kg" in s1_t.activity["conversion_applied"]
+    assert s1_t.emissions_total_co2e_t == pytest.approx(5.3770, rel=1e-3)
+
+    # 3. Litres via IS 4576 LPG liquid density (1,000 L * 0.540 kg/L = 540 kg)
+    req_l = CarbonCalculateRequest(
+        period=ReportingPeriodInput(period_type=ReportingPeriodType.SIMULATED_DEMO_30D),
+        scope1=Scope1Input(fuel_id="lpg", activity_value=1000.0, activity_unit="litres")
+    )
+    res_l = carbon_service.calculate(req_l)
+    s1_l = res_l.gross_footprint.scope1
+    assert s1_l.activity["effective_mass_kg"] == 540.0
+    assert "0.540 kg/L" in s1_l.activity["conversion_applied"]
+    assert "IS 4576" in s1_l.activity["conversion_applied"]
+    # 540 kg * 2.98724 / 1000 = 1.6131 tCO2e
+    assert s1_l.emissions_total_co2e_t == pytest.approx(1.6131, rel=1e-3)
+    # 540 kg * 2.98463 / 1000 = 1.6117 tCO2 direct
+    assert s1_l.emissions_direct_co2_t == pytest.approx(1.6117, rel=1e-3)
+
+    # 4. Incompatible units rejection (m3, kWh, gallons)
+    for bad_unit in ["m3", "kWh", "gallons", "unknown_unit"]:
+        req_bad = CarbonCalculateRequest(
+            period=ReportingPeriodInput(period_type=ReportingPeriodType.SIMULATED_DEMO_30D),
+            scope1=Scope1Input(fuel_id="lpg", activity_value=1000.0, activity_unit=bad_unit)
+        )
+        with pytest.raises(Exception) as excinfo:
+            carbon_service.calculate(req_bad)
+        assert "Incompatible activity unit" in str(excinfo.value)
+        assert "IPCC LPG emission factors are strictly defined per kilogram" in str(excinfo.value)
+
+
+# ─── 11. Scope 1 Custom Factors & CO2 / CO2e Distinction ──────────────────────
+
+def test_custom_fuel_factors_direct_co2_vs_total_co2e_distinction():
+    """Verify that custom factors do not conflate direct CO2 with total CO2e and are never labeled IPCC."""
+    # Case A: Only total CO2e supplied -> direct CO2 must be None, NOT equal to total
+    req_total_only = CarbonCalculateRequest(
+        period=ReportingPeriodInput(period_type=ReportingPeriodType.SIMULATED_DEMO_30D),
+        scope1=Scope1Input(
+            fuel_id="furnace_oil",
+            activity_value=1000.0,
+            activity_unit="kg",
+            custom_total_co2e_factor=3.15,
+            custom_factor_provenance="Refinery Assay Batch #88"
+        )
+    )
+    res_total_only = carbon_service.calculate(req_total_only)
+    s1_a = res_total_only.gross_footprint.scope1
+    assert s1_a.emissions_total_co2e_t == pytest.approx((1000.0 * 3.15) / 1000.0, rel=1e-3)
+    assert s1_a.emissions_direct_co2_t is None  # MUST NOT be 3.15!
+    assert s1_a.factor_breakdown.direct_co2_kg_per_kg is None
+    assert s1_a.factor_breakdown.total_co2e_kg_per_kg == 3.15
+    assert s1_a.verification_status != "VERIFIED_IPCC"
+    assert "Total CO₂e only; direct CO₂ factor not supplied" in s1_a.formula
+    assert "Refinery Assay Batch #88" in s1_a.source_reference
+
+    # Case B: Both direct CO2 and total CO2e supplied
+    req_dual = CarbonCalculateRequest(
+        period=ReportingPeriodInput(period_type=ReportingPeriodType.SIMULATED_DEMO_30D),
+        scope1=Scope1Input(
+            fuel_id="bio_blend",
+            activity_value=1000.0,
+            activity_unit="kg",
+            custom_direct_co2_factor=1.85,
+            custom_total_co2e_factor=1.92,
+            custom_factor_provenance="Biofuels Lab Assay Certificate"
+        )
+    )
+    res_dual = carbon_service.calculate(req_dual)
+    s1_b = res_dual.gross_footprint.scope1
+    assert s1_b.emissions_direct_co2_t == pytest.approx(1.85, rel=1e-3)
+    assert s1_b.emissions_total_co2e_t == pytest.approx(1.92, rel=1e-3)
+    assert s1_b.factor_breakdown.direct_co2_kg_per_kg == 1.85
+    assert s1_b.factor_breakdown.total_co2e_kg_per_kg == 1.92
+    assert s1_b.verification_status != "VERIFIED_IPCC"
+
+    # Case C: Rejection if direct CO2 factor exceeds total CO2e
+    with pytest.raises(ValueError) as excinfo:
+        Scope1Input(
+            fuel_id="invalid_blend",
+            activity_value=100.0,
+            custom_direct_co2_factor=3.50,
+            custom_total_co2e_factor=2.50
+        )
+    assert "Direct CO2 factor (3.5) cannot exceed total CO2e factor (2.5)" in str(excinfo.value)
+
+
+# ─── 12. Scenario Accounting: Proposed Gross = Scope 1 + Proposed Scope 2 ─────
+
+def test_scenario_proposed_gross_equals_scope1_plus_proposed_scope2():
+    """Verify that proposed gross strictly equals Scope 1 plus proposed Scope 2."""
+    baseline_kwh = 12480.0
+    savings_kwh = 1480.0
+    proposed_kwh = 11000.0
+    grid_ef = 0.728862  # FY 2023-24 location-based factor
+
+    req = CarbonCalculateRequest(
+        period=ReportingPeriodInput(period_type=ReportingPeriodType.SIMULATED_DEMO_30D),
+        scope1=Scope1Input(fuel_id="lpg", activity_value=1800.0),
+        scope2=Scope2Input(grid_consumption_kwh=baseline_kwh, cea_reporting_year="2023-24"),
+        scenario_comparison=ScenarioComparisonInput(
+            enabled=True,
+            proposed_savings_kwh=savings_kwh,
+            proposed_consumption_kwh=proposed_kwh,
+            savings_provenance=ProvenanceType.SIMULATED
+        )
+    )
+    res = carbon_service.calculate(req)
+    sc = res.scenario_comparison
+
+    # Baseline Scope 1 = 1800 * 2.98724 / 1000 = 5.3770 tCO2e
+    s1_expected = 5.3770
+    # Proposed Scope 2 = 11000 * 0.728862 / 1000 = 8.0175 tCO2e
+    proposed_s2_expected = round((proposed_kwh * grid_ef) / 1000.0, 4)
+    # Proposed Gross = Scope 1 + Proposed Scope 2 = 5.3770 + 8.0175 = 13.3945 tCO2e
+    proposed_gross_expected = round(s1_expected + proposed_s2_expected, 4)
+
+    assert sc.scope1_t_co2e == pytest.approx(s1_expected, rel=1e-3)
+    assert sc.proposed_scope2_t_co2e == pytest.approx(proposed_s2_expected, rel=1e-3)
+    assert sc.proposed_gross_t_co2e == pytest.approx(proposed_gross_expected, rel=1e-3)
+    assert sc.proposed_gross_t_co2e == pytest.approx(sc.scope1_t_co2e + sc.proposed_scope2_t_co2e, rel=1e-5)
+
+    # Avoided emissions reported separately (1480 * 0.728862 / 1000 = 1.0787 tCO2e)
+    avoided_expected = round((savings_kwh * grid_ef) / 1000.0, 4)
+    assert res.avoided_emissions.avoided_co2e_t == pytest.approx(avoided_expected, rel=1e-3)
+
+    # Baseline gross remains un-netted
+    baseline_s2 = round((baseline_kwh * grid_ef) / 1000.0, 4)
+    assert res.gross_footprint.total_gross_co2e_t == pytest.approx(s1_expected + baseline_s2, rel=1e-3)
+
+
+def test_scenario_input_validation_and_consistency():
+    """Verify scenario inputs reject negative values and baseline inconsistency."""
+    # 1. Inconsistent proposed + savings != baseline (10,000 + 1,000 != 12,480)
+    req_inconsistent = CarbonCalculateRequest(
+        period=ReportingPeriodInput(period_type=ReportingPeriodType.SIMULATED_DEMO_30D),
+        scope2=Scope2Input(grid_consumption_kwh=12480.0),
+        scenario_comparison=ScenarioComparisonInput(
+            enabled=True,
+            proposed_savings_kwh=1000.0,
+            proposed_consumption_kwh=10000.0
+        )
+    )
+    with pytest.raises(Exception) as excinfo1:
+        carbon_service.calculate(req_inconsistent)
+    assert "Scenario inputs inconsistent with baseline" in str(excinfo1.value)
+
+    # 2. Negative savings rejected at model validation
+    with pytest.raises(Exception):
+        ScenarioComparisonInput(
+            enabled=True,
+            proposed_savings_kwh=-50.0
+        )
+
+    # 3. Negative proposed consumption rejected
+    with pytest.raises(Exception):
+        ScenarioComparisonInput(
+            enabled=True,
+            proposed_consumption_kwh=-100.0
+        )
+
+
+# ─── 13. Scope 2 Reporting Year Selection & Metadata Preservation ─────────────
+
+def test_cea_reporting_year_selection_preserves_metadata():
+    """Verify that selected CEA reporting years preserve year, factor, and methodology without silent substitution."""
+    for yr in ["2021-22", "2022-23", "2023-24", "2024-25"]:
+        req = CarbonCalculateRequest(
+            period=ReportingPeriodInput(period_type=ReportingPeriodType.SIMULATED_DEMO_30D),
+            scope2=Scope2Input(
+                grid_consumption_kwh=10000.0,
+                cea_reporting_year=yr,
+                cea_methodology=CeaMethodology.WEIGHTED_AVG_WITH_RES
+            )
+        )
+        res = carbon_service.calculate(req)
+        meta = res.gross_footprint.scope2.factor_metadata
+        assert meta.reporting_year == yr
+        assert meta.row == 14
+        assert meta.sheet == "Results"
+        assert meta.unit == "kg CO2/kWh"
+        assert "Scope 2 Location-Based" in meta.accounting_approach
+
+
+# ─── 14. Activity Period Normalization Metadata ───────────────────────────────
+
+def test_activity_period_normalization_records_complete_metadata():
+    """Verify that period normalization records original value, normalized value, and scale factor."""
+    req = CarbonCalculateRequest(
+        period=ReportingPeriodInput(period_type=ReportingPeriodType.SIMULATED_DEMO_30D),
+        scope1=Scope1Input(
+            fuel_id="lpg",
+            activity_value=60.0,
+            activity_period=ReportingPeriodInput(period_type=ReportingPeriodType.DAILY)
+        ),
+        target_normalization_period=ReportingPeriodType.SIMULATED_DEMO_30D
+    )
+    res = carbon_service.calculate(req)
+    norm = res.gross_footprint.scope1.activity["normalization"]
+    assert norm["normalization_applied"] is True
+    assert norm["original_value"] == 60.0
+    assert norm["normalized_value"] == 1800.0
+    assert norm["original_duration_days"] == 1.0
+    assert norm["normalized_duration_days"] == 30.0
+    assert norm["scale_factor"] == 30.0
+
+
+# ─── 15. Provenance Tracking & Quality Labeling ────────────────────────────────
+
+def test_provenance_tracking_and_labeling():
+    """Verify that calculations distinguish purely measured telemetry from estimated or simulated data."""
+    # 1. Hybrid: Scope 1 ESTIMATED + Scope 2 MEASURED -> not purely measured
+    req_hybrid = CarbonCalculateRequest(
+        period=ReportingPeriodInput(period_type=ReportingPeriodType.SIMULATED_DEMO_30D),
+        scope1=Scope1Input(fuel_id="lpg", activity_value=1800.0, provenance=ProvenanceType.ESTIMATED),
+        scope2=Scope2Input(grid_consumption_kwh=12480.0, provenance=ProvenanceType.MEASURED)
+    )
+    res_hybrid = carbon_service.calculate(req_hybrid)
+    meta_hybrid = res_hybrid.calculation_metadata
+    assert meta_hybrid["is_purely_measured"] is False
+    assert meta_hybrid["audit_status"] == "CALCULATION_UNVERIFIED_DEMO"
+    assert meta_hybrid["provenance_breakdown"]["scope1"] == "ESTIMATED"
+    assert meta_hybrid["provenance_breakdown"]["scope2"] == "MEASURED"
+
+    # 2. Purely measured: Scope 1 MEASURED + Scope 2 MEASURED
+    req_measured = CarbonCalculateRequest(
+        period=ReportingPeriodInput(period_type=ReportingPeriodType.SIMULATED_DEMO_30D),
+        scope1=Scope1Input(fuel_id="lpg", activity_value=1800.0, provenance=ProvenanceType.MEASURED),
+        scope2=Scope2Input(grid_consumption_kwh=12480.0, provenance=ProvenanceType.MEASURED)
+    )
+    res_measured = carbon_service.calculate(req_measured)
+    meta_measured = res_measured.calculation_metadata
+    assert meta_measured["is_purely_measured"] is True
+    assert meta_measured["audit_status"] == "MEASURED_INTERNAL_TELEMETRY"

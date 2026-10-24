@@ -22,3 +22,13 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Python cache & test files
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Large dataset files (>100MB)
+industrial_energy_forecasting_synthetic.csv
+

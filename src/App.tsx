@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   LayoutGrid, Cpu, Sliders, Leaf, FileText,
-  AlertTriangle, CheckCircle2, Zap, TrendingDown,
+  AlertTriangle, CheckCircle2, Zap, TrendingDown, TrendingUp,
   Printer, Download, ChevronRight, Box, Compass,
   Home, LogOut, User, Gauge, Shield, Activity, ArrowRight, Globe,
   RefreshCw, RotateCcw,
@@ -11,7 +11,14 @@ import ScadaFloorMap from './components/ScadaFloorMap';
 import Factory3DScene from './components/Factory3D/Factory3DScene';
 import HomePage from './components/HomePage/HomePage';
 import LoginModal from './components/Auth/LoginModal';
-import { DemandAreaChart, ComparisonLineChart, ScopePie } from './components/Charts';
+import EnergyForecastDashboard from './components/ForecastDashboard/EnergyForecastDashboard';
+import {
+  DemandAreaChart,
+  ComparisonLineChart,
+  ScopePie,
+  MachineForecastIntervalChart,
+  type ForecastIntervalPoint,
+} from './components/Charts';
 import {
   PLANT, ASSETS, HOURLY_BASE, CARBON,
   calcSimResult, DEFAULT_SIM_PARAMS, type SimParams, type Asset,
@@ -25,6 +32,13 @@ import {
   type FactorQueryResponse,
   type CeaMethodology,
 } from './services/carbonApi';
+import {
+  fetchMachineForecast,
+  ForecastUnavailableError,
+  getOfflineFallbackForecast,
+  mapAssetToForecastRequest,
+  type EnergyForecastResponse,
+} from './services/forecastApi';
 import './index.css';
 
 // ─── Page Transition Animation Variants ────────────────────────────────────────
@@ -34,12 +48,13 @@ const PAGE_VARIANTS = {
   exit:    { opacity: 0, y: -8, transition: { duration: 0.2, ease: 'easeIn' as const } },
 };
 
-type View = 'overview' | 'scada' | 'simulator' | 'carbon' | 'reports';
+type View = 'overview' | 'scada' | 'simulator' | 'forecast' | 'carbon' | 'reports';
 
 const NAV: { id: View; icon: React.ReactNode; label: string }[] = [
   { id: 'overview',  icon: <LayoutGrid size={14} />,   label: 'Overview' },
   { id: 'scada',     icon: <Box size={14} />,          label: '3D Factory Twin' },
   { id: 'simulator', icon: <Sliders size={14} />,       label: 'Digital Twin' },
+  { id: 'forecast',  icon: <TrendingUp size={14} />,    label: 'Energy Forecast' },
   { id: 'carbon',    icon: <Leaf size={14} />,          label: 'Carbon Accounting' },
   { id: 'reports',   icon: <FileText size={14} />,      label: 'Audit Report' },
 ];
@@ -178,11 +193,16 @@ function OverviewView({
   setView,
   carbonData,
   gridEF,
+  onSelectAsset,
+  assets,
 }: {
   setView: (v: View) => void;
   carbonData: CarbonCalculateResponse | null;
   gridEF: number;
+  onSelectAsset?: (id: string) => void;
+  assets?: Asset[];
 }) {
+  const currentAssetList = assets || ASSETS;
   const scope2Emissions = carbonData?.gross_footprint.scope2?.emissions_total_co2e_t.toFixed(2) ?? '9.10';
   const factorUsed = (carbonData?.gross_footprint.scope2?.factor_metadata.selected_factor ?? gridEF).toFixed(2);
   const kpis = [
@@ -258,30 +278,53 @@ function OverviewView({
 
       {/* Asset summary table */}
       <div className="panel" style={{ marginTop: 10 }}>
-        <div className="panel-hdr">Asset Energy Summary</div>
+        <div className="panel-hdr" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span>Asset Energy &amp; Tactical Telemetry Summary</span>
+          <span style={{ fontSize: 9.5, color: 'var(--slate-400)', fontFamily: 'var(--font-mono)' }}>Click any machine to inspect AI forecast</span>
+        </div>
         <table className="compare-table">
           <thead>
             <tr>
               <th>Asset</th>
               <th>Model</th>
-              <th>Current kW</th>
-              <th>Energy kWh</th>
+              <th>Current Draw</th>
+              <th>Energy (Period)</th>
               <th>P.F.</th>
               <th>Status</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
-            {ASSETS.map(a => (
-              <tr key={a.id}>
+            {currentAssetList.map(a => (
+              <tr
+                key={a.id}
+                onClick={() => { onSelectAsset?.(a.id); setView('scada'); }}
+                style={{ cursor: 'pointer' }}
+                title={`Click to open ${a.name} in 3D digital twin & inspect 15-min forecast`}
+              >
                 <td className="td-label">{a.name}</td>
                 <td style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--slate-500)' }}>{a.model}</td>
                 <td className="td-proposed">{a.currentKw} kW</td>
-                <td style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--white)' }}>{a.energyKwh.toLocaleString()}</td>
+                <td style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--white)' }}>{a.energyKwh.toLocaleString()} kWh</td>
                 <td style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: a.pf < 0.85 ? 'var(--amber)' : 'var(--emerald)' }}>{a.pf}</td>
                 <td>
                   <span className={`badge badge-${a.status === 'OPTIMAL' ? 'emerald' : a.status === 'WARNING' ? 'amber' : 'red'}`}>
                     {a.status}
                   </span>
+                </td>
+                <td>
+                  <button
+                    className="btn btn-outline btn-sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectAsset?.(a.id);
+                      setView('scada');
+                    }}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                  >
+                    <Activity size={10} color="var(--cyan)" />
+                    Inspect &amp; Forecast
+                  </button>
                 </td>
               </tr>
             ))}
@@ -413,8 +456,13 @@ function SimulatorView({
   const avoidedRes = carbonData?.avoided_emissions;
   const savingsKwh = anyFix ? (avoidedRes?.savings_kwh ?? result.savingsKwh) : 0;
   const avoidedCO2e = anyFix ? (avoidedRes?.avoided_co2e_t ?? result.savingsCarbon) : 0;
-  const proposedScope2 = Math.max(0, +(baselineScope2 - avoidedCO2e).toFixed(3));
-  const proposedGross = Math.max(0, +(baselineGross - avoidedCO2e).toFixed(3));
+  const proposedConsumption = Math.max(0, +(PLANT.baselineEnergy - savingsKwh).toFixed(2));
+  const proposedScope2 = anyFix
+    ? (carbonData?.scenario_comparison?.proposed_scope2_t_co2e ?? +((proposedConsumption * factorVal) / 1000).toFixed(3))
+    : baselineScope2;
+  const proposedGross = anyFix
+    ? (carbonData?.scenario_comparison?.proposed_gross_t_co2e ?? +(baselineScope1 + proposedScope2).toFixed(3))
+    : baselineGross;
   const reductionPct = baselineGross > 0 ? +((avoidedCO2e / baselineGross) * 100).toFixed(2) : 0;
 
   const toggle = (k: keyof SimParams) =>
@@ -851,18 +899,35 @@ function CarbonView({
   setCeaMethodology: (m: CeaMethodology) => void;
   availableYears: string[];
 }) {
-  const s1 = CARBON.scope1Calc();
-  const s2 = CARBON.scope2Calc(PLANT.baselineEnergy, gridEF);
-  const total = +(s1.kgCO2e + s2.kgCO2e).toFixed(3);
-  const sim = calcSimResult(params);
-  const reductionPotential = sim.savingsCarbon;
-  const scope1Percent = ((s1.kgCO2e / total) * 100).toFixed(1);
-  const scope2Percent = ((s2.kgCO2e / total) * 100).toFixed(1);
+  const s1Total = carbonData?.gross_footprint.scope1?.emissions_total_co2e_t ?? +(CARBON.scope1Calc().kgCO2e);
+  const s1Direct = carbonData?.gross_footprint.scope1?.emissions_direct_co2_t ?? null;
+  const s1ActivityVal = carbonData?.gross_footprint.scope1?.activity.value ?? 1800;
+  const s1Unit = carbonData?.gross_footprint.scope1?.activity.unit ?? 'kg';
+  const s1Conversion = carbonData?.gross_footprint.scope1?.activity.conversion_applied ?? null;
+  const s1Factor = carbonData?.gross_footprint.scope1?.factor_breakdown.total_co2e_kg_per_kg ?? 2.9872;
+  const s1DirectFactor = carbonData?.gross_footprint.scope1?.factor_breakdown.direct_co2_kg_per_kg;
+  const s1Formula = carbonData?.gross_footprint.scope1?.formula ?? `${s1ActivityVal} ${s1Unit} LPG × 2.9872 kg CO₂e/kg ÷ 1,000 = ${s1Total} tCO₂e`;
+  const s1Verification = carbonData?.gross_footprint.scope1?.verification_status ?? 'VERIFIED_IPCC';
+
+  const s2Total = carbonData?.gross_footprint.scope2?.emissions_total_co2e_t ?? +(CARBON.scope2Calc(PLANT.baselineEnergy, gridEF).kgCO2e);
+  const s2ActivityVal = carbonData?.gross_footprint.scope2?.activity.value ?? PLANT.baselineEnergy;
+  const factorMeta = carbonData?.gross_footprint.scope2?.factor_metadata;
+  const factorVal = factorMeta?.selected_factor ?? gridEF;
+  const s2Formula = carbonData?.gross_footprint.scope2?.formula ?? `${s2ActivityVal.toLocaleString()} kWh × ${factorVal} kg CO₂/kWh ÷ 1,000 = ${s2Total} tCO₂e`;
+  const s2Approach = factorMeta?.accounting_approach ?? 'Scope 2 Location-Based (Grid Average with RES & Captive)';
+
+  const grossTotal = carbonData?.gross_footprint.total_gross_co2e_t ?? +(s1Total + s2Total).toFixed(3);
+  const sim = calcSimResult(params, factorVal);
+  const avoidedCarbon = carbonData?.avoided_emissions?.avoided_co2e_t ?? sim.savingsCarbon;
+  const scope1Percent = grossTotal > 0 ? ((s1Total / grossTotal) * 100).toFixed(1) : '0';
+  const scope2Percent = grossTotal > 0 ? ((s2Total / grossTotal) * 100).toFixed(1) : '0';
+  const auditStatus = carbonData?.calculation_metadata.audit_status ?? 'CALCULATION_UNVERIFIED_DEMO';
+  const periodDesc = carbonData?.period.description ?? 'Simulated Demo Window (30.0 days)';
 
   return (
     <div className="scroll-area" style={{ padding: '20px 24px', maxWidth: 1200, margin: '0 auto' }}>
       {/* Header with Standards Badges */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
             <Globe size={18} style={{ color: 'var(--cyan)' }} />
@@ -871,11 +936,14 @@ function CarbonView({
             </h2>
           </div>
           <p style={{ fontSize: 12, color: 'var(--slate-400)', margin: 0 }}>
-            PrecisionWorks Manufacturing • Location-based Scope 1 & Scope 2 Emissions Inventory
+            PrecisionWorks Manufacturing • {s2Approach} • {periodDesc}
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <span style={{ fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 6, background: backendStatus === 'CONNECTED' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)', color: backendStatus === 'CONNECTED' ? '#34d399' : '#fbbf24', border: `1px solid ${backendStatus === 'CONNECTED' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)'}` }}>
+            {backendStatus}
+          </span>
           <span style={{ fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 6, background: 'rgba(2, 132, 199, 0.15)', color: '#38bdf8', border: '1px solid rgba(2, 132, 199, 0.3)' }}>
             ISO 14064-1:2018
           </span>
@@ -883,8 +951,72 @@ function CarbonView({
             GHG PROTOCOL
           </span>
           <span style={{ fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 6, background: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
-            CEA INDIA v2024
+            CEA FY {reportingYear}
           </span>
+        </div>
+      </div>
+
+      {/* Scope 2 Grid Reporting Year & Methodology Configuration Bar */}
+      <div style={{ background: '#111827', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+          <div>
+            <label style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600, display: 'block', marginBottom: 4 }}>
+              CEA Reporting Year
+            </label>
+            <select
+              value={reportingYear}
+              onChange={(e) => setReportingYear(e.target.value)}
+              style={{
+                background: '#0b0f17',
+                color: '#38bdf8',
+                border: '1px solid rgba(2, 132, 199, 0.4)',
+                borderRadius: 4,
+                padding: '4px 10px',
+                fontSize: 12,
+                fontWeight: 700,
+                fontFamily: 'var(--font-mono)',
+              }}
+            >
+              {availableYears.map((yr) => (
+                <option key={yr} value={yr}>
+                  FY {yr} {yr === '2023-24' ? '(Audited Latest)' : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600, display: 'block', marginBottom: 4 }}>
+              CEA Accounting Methodology
+            </label>
+            <select
+              value={ceaMethodology}
+              onChange={(e) => setCeaMethodology(e.target.value as CeaMethodology)}
+              style={{
+                background: '#0b0f17',
+                color: '#38bdf8',
+                border: '1px solid rgba(2, 132, 199, 0.4)',
+                borderRadius: 4,
+                padding: '4px 10px',
+                fontSize: 12,
+                fontWeight: 700,
+              }}
+            >
+              <option value="weighted_avg_with_res">Weighted Avg with RES & Captive (Row 14 - Recommended Location-Based)</option>
+              <option value="weighted_avg_thermal">Weighted Avg Thermal Fossil (Row 13)</option>
+              <option value="operating_margin">Operating Margin Simple (Row 15)</option>
+              <option value="build_margin">Build Margin (Row 16)</option>
+              <option value="combined_margin">Combined Margin 50/50 (Row 17)</option>
+            </select>
+          </div>
+        </div>
+
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: 10, color: '#94a3b8' }}>Grid Factor Value</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: '#38bdf8', fontFamily: 'var(--font-mono)' }}>
+            {factorVal.toFixed(5)} <span style={{ fontSize: 10, color: '#94a3b8' }}>kg CO₂/kWh</span>
+          </div>
+          <div style={{ fontSize: 10, color: '#64748b' }}>Results!Row {factorMeta?.row ?? 14}, Col {factorMeta?.column ?? 13}</div>
         </div>
       </div>
 
@@ -895,11 +1027,11 @@ function CarbonView({
             Total Carbon Footprint
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
-            <span style={{ fontSize: 24, fontWeight: 800, color: '#ffffff', fontFamily: 'var(--font-mono)' }}>{total}</span>
-            <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>tCO₂e/day</span>
+            <span style={{ fontSize: 24, fontWeight: 800, color: '#ffffff', fontFamily: 'var(--font-mono)' }}>{grossTotal.toFixed(3)}</span>
+            <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>tCO₂e</span>
           </div>
           <div style={{ fontSize: 11, color: '#a78bfa' }}>
-            Scope 1 (1.7%) + Scope 2 (98.3%)
+            Scope 1 ({scope1Percent}%) + Scope 2 ({scope2Percent}%)
           </div>
         </div>
 
@@ -908,11 +1040,11 @@ function CarbonView({
             Scope 1 (Direct Fuel)
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
-            <span style={{ fontSize: 24, fontWeight: 800, color: '#f87171', fontFamily: 'var(--font-mono)' }}>{s1.kgCO2e}</span>
-            <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>tCO₂e/day</span>
+            <span style={{ fontSize: 24, fontWeight: 800, color: '#f87171', fontFamily: 'var(--font-mono)' }}>{s1Total.toFixed(3)}</span>
+            <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>tCO₂e</span>
           </div>
           <div style={{ fontSize: 11, color: '#94a3b8' }}>
-            LPG Heat Treatment Furnace
+            {s1Direct !== null ? `${s1Direct.toFixed(3)} t direct CO₂` : 'Total CO₂e (Direct unsegregated)'}
           </div>
         </div>
 
@@ -921,24 +1053,24 @@ function CarbonView({
             Scope 2 (Indirect Grid)
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
-            <span style={{ fontSize: 24, fontWeight: 800, color: '#38bdf8', fontFamily: 'var(--font-mono)' }}>{s2.kgCO2e}</span>
-            <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>tCO₂e/day</span>
+            <span style={{ fontSize: 24, fontWeight: 800, color: '#38bdf8', fontFamily: 'var(--font-mono)' }}>{s2Total.toFixed(3)}</span>
+            <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>tCO₂e</span>
           </div>
           <div style={{ fontSize: 11, color: '#94a3b8' }}>
-            Purchased MSEDCL Electricity
+            Purchased Electricity (FY {reportingYear})
           </div>
         </div>
 
         <div style={{ background: '#111827', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 10, padding: '16px 18px', borderLeft: '4px solid #10b981' }}>
           <div style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600, marginBottom: 6 }}>
-            Abatement Potential
+            Avoided Emissions
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
-            <span style={{ fontSize: 24, fontWeight: 800, color: '#34d399', fontFamily: 'var(--font-mono)' }}>{reductionPotential}</span>
-            <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>tCO₂e/day</span>
+            <span style={{ fontSize: 24, fontWeight: 800, color: '#34d399', fontFamily: 'var(--font-mono)' }}>{avoidedCarbon.toFixed(3)}</span>
+            <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>tCO₂e</span>
           </div>
           <div style={{ fontSize: 11, color: '#34d399' }}>
-            -7.9% via Idle Cutoff & ToD Shift
+            Reported separately (Not netted against gross)
           </div>
         </div>
       </div>
@@ -957,9 +1089,12 @@ function CarbonView({
                 <span style={{ fontSize: 14, fontWeight: 700, color: '#f1f5f9' }}>
                   Direct Fuel Combustion (Stationary)
                 </span>
+                <span style={{ fontSize: 10, color: s1Verification === 'VERIFIED_IPCC' ? '#34d399' : '#f59e0b', background: 'rgba(255,255,255,0.05)', padding: '2px 8px', borderRadius: 4 }}>
+                  {s1Verification}
+                </span>
               </div>
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: 16, fontWeight: 800, color: '#f87171' }}>
-                {s1.kgCO2e} tCO₂e/day
+                {s1Total.toFixed(3)} tCO₂e
               </span>
             </div>
 
@@ -969,12 +1104,22 @@ function CarbonView({
                 <div style={{ fontSize: 12, fontWeight: 600, color: '#e2e8f0' }}>Thermic Intl 85 kW Furnace</div>
               </div>
               <div>
-                <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 3 }}>Activity Rate</div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: '#e2e8f0', fontFamily: 'var(--font-mono)' }}>60 kg LPG / day</div>
+                <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 3 }}>Activity Rate &amp; Unit</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#e2e8f0', fontFamily: 'var(--font-mono)' }}>
+                  {s1ActivityVal.toLocaleString()} {s1Unit} LPG
+                  {s1Conversion && <span style={{ display: 'block', fontSize: 10, color: '#38bdf8' }}>{s1Conversion}</span>}
+                </div>
               </div>
               <div>
                 <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 3 }}>Emission Factor</div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: '#e2e8f0', fontFamily: 'var(--font-mono)' }}>2.98 kg CO₂e / kg LPG</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#e2e8f0', fontFamily: 'var(--font-mono)' }}>
+                  {s1Factor.toFixed(4)} kg CO₂e / kg LPG
+                  {s1DirectFactor !== null && s1DirectFactor !== undefined && (
+                    <span style={{ display: 'block', fontSize: 10, color: '#94a3b8' }}>
+                      ({s1DirectFactor.toFixed(4)} kg CO₂ direct)
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -982,9 +1127,9 @@ function CarbonView({
             <div style={{ background: '#0b0f17', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: 8, padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ fontSize: 12, color: '#cbd5e1', fontFamily: 'var(--font-mono)' }}>
                 <span style={{ color: '#94a3b8' }}>Formula: </span>
-                60 kg LPG/day × 2.98 kg CO₂e/kg ÷ 1,000 = <strong style={{ color: '#f87171' }}>0.179 tCO₂e/day</strong>
+                {s1Formula}
               </div>
-              <span style={{ fontSize: 10, color: '#64748b' }}>IPCC 2006 GL Vol. 2 Table 2.2</span>
+              <span style={{ fontSize: 10, color: '#64748b' }}>2006 IPCC GL Vol. 2 Table 2.3</span>
             </div>
           </div>
 
@@ -996,11 +1141,11 @@ function CarbonView({
                   SCOPE 2
                 </span>
                 <span style={{ fontSize: 14, fontWeight: 700, color: '#f1f5f9' }}>
-                  Indirect Emissions (Purchased Electricity)
+                  {s2Approach}
                 </span>
               </div>
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: 16, fontWeight: 800, color: '#38bdf8' }}>
-                {s2.kgCO2e} tCO₂e/day
+                {s2Total.toFixed(3)} tCO₂e
               </span>
             </div>
 
@@ -1008,36 +1153,20 @@ function CarbonView({
               <div>
                 <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 3 }}>Sub-metered Baseline</div>
                 <div style={{ fontSize: 12, fontWeight: 600, color: '#e2e8f0', fontFamily: 'var(--font-mono)' }}>
-                  {PLANT.baselineEnergy.toLocaleString()} kWh/period
+                  {s2ActivityVal.toLocaleString()} kWh
                 </div>
               </div>
               <div>
-                <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 3 }}>Grid Utility</div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: '#e2e8f0' }}>MSEDCL HT-I (Maharashtra)</div>
+                <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 3 }}>Grid Utility / Authority</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#e2e8f0' }}>Central Electricity Authority (CEA)</div>
               </div>
               <div>
                 <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 3 }}>Grid Emission Factor</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <input
-                    type="number"
-                    step={0.01}
-                    min={0.5}
-                    max={1.2}
-                    value={gridEF}
-                    onChange={(e) => setGridEF(parseFloat(e.target.value) || 0.82)}
-                    style={{
-                      background: '#0b0f17',
-                      color: '#38bdf8',
-                      border: '1px solid rgba(2, 132, 199, 0.4)',
-                      borderRadius: 4,
-                      padding: '2px 8px',
-                      fontSize: 12,
-                      fontWeight: 700,
-                      fontFamily: 'var(--font-mono)',
-                      width: 65,
-                    }}
-                  />
-                  <span style={{ fontSize: 10, color: '#94a3b8' }}>kg/kWh</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#38bdf8', fontFamily: 'var(--font-mono)' }}>
+                    {factorVal.toFixed(5)}
+                  </span>
+                  <span style={{ fontSize: 10, color: '#94a3b8' }}>kg CO₂/kWh</span>
                 </div>
               </div>
             </div>
@@ -1046,9 +1175,9 @@ function CarbonView({
             <div style={{ background: '#0b0f17', border: '1px solid rgba(2, 132, 199, 0.2)', borderRadius: 8, padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ fontSize: 12, color: '#cbd5e1', fontFamily: 'var(--font-mono)' }}>
                 <span style={{ color: '#94a3b8' }}>Formula: </span>
-                {PLANT.baselineEnergy.toLocaleString()} kWh × {gridEF} kg/kWh ÷ 1,000 = <strong style={{ color: '#38bdf8' }}>{s2.kgCO2e} tCO₂e/day</strong>
+                {s2Formula}
               </div>
-              <span style={{ fontSize: 10, color: '#64748b' }}>CEA Baseline DB v20.0 (2024)</span>
+              <span style={{ fontSize: 10, color: '#64748b' }}>CEA Database Ver 22.0 ({reportingYear})</span>
             </div>
           </div>
         </div>
@@ -1062,7 +1191,7 @@ function CarbonView({
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
-              <ScopePie scope1={s1.kgCO2e} scope2={s2.kgCO2e} />
+              <ScopePie scope1={s1Total} scope2={s2Total} />
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: 12 }}>
@@ -1072,7 +1201,7 @@ function CarbonView({
                   <span style={{ color: '#94a3b8' }}>Scope 2 (Electricity)</span>
                 </div>
                 <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#38bdf8' }}>
-                  {scope2Percent}% ({s2.kgCO2e} t)
+                  {scope2Percent}% ({s2Total.toFixed(3)} t)
                 </span>
               </div>
 
@@ -1082,7 +1211,7 @@ function CarbonView({
                   <span style={{ color: '#94a3b8' }}>Scope 1 (LPG Gas)</span>
                 </div>
                 <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#f87171' }}>
-                  {scope1Percent}% ({s1.kgCO2e} t)
+                  {scope1Percent}% ({s1Total.toFixed(3)} t)
                 </span>
               </div>
             </div>
@@ -1320,6 +1449,7 @@ function InspectorPanel({
   carbonData,
   gridEF,
   onResetBaseline,
+  assets,
 }: {
   selectedId: string | null;
   setView: (v: View) => void;
@@ -1327,19 +1457,107 @@ function InspectorPanel({
   carbonData: CarbonCalculateResponse | null;
   gridEF: number;
   onResetBaseline?: () => void;
+  assets?: Asset[];
 }) {
   const [tab, setTab] = useState<'asset' | 'alerts' | 'kpis'>('alerts');
-  const asset = ASSETS.find(a => a.id === selectedId);
+  const currentAssetList = assets || ASSETS;
+  const asset = currentAssetList.find(a => a.id === selectedId);
+
+  type ForecastStatus = 'IDLE' | 'LOADING' | 'SUCCESS' | 'ERROR' | 'UNAVAILABLE';
+  const [forecastStatus, setForecastStatus] = useState<ForecastStatus>('IDLE');
+  const [forecast, setForecast] = useState<EnergyForecastResponse | null>(null);
+  const [forecastError, setForecastError] = useState<string | null>(null);
+  const [showDemoHeuristic, setShowDemoHeuristic] = useState<boolean>(false);
+
+  const loadForecast = useCallback(async (currentAsset: Asset) => {
+    setForecastStatus('LOADING');
+    setForecastError(null);
+    setShowDemoHeuristic(false);
+    const req = mapAssetToForecastRequest(currentAsset);
+    try {
+      const res = await fetchMachineForecast(req);
+      setForecast(res);
+      setForecastStatus('SUCCESS');
+    } catch (err: any) {
+      console.warn('FastAPI forecasting request error:', err);
+      setForecast(null);
+      const isUnavailable =
+        err instanceof ForecastUnavailableError ||
+        err.message?.includes('offline') ||
+        err.message?.includes('unreachable') ||
+        err.message?.includes('503') ||
+        err.message?.includes('Failed to fetch') ||
+        err.message?.includes('NetworkError');
+
+      if (isUnavailable) {
+        setForecastStatus('UNAVAILABLE');
+        setForecastError(err.message || 'Forecasting model service is currently offline or unreachable.');
+      } else {
+        setForecastStatus('ERROR');
+        setForecastError(err.message || 'Forecast calculation failed.');
+      }
+    }
+  }, []);
 
   useEffect(() => {
-    if (selectedId) setTab('asset');
+    if (selectedId) {
+      setTab('asset');
+    }
   }, [selectedId]);
+
+  useEffect(() => {
+    if (asset) {
+      loadForecast(asset);
+    } else {
+      setForecast(null);
+      setForecastStatus('IDLE');
+    }
+  }, [asset, loadForecast]);
 
   const s2Total = (carbonData?.gross_footprint.scope2?.emissions_total_co2e_t ?? 9.096).toFixed(2);
   const s1Total = (carbonData?.gross_footprint.scope1?.emissions_total_co2e_t ?? 5.377).toFixed(2);
   const anyFix = params.autoIdleCutoff || params.pressureSetpoint < 7.5 || params.staggerFurnace;
   const avoidedCarbon = (carbonData?.avoided_emissions?.avoided_co2e_t ?? (anyFix ? 0.728 : 0.0)).toFixed(3);
   const factorVal = (carbonData?.gross_footprint.scope2?.factor_metadata.selected_factor ?? gridEF).toFixed(3);
+
+  const current15MinEnergy = asset ? +(asset.currentKw * 0.25).toFixed(4) : 0;
+
+  // Chart data points aligning current interval telemetry vs target interval forecast
+  const chartPoints: ForecastIntervalPoint[] = useMemo(() => {
+    if (!asset || !forecast) return [];
+    const startTime = forecast.target_interval_start
+      ? `${forecast.target_interval_start.slice(11, 16)}Z`
+      : 'T-00m';
+    const endTime = forecast.target_interval_end
+      ? `${forecast.target_interval_end.slice(11, 16)}Z`
+      : '+15m';
+
+    return [
+      {
+        label: 'Current [T-00m]',
+        timeWindow: `${startTime} (Past 15m)`,
+        energyKwh: current15MinEnergy,
+        equivalentKw: asset.currentKw,
+        isForecast: false,
+        statusLabel: 'SIMULATED SCADA TELEMETRY (INPUT)',
+      },
+      {
+        label: 'Target [T+15m]',
+        timeWindow: `${startTime}–${endTime} (+15m)`,
+        energyKwh: forecast.predicted_next_15min_energy_kwh,
+        equivalentKw: forecast.equivalent_average_power_kw,
+        isForecast: true,
+        statusLabel: 'ML MODEL FORECAST (TARGET)',
+      },
+    ];
+  }, [asset, forecast, current15MinEnergy]);
+
+  // Unverified demo fallback for offline examination only if explicitly requested
+  const demoFallback = useMemo(() => {
+    if (!asset || !showDemoHeuristic) return null;
+    const req = mapAssetToForecastRequest(asset);
+    return getOfflineFallbackForecast(req);
+  }, [asset, showDemoHeuristic]);
 
   return (
     <aside className="inspector-panel">
@@ -1397,17 +1615,25 @@ function InspectorPanel({
         {tab === 'asset' && (
           <>
             <div className="section-title">
-              {asset ? asset.name : 'Select an asset on the SCADA map'}
+              {asset ? `${asset.name} [${asset.id.toUpperCase()}]` : 'Select an asset on the SCADA map'}
             </div>
             {asset ? (
               <>
+                {/* Real-time Telemetry Card */}
                 <div className="panel" style={{ marginBottom: 10 }}>
-                  <div className="panel-hdr">{asset.model}</div>
+                  <div className="panel-hdr" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>{asset.model}</span>
+                    <span className="badge badge-cyan" style={{ fontSize: 8 }}>
+                      SIMULATED SCADA TELEMETRY
+                    </span>
+                  </div>
                   <StatRow label="Current Draw" value={`${asset.currentKw} kW`} color="cyan" />
+                  <StatRow label="Current 15m Energy" value={`${current15MinEnergy.toFixed(3)} kWh`} color="white" />
                   <StatRow label="Rated Capacity" value={`${asset.ratedKw} kW`} />
-                  <StatRow label="Energy (Period)" value={`${asset.energyKwh.toLocaleString()} kWh`} />
+                  <StatRow label="Cumulative Energy" value={`${asset.energyKwh.toLocaleString()} kWh`} />
                   <StatRow label="Power Factor" value={String(asset.pf)} color={asset.pf < 0.85 ? 'amber' : 'emerald'} />
-                  <StatRow label="Load %" value={`${Math.round((asset.currentKw / asset.ratedKw) * 100)}%`} />
+                  <StatRow label="Load Factor" value={`${Math.round((asset.currentKw / asset.ratedKw) * 100)}%`} />
+                  <StatRow label="Data Provenance" value="Simulated Sub-Meter" color="cyan" />
                   {asset.dischargePressureBar && <StatRow label="Discharge Pressure" value={`${asset.dischargePressureBar} bar`} color="amber" />}
                   {asset.tempC && <StatRow label="Temperature" value={`${asset.tempC}°C`} color="red" />}
                   {asset.cop && <StatRow label="COP" value={String(asset.cop)} color="emerald" />}
@@ -1428,6 +1654,232 @@ function InspectorPanel({
                   />
                 )}
 
+                {/* AI 15-Minute Tactical Energy Forecast Card */}
+                <div className="panel" style={{ marginTop: 10 }}>
+                  <div className="panel-hdr" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Activity size={12} color="var(--cyan)" />
+                      <span>AI Tactical 15-Min Energy Forecast</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {forecastStatus === 'SUCCESS' && (
+                        <span className="badge badge-emerald" style={{ fontSize: 8 }}>
+                          ● MODEL LIVE
+                        </span>
+                      )}
+                      {forecastStatus === 'UNAVAILABLE' && (
+                        <span className="badge badge-amber" style={{ fontSize: 8 }}>
+                          ● OFFLINE
+                        </span>
+                      )}
+                      {forecastStatus === 'ERROR' && (
+                        <span className="badge badge-red" style={{ fontSize: 8 }}>
+                          ● ERROR
+                        </span>
+                      )}
+                      <button
+                        onClick={() => asset && loadForecast(asset)}
+                        disabled={forecastStatus === 'LOADING'}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: 'var(--slate-400)',
+                          cursor: 'pointer',
+                          padding: '2px 4px',
+                          display: 'flex',
+                          alignItems: 'center',
+                        }}
+                        title="Refresh model forecast"
+                      >
+                        <RefreshCw size={11} className={forecastStatus === 'LOADING' ? 'spin-anim' : ''} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 1. Loading State */}
+                  {forecastStatus === 'LOADING' && (
+                    <div style={{ padding: '16px 8px', textAlign: 'center', fontSize: 10, color: 'var(--slate-400)', fontFamily: 'var(--font-mono)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                        <RefreshCw size={14} className="spin-anim" color="var(--cyan)" />
+                        <span style={{ fontWeight: 600, color: '#0f172a' }}>Executing Model Inference...</span>
+                      </div>
+                      Evaluating next 15-minute consumption with HistGradientBoosting pipeline...
+                    </div>
+                  )}
+
+                  {/* 2. Unavailable / Backend Offline State */}
+                  {forecastStatus === 'UNAVAILABLE' && (
+                    <div style={{ padding: '4px 0' }}>
+                      <div className="alert-banner warn" style={{ marginBottom: 8 }}>
+                        <div className="alert-title" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <AlertTriangle size={11} />
+                          FORECASTING MODEL UNAVAILABLE
+                        </div>
+                        <div className="alert-body">
+                          {forecastError || 'FastAPI backend forecasting service is offline or unreachable at http://127.0.0.1:8000.'}
+                        </div>
+                        <div style={{ fontSize: 9, color: 'var(--slate-500)', marginTop: 4, fontFamily: 'var(--font-mono)' }}>
+                          No forecast is displayed because the live model is offline. WattWise AI does not fabricate predictions when model services are unavailable.
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        <button
+                          className="btn btn-outline btn-sm btn-full"
+                          onClick={() => loadForecast(asset)}
+                          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
+                        >
+                          <RefreshCw size={10} /> Retry Backend Connection
+                        </button>
+
+                        <button
+                          className="btn btn-sm btn-full"
+                          style={{
+                            background: 'rgba(234, 88, 12, 0.08)',
+                            color: '#ea580c',
+                            border: '1px dashed rgba(234, 88, 12, 0.3)',
+                            fontFamily: 'var(--font-mono)',
+                            fontSize: 9,
+                          }}
+                          onClick={() => setShowDemoHeuristic(!showDemoHeuristic)}
+                        >
+                          {showDemoHeuristic ? 'Hide Unverified Demo Preview' : 'Inspect Unverified Offline Demo Heuristic'}
+                        </button>
+                      </div>
+
+                      {/* Explicitly watermarked offline fallback inspection */}
+                      {showDemoHeuristic && demoFallback && (
+                        <div style={{
+                          marginTop: 10,
+                          padding: 10,
+                          borderRadius: 6,
+                          background: 'rgba(234, 88, 12, 0.04)',
+                          border: '1px dashed #ea580c',
+                        }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                            <span style={{ fontSize: 9, fontWeight: 700, color: '#ea580c', fontFamily: 'var(--font-mono)' }}>
+                              DEMO_HEURISTIC_OFFLINE (SIMULATION)
+                            </span>
+                            <span className="badge badge-amber" style={{ fontSize: 8 }}>DEMO PREVIEW</span>
+                          </div>
+                          <div style={{ fontSize: 8.5, color: 'var(--slate-500)', marginBottom: 8, lineHeight: 1.3 }}>
+                            ⚠️ Caution: This is an offline heuristic formula for UI review only. It is NOT generated by the trained ML model.
+                          </div>
+                          <StatRow label="Estimated Energy" value={`${demoFallback.predicted_next_15min_energy_kwh.toFixed(3)} kWh`} color="amber" />
+                          <StatRow label="Estimated Power" value={`${demoFallback.equivalent_average_power_kw.toFixed(2)} kW`} />
+                          <StatRow label="Estimated Delta" value={`${demoFallback.delta_kwh >= 0 ? '+' : ''}${demoFallback.delta_kwh.toFixed(3)} kWh`} color="amber" />
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 3. Error State */}
+                  {forecastStatus === 'ERROR' && (
+                    <div style={{ padding: '4px 0' }}>
+                      <div className="alert-banner crit" style={{ marginBottom: 8 }}>
+                        <div className="alert-title">FORECAST INFERENCE ERROR</div>
+                        <div className="alert-body">{forecastError}</div>
+                      </div>
+                      <button className="btn btn-outline btn-sm btn-full" onClick={() => loadForecast(asset)}>
+                        <RefreshCw size={10} style={{ marginRight: 4 }} /> Retry Calculation
+                      </button>
+                    </div>
+                  )}
+
+                  {/* 4. Successful Live Model Forecast */}
+                  {forecastStatus === 'SUCCESS' && forecast && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      {/* Explicit prediction vs measured distinction banner */}
+                      <div style={{
+                        padding: '5px 8px',
+                        borderRadius: 4,
+                        background: 'rgba(2, 132, 199, 0.08)',
+                        border: '1px solid rgba(2, 132, 199, 0.2)',
+                        fontSize: 9,
+                        color: 'var(--cyan)',
+                        fontFamily: 'var(--font-mono)',
+                        lineHeight: 1.4,
+                      }}>
+                        ℹ️ PREDICTIVE PROJECTION: Values below represent model projections for the upcoming 15-minute interval, NOT actual measured consumption.
+                      </div>
+
+                      {/* Primary Metrics */}
+                      <StatRow
+                        label="Predicted Next 15m"
+                        value={`${forecast.predicted_next_15min_energy_kwh.toFixed(3)} ${forecast.energy_unit}`}
+                        color="cyan"
+                      />
+                      <StatRow
+                        label="Equiv. Avg Power"
+                        value={`${forecast.equivalent_average_power_kw.toFixed(2)} ${forecast.power_unit}`}
+                        color="white"
+                      />
+                      <StatRow
+                        label="Current 15m Telemetry"
+                        value={`${forecast.current_energy_kwh.toFixed(3)} ${forecast.energy_unit}`}
+                      />
+                      <StatRow
+                        label="Expected Delta"
+                        value={`${forecast.delta_kwh >= 0 ? '+' : ''}${forecast.delta_kwh.toFixed(3)} kWh (${forecast.delta_percentage >= 0 ? '+' : ''}${forecast.delta_percentage}%)`}
+                        color={forecast.delta_kwh <= 0 ? 'emerald' : 'amber'}
+                      />
+                      <StatRow
+                        label="Target Interval"
+                        value={forecast.target_interval}
+                      />
+
+                      {/* Physical Bounds Status */}
+                      {forecast.physical_constraint_applied ? (
+                        <div style={{
+                          margin: '4px 0',
+                          padding: '4px 6px',
+                          borderRadius: 4,
+                          background: 'rgba(234, 88, 12, 0.1)',
+                          border: '1px solid rgba(234, 88, 12, 0.3)',
+                          fontSize: 9,
+                          color: '#ea580c',
+                          fontFamily: 'var(--font-mono)'
+                        }}>
+                          ⚡ Surge capacity clamp enforced: E ≤ 1.30 × Rated Capacity ({(asset.ratedKw * 0.25 * 1.30).toFixed(3)} kWh)
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: 9, color: 'var(--emerald)', fontFamily: 'var(--font-mono)', padding: '2px 0' }}>
+                          ✓ Physical thermodynamic bounds verified (E ≥ 0, within surge limit)
+                        </div>
+                      )}
+
+                      {/* Tactical Interval Sequence Chart */}
+                      <div style={{ marginTop: 8, marginBottom: 4 }}>
+                        <div style={{ fontSize: 9, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)', marginBottom: 4, letterSpacing: 1, textTransform: 'uppercase' }}>
+                          Interval Energy Trajectory (kWh)
+                        </div>
+                        <MachineForecastIntervalChart points={chartPoints} />
+                      </div>
+
+                      {/* Provenance & Synthetic Disclaimer */}
+                      <div style={{
+                        marginTop: 6,
+                        paddingTop: 6,
+                        borderTop: '1px solid rgba(0, 0, 0, 0.06)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 4
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontSize: 9, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)' }}>PROVENANCE</span>
+                          <span className="badge badge-cyan" style={{ fontSize: 8.5 }}>
+                            {forecast.data_provenance}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: 8.5, color: 'var(--slate-400)', fontFamily: 'var(--font-mono)', lineHeight: 1.4 }}>
+                          Model: HistGradientBoostingRegressor (Pipeline Artifact).
+                          Benchmark: Synthetic Industrial Energy Dataset. Test R²=0.652, MAE=0.94 kWh. Evaluated on disjoint chronological dates. Not real-factory accuracy.
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 {asset.status !== 'OPTIMAL' && (
                   <button className="btn btn-cyan btn-full" style={{ marginTop: 10 }}
                     onClick={() => setView('simulator')}
@@ -1440,7 +1892,7 @@ function InspectorPanel({
             ) : (
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--slate-500)', lineHeight: 1.8, marginTop: 20 }}>
                 Click any asset node on the SCADA Floor Map to inspect its live telemetry, load profile, and AI diagnostic.
-                {'\n\n'}Assets: {ASSETS.map(a => a.name).join(', ')}.
+                {'\n\n'}Assets: {currentAssetList.map(a => a.name).join(', ')}.
               </div>
             )}
           </>
@@ -1829,7 +2281,13 @@ export default function App() {
         <AnimatePresence mode="wait">
           {view === 'overview' && (
             <motion.div key="overview" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%' }}>
-              <OverviewView setView={setView} carbonData={carbonData} gridEF={gridEF} />
+              <OverviewView
+                setView={setView}
+                carbonData={carbonData}
+                gridEF={gridEF}
+                onSelectAsset={handleSelectAsset}
+                assets={simulatedAssets}
+              />
             </motion.div>
           )}
           {view === 'scada' && (
@@ -1853,6 +2311,19 @@ export default function App() {
                 carbonData={carbonData}
                 gridEF={gridEF}
                 reportingYear={reportingYear}
+              />
+            </motion.div>
+          )}
+          {view === 'forecast' && (
+            <motion.div key="forecast" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+              <EnergyForecastDashboard
+                assets={simulatedAssets}
+                params={params}
+                onNavigateToSimulator={() => setView('simulator')}
+                onSelectAsset={(id) => {
+                  setSelectedAsset(id);
+                  setView('scada');
+                }}
               />
             </motion.div>
           )}
@@ -1891,6 +2362,7 @@ export default function App() {
         carbonData={carbonData}
         gridEF={gridEF}
         onResetBaseline={handleResetBaseline}
+        assets={simulatedAssets}
       />
     </div>
   );

@@ -164,34 +164,34 @@ function ForecastTooltip({ active, payload }: any) {
 
   return (
     <div style={{
-      background: 'rgba(255, 255, 255, 0.98)',
-      backdropFilter: 'blur(12px)',
-      border: '1px solid rgba(0, 0, 0, 0.12)',
-      boxShadow: '0 8px 24px -4px rgba(0, 0, 0, 0.12)',
+      background: 'rgba(235, 226, 212, 0.96)',
+      backdropFilter: 'blur(16px)',
+      border: '1px solid rgba(90, 75, 55, 0.2)',
+      boxShadow: '0 8px 24px -4px rgba(60, 45, 25, 0.15)',
       borderRadius: 8, padding: '8px 12px',
       fontFamily: MONO, fontSize: 10,
       minWidth: 160,
     }}>
-      <div style={{ color: '#0f172a', fontWeight: 700, marginBottom: 4 }}>
+      <div style={{ color: '#1C1917', fontWeight: 700, marginBottom: 4 }}>
         {d.label}
       </div>
-      <div style={{ color: '#64748b', fontSize: 9, marginBottom: 6 }}>
+      <div style={{ color: '#78716C', fontSize: 9, marginBottom: 6 }}>
         Window: {d.timeWindow}
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 14, marginBottom: 3 }}>
-        <span style={{ color: '#475569' }}>Energy:</span>
+        <span style={{ color: '#57534E' }}>Energy:</span>
         <span style={{ fontWeight: 700, color: d.isForecast ? '#7c3aed' : '#0284c7' }}>
           {d.energyKwh.toFixed(3)} kWh
         </span>
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 14, marginBottom: 4 }}>
-        <span style={{ color: '#475569' }}>Equiv. Power:</span>
-        <span style={{ fontWeight: 600, color: '#0f172a' }}>
+        <span style={{ color: '#57534E' }}>Equiv. Power:</span>
+        <span style={{ fontWeight: 600, color: '#1C1917' }}>
           {d.equivalentKw.toFixed(2)} kW
         </span>
       </div>
       <div style={{
-        marginTop: 6, paddingTop: 4, borderTop: '1px solid rgba(0, 0, 0, 0.08)',
+        marginTop: 6, paddingTop: 4, borderTop: '1px solid rgba(90, 75, 55, 0.1)',
         fontSize: 8.5, color: d.isForecast ? '#7c3aed' : '#0284c7', fontWeight: 700,
         letterSpacing: 0.5, textTransform: 'uppercase',
       }}>
@@ -209,16 +209,16 @@ export function MachineForecastIntervalChart({
   return (
     <ResponsiveContainer width="100%" height={150}>
       <BarChart data={points} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
-        <CartesianGrid stroke="rgba(0, 0, 0, 0.06)" strokeDasharray="3 3" />
-        <XAxis dataKey="label" tick={{ ...TICK, fontSize: 8.5 }} />
-        <YAxis tick={TICK} unit=" kWh" />
+        <CartesianGrid stroke="rgba(90, 75, 55, 0.08)" strokeDasharray="3 3" />
+        <XAxis dataKey="label" tick={{ fill: '#78716C', fontSize: 8.5, fontFamily: MONO }} />
+        <YAxis tick={{ fill: '#78716C', fontSize: 9, fontFamily: MONO }} unit=" kWh" />
         <Tooltip content={<ForecastTooltip />} />
         <Bar dataKey="energyKwh" radius={[4, 4, 0, 0]}>
           {points.map((p, i) => (
             <Cell
               key={i}
               fill={p.isForecast ? 'rgba(124, 58, 237, 0.85)' : 'rgba(2, 132, 199, 0.85)'}
-              stroke={p.isForecast ? '#6d28d9' : '#0284c7'}
+              stroke={p.isForecast ? '#7c3aed' : '#0284c7'}
               strokeWidth={1.5}
               strokeDasharray={p.isForecast ? '3 2' : undefined}
             />

@@ -251,14 +251,15 @@ export default function EnergyForecastDashboard({
 
   return (
     <div
+      className="scroll-area"
       style={{
-        background: '#f8fafc',
+        background: 'transparent',
         minHeight: '100%',
-        padding: '32px 36px 80px',
+        padding: '20px 24px 60px',
         maxWidth: 1200,
         margin: '0 auto',
-        fontFamily: 'var(--font-sans)',
-        color: '#0f172a',
+        fontFamily: 'var(--font-ui)',
+        color: 'var(--white)',
       }}
     >
       {/* ─── Top Header & Controls ─────────────────────────────────────────── */}
@@ -267,74 +268,70 @@ export default function EnergyForecastDashboard({
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'flex-start',
-          marginBottom: 28,
+          marginBottom: 20,
           flexWrap: 'wrap',
           gap: 16,
         }}
       >
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
             <span
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 5,
-                background: 'rgba(109, 40, 217, 0.08)',
-                color: '#6d28d9',
-                padding: '3px 8px',
+                background: 'rgba(124, 58, 237, 0.12)',
+                color: 'var(--violet)',
+                border: '1px solid rgba(124, 58, 237, 0.25)',
+                padding: '2px 8px',
                 borderRadius: 4,
-                fontSize: 11,
+                fontSize: 9.5,
                 fontWeight: 700,
-                letterSpacing: 0.5,
+                letterSpacing: 1.5,
                 textTransform: 'uppercase',
-                fontFamily: MONO,
+                fontFamily: 'var(--font-mono)',
               }}
             >
               <Sparkles size={11} /> Industrial EMS
             </span>
-            <span style={{ fontSize: 12, color: '#64748b' }}>
+            <span style={{ fontSize: 11, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)', letterSpacing: 0.5 }}>
               Next 15-Minute Tactical Energy Forecasting
             </span>
           </div>
 
           <h1
             style={{
-              fontSize: 26,
-              fontWeight: 800,
-              color: '#0f172a',
-              letterSpacing: -0.6,
+              fontSize: 20,
+              fontWeight: 700,
+              color: 'var(--white)',
+              letterSpacing: 0.5,
               margin: '0 0 4px',
+              textTransform: 'uppercase',
+              fontFamily: 'var(--font-mono)',
             }}
           >
             Energy Forecast Dashboard
           </h1>
 
-          <p style={{ margin: 0, fontSize: 13, color: '#64748b' }}>
+          <p style={{ margin: 0, fontSize: 12, color: 'var(--slate-400)' }}>
             Next-interval power requirements for precision equipment bays using trained gradient boosting inference.
           </p>
         </div>
 
         {/* Action Controls: Dropdown & Refresh */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           {anyWhatIfActive && onNavigateToSimulator && (
             <button
               onClick={onNavigateToSimulator}
+              className="btn btn-sm"
               style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                background: '#eff6ff',
-                border: '1px solid #bfdbfe',
-                borderRadius: 8,
-                padding: '7px 12px',
-                fontSize: 12,
-                fontWeight: 600,
-                color: '#1d4ed8',
-                cursor: 'pointer',
+                background: 'var(--cyan-dim)',
+                borderColor: 'rgba(2, 132, 199, 0.3)',
+                color: 'var(--cyan)',
               }}
             >
-              <Sliders size={13} />
-              <span>Digital Twin Scenario Active</span>
+              <Sliders size={12} />
+              <span>Scenario Active</span>
             </button>
           )}
 
@@ -342,7 +339,14 @@ export default function EnergyForecastDashboard({
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <label
               htmlFor="forecast-view-select"
-              style={{ fontSize: 12, fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: 0.5 }}
+              style={{
+                fontSize: 10,
+                fontWeight: 700,
+                color: 'var(--slate-400)',
+                textTransform: 'uppercase',
+                letterSpacing: 1.5,
+                fontFamily: 'var(--font-mono)',
+              }}
             >
               Forecast View:
             </label>
@@ -351,23 +355,24 @@ export default function EnergyForecastDashboard({
               value={selectedMode}
               onChange={(e) => setSelectedMode(e.target.value as ForecastViewMode)}
               style={{
-                background: '#ffffff',
-                border: '1px solid #cbd5e1',
-                borderRadius: 8,
-                padding: '7px 14px',
-                fontSize: 13,
+                background: 'var(--bg-input)',
+                border: '1px solid var(--border-active)',
+                borderRadius: 'var(--r)',
+                padding: '6px 12px',
+                fontSize: 12,
                 fontWeight: 600,
-                color: '#0f172a',
+                color: 'var(--white)',
                 outline: 'none',
                 cursor: 'pointer',
-                boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
+                fontFamily: 'var(--font-mono)',
+                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
               }}
             >
-              <option value="all">Overall Plant</option>
-              <option value="compressor">Air Compressor</option>
-              <option value="cnc">CNC Machining Center</option>
-              <option value="furnace">Industrial Heat Furnace</option>
-              <option value="cooling">Chilled Water Cooling</option>
+              <option value="all" style={{ background: '#EFE6D7', color: '#1C1917' }}>Overall Plant</option>
+              <option value="compressor" style={{ background: '#EFE6D7', color: '#1C1917' }}>Air Compressor</option>
+              <option value="cnc" style={{ background: '#EFE6D7', color: '#1C1917' }}>CNC Machining Center</option>
+              <option value="furnace" style={{ background: '#EFE6D7', color: '#1C1917' }}>Industrial Heat Furnace</option>
+              <option value="cooling" style={{ background: '#EFE6D7', color: '#1C1917' }}>Chilled Water Cooling</option>
             </select>
           </div>
 
@@ -375,22 +380,9 @@ export default function EnergyForecastDashboard({
           <button
             onClick={refreshAllForecasts}
             title="Refresh machine forecasts"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              background: '#ffffff',
-              border: '1px solid #cbd5e1',
-              borderRadius: 8,
-              padding: '7px 12px',
-              fontSize: 12,
-              fontWeight: 600,
-              color: '#334155',
-              cursor: 'pointer',
-              boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
-            }}
+            className="btn btn-sm"
           >
-            <RefreshCw size={13} className={isGlobalLoading ? 'spin-icon' : ''} />
+            <RefreshCw size={11} className={isGlobalLoading ? 'spin-icon' : ''} />
             <span>Refresh</span>
           </button>
         </div>
@@ -411,13 +403,15 @@ export default function EnergyForecastDashboard({
           >
             {/* Main Forecast Hero Card */}
             <div
+              className="panel"
               style={{
-                background: '#ffffff',
-                border: '1px solid #e2e8f0',
-                borderRadius: 12,
-                padding: '28px 32px',
-                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02)',
-                marginBottom: 24,
+                background: 'rgba(238, 230, 218, 0.92)',
+                backdropFilter: 'blur(16px)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--r)',
+                padding: '24px 28px',
+                boxShadow: '0 4px 20px -2px rgba(60, 45, 25, 0.06)',
+                marginBottom: 16,
               }}
             >
               <div
@@ -425,7 +419,7 @@ export default function EnergyForecastDashboard({
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  marginBottom: 16,
+                  marginBottom: 14,
                   flexWrap: 'wrap',
                   gap: 12,
                 }}
@@ -436,50 +430,66 @@ export default function EnergyForecastDashboard({
                       width: 8,
                       height: 8,
                       borderRadius: '50%',
-                      background: '#6d28d9',
+                      background: 'var(--violet)',
                       display: 'inline-block',
                     }}
                   />
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: 0.6 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: 1.5, fontFamily: 'var(--font-mono)' }}>
                     Overall Plant Energy Forecast (Next 15 Minutes)
                   </span>
                 </div>
 
                 {/* API Status Badge */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontFamily: MONO }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    fontSize: 10,
+                    fontFamily: 'var(--font-mono)',
+                    padding: '3px 8px',
+                    borderRadius: 4,
+                    background: backendConnected ? 'var(--emerald-dim)' : 'var(--amber-dim)',
+                    border: `1px solid ${backendConnected ? 'rgba(5, 150, 105, 0.25)' : 'rgba(217, 119, 6, 0.25)'}`,
+                    color: backendConnected ? 'var(--emerald)' : 'var(--amber)',
+                    fontWeight: 700,
+                    letterSpacing: 1,
+                    textTransform: 'uppercase',
+                  }}
+                >
                   <span
                     style={{
-                      width: 7,
-                      height: 7,
+                      width: 6,
+                      height: 6,
                       borderRadius: '50%',
-                      background: backendConnected ? '#10b981' : '#f59e0b',
+                      background: 'currentColor',
                     }}
                   />
-                  <span style={{ color: backendConnected ? '#059669' : '#d97706', fontWeight: 600 }}>
+                  <span>
                     {backendConnected ? 'Live API Forecast' : 'Offline Persistence Fallback'}
                   </span>
                 </div>
               </div>
 
               {/* Main Metric & Equivalent Load */}
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 24 }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 20 }}>
                 <span
                   style={{
                     fontSize: 48,
                     fontWeight: 800,
-                    color: '#0f172a',
-                    fontFamily: MONO,
-                    letterSpacing: -1.5,
+                    color: 'var(--white)',
+                    fontFamily: 'var(--font-mono)',
+                    letterSpacing: -1,
                     lineHeight: 1,
                   }}
                 >
                   {fleetSummary.totalPredicted15mKwh.toFixed(2)}
                 </span>
-                <span style={{ fontSize: 18, fontWeight: 700, color: '#6d28d9', fontFamily: MONO }}>
+                <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--violet)', fontFamily: 'var(--font-mono)' }}>
                   kWh
                 </span>
-                <span style={{ fontSize: 14, color: '#64748b', marginLeft: 8 }}>
-                  (Equiv. Average Load: <strong style={{ color: '#0f172a' }}>{fleetSummary.totalEquivPredictedKw.toFixed(1)} kW</strong>)
+                <span style={{ fontSize: 13, color: 'var(--slate-500)', marginLeft: 8, fontFamily: 'var(--font-mono)' }}>
+                  (Equiv. Average Load: <strong style={{ color: 'var(--white)' }}>{fleetSummary.totalEquivPredictedKw.toFixed(1)} kW</strong>)
                 </span>
               </div>
 
@@ -489,42 +499,42 @@ export default function EnergyForecastDashboard({
                   display: 'grid',
                   gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
                   gap: 16,
-                  paddingTop: 20,
-                  borderTop: '1px solid #f1f5f9',
+                  paddingTop: 16,
+                  borderTop: '1px solid var(--border-muted)',
                 }}
               >
                 <div>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 3 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: 1, fontFamily: 'var(--font-mono)', marginBottom: 3 }}>
                     Current Plant Demand
                   </div>
-                  <div style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', fontFamily: MONO }}>
-                    {fleetSummary.totalCurrentKw.toFixed(1)} <span style={{ fontSize: 12, color: '#64748b' }}>kW</span>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--white)', fontFamily: 'var(--font-mono)' }}>
+                    {fleetSummary.totalCurrentKw.toFixed(1)} <span style={{ fontSize: 11, color: 'var(--slate-500)' }}>kW</span>
                   </div>
-                  <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
+                  <div style={{ fontSize: 11, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
                     Ref load: {fleetSummary.totalReference15mEnergyKwh.toFixed(2)} kWh
                   </div>
                 </div>
 
                 <div>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 3 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: 1, fontFamily: 'var(--font-mono)', marginBottom: 3 }}>
                     Forecast Interval Window
                   </div>
-                  <div style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', fontFamily: MONO }}>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--white)', fontFamily: 'var(--font-mono)' }}>
                     {fleetSummary.targetInterval}
                   </div>
-                  <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
+                  <div style={{ fontSize: 11, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
                     Exact 15-minute horizon
                   </div>
                 </div>
 
                 <div>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 3 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: 1, fontFamily: 'var(--font-mono)', marginBottom: 3 }}>
                     Machine Coverage
                   </div>
-                  <div style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', fontFamily: MONO }}>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--white)', fontFamily: 'var(--font-mono)' }}>
                     {fleetSummary.validForecastCount} of {fleetSummary.totalMachines} machines
                   </div>
-                  <div style={{ fontSize: 11, color: fleetSummary.isPartial ? '#d97706' : '#059669', marginTop: 2 }}>
+                  <div style={{ fontSize: 11, color: fleetSummary.isPartial ? 'var(--amber)' : 'var(--emerald)', fontFamily: 'var(--font-mono)', marginTop: 2, fontWeight: 600 }}>
                     {fleetSummary.isPartial ? 'Partial fleet total' : 'Complete fleet reporting'}
                   </div>
                 </div>
@@ -533,34 +543,47 @@ export default function EnergyForecastDashboard({
 
             {/* Compact Energy Contribution Breakdown Chart */}
             <div
+              className="panel"
               style={{
-                background: '#ffffff',
-                border: '1px solid #e2e8f0',
-                borderRadius: 12,
-                padding: '24px 28px',
-                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
-                marginBottom: 28,
+                background: 'rgba(238, 230, 218, 0.92)',
+                backdropFilter: 'blur(16px)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--r)',
+                padding: '20px 24px',
+                boxShadow: '0 4px 20px -2px rgba(60, 45, 25, 0.06)',
+                marginBottom: 20,
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#0f172a' }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--white)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: 1 }}>
                     Forecast Energy Contribution by Machine
-                  </h3>
-                  <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--slate-500)', marginTop: 2 }}>
                     Predicted next-15-minute energy consumption (kWh) across the four digital-twin assets.
                   </div>
                 </div>
-                <div style={{ fontSize: 11, color: '#64748b', fontFamily: MONO, whiteSpace: 'nowrap', flexShrink: 0 }}>
-                  Total: <strong style={{ color: '#0f172a' }}>{fleetSummary.totalPredicted15mKwh.toFixed(2)} kWh</strong>
+                <div
+                  style={{
+                    fontSize: 10,
+                    color: 'var(--slate-500)',
+                    fontFamily: 'var(--font-mono)',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
+                    background: 'rgba(90, 75, 55, 0.08)',
+                    padding: '3px 8px',
+                    borderRadius: 4,
+                  }}
+                >
+                  Total: <strong style={{ color: 'var(--white)' }}>{fleetSummary.totalPredicted15mKwh.toFixed(2)} kWh</strong>
                 </div>
               </div>
 
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={fleetContributionData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                  <CartesianGrid stroke="#f1f5f9" strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fill: '#475569', fontSize: 11, fontWeight: 600 }} axisLine={false} tickLine={false} />
-                  <YAxis tick={TICK} unit=" kWh" axisLine={false} tickLine={false} />
+                  <CartesianGrid stroke="rgba(90, 75, 55, 0.08)" strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="name" tick={{ fill: 'var(--slate-500)', fontSize: 10, fontFamily: 'var(--font-mono)', fontWeight: 600 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: 'var(--slate-500)', fontSize: 10, fontFamily: 'var(--font-mono)' }} unit=" kWh" axisLine={false} tickLine={false} />
                   <Tooltip
                     content={({ active, payload }) => {
                       if (!active || !payload?.length) return null;
@@ -568,20 +591,20 @@ export default function EnergyForecastDashboard({
                       return (
                         <div
                           style={{
-                            background: '#ffffff',
-                            border: '1px solid #e2e8f0',
+                            background: '#DDD0BC',
+                            border: '1px solid var(--border)',
                             borderRadius: 6,
                             padding: '8px 12px',
-                            fontFamily: MONO,
+                            fontFamily: 'var(--font-mono)',
                             fontSize: 11,
-                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
+                            boxShadow: '0 4px 16px rgba(60, 45, 25, 0.12)',
                           }}
                         >
-                          <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: 4 }}>{d.name}</div>
+                          <div style={{ fontWeight: 700, color: '#1C1917', marginBottom: 4 }}>{d.name}</div>
                           <div style={{ color: d.color }}>
                             Predicted: <strong>{d.predictedKwh.toFixed(3)} kWh</strong>
                           </div>
-                          <div style={{ color: '#64748b', fontSize: 10, marginTop: 2 }}>
+                          <div style={{ color: 'var(--slate-500)', fontSize: 10, marginTop: 2 }}>
                             Reference: {d.referenceKwh.toFixed(3)} kWh (P × 0.25h)
                           </div>
                         </div>
@@ -645,13 +668,15 @@ export default function EnergyForecastDashboard({
                   <div>
                     {/* Machine Detail Card */}
                     <div
+                      className="panel"
                       style={{
-                        background: '#ffffff',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: 12,
-                        padding: '28px 32px',
-                        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
-                        marginBottom: 24,
+                        background: 'rgba(238, 230, 218, 0.92)',
+                        backdropFilter: 'blur(16px)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 'var(--r)',
+                        padding: '24px 28px',
+                        boxShadow: '0 4px 20px -2px rgba(60, 45, 25, 0.06)',
+                        marginBottom: 16,
                       }}
                     >
                       <div
@@ -659,7 +684,7 @@ export default function EnergyForecastDashboard({
                           display: 'flex',
                           justifyContent: 'space-between',
                           alignItems: 'flex-start',
-                          marginBottom: 16,
+                          marginBottom: 14,
                           flexWrap: 'wrap',
                           gap: 12,
                         }}
@@ -675,25 +700,26 @@ export default function EnergyForecastDashboard({
                                 display: 'inline-block',
                               }}
                             />
-                            <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#0f172a' }}>
+                            <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: 'var(--white)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
                               {selectedAsset.name}
                             </h2>
                             <span
                               style={{
-                                fontSize: 10,
-                                fontFamily: MONO,
-                                background: '#f1f5f9',
-                                color: '#475569',
+                                fontSize: 9.5,
+                                fontFamily: 'var(--font-mono)',
+                                background: 'rgba(90, 75, 55, 0.1)',
+                                color: 'var(--white)',
                                 padding: '2px 6px',
                                 borderRadius: 4,
                                 fontWeight: 700,
+                                letterSpacing: 1,
                               }}
                             >
                               {selectedAsset.id.toUpperCase()}
                             </span>
                           </div>
-                          <div style={{ fontSize: 13, color: '#64748b' }}>
-                            {cfg.model} • {cfg.bay} • <strong style={{ color: '#0f172a' }}>{selectedAsset.ratedKw} kW</strong> Rated Power
+                          <div style={{ fontSize: 12, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)' }}>
+                            {cfg.model} • {cfg.bay} • <strong style={{ color: 'var(--white)' }}>{selectedAsset.ratedKw} kW</strong> Rated Power
                           </div>
                         </div>
 
@@ -701,27 +727,31 @@ export default function EnergyForecastDashboard({
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <span
                             style={{
-                              fontSize: 11,
-                              fontFamily: MONO,
+                              fontSize: 10,
+                              fontFamily: 'var(--font-mono)',
                               fontWeight: 700,
                               padding: '3px 8px',
                               borderRadius: 4,
-                              background: '#f8fafc',
-                              color: '#334155',
-                              border: '1px solid #e2e8f0',
+                              background: 'rgba(90, 75, 55, 0.08)',
+                              color: 'var(--white)',
+                              border: '1px solid var(--border)',
+                              letterSpacing: 0.5,
                             }}
                           >
                             State {selectedAsset.currentKw <= 0.05 ? '0 (Off)' : selectedAsset.status === 'IDLE' ? '1 (Idle)' : '2 (Running)'}
                           </span>
                           <span
                             style={{
-                              fontSize: 11,
+                              fontSize: 10,
                               fontWeight: 700,
+                              fontFamily: 'var(--font-mono)',
                               padding: '3px 8px',
                               borderRadius: 4,
-                              background: selectedAsset.status === 'OPTIMAL' ? '#ecfdf5' : selectedAsset.status === 'WARNING' ? '#fffbeb' : '#fef2f2',
-                              color: selectedAsset.status === 'OPTIMAL' ? '#059669' : selectedAsset.status === 'WARNING' ? '#d97706' : '#e11d48',
-                              border: `1px solid ${selectedAsset.status === 'OPTIMAL' ? '#a7f3d0' : selectedAsset.status === 'WARNING' ? '#fde68a' : '#fecdd3'}`,
+                              letterSpacing: 1,
+                              textTransform: 'uppercase',
+                              background: selectedAsset.status === 'OPTIMAL' ? 'var(--emerald-dim)' : selectedAsset.status === 'WARNING' ? 'var(--amber-dim)' : 'var(--red-dim)',
+                              color: selectedAsset.status === 'OPTIMAL' ? 'var(--emerald)' : selectedAsset.status === 'WARNING' ? 'var(--amber)' : 'var(--red)',
+                              border: `1px solid ${selectedAsset.status === 'OPTIMAL' ? 'rgba(5, 150, 105, 0.25)' : selectedAsset.status === 'WARNING' ? 'rgba(217, 119, 6, 0.25)' : 'rgba(220, 38, 38, 0.25)'}`,
                             }}
                           >
                             {selectedAsset.status}
@@ -730,24 +760,24 @@ export default function EnergyForecastDashboard({
                       </div>
 
                       {/* Primary Predicted Metric */}
-                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 24 }}>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 20 }}>
                         <span
                           style={{
                             fontSize: 44,
                             fontWeight: 800,
-                            color: '#0f172a',
-                            fontFamily: MONO,
-                            letterSpacing: -1.2,
+                            color: 'var(--white)',
+                            fontFamily: 'var(--font-mono)',
+                            letterSpacing: -1,
                             lineHeight: 1,
                           }}
                         >
                           {fc ? fc.predicted_next_15min_energy_kwh.toFixed(3) : reference15mKwh.toFixed(3)}
                         </span>
-                        <span style={{ fontSize: 18, fontWeight: 700, color: '#6d28d9', fontFamily: MONO }}>
+                        <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--violet)', fontFamily: 'var(--font-mono)' }}>
                           kWh
                         </span>
-                        <span style={{ fontSize: 14, color: '#64748b', marginLeft: 8 }}>
-                          (Equiv. Load: <strong style={{ color: '#0f172a' }}>{fc ? fc.equivalent_average_power_kw.toFixed(2) : selectedAsset.currentKw} kW</strong>)
+                        <span style={{ fontSize: 13, color: 'var(--slate-500)', marginLeft: 8, fontFamily: 'var(--font-mono)' }}>
+                          (Equiv. Load: <strong style={{ color: 'var(--white)' }}>{fc ? fc.equivalent_average_power_kw.toFixed(2) : selectedAsset.currentKw} kW</strong>)
                         </span>
                       </div>
 
@@ -757,54 +787,54 @@ export default function EnergyForecastDashboard({
                           display: 'grid',
                           gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
                           gap: 16,
-                          paddingTop: 20,
-                          borderTop: '1px solid #f1f5f9',
+                          paddingTop: 16,
+                          borderTop: '1px solid var(--border-muted)',
                         }}
                       >
                         <div>
-                          <div style={{ fontSize: 11, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 3 }}>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: 1, fontFamily: 'var(--font-mono)', marginBottom: 3 }}>
                             Current Power Demand
                           </div>
-                          <div style={{ fontSize: 17, fontWeight: 700, color: '#0f172a', fontFamily: MONO }}>
-                            {selectedAsset.currentKw} <span style={{ fontSize: 12, color: '#64748b' }}>kW</span>
+                          <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--white)', fontFamily: 'var(--font-mono)' }}>
+                            {selectedAsset.currentKw} <span style={{ fontSize: 11, color: 'var(--slate-500)' }}>kW</span>
                           </div>
-                          <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
+                          <div style={{ fontSize: 11, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
                             {loadFactorPct}% of rated capacity
                           </div>
                         </div>
 
                         <div>
-                          <div style={{ fontSize: 11, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 3 }}>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: 1, fontFamily: 'var(--font-mono)', marginBottom: 3 }}>
                             Constant-Load Reference
                           </div>
-                          <div style={{ fontSize: 17, fontWeight: 700, color: '#0284c7', fontFamily: MONO }}>
-                            {reference15mKwh.toFixed(3)} <span style={{ fontSize: 12, color: '#64748b' }}>kWh</span>
+                          <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--cyan)', fontFamily: 'var(--font-mono)' }}>
+                            {reference15mKwh.toFixed(3)} <span style={{ fontSize: 11, color: 'var(--slate-500)' }}>kWh</span>
                           </div>
-                          <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
+                          <div style={{ fontSize: 11, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
                             P × 0.25h extrapolation
                           </div>
                         </div>
 
                         <div>
-                          <div style={{ fontSize: 11, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 3 }}>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: 1, fontFamily: 'var(--font-mono)', marginBottom: 3 }}>
                             Forecast Interval
                           </div>
-                          <div style={{ fontSize: 17, fontWeight: 700, color: '#0f172a', fontFamily: MONO }}>
+                          <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--white)', fontFamily: 'var(--font-mono)' }}>
                             {intervalStr}
                           </div>
-                          <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
+                          <div style={{ fontSize: 11, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
                             Next 15-minute window
                           </div>
                         </div>
 
                         <div>
-                          <div style={{ fontSize: 11, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 3 }}>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: 1, fontFamily: 'var(--font-mono)', marginBottom: 3 }}>
                             Capacity Bounds Check
                           </div>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: fc?.physical_constraint_applied ? '#d97706' : '#059669', marginTop: 3 }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: fc?.physical_constraint_applied ? 'var(--amber)' : 'var(--emerald)', fontFamily: 'var(--font-mono)', marginTop: 3 }}>
                             {fc?.physical_constraint_applied ? 'Clamped (Surge Limit)' : 'Within Physical Capacity'}
                           </div>
-                          <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
+                          <div style={{ fontSize: 11, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
                             ≤ 1.3× nameplate rating
                           </div>
                         </div>
@@ -813,46 +843,48 @@ export default function EnergyForecastDashboard({
 
                     {/* Small Machine Comparison Chart */}
                     <div
+                      className="panel"
                       style={{
-                        background: '#ffffff',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: 12,
-                        padding: '24px 28px',
-                        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
-                        marginBottom: 28,
+                        background: 'rgba(238, 230, 218, 0.92)',
+                        backdropFilter: 'blur(16px)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 'var(--r)',
+                        padding: '20px 24px',
+                        boxShadow: '0 4px 20px -2px rgba(60, 45, 25, 0.06)',
+                        marginBottom: 20,
                       }}
                     >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
                         <div>
-                          <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#0f172a' }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--white)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: 1 }}>
                             Reference vs Model Forecast Comparison
-                          </h3>
-                          <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>
+                          </div>
+                          <div style={{ fontSize: 11, color: 'var(--slate-500)', marginTop: 2 }}>
                             Constant-load reference estimate (P × 0.25h) compared to model predicted interval energy.
                           </div>
                         </div>
                         {fc && (
                           <div
                             style={{
-                              fontSize: 11,
-                              fontFamily: MONO,
-                              color: '#475569',
+                              fontSize: 10,
+                              fontFamily: 'var(--font-mono)',
+                              color: 'var(--white)',
                               whiteSpace: 'nowrap',
                               flexShrink: 0,
-                              background: '#f8fafc',
-                              border: '1px solid #e2e8f0',
-                              padding: '4px 8px',
+                              background: 'rgba(90, 75, 55, 0.08)',
+                              border: '1px solid var(--border)',
+                              padding: '3px 8px',
                               borderRadius: 4,
                             }}
                           >
-                            Difference: <strong>{fc.delta_kwh >= 0 ? `+${fc.delta_kwh.toFixed(3)}` : fc.delta_kwh.toFixed(3)} kWh</strong> ({fc.delta_percentage > 0 ? `+${fc.delta_percentage}%` : `${fc.delta_percentage}%`})
+                            Difference: <strong style={{ color: fc.delta_kwh <= 0 ? 'var(--cyan)' : 'var(--amber)' }}>{fc.delta_kwh >= 0 ? `+${fc.delta_kwh.toFixed(3)}` : fc.delta_kwh.toFixed(3)} kWh</strong> ({fc.delta_percentage > 0 ? `+${fc.delta_percentage}%` : `${fc.delta_percentage}%`})
                           </div>
                         )}
                       </div>
 
                       <MachineForecastIntervalChart points={chartPoints} />
 
-                      <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 8 }}>
+                      <div style={{ fontSize: 10, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)', marginTop: 8 }}>
                         *Notice: Difference relative to static constant-load extrapolation. Does not indicate verified operational energy savings or plant waste.
                       </div>
                     </div>
@@ -865,14 +897,17 @@ export default function EnergyForecastDashboard({
       </AnimatePresence>
 
       {/* ─── Expandable Technical Sections (Collapsed by Default) ───────────── */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {/* Accordion 1: Model Information */}
         <div
+          className="panel"
           style={{
-            background: '#ffffff',
-            border: '1px solid #e2e8f0',
-            borderRadius: 10,
+            background: 'rgba(238, 230, 218, 0.92)',
+            backdropFilter: 'blur(16px)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--r)',
             overflow: 'hidden',
+            marginBottom: 0,
           }}
         >
           <button
@@ -882,7 +917,7 @@ export default function EnergyForecastDashboard({
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              padding: '14px 18px',
+              padding: '12px 18px',
               background: 'transparent',
               border: 'none',
               cursor: 'pointer',
@@ -890,12 +925,12 @@ export default function EnergyForecastDashboard({
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Cpu size={14} color="#6d28d9" />
-              <span style={{ fontSize: 13, fontWeight: 700, color: '#334155' }}>
+              <Cpu size={14} color="var(--violet)" />
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--white)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: 1.5 }}>
                 Model Information & Lineage
               </span>
             </div>
-            {showModelInfo ? <ChevronDown size={14} color="#64748b" /> : <ChevronRight size={14} color="#64748b" />}
+            {showModelInfo ? <ChevronDown size={14} color="var(--slate-500)" /> : <ChevronRight size={14} color="var(--slate-500)" />}
           </button>
 
           <AnimatePresence>
@@ -906,42 +941,42 @@ export default function EnergyForecastDashboard({
                 exit={{ opacity: 0, height: 0 }}
                 style={{ overflow: 'hidden' }}
               >
-                <div style={{ padding: '0 18px 16px', borderTop: '1px solid #f1f5f9' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginTop: 12 }}>
-                    <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: 6 }}>
-                      <div style={{ fontSize: 10, color: '#64748b', fontFamily: MONO }}>MODEL ARCHITECTURE</div>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: '#0f172a', marginTop: 2 }}>
+                <div style={{ padding: '0 18px 16px', borderTop: '1px solid var(--border-muted)' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10, marginTop: 12 }}>
+                    <div style={{ background: '#DDD0BC', border: '1px solid var(--border)', padding: '10px 12px', borderRadius: 6 }}>
+                      <div style={{ fontSize: 9.5, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)', letterSpacing: 1, textTransform: 'uppercase' }}>MODEL ARCHITECTURE</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--white)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
                         HistGradientBoostingRegressor
                       </div>
-                      <div style={{ fontSize: 10, color: '#64748b', marginTop: 2 }}>Scikit-Learn Pipeline</div>
+                      <div style={{ fontSize: 10, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>Scikit-Learn Pipeline</div>
                     </div>
 
-                    <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: 6 }}>
-                      <div style={{ fontSize: 10, color: '#64748b', fontFamily: MONO }}>TARGET HORIZON</div>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: '#6d28d9', marginTop: 2 }}>
+                    <div style={{ background: '#DDD0BC', border: '1px solid var(--border)', padding: '10px 12px', borderRadius: 6 }}>
+                      <div style={{ fontSize: 9.5, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)', letterSpacing: 1, textTransform: 'uppercase' }}>TARGET HORIZON</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--violet)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
                         target_next_15min_energy_kwh
                       </div>
-                      <div style={{ fontSize: 10, color: '#64748b', marginTop: 2 }}>Upcoming 15-minute interval</div>
+                      <div style={{ fontSize: 10, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>Upcoming 15-minute interval</div>
                     </div>
 
-                    <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: 6 }}>
-                      <div style={{ fontSize: 10, color: '#64748b', fontFamily: MONO }}>DATASET SHA-256 HASH</div>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: '#0f172a', marginTop: 2, fontFamily: MONO }}>
+                    <div style={{ background: '#DDD0BC', border: '1px solid var(--border)', padding: '10px 12px', borderRadius: 6 }}>
+                      <div style={{ fontSize: 9.5, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)', letterSpacing: 1, textTransform: 'uppercase' }}>DATASET SHA-256 HASH</div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--white)', marginTop: 2, fontFamily: 'var(--font-mono)' }}>
                         {metadata?.dataset_hash || '06229d9556da29c4'}
                       </div>
-                      <div style={{ fontSize: 10, color: '#64748b', marginTop: 2 }}>740,748 industrial records</div>
+                      <div style={{ fontSize: 10, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>740,748 industrial records</div>
                     </div>
 
-                    <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: 6 }}>
-                      <div style={{ fontSize: 10, color: '#64748b', fontFamily: MONO }}>SYNTHETIC BENCHMARK</div>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: '#059669', marginTop: 2 }}>
+                    <div style={{ background: '#DDD0BC', border: '1px solid var(--border)', padding: '10px 12px', borderRadius: 6 }}>
+                      <div style={{ fontSize: 9.5, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)', letterSpacing: 1, textTransform: 'uppercase' }}>SYNTHETIC BENCHMARK</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--emerald)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
                         R² = 0.652 | MAE = 0.940 kWh
                       </div>
-                      <div style={{ fontSize: 10, color: '#64748b', marginTop: 2 }}>Unseen Fleet R² = 0.617</div>
+                      <div style={{ fontSize: 10, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>Unseen Fleet R² = 0.617</div>
                     </div>
                   </div>
 
-                  <p style={{ margin: '12px 0 0', fontSize: 11, color: '#64748b', lineHeight: 1.5 }}>
+                  <p style={{ margin: '12px 0 0', fontSize: 11, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)', lineHeight: 1.5 }}>
                     *Notice: Model benchmarked on synthetic industrial energy dataset; factory-specific accuracy has not been established on physical field sub-meters. Unseen machine IDs are handled safely via one-hot encoder zero-encoding.
                   </p>
                 </div>
@@ -952,11 +987,14 @@ export default function EnergyForecastDashboard({
 
         {/* Accordion 2: Forecast Inputs & Quality */}
         <div
+          className="panel"
           style={{
-            background: '#ffffff',
-            border: '1px solid #e2e8f0',
-            borderRadius: 10,
+            background: 'rgba(238, 230, 218, 0.92)',
+            backdropFilter: 'blur(16px)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--r)',
             overflow: 'hidden',
+            marginBottom: 0,
           }}
         >
           <button
@@ -966,7 +1004,7 @@ export default function EnergyForecastDashboard({
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              padding: '14px 18px',
+              padding: '12px 18px',
               background: 'transparent',
               border: 'none',
               cursor: 'pointer',
@@ -974,12 +1012,12 @@ export default function EnergyForecastDashboard({
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Database size={14} color="#0284c7" />
-              <span style={{ fontSize: 13, fontWeight: 700, color: '#334155' }}>
+              <Database size={14} color="var(--cyan)" />
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--white)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: 1.5 }}>
                 Forecast Inputs & Data Quality (29 Features)
               </span>
             </div>
-            {showDataQuality ? <ChevronDown size={14} color="#64748b" /> : <ChevronRight size={14} color="#64748b" />}
+            {showDataQuality ? <ChevronDown size={14} color="var(--slate-500)" /> : <ChevronRight size={14} color="var(--slate-500)" />}
           </button>
 
           <AnimatePresence>
@@ -990,40 +1028,40 @@ export default function EnergyForecastDashboard({
                 exit={{ opacity: 0, height: 0 }}
                 style={{ overflow: 'hidden' }}
               >
-                <div style={{ padding: '0 18px 16px', borderTop: '1px solid #f1f5f9' }}>
+                <div style={{ padding: '0 18px 16px', borderTop: '1px solid var(--border-muted)' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 10, marginTop: 12, fontSize: 11 }}>
-                    <div style={{ background: '#f8fafc', padding: 10, borderRadius: 6, border: '1px solid #e2e8f0' }}>
-                      <div style={{ fontWeight: 700, color: '#0369a1', marginBottom: 2 }}>
+                    <div style={{ background: '#DDD0BC', padding: 10, borderRadius: 6, border: '1px solid var(--border)' }}>
+                      <div style={{ fontWeight: 700, color: 'var(--cyan)', fontFamily: 'var(--font-mono)', fontSize: 11, marginBottom: 2 }}>
                         Operational Telemetry (Simulated)
                       </div>
-                      <div style={{ color: '#475569' }}>
+                      <div style={{ color: 'var(--white)', fontFamily: 'var(--font-mono)', fontSize: 10 }}>
                         Features: power_kw, rated_power_kw, load_factor, operating_state, operating_minutes.
                       </div>
                     </div>
 
-                    <div style={{ background: '#f8fafc', padding: 10, borderRadius: 6, border: '1px solid #e2e8f0' }}>
-                      <div style={{ fontWeight: 700, color: '#6d28d9', marginBottom: 2 }}>
+                    <div style={{ background: '#DDD0BC', padding: 10, borderRadius: 6, border: '1px solid var(--border)' }}>
+                      <div style={{ fontWeight: 700, color: 'var(--violet)', fontFamily: 'var(--font-mono)', fontSize: 11, marginBottom: 2 }}>
                         Temporal Signals (Real-Time UTC)
                       </div>
-                      <div style={{ color: '#475569' }}>
+                      <div style={{ color: 'var(--white)', fontFamily: 'var(--font-mono)', fontSize: 10 }}>
                         Features: hour, day_of_week, hour_sin/cos, day_sin/cos, is_weekend, shift_pattern.
                       </div>
                     </div>
 
-                    <div style={{ background: '#f8fafc', padding: 10, borderRadius: 6, border: '1px solid #e2e8f0' }}>
-                      <div style={{ fontWeight: 700, color: '#d97706', marginBottom: 2 }}>
+                    <div style={{ background: '#DDD0BC', padding: 10, borderRadius: 6, border: '1px solid var(--border)' }}>
+                      <div style={{ fontWeight: 700, color: 'var(--amber)', fontFamily: 'var(--font-mono)', fontSize: 11, marginBottom: 2 }}>
                         Environmental Inputs (Defaults)
                       </div>
-                      <div style={{ color: '#475569' }}>
+                      <div style={{ color: 'var(--white)', fontFamily: 'var(--font-mono)', fontSize: 10 }}>
                         Furnace models explicit 840°C; other assets use equipment median (35°C) and factory ambient defaults (27.5°C, 58% RH).
                       </div>
                     </div>
 
-                    <div style={{ background: '#f8fafc', padding: 10, borderRadius: 6, border: '1px solid #e2e8f0' }}>
-                      <div style={{ fontWeight: 700, color: '#475569', marginBottom: 2 }}>
+                    <div style={{ background: '#DDD0BC', padding: 10, borderRadius: 6, border: '1px solid var(--border)' }}>
+                      <div style={{ fontWeight: 700, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)', fontSize: 11, marginBottom: 2 }}>
                         Lag Fallback (Zero-Leakage)
                       </div>
-                      <div style={{ color: '#475569' }}>
+                      <div style={{ color: 'var(--white)', fontFamily: 'var(--font-mono)', fontSize: 10 }}>
                         Past lags default to current-interval draw (y_t) due to lack of a FIFO buffer. No future target leakage.
                       </div>
                     </div>

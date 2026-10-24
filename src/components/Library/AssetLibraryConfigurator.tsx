@@ -35,7 +35,7 @@ export interface MachineAsset {
   description: string;
 }
 
-const MACHINE_DATA = rawMachineData as MachineAsset[];
+const MACHINE_DATA = rawMachineData as unknown as MachineAsset[];
 
 const CELL_CATEGORIES = [
   { id: 'all', label: 'All Utility Cells', count: 50 },

@@ -6,7 +6,8 @@ import {
   Building2, Sun, CloudRain, Coins, Info, Wrench,
   Flame, Fan, Server, Box, Compass, LogOut, User, RotateCcw,
   PanelRightClose, PanelRightOpen, Activity, ArrowRight,
-  Shield, Gauge, Printer, Download, ShieldAlert
+  Shield, Gauge, Printer, Download, ShieldAlert,
+  Award, Terminal, Database, ShieldCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {

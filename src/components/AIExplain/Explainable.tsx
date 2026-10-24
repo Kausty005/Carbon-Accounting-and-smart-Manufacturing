@@ -9,6 +9,9 @@ interface ExplainableProps {
   className?: string;
   style?: React.CSSProperties;
   showBadge?: boolean;
+  title?: string;
+  explanationType?: string;
+  metric?: string;
 }
 
 export function Explainable({

@@ -83,11 +83,11 @@ function CameraController({
 function MachineHudBadge({
   asset,
   isSelected,
-  onClose,
+  onSelect,
 }: {
   asset: Asset;
   isSelected: boolean;
-  onClose: () => void;
+  onSelect: () => void;
 }) {
   const statusColors: Record<string, string> = {
     OPTIMAL: '#10b981',
@@ -276,24 +276,30 @@ function MachineHudBadge({
     >
       <div
         onPointerDown={(e) => e.stopPropagation()}
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.stopPropagation();
+          onSelect();
+        }}
         onDoubleClick={(e) => e.stopPropagation()}
         onWheel={(e) => e.stopPropagation()}
         style={{
-          background: 'rgba(255, 255, 255, 0.96)',
+          background: isSelected ? 'rgba(255, 255, 255, 0.98)' : 'rgba(255, 255, 255, 0.91)',
           backdropFilter: 'blur(10px)',
           WebkitBackdropFilter: 'blur(10px)',
-          border: `1.2px solid ${accent}`,
-          boxShadow: `0 4px 16px rgba(0, 0, 0, 0.10), 0 0 10px ${accent}20`,
+          border: isSelected ? `1.5px solid ${accent}` : `1px solid rgba(0, 0, 0, 0.12)`,
+          boxShadow: isSelected
+            ? `0 0 16px ${accent}40, 0 6px 18px rgba(0, 0, 0, 0.12)`
+            : `0 2px 10px rgba(0, 0, 0, 0.06)`,
           borderRadius: 6,
           padding: '6px 9px',
           fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
-          cursor: 'default',
+          cursor: 'pointer',
           width: 172,
-          transition: 'all 0.15s ease',
+          transition: 'all 0.18s ease',
+          transform: isSelected ? 'scale(1.03)' : 'scale(1)',
         }}
       >
-        {/* Header: Machine Name, Status Badge, Close Button */}
+        {/* Header: Machine Name & Status Badge */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4, marginBottom: 2 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, overflow: 'hidden' }}>
             <span
@@ -302,7 +308,7 @@ function MachineHudBadge({
                 height: 6,
                 borderRadius: '50%',
                 background: statusColor,
-                boxShadow: `0 0 6px ${statusColor}`,
+                boxShadow: isSelected ? `0 0 8px ${statusColor}` : `0 0 4px ${statusColor}`,
                 display: 'inline-block',
                 flexShrink: 0,
               }}
@@ -310,8 +316,8 @@ function MachineHudBadge({
             <span
               style={{
                 fontSize: 9.5,
-                fontWeight: 800,
-                color: '#0f172a',
+                fontWeight: isSelected ? 800 : 700,
+                color: isSelected ? '#0f172a' : '#1e293b',
                 letterSpacing: 0.2,
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
@@ -323,43 +329,21 @@ function MachineHudBadge({
             </span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 3, flexShrink: 0 }}>
-            <span
-              style={{
-                fontSize: 7.5,
-                padding: '1px 3.5px',
-                borderRadius: 2.5,
-                background: `${statusColor}18`,
-                color: statusColor,
-                border: `1px solid ${statusColor}33`,
-                fontWeight: 700,
-                lineHeight: 1,
-              }}
-            >
-              {asset.status}
-            </span>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onClose();
-              }}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                padding: '1px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#94a3b8',
-                borderRadius: 3,
-                lineHeight: 1,
-              }}
-              title="Close inspection card"
-            >
-              <X size={10} />
-            </button>
-          </div>
+          <span
+            style={{
+              fontSize: 7.5,
+              padding: '1px 4px',
+              borderRadius: 2.5,
+              background: `${statusColor}18`,
+              color: statusColor,
+              border: `1px solid ${statusColor}33`,
+              fontWeight: 700,
+              lineHeight: 1,
+              flexShrink: 0,
+            }}
+          >
+            {asset.status}
+          </span>
         </div>
 
         {/* Subtitle / Bay ID */}
@@ -449,12 +433,12 @@ function MachineNode({
         </mesh>
       )}
 
-      {/* Floating HUD Inspection Card - Only visible when this machine is selected */}
-      {showHud && isSelected && (
+      {/* Floating HUD Inspection Card - Visible all the time */}
+      {showHud && (
         <MachineHudBadge
           asset={asset}
           isSelected={isSelected}
-          onClose={() => onSelect(null)}
+          onSelect={() => onSelect(asset.id)}
         />
       )}
     </group>

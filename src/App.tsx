@@ -111,7 +111,7 @@ function LoadBar({ label, pct, color }: { label: string; pct: number; color: str
   );
 }
 
-// â”€â”€â”€ Top Telemetry Bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Top Telemetry Bar ─────────────────────────────────────────────────────────
 
 function TeleBar({
   simOn,
@@ -168,7 +168,7 @@ function TeleBar({
       <div className="tele-item">
         <span className="tele-label">ToD Tariff Zone</span>
         <span className={`tele-val ${isPeak ? 'tele-warn' : ''}`}>
-          {isPeak ? 'PEAK (â‚¹9.00/kWh)' : 'NORMAL (â‚¹7.50/kWh)'}
+          {isPeak ? 'PEAK (₹9.00/kWh)' : 'NORMAL (₹7.50/kWh)'}
         </span>
       </div>
 
@@ -179,18 +179,18 @@ function TeleBar({
 
       <div className="tele-item">
         <span className="tele-label">Energy Cost</span>
-        <span className="tele-val text-emerald">â‚¹{cost.toLocaleString()}</span>
+        <span className="tele-val text-emerald">₹{cost.toLocaleString()}</span>
       </div>
 
       <div className="tele-item">
         <span className="tele-label">Gross Footprint</span>
-        <span className="tele-val" style={{ color: 'var(--amber)' }}>{totalCarbon} tCOâ‚‚e</span>
+        <span className="tele-val" style={{ color: 'var(--amber)' }}>{totalCarbon} tCO₂e</span>
       </div>
 
       {simOn && (
         <div className="tele-item">
           <span className="tele-label">Avoided Emissions</span>
-          <span className="tele-val text-emerald">{avoidedCarbon} tCOâ‚‚e</span>
+          <span className="tele-val text-emerald">{avoidedCarbon} tCO₂e</span>
         </div>
       )}
 
@@ -216,7 +216,7 @@ function TeleBar({
   );
 }
 
-// â”€â”€â”€ 24h Demand Data & Distribution Constants matching reference â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── 24h Demand Data & Distribution Constants matching reference ─────────────
 const OVERVIEW_24H_DEMAND = [
   { time: '00:00', compressor: 18, cnc: 0, furnace: 0, cooling: 14 },
   { time: '02:00', compressor: 38, cnc: 0, furnace: 0, cooling: 16 },
@@ -244,7 +244,7 @@ function OverviewView({
 }) {
   return (
     <div className="scroll-area" style={{ background: '#F4EEE5', minHeight: '100%', padding: '16px 22px 32px' }}>
-      {/* â”€â”€â”€ Top Header: Title & Time Controls â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ─── Top Header: Title & Time Controls ────────────────────────────── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
         <div>
           <h1 style={{ fontSize: 25, fontWeight: 700, color: '#1E252D', margin: 0, letterSpacing: '-0.015em' }}>
@@ -284,7 +284,7 @@ function OverviewView({
         </div>
       </div>
 
-      {/* â”€â”€â”€ Row 1: Top 4 KPI Metric Cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ─── Row 1: Top 4 KPI Metric Cards ─────────────────────────────────── */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(4, 1fr)',
@@ -318,7 +318,7 @@ function OverviewView({
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: 11, fontWeight: 600, color: '#10B981', display: 'flex', alignItems: 'center', gap: 2 }}>
-                â†‘ +8.4% vs yesterday
+                ↑ +8.4% vs yesterday
               </span>
               <BarChart2 size={14} color="#0284C7" />
             </div>
@@ -331,7 +331,7 @@ function OverviewView({
             component_type: 'kpi',
             title: 'Energy cost',
             identifier: 'kpi_energy_cost',
-            value: 'â‚¹23,044',
+            value: '₹23,044',
             unit: 'INR',
             trend: '+6.1% vs yesterday',
             time_range: 'Last 24 Hours',
@@ -348,11 +348,11 @@ function OverviewView({
               <span style={{ fontSize: 12, fontWeight: 500, color: '#64748B' }}>Energy cost</span>
             </div>
             <div style={{ fontSize: 24, fontWeight: 700, color: '#1E252D', marginBottom: 8 }}>
-              â‚¹23,044
+              ₹23,044
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: 11, fontWeight: 600, color: '#EF4444', display: 'flex', alignItems: 'center', gap: 2 }}>
-                â†‘ +6.1% vs yesterday
+                ↑ +6.1% vs yesterday
               </span>
               <BarChart2 size={14} color="#0284C7" />
             </div>
@@ -365,7 +365,7 @@ function OverviewView({
             component_type: 'kpi',
             title: 'Potential savings',
             identifier: 'kpi_potential_savings',
-            value: 'â‚¹7,987',
+            value: '₹7,987',
             unit: 'INR / period',
             trend: '998 kWh (8% reduction)',
             time_range: 'Last 24 Hours',
@@ -381,7 +381,7 @@ function OverviewView({
               <span style={{ fontSize: 12, fontWeight: 500, color: '#64748B' }}>Potential savings</span>
             </div>
             <div style={{ fontSize: 24, fontWeight: 700, color: '#1E252D', marginBottom: 8 }}>
-              â‚¹7,987 <span style={{ fontSize: 11, fontWeight: 400, color: '#64748B' }}>/ period</span>
+              ₹7,987 <span style={{ fontSize: 11, fontWeight: 400, color: '#64748B' }}>/ period</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: 11, fontWeight: 600, color: '#16A34A' }}>
@@ -399,7 +399,7 @@ function OverviewView({
             title: 'Carbon footprint',
             identifier: 'kpi_carbon_footprint',
             value: '14.47',
-            unit: 'tCOâ‚‚e',
+            unit: 'tCO₂e',
             trend: '-12.6% vs baseline',
             time_range: 'Last 24 Hours',
             site: 'PrecisionWorks Mfg',
@@ -414,7 +414,7 @@ function OverviewView({
               <span style={{ fontSize: 12, fontWeight: 500, color: '#64748B' }}>Carbon footprint</span>
             </div>
             <div style={{ fontSize: 24, fontWeight: 700, color: '#1E252D', marginBottom: 8 }}>
-              14.47 <span style={{ fontSize: 13, fontWeight: 500, color: '#1E252D' }}>tCOâ‚‚e</span>
+              14.47 <span style={{ fontSize: 13, fontWeight: 500, color: '#1E252D' }}>tCO₂e</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: 11, fontWeight: 500, color: '#475569' }}>
@@ -426,7 +426,7 @@ function OverviewView({
         </Explainable>
       </div>
 
-      {/* â”€â”€â”€ Row 2: Dual Charts + Priority Alerts (3 Columns) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ─── Row 2: Dual Charts + Priority Alerts (3 Columns) ──────────────── */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: '40% 35% 25%',
@@ -644,7 +644,7 @@ function OverviewView({
               <span style={{ fontSize: 13.5, fontWeight: 700, color: '#1E252D' }}>Priority alerts</span>
             </div>
             <span onClick={() => setView('anomalies')} style={{ fontSize: 11, fontWeight: 600, color: '#0284C7', cursor: 'pointer' }}>
-              View all â†’
+              View all →
             </span>
           </div>
 
@@ -681,7 +681,7 @@ function OverviewView({
                   </div>
                 </div>
                 <div style={{ fontSize: 10, color: '#7F1D1D', lineHeight: 1.35 }}>
-                  18 kW idle draw during 3.2 hrs/day break periods. Estimated waste: 998 kWh/period (â‚¹7,987).
+                  18 kW idle draw during 3.2 hrs/day break periods. Estimated waste: 998 kWh/period (₹7,987).
                 </div>
               </div>
             </Explainable>
@@ -760,7 +760,7 @@ function OverviewView({
         </div>
       </div>
 
-      {/* â”€â”€â”€ Row 3: Action Needed Golden Banner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ─── Row 3: Action Needed Golden Banner ────────────────────────────── */}
       <Explainable
         context={{
           component_type: 'banner',
@@ -812,7 +812,7 @@ function OverviewView({
                 </span>
               </div>
               <div style={{ fontSize: 11.5, color: '#475569' }}>
-                18 kW idle draw during shift handover and lunch breaks (3.2 hrs/day). Estimated waste: <strong>998 kWh/period (â‚¹7,987 / 727.7 kg COâ‚‚e)</strong>.
+                18 kW idle draw during shift handover and lunch breaks (3.2 hrs/day). Estimated waste: <strong>998 kWh/period (₹7,987 / 727.7 kg CO₂e)</strong>.
               </div>
             </div>
           </div>
@@ -827,7 +827,7 @@ function OverviewView({
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ fontSize: 13 }}>â±</span>
+              <span style={{ fontSize: 13 }}>⏱</span>
               <div>
                 <div style={{ fontSize: 12, fontWeight: 700, color: '#1E252D', lineHeight: 1.1 }}>3.2 hrs/day</div>
                 <div style={{ fontSize: 9.5, color: '#64748B' }}>Idle time</div>
@@ -871,7 +871,7 @@ function OverviewView({
         </div>
       </Explainable>
 
-      {/* â”€â”€â”€ Row 4: Asset Operational Status Cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ─── Row 4: Asset Operational Status Cards ─────────────────────────── */}
       <div style={{ background: '#FFFFFF', border: '1px solid #EAE3D7', borderRadius: 12, padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -882,7 +882,7 @@ function OverviewView({
             </div>
           </div>
           <span onClick={() => setView('scada')} style={{ fontSize: 11, fontWeight: 600, color: '#0284C7', cursor: 'pointer' }}>
-            View all assets â†’
+            View all assets →
           </span>
         </div>
 
@@ -1064,7 +1064,7 @@ function OverviewView({
   );
 }
 
-// â”€â”€â”€ SCADA & 3D Factory View â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── SCADA & 3D Factory View ──────────────────────────────────────────────────
 function ScadaView({
   assets,
   selectedId,
@@ -1161,7 +1161,7 @@ function ScadaView({
   );
 }
 
-// â”€â”€â”€ Simulator View â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Simulator View ───────────────────────────────────────────────────────────
 
 function SimulatorView({
   params,
@@ -1201,10 +1201,10 @@ function SimulatorView({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
         <div>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--slate-400)', letterSpacing: 2, textTransform: 'uppercase' }}>
-            Digital Twin &amp; What-If Simulator â€” PrecisionWorks Manufacturing
+            Digital Twin &amp; What-If Simulator — PrecisionWorks Manufacturing
           </div>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--slate-500)', marginTop: 2 }}>
-            Simulated Energy Interventions Â· ISO 14064-1 &amp; GHG Protocol Scenario Modeling Â· No Direct Actuation
+            Simulated Energy Interventions · ISO 14064-1 &amp; GHG Protocol Scenario Modeling · No Direct Actuation
           </div>
         </div>
 
@@ -1236,15 +1236,15 @@ function SimulatorView({
 
       {/* Physics Operational Constraint Panel */}
       <div className="panel" style={{ marginBottom: 12 }}>
-        <div className="panel-hdr"><Shield size={12} /> Physics Constraint Validation â€” Operational Safety Gate</div>
+        <div className="panel-hdr"><Shield size={12} /> Physics Constraint Validation — Operational Safety Gate</div>
         <div style={{ padding: '10px 12px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
           <ConstraintBadge
             icon={<Gauge size={16} />}
             label="Header Pressure"
             value={`${params.pressureSetpoint.toFixed(1)} bar`}
-            constraint="min â‰¥ 6.2 bar"
+            constraint="min ≥ 6.2 bar"
             pass={params.pressureSetpoint >= 6.2}
-            detail={`Air receiver buffer ${params.pressureSetpoint >= 6.5 ? 'ADEQUATE' : 'BORDERLINE'} â€” CNC pneumatic cycle safe`}
+            detail={`Air receiver buffer ${params.pressureSetpoint >= 6.5 ? 'ADEQUATE' : 'BORDERLINE'} — CNC pneumatic cycle safe`}
           />
           <ConstraintBadge
             icon={<Activity size={16} />}
@@ -1252,21 +1252,21 @@ function SimulatorView({
             value="1,200 units"
             constraint="100% target"
             pass={true}
-            detail="Production unimpacted â€” idle cutoff only during non-machining windows"
+            detail="Production unimpacted — idle cutoff only during non-machining windows"
           />
           <ConstraintBadge
             icon={<Zap size={16} />}
             label="Motor Starts/Hour"
             value={params.autoIdleCutoff ? '2.4 /hr' : '4.1 /hr'}
-            constraint="max â‰¤ 6/hr"
+            constraint="max ≤ 6/hr"
             pass={true}
-            detail="Auto-idle timer prevents rapid restart â€” winding insulation safe"
+            detail="Auto-idle timer prevents rapid restart — winding insulation safe"
           />
         </div>
         <div style={{ padding: '8px 12px 10px', fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--slate-500)', borderTop: '1px solid var(--border-muted)' }}>
           <span style={{ color: 'var(--cyan)' }}>kVA Analysis: </span>
-          Baseline 147.2 kVA {params.autoIdleCutoff ? 'â†’ 120.1 kVA (Simulated) ' : ''}â€” Contract ceiling: 160 kVA.
-          {params.autoIdleCutoff && <span style={{ color: 'var(--emerald)' }}> Power Factor: 0.91 â†’ 0.96 (reactive kVAh penalty eliminated)</span>}
+          Baseline 147.2 kVA {params.autoIdleCutoff ? '→ 120.1 kVA (Simulated) ' : ''}— Contract ceiling: 160 kVA.
+          {params.autoIdleCutoff && <span style={{ color: 'var(--emerald)' }}> Power Factor: 0.91 → 0.96 (reactive kVAh penalty eliminated)</span>}
         </div>
       </div>
 
@@ -1300,7 +1300,7 @@ function SimulatorView({
               {/* Toggle 1 */}
               <div style={{ marginBottom: 16 }}>
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--amber)', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 6 }}>
-                  ANOMALY FIX Â· COMPRESSOR IDLE
+                  ANOMALY FIX · COMPRESSOR IDLE
                 </div>
                 <div className="toggle-wrap" onClick={() => toggle('autoIdleCutoff')}>
                   <Toggle on={params.autoIdleCutoff} onChange={() => toggle('autoIdleCutoff')} />
@@ -1310,10 +1310,10 @@ function SimulatorView({
                   <div className="formula-box" style={{ marginTop: 8 }}>
                     <span className="formula-comment">// Compressor idle optimization (Simulated)</span>{'\n'}
                     {'idle_kW = 18, idle_hrs = 3.2'}{'\n'}
-                    {'savings = 18 Ã— 3.2 = 57.6 kWh/day'}{'\n'}
-                    {'period = 57.6 Ã— 30 = 1,728 kWh'}{'\n'}
+                    {'savings = 18 × 3.2 = 57.6 kWh/day'}{'\n'}
+                    {'period = 57.6 × 30 = 1,728 kWh'}{'\n'}
                     <span style={{ color: 'var(--emerald)' }}>
-                      {`saving â‰ˆ ${result.idleSavingsKwh} kWh â†’ â‚¹${(result.idleSavingsKwh * PLANT.tariff).toFixed(2)} â†’ ${((result.idleSavingsKwh * factorVal) / 1000).toFixed(3)} tCOâ‚‚e avoided`}
+                      {`saving ≈ ${result.idleSavingsKwh} kWh → ₹${(result.idleSavingsKwh * PLANT.tariff).toFixed(2)} → ${((result.idleSavingsKwh * factorVal) / 1000).toFixed(3)} tCO₂e avoided`}
                     </span>
                   </div>
                 )}
@@ -1340,11 +1340,11 @@ function SimulatorView({
                 </div>
                 {params.pressureSetpoint < 7.5 && (
                   <div className="formula-box">
-                    <span className="formula-comment">// Each 0.1 bar â‰ˆ 1% compressor energy saved</span>{'\n'}
+                    <span className="formula-comment">// Each 0.1 bar ≈ 1% compressor energy saved</span>{'\n'}
                     {`reduction = ${(7.5 - params.pressureSetpoint).toFixed(1)} bar`}{'\n'}
-                    {`pressure_savings = ${(7.5 - params.pressureSetpoint).toFixed(1)} Ã— 10 Ã— 3120/100`}{'\n'}
+                    {`pressure_savings = ${(7.5 - params.pressureSetpoint).toFixed(1)} × 10 × 3120/100`}{'\n'}
                     <span style={{ color: 'var(--emerald)' }}>
-                      {`= ${result.pressureSavingsKwh.toFixed(1)} kWh saved â†’ ${((result.pressureSavingsKwh * factorVal) / 1000).toFixed(3)} tCOâ‚‚e avoided`}
+                      {`= ${result.pressureSavingsKwh.toFixed(1)} kWh saved → ${((result.pressureSavingsKwh * factorVal) / 1000).toFixed(3)} tCO₂e avoided`}
                     </span>
                   </div>
                 )}
@@ -1363,7 +1363,7 @@ function SimulatorView({
                   <div className="formula-box" style={{ marginTop: 8 }}>
                     <span className="formula-comment">// Demand management formula (Peak clipping)</span>{'\n'}
                     {'furnace_rated = 85 kW'}{'\n'}
-                    {'peak_reduction = 85 Ã— 0.18 = 15.3 kW'}{'\n'}
+                    {'peak_reduction = 85 × 0.18 = 15.3 kW'}{'\n'}
                     <span style={{ color: 'var(--emerald)' }}>
                       {`MD reduction = ${result.peakReductionKva} kVA (18%)`}
                     </span>
@@ -1397,10 +1397,10 @@ function SimulatorView({
                     Baseline Gross
                   </div>
                   <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--violet)', margin: '4px 0 2px' }}>
-                    {baselineGross.toFixed(2)} <span style={{ fontSize: 10, fontWeight: 400 }}>tCOâ‚‚e</span>
+                    {baselineGross.toFixed(2)} <span style={{ fontSize: 10, fontWeight: 400 }}>tCO₂e</span>
                   </div>
                   <div style={{ fontSize: 9, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)' }}>
-                    MEASURED Â· Scope 1+2
+                    MEASURED · Scope 1+2
                   </div>
                 </div>
 
@@ -1423,10 +1423,10 @@ function SimulatorView({
                     Avoided Scope 2
                   </div>
                   <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--emerald)', margin: '4px 0 2px' }}>
-                    {avoidedCO2e.toFixed(3)} <span style={{ fontSize: 10, fontWeight: 400 }}>tCOâ‚‚e</span>
+                    {avoidedCO2e.toFixed(3)} <span style={{ fontSize: 10, fontWeight: 400 }}>tCO₂e</span>
                   </div>
                   <div style={{ fontSize: 9, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)' }}>
-                    SIMULATED Â· Separate
+                    SIMULATED · Separate
                   </div>
                 </div>
 
@@ -1436,7 +1436,7 @@ function SimulatorView({
                     Proposed Gross
                   </div>
                   <div style={{ fontSize: 16, fontWeight: 700, color: anyFix ? 'var(--cyan)' : 'var(--slate-300)', margin: '4px 0 2px' }}>
-                    {proposedGross.toFixed(2)} <span style={{ fontSize: 10, fontWeight: 400 }}>tCOâ‚‚e</span>
+                    {proposedGross.toFixed(2)} <span style={{ fontSize: 10, fontWeight: 400 }}>tCO₂e</span>
                   </div>
                   <div style={{ fontSize: 9, color: anyFix ? 'var(--emerald)' : 'var(--slate-500)', fontFamily: 'var(--font-mono)' }}>
                     {anyFix ? `-${reductionPct.toFixed(1)}% reduction` : 'Identical to baseline'}
@@ -1447,12 +1447,12 @@ function SimulatorView({
               {/* Formula & Rule Box */}
               <div className="formula-box">
                 <span className="formula-comment">// Avoided Emissions Formula (GHG Protocol Corporate Standard)</span>{'\n'}
-                {`avoided_tCO2e = ${savingsKwh.toFixed(1)} kWh Ã— ${factorVal.toFixed(5)} kg COâ‚‚/kWh Ã· 1000 = ${avoidedCO2e.toFixed(4)} tCOâ‚‚e avoided`}{'\n'}
+                {`avoided_tCO2e = ${savingsKwh.toFixed(1)} kWh × ${factorVal.toFixed(5)} kg CO₂/kWh ÷ 1000 = ${avoidedCO2e.toFixed(4)} tCO₂e avoided`}{'\n'}
                 <span style={{ color: 'var(--slate-400)' }}>
-                  {`Emission Factor: CEA India FY ${reportingYear} (${factorVal.toFixed(5)} kg COâ‚‚/kWh) Â· Reporting Period: 30.0 Days`}{'\n'}
+                  {`Emission Factor: CEA India FY ${reportingYear} (${factorVal.toFixed(5)} kg CO₂/kWh) · Reporting Period: 30.0 Days`}{'\n'}
                 </span>
                 <span style={{ color: 'var(--emerald)' }}>
-                  ACCOUNTING CORRECTNESS: Avoided emissions are reported separately. Gross baseline emissions ({baselineGross.toFixed(3)} tCOâ‚‚e) remain unchanged. Scope 1 fuel emissions ({baselineScope1.toFixed(3)} tCOâ‚‚e) are not altered by electricity savings.
+                  ACCOUNTING CORRECTNESS: Avoided emissions are reported separately. Gross baseline emissions ({baselineGross.toFixed(3)} tCO₂e) remain unchanged. Scope 1 fuel emissions ({baselineScope1.toFixed(3)} tCO₂e) are not altered by electricity savings.
                 </span>
               </div>
             </div>
@@ -1483,30 +1483,30 @@ function SimulatorView({
                 </tr>
                 <tr>
                   <td className="td-label">Scope 2 Grid Carbon</td>
-                  <td className="td-baseline">{baselineScope2.toFixed(3)} tCOâ‚‚e</td>
-                  <td className="td-proposed">{proposedScope2.toFixed(3)} tCOâ‚‚e</td>
-                  <td className="td-delta">-{avoidedCO2e.toFixed(3)} tCOâ‚‚e</td>
+                  <td className="td-baseline">{baselineScope2.toFixed(3)} tCO₂e</td>
+                  <td className="td-proposed">{proposedScope2.toFixed(3)} tCO₂e</td>
+                  <td className="td-delta">-{avoidedCO2e.toFixed(3)} tCO₂e</td>
                   <td style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--emerald)' }}>AVOIDED</td>
                 </tr>
                 <tr>
                   <td className="td-label">Scope 1 Fuel Carbon (LPG)</td>
-                  <td className="td-baseline">{baselineScope1.toFixed(3)} tCOâ‚‚e</td>
-                  <td className="td-proposed">{baselineScope1.toFixed(3)} tCOâ‚‚e</td>
-                  <td className="td-delta" style={{ color: 'var(--slate-400)' }}>0.000 tCOâ‚‚e</td>
+                  <td className="td-baseline">{baselineScope1.toFixed(3)} tCO₂e</td>
+                  <td className="td-proposed">{baselineScope1.toFixed(3)} tCO₂e</td>
+                  <td className="td-delta" style={{ color: 'var(--slate-400)' }}>0.000 tCO₂e</td>
                   <td style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--slate-400)' }}>UNAFFECTED</td>
                 </tr>
                 <tr>
                   <td className="td-label">Gross Operational Footprint</td>
-                  <td className="td-baseline">{baselineGross.toFixed(3)} tCOâ‚‚e</td>
-                  <td className="td-proposed">{proposedGross.toFixed(3)} tCOâ‚‚e</td>
-                  <td className="td-delta">-{avoidedCO2e.toFixed(3)} tCOâ‚‚e ({reductionPct.toFixed(1)}%)</td>
+                  <td className="td-baseline">{baselineGross.toFixed(3)} tCO₂e</td>
+                  <td className="td-proposed">{proposedGross.toFixed(3)} tCO₂e</td>
+                  <td className="td-delta">-{avoidedCO2e.toFixed(3)} tCO₂e ({reductionPct.toFixed(1)}%)</td>
                   <td style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--violet)' }}>ISOLATED</td>
                 </tr>
                 <tr>
-                  <td className="td-label">Electricity Cost (â‚¹8/kWh)</td>
-                  <td className="td-baseline">â‚¹{PLANT.baselineCost.toLocaleString()}</td>
-                  <td className="td-proposed">â‚¹{result.optimizedCost.toLocaleString()}</td>
-                  <td className="td-delta">-â‚¹{result.savingsCost.toLocaleString()}</td>
+                  <td className="td-label">Electricity Cost (₹8/kWh)</td>
+                  <td className="td-baseline">₹{PLANT.baselineCost.toLocaleString()}</td>
+                  <td className="td-proposed">₹{result.optimizedCost.toLocaleString()}</td>
+                  <td className="td-delta">-₹{result.savingsCost.toLocaleString()}</td>
                   <td style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--amber)' }}>ESTIMATED</td>
                 </tr>
                 <tr>
@@ -1532,8 +1532,8 @@ function SimulatorView({
                 </tr>
                 {result.roi && (
                   <tr>
-                    <td className="td-label">Est. Payback (Auto-Cutoff relay â‚¹2L)</td>
-                    <td className="td-baseline">â€”</td>
+                    <td className="td-label">Est. Payback (Auto-Cutoff relay ₹2L)</td>
+                    <td className="td-baseline">—</td>
                     <td className="td-proposed" style={{ color: 'var(--cyan)' }}>{result.roi} months</td>
                     <td className="td-delta">ROI</td>
                     <td style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--cyan)' }}>FINANCIAL</td>
@@ -1556,7 +1556,7 @@ function SimulatorView({
   );
 }
 
-// â”€â”€â”€ Physics Constraint Badge â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Physics Constraint Badge ──────────────────────────────────────────────────
 function ConstraintBadge({
   icon, label, value, constraint, pass, detail
 }: {
@@ -1597,8 +1597,8 @@ function ConstraintBadge({
   );
 }
 
-// â”€â”€â”€ Carbon View â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â”€â”€â”€ Carbon View â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Carbon View ──────────────────────────────────────────────────────────────
+// ─── Carbon View ──────────────────────────────────────────────────────────────
 function CarbonView(props: {
   params: SimParams;
   gridEF: number;
@@ -1617,7 +1617,7 @@ function CarbonView(props: {
   return <CarbonAccountingView {...props} />;
 }
 
-// â”€â”€â”€ Report View â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Report View ──────────────────────────────────────────────────────────────
 
 function ReportView({
   params,
@@ -1641,7 +1641,7 @@ function ReportView({
   const scenSec = (scenKwh / baseUnits).toFixed(2);
   const secImprovementPct = (((Number(baseSec) - Number(scenSec)) / (Number(baseSec) || 1)) * 100).toFixed(1);
 
-  // Counterfactual calculation: Case A (Volume Contraction Audit â€” Material Delay)
+  // Counterfactual calculation: Case A (Volume Contraction Audit — Material Delay)
   const cfContractionUnits = 122;
   const cfAdjustedBaseKwh = Number((baseKwh * (cfContractionUnits / baseUnits)).toFixed(2));
   const cfVolumeDropEffectKwh = Number((baseKwh - cfAdjustedBaseKwh).toFixed(2));
@@ -1659,7 +1659,7 @@ function ReportView({
 
   const handlePrint = () => window.print();
   const handleExport = () => {
-    const content = `WattWise AI â€” ISO 50001 Sustainability & Cost Audit Report
+    const content = `WattWise AI — ISO 50001 Sustainability & Cost Audit Report
 PrecisionWorks Manufacturing
 Date: ${new Date().toLocaleDateString('en-IN')}
 Scenario ID: ${activeSimulation.scenario_id}
@@ -1669,11 +1669,11 @@ Calculation Engine: UVDR-v2.0.0
 
 EXECUTIVE SUMMARY
 Baseline Energy:    ${baseKwh.toLocaleString()} kWh
-Baseline Cost:      â‚¹${baseCost.toLocaleString()}
+Baseline Cost:      ₹${baseCost.toLocaleString()}
 Proposed Energy:    ${scenKwh.toLocaleString()} kWh
-Proposed Cost:      â‚¹${scenCost.toLocaleString()}
+Proposed Cost:      ₹${scenCost.toLocaleString()}
 Energy Savings:     ${savedKwh} kWh (${((savedKwh / (baseKwh || 1)) * 100).toFixed(1)}%)
-Cost Savings:       â‚¹${savedCost.toLocaleString()}/day
+Cost Savings:       ₹${savedCost.toLocaleString()}/day
 Peak Demand Shaved: ${Math.abs(activeSimulation.deltas.peak_kw)} kW
 Scope 2 Avoided:    ${avoidedCo2} kg CO2e (${(avoidedCo2 / 1000).toFixed(3)} tCO2e)
 
@@ -1691,7 +1691,7 @@ Production Volume Baseline:    ${baseUnits} parts (SEC: ${baseSec} kWh/part)
 Scenario Normalized SEC:       ${scenSec} kWh/part (-${secImprovementPct}%)
 Counterfactual Shift Output:   ${cfContractionUnits} parts (Material delay on CNC)
 Raw Submeter Drop:             185.00 kWh (-14.01%)
-Adjusted Baseline (E_adj):     ${cfAdjustedBaseKwh} kWh (E_adj = E_base Ã— 122 / 140)
+Adjusted Baseline (E_adj):     ${cfAdjustedBaseKwh} kWh (E_adj = E_base × 122 / 140)
 Production Volume Effect:      ${cfVolumeDropEffectKwh} kWh (Output loss, not efficiency)
 Verified Operational Savings:  ${cfVerifiedSavingsKwh} kWh/day (${cfVerifiedScope2Kg} kg CO2e/day)
 5-Day Cumulative Savings:      ${(cfVerifiedSavingsKwh * 5).toFixed(2)} kWh/week
@@ -1701,16 +1701,16 @@ Blame-Game Resolution:         Raw meter drop is adjusted for factory volume; se
 
 DIAGNOSTIC UNCERTAINTY & SENSOR SUFFICIENCY (IDEA A)
 Readiness Grade:               Grade ${grade} (${gradeDesc})
-Uncertainty Band:              â‚¹${(savedCost * 0.65).toFixed(0)} - â‚¹${(savedCost * 1.35).toFixed(0)}/day (Â±35% Diagnostic Ambiguity)
+Uncertainty Band:              ₹${(savedCost * 0.65).toFixed(0)} - ₹${(savedCost * 1.35).toFixed(0)}/day (±35% Diagnostic Ambiguity)
 Physical Ambiguity:            Blow-off timer fault vs Downstream ring-main pipe leaks
-Value of Information (VOI):    Temporary Ultrasonic Airflow Transducer (â‚¹12,000 Capex, VOI Ratio: 4.5x)
+Value of Information (VOI):    Temporary Ultrasonic Airflow Transducer (₹12,000 Capex, VOI Ratio: 4.5x)
 Target Post-Sensor Payback:    2.8 - 5.1 months (Grade A Confidence)
 
 CARBON ACCOUNTING (GHG Protocol Corporate Standard)
-Scope 1 Thermal (LPG):         ${s1Total.toFixed(3)} tCOâ‚‚e/month
-Scope 2 Grid Electricity:      ${s2Total.toFixed(3)} tCOâ‚‚e/month (at CEA India Baseline Database v19/v22)
-Gross Plant Footprint:         ${grossTotal.toFixed(3)} tCOâ‚‚e/month
-Avoided Carbon (Scenario):     ${avoidedCarbon.toFixed(3)} tCOâ‚‚e/month
+Scope 1 Thermal (LPG):         ${s1Total.toFixed(3)} tCO₂e/month
+Scope 2 Grid Electricity:      ${s2Total.toFixed(3)} tCO₂e/month (at CEA India Baseline Database v19/v22)
+Gross Plant Footprint:         ${grossTotal.toFixed(3)} tCO₂e/month
+Avoided Carbon (Scenario):     ${avoidedCarbon.toFixed(3)} tCO₂e/month
 Missing Factor Policy:         Calculation halted if factor unverified; no silent defaults.
 
 VERIFICATION PROTOCOL
@@ -1750,9 +1750,9 @@ Governance:         Simulation Only. Plant Energy Manager approval required prio
         <div className="report-heading">Executive Sustainability &amp; Cost Audit Report</div>
         <div className="report-kv"><span className="report-k">Facility</span><span className="report-v">PrecisionWorks Manufacturing</span></div>
         <div className="report-kv"><span className="report-k">Report Date</span><span className="report-v">{new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}</span></div>
-        <div className="report-kv"><span className="report-k">Standard</span><span className="report-v">ISO 50001:2018 â€” Energy Management Systems</span></div>
-        <div className="report-kv"><span className="report-k">Grid Tariff</span><span className="report-v">â‚¹9.00/kWh (ToD â€” Peak/Off-Peak Rate Structure)</span></div>
-        <div className="report-kv"><span className="report-k">Grid Emission Factor</span><span className="report-v">0.82 kg COâ‚‚e/kWh (CEA India Baseline Database)</span></div>
+        <div className="report-kv"><span className="report-k">Standard</span><span className="report-v">ISO 50001:2018 — Energy Management Systems</span></div>
+        <div className="report-kv"><span className="report-k">Grid Tariff</span><span className="report-v">₹9.00/kWh (ToD — Peak/Off-Peak Rate Structure)</span></div>
+        <div className="report-kv"><span className="report-k">Grid Emission Factor</span><span className="report-v">0.82 kg CO₂e/kWh (CEA India Baseline Database)</span></div>
         <div className="report-kv"><span className="report-k">Scenario Active</span><span className="report-v">{activeSimulation.scenario_id} ({activeSimulation.feasibility.toUpperCase()})</span></div>
       </div>
 
@@ -1763,15 +1763,15 @@ Governance:         Simulation Only. Plant Energy Manager approval required prio
           Problem Detected &amp; Baseline Anomaly
         </div>
         <div className="alert-banner warn" style={{ marginBottom: 10 }}>
-          <div className="alert-title">PRIMARY ANOMALY â€” AIR COMPRESSOR (COMP-01 / ELGi EN 45)</div>
+          <div className="alert-title">PRIMARY ANOMALY — AIR COMPRESSOR (COMP-01 / ELGi EN 45)</div>
           <div className="alert-body">
-            Compressor idles unloaded at <strong>18.0 kW</strong> during shift transition and lunch windows (11:00â€“14:00) vs expected rated idle of <strong>8.0 kW</strong>.
+            Compressor idles unloaded at <strong>18.0 kW</strong> during shift transition and lunch windows (11:00–14:00) vs expected rated idle of <strong>8.0 kW</strong>.
             Discharge pressure setpoint at 7.5 bar exceeds necessary 6.8 bar tool ring main requirement.
           </div>
         </div>
-        <div className="report-kv"><span className="report-k">Avoidable Energy Waste</span><span className="report-v" style={{ color: 'var(--amber)' }}>10 kW excess Ã— 3 hrs/day = 30 kWh/day</span></div>
-        <div className="report-kv"><span className="report-k">Excess Electricity Cost</span><span className="report-v" style={{ color: 'var(--amber)' }}>â‚¹270.00/day</span></div>
-        <div className="report-kv"><span className="report-k">Avoidable Carbon Emissions</span><span className="report-v" style={{ color: 'var(--amber)' }}>24.6 kg COâ‚‚e/day (Scope 2)</span></div>
+        <div className="report-kv"><span className="report-k">Avoidable Energy Waste</span><span className="report-v" style={{ color: 'var(--amber)' }}>10 kW excess × 3 hrs/day = 30 kWh/day</span></div>
+        <div className="report-kv"><span className="report-k">Excess Electricity Cost</span><span className="report-v" style={{ color: 'var(--amber)' }}>₹270.00/day</span></div>
+        <div className="report-kv"><span className="report-k">Avoidable Carbon Emissions</span><span className="report-v" style={{ color: 'var(--amber)' }}>24.6 kg CO₂e/day (Scope 2)</span></div>
       </div>
 
       {/* Action Taken */}
@@ -1797,9 +1797,9 @@ Governance:         Simulation Only. Plant Energy Manager approval required prio
         <div className="report-kv"><span className="report-k">Baseline Energy</span><span className="report-v">{baseKwh.toLocaleString()} kWh</span></div>
         <div className="report-kv"><span className="report-k">Optimized Energy</span><span className="report-v" style={{ color: 'var(--emerald)' }}>{scenKwh.toLocaleString()} kWh</span></div>
         <div className="report-kv"><span className="report-k">Energy Savings</span><span className="report-v" style={{ color: 'var(--emerald)' }}>{savedKwh} kWh ({((savedKwh / (baseKwh || 1)) * 100).toFixed(1)}%)</span></div>
-        <div className="report-kv"><span className="report-k">Cost Savings</span><span className="report-v" style={{ color: 'var(--emerald)' }}>â‚¹{savedCost.toLocaleString()}/day</span></div>
+        <div className="report-kv"><span className="report-k">Cost Savings</span><span className="report-v" style={{ color: 'var(--emerald)' }}>₹{savedCost.toLocaleString()}/day</span></div>
         <div className="report-kv"><span className="report-k">Peak Demand Shaved</span><span className="report-v" style={{ color: 'var(--cyan)' }}>{Math.abs(activeSimulation.deltas.peak_kw)} kW</span></div>
-        <div className="report-kv"><span className="report-k">Scope 2 Carbon Abated</span><span className="report-v" style={{ color: 'var(--violet)' }}>{avoidedCo2} kg COâ‚‚e/day</span></div>
+        <div className="report-kv"><span className="report-k">Scope 2 Carbon Abated</span><span className="report-v" style={{ color: 'var(--violet)' }}>{avoidedCo2} kg CO₂e/day</span></div>
       </div>
 
       {/* Counterfactual M&V Verification */}
@@ -1818,7 +1818,7 @@ Governance:         Simulation Only. Plant Energy Manager approval required prio
         <div className="report-kv"><span className="report-k">Observed Raw Submeter Drop</span><span className="report-v">-185.00 kWh (-14.01%)</span></div>
         <div className="report-kv"><span className="report-k">Production Volume Effect (Not Savings)</span><span className="report-v" style={{ color: 'var(--amber)' }}>-{cfVolumeDropEffectKwh.toFixed(2)} kWh (-12.92%)</span></div>
         <div className="report-kv"><span className="report-k">IPMVP Adjusted Baseline (E_adj)</span><span className="report-v">{cfAdjustedBaseKwh.toLocaleString()} kWh</span></div>
-        <div className="report-kv"><span className="report-k">Verified Operational Efficiency Savings</span><span className="report-v" style={{ color: 'var(--emerald)' }}>{cfVerifiedSavingsKwh.toFixed(2)} kWh/day ({cfVerifiedScope2Kg} kg COâ‚‚e)</span></div>
+        <div className="report-kv"><span className="report-k">Verified Operational Efficiency Savings</span><span className="report-v" style={{ color: 'var(--emerald)' }}>{cfVerifiedSavingsKwh.toFixed(2)} kWh/day ({cfVerifiedScope2Kg} kg CO₂e)</span></div>
         <div className="report-kv"><span className="report-k">Reconciliation Status</span><span className="report-v text-emerald">{cfVolumeDropEffectKwh.toFixed(2)} + {cfVerifiedSavingsKwh.toFixed(2)} = 185.00 kWh (100% Match)</span></div>
         <div className="report-kv"><span className="report-k">Verification Standard</span><span className="report-v">IPMVP Option B/C &amp; ISO 50001:2018 Clause 6.3</span></div>
       </div>
@@ -1830,10 +1830,10 @@ Governance:         Simulation Only. Plant Energy Manager approval required prio
           Diagnostic Sensor Sufficiency &amp; Uncertainty Gate (Idea A)
         </div>
         <div className="report-kv"><span className="report-k">Current Telemetry Readiness</span><span className="report-v" style={{ color: 'var(--amber)' }}>Grade {grade} ({gradeDesc})</span></div>
-        <div className="report-kv"><span className="report-k">Uncertainty Spread</span><span className="report-v">â‚¹{(savedCost * 0.65).toFixed(0)} â€“ â‚¹{(savedCost * 1.35).toFixed(0)} / day (Â±35%)</span></div>
+        <div className="report-kv"><span className="report-k">Uncertainty Spread</span><span className="report-v">₹{(savedCost * 0.65).toFixed(0)} – ₹{(savedCost * 1.35).toFixed(0)} / day (±35%)</span></div>
         <div className="report-kv"><span className="report-k">Diagnostic Ambiguity</span><span className="report-v">Blow-off timer fault vs Downstream ring-main pipe leak</span></div>
-        <div className="report-kv"><span className="report-k">Value of Information (VOI)</span><span className="report-v text-cyan">Temporary Ultrasonic Airflow Transducer (â‚¹12,000 Capex, VOI: 4.5x)</span></div>
-        <div className="report-kv"><span className="report-k">Projected Grade A Payback</span><span className="report-v text-emerald">2.8 â€“ 5.1 Months</span></div>
+        <div className="report-kv"><span className="report-k">Value of Information (VOI)</span><span className="report-v text-cyan">Temporary Ultrasonic Airflow Transducer (₹12,000 Capex, VOI: 4.5x)</span></div>
+        <div className="report-kv"><span className="report-k">Projected Grade A Payback</span><span className="report-v text-emerald">2.8 – 5.1 Months</span></div>
       </div>
     </div>
   );
@@ -1889,14 +1889,14 @@ function InspectorPanel({
             <div className="alert-banner warn">
               <div className="alert-title">
                 <AlertTriangle size={10} style={{ display: 'inline', marginRight: 4 }} />
-                ANOMALY â€” AIR COMPRESSOR
+                ANOMALY — AIR COMPRESSOR
               </div>
               <div className="alert-body">
                 18 kW idle draw during 3.2 hrs/day break periods. Discharge pressure 7.2 bar (set: 7.5, optimal: 6.8).
                 Power Factor 0.78.
               </div>
               <div className="alert-rec">
-                Auto-Idle Cutoff: saves 998.4 kWh / â‚¹7,987 / 727.7 kg COâ‚‚e avoided
+                Auto-Idle Cutoff: saves 998.4 kWh / ₹7,987 / 727.7 kg CO₂e avoided
               </div>
               <button className="btn btn-amber btn-sm btn-full" style={{ marginTop: 8 }}
                 onClick={() => setView('simulator')}
@@ -1906,13 +1906,13 @@ function InspectorPanel({
               </button>
             </div>
             <div className="alert-banner ok">
-              <div className="alert-title">CNC MACHINING CENTER â€” OPTIMAL</div>
+              <div className="alert-title">CNC MACHINING CENTER — OPTIMAL</div>
               <div className="alert-body">SEC: 1.8 kWh/part. P.F. 0.94. No anomalies detected.</div>
             </div>
             <div className="alert-banner crit">
-              <div className="alert-title">FURNACE â€” HIGH PEAK DEMAND</div>
+              <div className="alert-title">FURNACE — HIGH PEAK DEMAND</div>
               <div className="alert-body">
-                85 kW concurrent with compressor peak 09:00â€“12:00.
+                85 kW concurrent with compressor peak 09:00–12:00.
                 Staggering preheat by 45 min reduces peak demand 18%.
               </div>
             </div>
@@ -1935,10 +1935,10 @@ function InspectorPanel({
                   <StatRow label="Power Factor" value={String(asset.pf)} color={asset.pf < 0.85 ? 'amber' : 'emerald'} />
                   <StatRow label="Load %" value={`${Math.round((asset.currentKw / asset.ratedKw) * 100)}%`} />
                   {asset.dischargePressureBar && <StatRow label="Discharge Pressure" value={`${asset.dischargePressureBar} bar`} color="amber" />}
-                  {asset.tempC && <StatRow label="Temperature" value={`${asset.tempC}Â°C`} color="red" />}
+                  {asset.tempC && <StatRow label="Temperature" value={`${asset.tempC}°C`} color="red" />}
                   {asset.cop && <StatRow label="COP" value={String(asset.cop)} color="emerald" />}
                   {asset.secKwhPerPart && <StatRow label="SEC" value={`${asset.secKwhPerPart} kWh/part`} />}
-                  {asset.idleKw && <StatRow label="Idle Waste" value={`${asset.idleKw} kW Ã— ${asset.idleHrsPerDay}h`} color="amber" />}
+                  {asset.idleKw && <StatRow label="Idle Waste" value={`${asset.idleKw} kW × ${asset.idleHrsPerDay}h`} color="amber" />}
                 </div>
 
                 <LoadBar
@@ -1980,15 +1980,15 @@ function InspectorPanel({
               <div className="panel-hdr">Energy</div>
               <StatRow label="Baseline Energy" value="12,480 kWh" color="white" />
               <StatRow label="Potential Savings" value="998.4 kWh (8%)" color="emerald" />
-              <StatRow label="Cost at â‚¹8/kWh" value="â‚¹99,840" color="amber" />
-              <StatRow label="Max Savings" value="â‚¹7,987.20" color="emerald" />
+              <StatRow label="Cost at ₹8/kWh" value="₹99,840" color="amber" />
+              <StatRow label="Max Savings" value="₹7,987.20" color="emerald" />
             </div>
             <div className="panel">
               <div className="panel-hdr">Carbon</div>
-              <StatRow label="Grid EF (CEA)" value={`${factorVal} kg COâ‚‚/kWh`} color="violet" />
-              <StatRow label="Scope 2 (Elec)" value={`${s2Total} tCOâ‚‚e/30d`} color="violet" />
-              <StatRow label="Scope 1 (LPG)" value={`${s1Total} tCOâ‚‚e/30d`} color="red" />
-              <StatRow label="Avoided Carbon" value={anyFix ? `-${avoidedCarbon} tCOâ‚‚e (SIMULATED)` : '0.000 tCOâ‚‚e'} color="emerald" />
+              <StatRow label="Grid EF (CEA)" value={`${factorVal} kg CO₂/kWh`} color="violet" />
+              <StatRow label="Scope 2 (Elec)" value={`${s2Total} tCO₂e/30d`} color="violet" />
+              <StatRow label="Scope 1 (LPG)" value={`${s1Total} tCO₂e/30d`} color="red" />
+              <StatRow label="Avoided Carbon" value={anyFix ? `-${avoidedCarbon} tCO₂e (SIMULATED)` : '0.000 tCO₂e'} color="emerald" />
             </div>
             <div className="panel">
               <div className="panel-hdr">Power Quality</div>
@@ -2014,7 +2014,7 @@ function InspectorPanel({
   );
 }
 
-// â”€â”€â”€ Root App â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Root App ─────────────────────────────────────────────────────────────────
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<'home' | 'login' | 'platform'>('home');
@@ -2531,4 +2531,4 @@ export default function App() {
     </div>
   </AIExplainProvider>
   );
-}
+}

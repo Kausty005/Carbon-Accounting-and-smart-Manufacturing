@@ -2,21 +2,27 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import {
   TrendingUp, Activity, Cpu, RefreshCw, AlertTriangle,
   Clock, ChevronDown, ChevronRight, Database,
-  Sparkles, CheckCircle2, Sliders, ArrowRight
+  Sparkles, CheckCircle2, Sliders, ArrowRight,
+  Calendar, BarChart3, Layers
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Cell, Legend
+  ResponsiveContainer, Cell, ReferenceLine
 } from 'recharts';
 import type { Asset, SimParams } from '../../data/mockData';
 import {
-  fetchMachineForecast,
+  fetchHorizonForecast,
+  fetchPlantHorizonForecast,
   fetchForecastMetadata,
-  getOfflineFallbackForecast,
+  getOfflineFallbackHorizonForecast,
+  getOfflineFallbackPlantForecast,
   mapAssetToForecastRequest,
-  type EnergyForecastResponse,
+  type ForecastHorizon,
+  type HorizonForecastResponse,
   type ForecastModelMetadata,
+  type ForecastTimeSeriesPoint,
+  type MachineForecastBreakdown,
 } from '../../services/forecastApi';
 import { MachineForecastIntervalChart, type ForecastIntervalPoint } from '../Charts';
 
@@ -30,7 +36,7 @@ interface EnergyForecastDashboardProps {
 type ForecastViewMode = 'all' | 'compressor' | 'cnc' | 'furnace' | 'cooling';
 
 const MONO = "'IBM Plex Mono','Courier New',monospace";
-const TICK = { fill: '#64748b', fontSize: 10, fontFamily: MONO };
+const TICK = { fill: '#78716C', fontSize: 10, fontFamily: MONO };
 
 const MACHINE_CONFIGS: Record<string, { name: string; color: string; taxonomy: string; bay: string; model: string }> = {
   compressor: {
@@ -63,6 +69,12 @@ const MACHINE_CONFIGS: Record<string, { name: string; color: string; taxonomy: s
   },
 };
 
+const HORIZON_OPTIONS: Array<{ id: ForecastHorizon; label: string; periodLabel: string; hours: number }> = [
+  { id: '15m', label: '15 Minutes', periodLabel: 'Next 15-Minute Window', hours: 0.25 },
+  { id: '1d', label: '1 Day', periodLabel: 'Next 24-Hour Horizon', hours: 24.0 },
+  { id: '1w', label: '1 Week', periodLabel: 'Next 7-Day Horizon', hours: 168.0 },
+];
+
 export default function EnergyForecastDashboard({
   assets,
   params,
@@ -72,6 +84,9 @@ export default function EnergyForecastDashboard({
   // ─── Mode Selection (Default: Overall Plant) ─────────────────────────────────
   const [selectedMode, setSelectedMode] = useState<ForecastViewMode>('all');
 
+  // ─── Horizon Selection (Default: 15 Minutes) ────────────────────────────────
+  const [selectedHorizon, setSelectedHorizon] = useState<ForecastHorizon>('15m');
+
   // ─── Digital Twin Simulation Clock Sync (Ticks every 1s) ────────────────────
   const [simClock, setSimClock] = useState<Date>(new Date());
   useEffect(() => {
@@ -79,11 +94,11 @@ export default function EnergyForecastDashboard({
     return () => clearInterval(clockTimer);
   }, []);
 
-  // ─── Forecast State per Machine ─────────────────────────────────────────────
-  const [forecasts, setForecasts] = useState<Record<string, EnergyForecastResponse | null>>({});
-  const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
-  const [errors, setErrors] = useState<Record<string, string | null>>({});
-  const [isFallbackMap, setIsFallbackMap] = useState<Record<string, boolean>>({});
+  // ─── Multi-Horizon Forecast State ───────────────────────────────────────────
+  const [forecastResponse, setForecastResponse] = useState<HorizonForecastResponse | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isFallback, setIsFallback] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [backendConnected, setBackendConnected] = useState<boolean>(true);
 
   // ─── Collapsible Technical Drawers (Collapsed by Default) ───────────────────
@@ -109,145 +124,143 @@ export default function EnergyForecastDashboard({
     };
   }, []);
 
-  // ─── Format Exact 15-Minute Target Interval Window ─────────────────────────
-  const getIntervalString = useCallback((fc: EnergyForecastResponse | null) => {
-    if (fc?.target_interval_start && fc?.target_interval_end) {
-      try {
-        const start = new Date(fc.target_interval_start);
-        const end = new Date(fc.target_interval_end);
-        const s = start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-        const e = end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-        return `${s} → ${e}`;
-      } catch {
-        // fallback to text slice
-      }
-    }
-    const start = simClock;
-    const end = new Date(start.getTime() + 15 * 60 * 1000);
-    const s = start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-    const e = end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-    return `${s} → ${e}`;
-  }, [simClock]);
-
-  // ─── Fetch Forecast for a Single Machine ───────────────────────────────────
-  const fetchSingleForecast = useCallback(async (asset: Asset, reqId: number) => {
-    setLoadingStates((prev) => ({ ...prev, [asset.id]: true }));
-    setErrors((prev) => ({ ...prev, [asset.id]: null }));
-
-    const req = mapAssetToForecastRequest(asset);
-
-    try {
-      const res = await fetchMachineForecast(req);
-      if (reqId === activeRequestIdRef.current) {
-        setForecasts((prev) => ({ ...prev, [asset.id]: res }));
-        setIsFallbackMap((prev) => ({ ...prev, [asset.id]: false }));
-        setBackendConnected(true);
-        setErrors((prev) => ({ ...prev, [asset.id]: null }));
-      }
-    } catch (err: any) {
-      console.warn(`Forecast fetch failed for machine ${asset.id}:`, err);
-      if (reqId === activeRequestIdRef.current) {
-        // Fallback demo prediction with explicit flagging
-        const fallback = getOfflineFallbackForecast(req);
-        setForecasts((prev) => ({ ...prev, [asset.id]: fallback }));
-        setIsFallbackMap((prev) => ({ ...prev, [asset.id]: true }));
-        setBackendConnected(false);
-        setErrors((prev) => ({
-          ...prev,
-          [asset.id]: err.message || 'FastAPI backend unavailable. Using offline persistence model.',
-        }));
-      }
-    } finally {
-      if (reqId === activeRequestIdRef.current) {
-        setLoadingStates((prev) => ({ ...prev, [asset.id]: false }));
-      }
-    }
-  }, []);
-
-  // ─── Refresh All Four Forecasts (Debounced on simulatedAssets changes) ──────
-  const refreshAllForecasts = useCallback(() => {
-    const nextReqId = ++activeRequestIdRef.current;
-    assets.forEach((asset) => {
-      fetchSingleForecast(asset, nextReqId);
-    });
-  }, [assets, fetchSingleForecast]);
-
-  // Trigger forecast refresh when digital twin assets or parameters change
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      refreshAllForecasts();
-    }, 250);
-    return () => clearTimeout(timer);
-  }, [assets, refreshAllForecasts]);
-
-  // ─── Fleet Aggregations ─────────────────────────────────────────────────────
-  const fleetSummary = useMemo(() => {
-    let totalCurrentKw = 0;
-    let totalPredicted15mKwh = 0;
-    let totalEquivPredictedKw = 0;
-    let validForecastCount = 0;
-    let fallbackCount = 0;
-    let targetInterval = getIntervalString(null);
-
-    assets.forEach((a) => {
-      totalCurrentKw += a.currentKw;
-      const fc = forecasts[a.id];
-      if (fc) {
-        totalPredicted15mKwh += fc.predicted_next_15min_energy_kwh;
-        totalEquivPredictedKw += fc.equivalent_average_power_kw;
-        validForecastCount++;
-        if (isFallbackMap[a.id]) fallbackCount++;
-        targetInterval = getIntervalString(fc);
-      }
-    });
-
-    const totalReference15mEnergyKwh = +(totalCurrentKw * 0.25).toFixed(3);
-    const totalDeltaKwh = +(totalPredicted15mKwh - totalReference15mEnergyKwh).toFixed(3);
-
-    return {
-      totalCurrentKw: +totalCurrentKw.toFixed(1),
-      totalReference15mEnergyKwh,
-      totalPredicted15mKwh: +totalPredicted15mKwh.toFixed(3),
-      totalEquivPredictedKw: +totalEquivPredictedKw.toFixed(2),
-      totalDeltaKwh,
-      validForecastCount,
-      totalMachines: assets.length,
-      fallbackCount,
-      targetInterval,
-      isPartial: validForecastCount > 0 && validForecastCount < assets.length,
-    };
-  }, [assets, forecasts, isFallbackMap, getIntervalString]);
-
-  // ─── Contribution Breakdown Chart Data for Overall Plant View ───────────────
-  const fleetContributionData = useMemo(() => {
-    return assets.map((a) => {
-      const fc = forecasts[a.id];
-      const cfg = MACHINE_CONFIGS[a.id] || { name: a.name, color: '#64748b' };
-      const predKwh = fc ? fc.predicted_next_15min_energy_kwh : 0;
-      const refKwh = +(a.currentKw * 0.25).toFixed(3);
-      return {
-        id: a.id,
-        name: cfg.name,
-        predictedKwh: predKwh,
-        referenceKwh: refKwh,
-        color: cfg.color,
-      };
-    });
-  }, [assets, forecasts]);
-
-  const anyWhatIfActive = params.autoIdleCutoff || params.pressureSetpoint < 7.5 || params.staggerFurnace;
-  const isGlobalLoading = Object.values(loadingStates).some(Boolean);
-
-  // Selected Machine Context
+  // ─── Selected Machine Context ───────────────────────────────────────────────
   const selectedAsset = useMemo(() => {
     if (selectedMode === 'all') return null;
     return assets.find((a) => a.id === selectedMode) || null;
   }, [assets, selectedMode]);
 
-  const selectedForecast = useMemo(() => {
-    if (!selectedAsset) return null;
-    return forecasts[selectedAsset.id] || null;
-  }, [forecasts, selectedAsset]);
+  // ─── Refresh Active Forecast (Plant Fleet or Single Machine) ────────────────
+  const refreshForecast = useCallback(async () => {
+    const reqId = ++activeRequestIdRef.current;
+    setIsLoading(true);
+    setErrorMessage(null);
+
+    const assetRequests = assets.map(mapAssetToForecastRequest);
+
+    if (selectedMode === 'all') {
+      try {
+        const res = await fetchPlantHorizonForecast(assetRequests, selectedHorizon);
+        if (reqId === activeRequestIdRef.current) {
+          setForecastResponse(res);
+          setIsFallback(false);
+          setBackendConnected(true);
+        }
+      } catch (err: any) {
+        console.warn('Fleet forecast fetch failed, using fallback:', err);
+        if (reqId === activeRequestIdRef.current) {
+          const fallback = getOfflineFallbackPlantForecast(assetRequests, selectedHorizon);
+          setForecastResponse(fallback);
+          setIsFallback(true);
+          setBackendConnected(false);
+          setErrorMessage(err.message || 'FastAPI backend unavailable. Using offline persistence model.');
+        }
+      } finally {
+        if (reqId === activeRequestIdRef.current) {
+          setIsLoading(false);
+        }
+      }
+    } else {
+      const targetAsset = assets.find((a) => a.id === selectedMode);
+      if (!targetAsset) {
+        setIsLoading(false);
+        return;
+      }
+      const targetReq = mapAssetToForecastRequest(targetAsset);
+
+      try {
+        const res = await fetchHorizonForecast(targetReq, selectedHorizon);
+        if (reqId === activeRequestIdRef.current) {
+          setForecastResponse(res);
+          setIsFallback(false);
+          setBackendConnected(true);
+        }
+      } catch (err: any) {
+        console.warn(`Forecast fetch failed for machine ${targetAsset.id}, using fallback:`, err);
+        if (reqId === activeRequestIdRef.current) {
+          const fallback = getOfflineFallbackHorizonForecast(targetReq, selectedHorizon);
+          setForecastResponse(fallback);
+          setIsFallback(true);
+          setBackendConnected(false);
+          setErrorMessage(err.message || 'FastAPI backend unavailable. Using offline persistence model.');
+        }
+      } finally {
+        if (reqId === activeRequestIdRef.current) {
+          setIsLoading(false);
+        }
+      }
+    }
+  }, [assets, selectedMode, selectedHorizon]);
+
+  // Trigger forecast refresh when digital twin assets, horizon, or mode changes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      refreshForecast();
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [refreshForecast]);
+
+  // ─── Target Interval Window Formatter ───────────────────────────────────────
+  const targetWindowFormatted = useMemo(() => {
+    if (!forecastResponse) {
+      if (selectedHorizon === '15m') return 'Upcoming 15m Window';
+      if (selectedHorizon === '1d') return 'Upcoming 24h Profile';
+      return 'Upcoming 7d Profile';
+    }
+
+    try {
+      const start = new Date(forecastResponse.forecast_start);
+      const end = new Date(forecastResponse.forecast_end);
+
+      if (selectedHorizon === '15m') {
+        const s = start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+        const e = end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+        return `${s} → ${e}`;
+      } else if (selectedHorizon === '1d') {
+        const sTime = start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+        const eDate = end.toLocaleDateString([], { month: 'short', day: 'numeric' });
+        const eTime = end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+        return `Today ${sTime} → ${eDate} ${eTime}`;
+      } else {
+        const sDate = start.toLocaleDateString([], { month: 'short', day: 'numeric' });
+        const eDate = end.toLocaleDateString([], { month: 'short', day: 'numeric' });
+        return `${sDate} → ${eDate} (7 Days)`;
+      }
+    } catch {
+      return `${selectedHorizon} forecast window`;
+    }
+  }, [forecastResponse, selectedHorizon]);
+
+  // ─── Baseline & Reference Computations ──────────────────────────────────────
+  const horizonHours = selectedHorizon === '15m' ? 0.25 : selectedHorizon === '1d' ? 24.0 : 168.0;
+
+  const currentPlantPowerKw = useMemo(() => {
+    return +assets.reduce((sum, a) => sum + a.currentKw, 0).toFixed(1);
+  }, [assets]);
+
+  const referenceStaticEnergyKwh = useMemo(() => {
+    if (selectedMode === 'all') {
+      return +(currentPlantPowerKw * horizonHours).toFixed(2);
+    }
+    const currentKw = selectedAsset?.currentKw || 0;
+    return +(currentKw * horizonHours).toFixed(3);
+  }, [selectedMode, selectedAsset, currentPlantPowerKw, horizonHours]);
+
+  const predictedEnergyKwh = forecastResponse?.predicted_energy_kwh ?? referenceStaticEnergyKwh;
+  const equivalentPowerKw = forecastResponse?.equivalent_average_power_kw ?? (predictedEnergyKwh / horizonHours);
+
+  const deltaKwh = +(predictedEnergyKwh - referenceStaticEnergyKwh).toFixed(2);
+  const deltaPct = referenceStaticEnergyKwh > 0 ? +((deltaKwh / referenceStaticEnergyKwh) * 100).toFixed(1) : 0;
+
+  // ─── Active Model Metadata for Active Horizon ───────────────────────────────
+  const activeModelMeta = useMemo(() => {
+    if (!metadata?.models) return null;
+    if (selectedHorizon === '15m') return metadata.models['15m'];
+    if (selectedHorizon === '1d') return metadata.models['hourly'];
+    return metadata.models['daily'];
+  }, [metadata, selectedHorizon]);
+
+  const anyWhatIfActive = params.autoIdleCutoff || params.pressureSetpoint < 7.5 || params.staggerFurnace;
 
   return (
     <div
@@ -295,7 +308,7 @@ export default function EnergyForecastDashboard({
               <Sparkles size={11} /> Industrial EMS
             </span>
             <span style={{ fontSize: 11, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)', letterSpacing: 0.5 }}>
-              Next 15-Minute Tactical Energy Forecasting
+              Multi-Horizon Machine & Plant Energy Forecasting
             </span>
           </div>
 
@@ -314,12 +327,12 @@ export default function EnergyForecastDashboard({
           </h1>
 
           <p style={{ margin: 0, fontSize: 12, color: 'var(--slate-400)' }}>
-            Next-interval power requirements for precision equipment bays using trained gradient boosting inference.
+            Precision interval power requirements using multi-horizon gradient boosted regression pipelines.
           </p>
         </div>
 
-        {/* Action Controls: Dropdown & Refresh */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        {/* Action Controls: Horizon Selector, View Mode Dropdown & Refresh */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           {anyWhatIfActive && onNavigateToSimulator && (
             <button
               onClick={onNavigateToSimulator}
@@ -335,7 +348,69 @@ export default function EnergyForecastDashboard({
             </button>
           )}
 
-          {/* Machine Selection Dropdown */}
+          {/* 1. Forecast Horizon Selector (Segmented Control) */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <label
+              htmlFor="forecast-horizon-selector"
+              style={{
+                fontSize: 10,
+                fontWeight: 700,
+                color: 'var(--slate-400)',
+                textTransform: 'uppercase',
+                letterSpacing: 1.5,
+                fontFamily: 'var(--font-mono)',
+              }}
+            >
+              Forecast Horizon:
+            </label>
+            <div
+              id="forecast-horizon-selector"
+              role="radiogroup"
+              aria-label="Forecast Horizon"
+              style={{
+                display: 'inline-flex',
+                background: 'rgba(90, 75, 55, 0.08)',
+                padding: 3,
+                borderRadius: 'var(--r)',
+                border: '1px solid var(--border)',
+              }}
+            >
+              {HORIZON_OPTIONS.map((opt) => {
+                const isActive = selectedHorizon === opt.id;
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => setSelectedHorizon(opt.id)}
+                    style={{
+                      border: isActive ? '1px solid rgba(90, 75, 55, 0.25)' : '1px solid transparent',
+                      outline: 'none',
+                      cursor: 'pointer',
+                      padding: '5px 12px',
+                      fontSize: 11,
+                      fontWeight: isActive ? 700 : 500,
+                      borderRadius: 'calc(var(--r) - 2px)',
+                      fontFamily: 'var(--font-mono)',
+                      background: isActive ? '#E6D7C3' : 'transparent',
+                      color: isActive ? '#1C1917' : 'var(--slate-400)',
+                      boxShadow: isActive ? '0 1px 3px rgba(60, 45, 25, 0.12)' : 'none',
+                      transition: 'all 0.15s ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                    }}
+                  >
+                    {opt.id === '15m' && <Clock size={11} />}
+                    {opt.id === '1d' && <BarChart3 size={11} />}
+                    {opt.id === '1w' && <Calendar size={11} />}
+                    <span>{opt.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 2. Machine Selection Dropdown */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <label
               htmlFor="forecast-view-select"
@@ -376,13 +451,13 @@ export default function EnergyForecastDashboard({
             </select>
           </div>
 
-          {/* Secondary Refresh Button */}
+          {/* 3. Refresh Button */}
           <button
-            onClick={refreshAllForecasts}
-            title="Refresh machine forecasts"
+            onClick={refreshForecast}
+            title="Refresh active forecast"
             className="btn btn-sm"
           >
-            <RefreshCw size={11} className={isGlobalLoading ? 'spin-icon' : ''} />
+            <RefreshCw size={11} className={isLoading ? 'spin-icon' : ''} />
             <span>Refresh</span>
           </button>
         </div>
@@ -395,7 +470,7 @@ export default function EnergyForecastDashboard({
           /* OVERALL PLANT VIEW                                               */
           /* ================================================================= */
           <motion.div
-            key="overall-plant"
+            key={`overall-plant-${selectedHorizon}`}
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
@@ -435,7 +510,9 @@ export default function EnergyForecastDashboard({
                     }}
                   />
                   <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: 1.5, fontFamily: 'var(--font-mono)' }}>
-                    Overall Plant Energy Forecast (Next 15 Minutes)
+                    {selectedHorizon === '15m' && 'Overall Plant Energy Forecast (Next 15 Minutes)'}
+                    {selectedHorizon === '1d' && 'Overall Plant Energy Forecast (Next 24 Hours)'}
+                    {selectedHorizon === '1w' && 'Overall Plant Energy Forecast (Next 7 Days)'}
                   </span>
                 </div>
 
@@ -466,13 +543,13 @@ export default function EnergyForecastDashboard({
                     }}
                   />
                   <span>
-                    {backendConnected ? 'Live API Forecast' : 'Offline Persistence Fallback'}
+                    {backendConnected ? 'Live Multi-Horizon API' : 'Offline Persistence Fallback'}
                   </span>
                 </div>
               </div>
 
               {/* Main Metric & Equivalent Load */}
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 20 }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
                 <span
                   style={{
                     fontSize: 48,
@@ -483,13 +560,17 @@ export default function EnergyForecastDashboard({
                     lineHeight: 1,
                   }}
                 >
-                  {fleetSummary.totalPredicted15mKwh.toFixed(2)}
+                  {selectedHorizon === '15m'
+                    ? predictedEnergyKwh.toFixed(2)
+                    : selectedHorizon === '1d'
+                    ? predictedEnergyKwh.toFixed(1)
+                    : predictedEnergyKwh.toLocaleString(undefined, { maximumFractionDigits: 1 })}
                 </span>
                 <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--violet)', fontFamily: 'var(--font-mono)' }}>
                   kWh
                 </span>
                 <span style={{ fontSize: 13, color: 'var(--slate-500)', marginLeft: 8, fontFamily: 'var(--font-mono)' }}>
-                  (Equiv. Average Load: <strong style={{ color: 'var(--white)' }}>{fleetSummary.totalEquivPredictedKw.toFixed(1)} kW</strong>)
+                  (Equiv. Average Load: <strong style={{ color: 'var(--white)' }}>{equivalentPowerKw.toFixed(1)} kW</strong>)
                 </span>
               </div>
 
@@ -508,22 +589,24 @@ export default function EnergyForecastDashboard({
                     Current Plant Demand
                   </div>
                   <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--white)', fontFamily: 'var(--font-mono)' }}>
-                    {fleetSummary.totalCurrentKw.toFixed(1)} <span style={{ fontSize: 11, color: 'var(--slate-500)' }}>kW</span>
+                    {currentPlantPowerKw.toFixed(1)} <span style={{ fontSize: 11, color: 'var(--slate-500)' }}>kW</span>
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
-                    Ref load: {fleetSummary.totalReference15mEnergyKwh.toFixed(2)} kWh
+                    Baseline ({selectedHorizon}): {referenceStaticEnergyKwh.toFixed(1)} kWh
                   </div>
                 </div>
 
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: 1, fontFamily: 'var(--font-mono)', marginBottom: 3 }}>
-                    Forecast Interval Window
+                    Forecast Target Window
                   </div>
-                  <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--white)', fontFamily: 'var(--font-mono)' }}>
-                    {fleetSummary.targetInterval}
+                  <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--white)', fontFamily: 'var(--font-mono)' }}>
+                    {targetWindowFormatted}
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
-                    Exact 15-minute horizon
+                    {selectedHorizon === '15m' && 'Exact 15-minute horizon'}
+                    {selectedHorizon === '1d' && '24 consecutive hourly predictions'}
+                    {selectedHorizon === '1w' && '7 consecutive daily predictions'}
                   </div>
                 </div>
 
@@ -532,16 +615,16 @@ export default function EnergyForecastDashboard({
                     Machine Coverage
                   </div>
                   <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--white)', fontFamily: 'var(--font-mono)' }}>
-                    {fleetSummary.validForecastCount} of {fleetSummary.totalMachines} machines
+                    {forecastResponse?.coverage_count || assets.length} of {forecastResponse?.total_machines || assets.length} machines
                   </div>
-                  <div style={{ fontSize: 11, color: fleetSummary.isPartial ? 'var(--amber)' : 'var(--emerald)', fontFamily: 'var(--font-mono)', marginTop: 2, fontWeight: 600 }}>
-                    {fleetSummary.isPartial ? 'Partial fleet total' : 'Complete fleet reporting'}
+                  <div style={{ fontSize: 11, color: 'var(--emerald)', fontFamily: 'var(--font-mono)', marginTop: 2, fontWeight: 600 }}>
+                    {forecastResponse?.is_complete_coverage ? 'Complete fleet reporting' : 'Partial fleet reporting'}
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Compact Energy Contribution Breakdown Chart */}
+            {/* ─── Horizon-Specific Plant Chart ───────────────────────────────── */}
             <div
               className="panel"
               style={{
@@ -554,70 +637,260 @@ export default function EnergyForecastDashboard({
                 marginBottom: 20,
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
+              {selectedHorizon === '15m' && (
+                /* ─── 15m Horizon: Machine Contribution Comparison Chart ─── */
                 <div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--white)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: 1 }}>
-                    Forecast Energy Contribution by Machine
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--white)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: 1 }}>
+                        Forecast Energy Contribution by Machine (Next 15 Minutes)
+                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--slate-500)', marginTop: 2 }}>
+                        Predicted next-15-minute energy consumption (kWh) across the four digital-twin assets.
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 10,
+                        color: 'var(--slate-500)',
+                        fontFamily: 'var(--font-mono)',
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0,
+                        background: 'rgba(90, 75, 55, 0.08)',
+                        padding: '3px 8px',
+                        borderRadius: 4,
+                      }}
+                    >
+                      Total: <strong style={{ color: 'var(--white)' }}>{predictedEnergyKwh.toFixed(2)} kWh</strong>
+                    </div>
                   </div>
-                  <div style={{ fontSize: 11, color: 'var(--slate-500)', marginTop: 2 }}>
-                    Predicted next-15-minute energy consumption (kWh) across the four digital-twin assets.
-                  </div>
-                </div>
-                <div
-                  style={{
-                    fontSize: 10,
-                    color: 'var(--slate-500)',
-                    fontFamily: 'var(--font-mono)',
-                    whiteSpace: 'nowrap',
-                    flexShrink: 0,
-                    background: 'rgba(90, 75, 55, 0.08)',
-                    padding: '3px 8px',
-                    borderRadius: 4,
-                  }}
-                >
-                  Total: <strong style={{ color: 'var(--white)' }}>{fleetSummary.totalPredicted15mKwh.toFixed(2)} kWh</strong>
-                </div>
-              </div>
 
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={fleetContributionData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                  <CartesianGrid stroke="rgba(90, 75, 55, 0.08)" strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fill: 'var(--slate-500)', fontSize: 10, fontFamily: 'var(--font-mono)', fontWeight: 600 }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fill: 'var(--slate-500)', fontSize: 10, fontFamily: 'var(--font-mono)' }} unit=" kWh" axisLine={false} tickLine={false} />
-                  <Tooltip
-                    content={({ active, payload }) => {
-                      if (!active || !payload?.length) return null;
-                      const d = payload[0].payload;
-                      return (
-                        <div
-                          style={{
-                            background: '#DDD0BC',
-                            border: '1px solid var(--border)',
-                            borderRadius: 6,
-                            padding: '8px 12px',
-                            fontFamily: 'var(--font-mono)',
-                            fontSize: 11,
-                            boxShadow: '0 4px 16px rgba(60, 45, 25, 0.12)',
-                          }}
-                        >
-                          <div style={{ fontWeight: 700, color: '#1C1917', marginBottom: 4 }}>{d.name}</div>
-                          <div style={{ color: d.color }}>
-                            Predicted: <strong>{d.predictedKwh.toFixed(3)} kWh</strong>
-                          </div>
-                          <div style={{ color: 'var(--slate-500)', fontSize: 10, marginTop: 2 }}>
-                            Reference: {d.referenceKwh.toFixed(3)} kWh (P × 0.25h)
-                          </div>
-                        </div>
-                      );
-                    }}
-                  />
-                  <Bar dataKey="predictedKwh" radius={[4, 4, 0, 0]} maxBarSize={44}>
-                    {fleetContributionData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+                  <ResponsiveContainer width="100%" height={210}>
+                    <BarChart
+                      data={(forecastResponse?.machine_breakdown?.length ? forecastResponse.machine_breakdown : assets.map((a) => ({
+                        machine_id: a.id,
+                        machine_name: MACHINE_CONFIGS[a.id]?.name || a.name,
+                        predicted_energy_kwh: +(a.currentKw * 0.25).toFixed(3),
+                        equivalent_average_power_kw: a.currentKw,
+                        percentage_of_fleet: 25,
+                      }))).map((m) => {
+                        const cfg = MACHINE_CONFIGS[m.machine_id] || { name: m.machine_name, color: '#64748b' };
+                        return {
+                          id: m.machine_id,
+                          name: cfg.name,
+                          predictedKwh: m.predicted_energy_kwh,
+                          powerKw: m.equivalent_average_power_kw,
+                          color: cfg.color,
+                        };
+                      })}
+                      margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
+                    >
+                      <CartesianGrid stroke="rgba(90, 75, 55, 0.08)" strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="name" tick={{ fill: 'var(--slate-500)', fontSize: 10, fontFamily: 'var(--font-mono)', fontWeight: 600 }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fill: 'var(--slate-500)', fontSize: 10, fontFamily: 'var(--font-mono)' }} unit=" kWh" axisLine={false} tickLine={false} />
+                      <Tooltip
+                        content={({ active, payload }) => {
+                          if (!active || !payload?.length) return null;
+                          const d = payload[0].payload;
+                          return (
+                            <div
+                              style={{
+                                background: '#DDD0BC',
+                                border: '1px solid var(--border)',
+                                borderRadius: 6,
+                                padding: '8px 12px',
+                                fontFamily: 'var(--font-mono)',
+                                fontSize: 11,
+                                boxShadow: '0 4px 16px rgba(60, 45, 25, 0.12)',
+                              }}
+                            >
+                              <div style={{ fontWeight: 700, color: '#1C1917', marginBottom: 4 }}>{d.name}</div>
+                              <div style={{ color: d.color }}>
+                                Predicted: <strong>{d.predictedKwh.toFixed(3)} kWh</strong>
+                              </div>
+                              <div style={{ color: 'var(--slate-500)', fontSize: 10, marginTop: 2 }}>
+                                Equiv. Power: {d.powerKw.toFixed(1)} kW
+                              </div>
+                            </div>
+                          );
+                        }}
+                      />
+                      <Bar dataKey="predictedKwh" radius={[4, 4, 0, 0]} maxBarSize={44}>
+                        {(forecastResponse?.machine_breakdown || []).map((entry, index) => {
+                          const col = MACHINE_CONFIGS[entry.machine_id]?.color || '#64748b';
+                          return <Cell key={`cell-${index}`} fill={col} />;
+                        })}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+
+              {selectedHorizon === '1d' && (
+                /* ─── 1d Horizon: 24-Hour Hourly Profile Chart ────────────── */
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--white)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: 1 }}>
+                        Next 24-Hour Plant Energy Profile (Hourly Forecast)
+                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--slate-500)', marginTop: 2 }}>
+                        Predicted hourly electricity consumption (kWh) over the upcoming 24-hour cycle. Sum = total 24h energy.
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 10,
+                        color: 'var(--slate-500)',
+                        fontFamily: 'var(--font-mono)',
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0,
+                        background: 'rgba(90, 75, 55, 0.08)',
+                        padding: '3px 8px',
+                        borderRadius: 4,
+                      }}
+                    >
+                      Total 24h: <strong style={{ color: 'var(--white)' }}>{predictedEnergyKwh.toFixed(1)} kWh</strong>
+                    </div>
+                  </div>
+
+                  <ResponsiveContainer width="100%" height={230}>
+                    <BarChart
+                      data={forecastResponse?.time_series || []}
+                      margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
+                    >
+                      <CartesianGrid stroke="rgba(90, 75, 55, 0.08)" strokeDasharray="3 3" vertical={false} />
+                      <XAxis
+                        dataKey="interval_label"
+                        tickFormatter={(val: string) => {
+                          const match = val.match(/Hour (\d+)/i);
+                          return match ? `H${match[1]}` : val;
+                        }}
+                        tick={{ fill: 'var(--slate-500)', fontSize: 9.5, fontFamily: 'var(--font-mono)' }}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <YAxis tick={{ fill: 'var(--slate-500)', fontSize: 10, fontFamily: 'var(--font-mono)' }} unit=" kWh" axisLine={false} tickLine={false} />
+                      <Tooltip
+                        content={({ active, payload }) => {
+                          if (!active || !payload?.length) return null;
+                          const pt = payload[0].payload as ForecastTimeSeriesPoint;
+                          return (
+                            <div
+                              style={{
+                                background: '#DDD0BC',
+                                border: '1px solid var(--border)',
+                                borderRadius: 6,
+                                padding: '8px 12px',
+                                fontFamily: 'var(--font-mono)',
+                                fontSize: 11,
+                                boxShadow: '0 4px 16px rgba(60, 45, 25, 0.12)',
+                              }}
+                            >
+                              <div style={{ fontWeight: 700, color: '#1C1917', marginBottom: 4 }}>
+                                {pt.interval_label}
+                              </div>
+                              <div style={{ color: 'var(--violet)' }}>
+                                Predicted Energy: <strong>{pt.predicted_energy_kwh.toFixed(2)} kWh</strong>
+                              </div>
+                              <div style={{ color: 'var(--slate-500)', fontSize: 10, marginTop: 2 }}>
+                                Equiv. Power: <strong>{pt.equivalent_average_power_kw.toFixed(1)} kW</strong>
+                              </div>
+                            </div>
+                          );
+                        }}
+                      />
+                      <Bar dataKey="predicted_energy_kwh" fill="#7c3aed" radius={[3, 3, 0, 0]} maxBarSize={22} />
+                    </BarChart>
+                  </ResponsiveContainer>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, fontSize: 10, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)' }}>
+                    <span>* Diurnal variation and scheduled factory shift transitions reflected across 24 hourly intervals.</span>
+                    <span>Hourly average: {(predictedEnergyKwh / 24.0).toFixed(2)} kWh/h</span>
+                  </div>
+                </div>
+              )}
+
+              {selectedHorizon === '1w' && (
+                /* ─── 1w Horizon: 7-Day Daily Profile Chart ──────────────── */
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--white)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: 1 }}>
+                        Next 7-Day Plant Energy Profile (Daily Forecast)
+                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--slate-500)', marginTop: 2 }}>
+                        Predicted daily electricity consumption (kWh) over the upcoming 7-day schedule. Sum = total 7d energy.
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 10,
+                        color: 'var(--slate-500)',
+                        fontFamily: 'var(--font-mono)',
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0,
+                        background: 'rgba(90, 75, 55, 0.08)',
+                        padding: '3px 8px',
+                        borderRadius: 4,
+                      }}
+                    >
+                      Total 7d: <strong style={{ color: 'var(--white)' }}>{predictedEnergyKwh.toLocaleString(undefined, { maximumFractionDigits: 1 })} kWh</strong>
+                    </div>
+                  </div>
+
+                  <ResponsiveContainer width="100%" height={230}>
+                    <BarChart
+                      data={forecastResponse?.time_series || []}
+                      margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
+                    >
+                      <CartesianGrid stroke="rgba(90, 75, 55, 0.08)" strokeDasharray="3 3" vertical={false} />
+                      <XAxis
+                        dataKey="interval_label"
+                        tick={{ fill: 'var(--slate-500)', fontSize: 10, fontFamily: 'var(--font-mono)', fontWeight: 600 }}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <YAxis tick={{ fill: 'var(--slate-500)', fontSize: 10, fontFamily: 'var(--font-mono)' }} unit=" kWh" axisLine={false} tickLine={false} />
+                      <Tooltip
+                        content={({ active, payload }) => {
+                          if (!active || !payload?.length) return null;
+                          const pt = payload[0].payload as ForecastTimeSeriesPoint;
+                          return (
+                            <div
+                              style={{
+                                background: '#DDD0BC',
+                                border: '1px solid var(--border)',
+                                borderRadius: 6,
+                                padding: '8px 12px',
+                                fontFamily: 'var(--font-mono)',
+                                fontSize: 11,
+                                boxShadow: '0 4px 16px rgba(60, 45, 25, 0.12)',
+                              }}
+                            >
+                              <div style={{ fontWeight: 700, color: '#1C1917', marginBottom: 4 }}>
+                                {pt.interval_label}
+                              </div>
+                              <div style={{ color: 'var(--cyan)' }}>
+                                Predicted Energy: <strong>{pt.predicted_energy_kwh.toFixed(1)} kWh</strong>
+                              </div>
+                              <div style={{ color: 'var(--slate-500)', fontSize: 10, marginTop: 2 }}>
+                                Equiv. Power: <strong>{pt.equivalent_average_power_kw.toFixed(1)} kW</strong>
+                              </div>
+                            </div>
+                          );
+                        }}
+                      />
+                      <Bar dataKey="predicted_energy_kwh" fill="#0284c7" radius={[4, 4, 0, 0]} maxBarSize={36} />
+                    </BarChart>
+                  </ResponsiveContainer>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, fontSize: 10, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)' }}>
+                    <span>* Captures scheduled weekday baseline requirements and weekend production idle drops.</span>
+                    <span>Daily average: {(predictedEnergyKwh / 7.0).toFixed(1)} kWh/day</span>
+                  </div>
+                </div>
+              )}
             </div>
           </motion.div>
         ) : (
@@ -626,7 +899,7 @@ export default function EnergyForecastDashboard({
           /* ================================================================= */
           selectedAsset && (
             <motion.div
-              key={`machine-${selectedAsset.id}`}
+              key={`machine-${selectedAsset.id}-${selectedHorizon}`}
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }}
@@ -640,27 +913,24 @@ export default function EnergyForecastDashboard({
                   bay: 'Production Bay',
                   model: selectedAsset.model,
                 };
-                const fc = selectedForecast;
-                const reference15mKwh = +(selectedAsset.currentKw * 0.25).toFixed(4);
                 const loadFactorPct = selectedAsset.ratedKw > 0 ? +((selectedAsset.currentKw / selectedAsset.ratedKw) * 100).toFixed(0) : 0;
-                const intervalStr = getIntervalString(fc);
 
                 const chartPoints: ForecastIntervalPoint[] = [
                   {
                     label: 'Reference (t)',
                     timeWindow: 'Current draw',
-                    energyKwh: reference15mKwh,
+                    energyKwh: referenceStaticEnergyKwh,
                     equivalentKw: selectedAsset.currentKw,
                     isForecast: false,
-                    statusLabel: 'CONSTANT-LOAD REFERENCE (P × 0.25h)',
+                    statusLabel: `CONSTANT-LOAD REFERENCE (P × ${horizonHours}h)`,
                   },
                   {
-                    label: 'Target (t+15m)',
-                    timeWindow: intervalStr,
-                    energyKwh: fc ? fc.predicted_next_15min_energy_kwh : reference15mKwh,
-                    equivalentKw: fc ? fc.equivalent_average_power_kw : selectedAsset.currentKw,
+                    label: `Target (${selectedHorizon})`,
+                    timeWindow: targetWindowFormatted,
+                    energyKwh: predictedEnergyKwh,
+                    equivalentKw: equivalentPowerKw,
                     isForecast: true,
-                    statusLabel: isFallbackMap[selectedAsset.id] ? 'OFFLINE PERSISTENCE' : 'GRADIENT BOOSTED FORECAST',
+                    statusLabel: isFallback ? 'OFFLINE PERSISTENCE' : 'GRADIENT BOOSTED FORECAST',
                   },
                 ];
 
@@ -717,6 +987,20 @@ export default function EnergyForecastDashboard({
                             >
                               {selectedAsset.id.toUpperCase()}
                             </span>
+                            <span
+                              style={{
+                                fontSize: 9.5,
+                                fontFamily: 'var(--font-mono)',
+                                background: 'rgba(124, 58, 237, 0.1)',
+                                color: 'var(--violet)',
+                                padding: '2px 6px',
+                                borderRadius: 4,
+                                fontWeight: 700,
+                                letterSpacing: 0.5,
+                              }}
+                            >
+                              {selectedHorizon === '15m' ? '15-Min Forecast' : selectedHorizon === '1d' ? '24-Hour Forecast' : '7-Day Forecast'}
+                            </span>
                           </div>
                           <div style={{ fontSize: 12, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)' }}>
                             {cfg.model} • {cfg.bay} • <strong style={{ color: 'var(--white)' }}>{selectedAsset.ratedKw} kW</strong> Rated Power
@@ -760,7 +1044,7 @@ export default function EnergyForecastDashboard({
                       </div>
 
                       {/* Primary Predicted Metric */}
-                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 20 }}>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
                         <span
                           style={{
                             fontSize: 44,
@@ -771,13 +1055,17 @@ export default function EnergyForecastDashboard({
                             lineHeight: 1,
                           }}
                         >
-                          {fc ? fc.predicted_next_15min_energy_kwh.toFixed(3) : reference15mKwh.toFixed(3)}
+                          {selectedHorizon === '15m'
+                            ? predictedEnergyKwh.toFixed(3)
+                            : selectedHorizon === '1d'
+                            ? predictedEnergyKwh.toFixed(2)
+                            : predictedEnergyKwh.toFixed(1)}
                         </span>
                         <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--violet)', fontFamily: 'var(--font-mono)' }}>
                           kWh
                         </span>
                         <span style={{ fontSize: 13, color: 'var(--slate-500)', marginLeft: 8, fontFamily: 'var(--font-mono)' }}>
-                          (Equiv. Load: <strong style={{ color: 'var(--white)' }}>{fc ? fc.equivalent_average_power_kw.toFixed(2) : selectedAsset.currentKw} kW</strong>)
+                          (Equiv. Load: <strong style={{ color: 'var(--white)' }}>{equivalentPowerKw.toFixed(2)} kW</strong>)
                         </span>
                       </div>
 
@@ -808,22 +1096,24 @@ export default function EnergyForecastDashboard({
                             Constant-Load Reference
                           </div>
                           <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--cyan)', fontFamily: 'var(--font-mono)' }}>
-                            {reference15mKwh.toFixed(3)} <span style={{ fontSize: 11, color: 'var(--slate-500)' }}>kWh</span>
+                            {referenceStaticEnergyKwh.toFixed(2)} <span style={{ fontSize: 11, color: 'var(--slate-500)' }}>kWh</span>
                           </div>
                           <div style={{ fontSize: 11, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
-                            P × 0.25h extrapolation
+                            P × {horizonHours}h extrapolation
                           </div>
                         </div>
 
                         <div>
                           <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: 1, fontFamily: 'var(--font-mono)', marginBottom: 3 }}>
-                            Forecast Interval
+                            Forecast Target Window
                           </div>
                           <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--white)', fontFamily: 'var(--font-mono)' }}>
-                            {intervalStr}
+                            {targetWindowFormatted}
                           </div>
                           <div style={{ fontSize: 11, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
-                            Next 15-minute window
+                            {selectedHorizon === '15m' && 'Next 15-minute window'}
+                            {selectedHorizon === '1d' && '24 hourly intervals'}
+                            {selectedHorizon === '1w' && '7 daily intervals'}
                           </div>
                         </div>
 
@@ -831,8 +1121,8 @@ export default function EnergyForecastDashboard({
                           <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: 1, fontFamily: 'var(--font-mono)', marginBottom: 3 }}>
                             Capacity Bounds Check
                           </div>
-                          <div style={{ fontSize: 12, fontWeight: 700, color: fc?.physical_constraint_applied ? 'var(--amber)' : 'var(--emerald)', fontFamily: 'var(--font-mono)', marginTop: 3 }}>
-                            {fc?.physical_constraint_applied ? 'Clamped (Surge Limit)' : 'Within Physical Capacity'}
+                          <div style={{ fontSize: 12, fontWeight: 700, color: forecastResponse?.physical_constraint_applied ? 'var(--amber)' : 'var(--emerald)', fontFamily: 'var(--font-mono)', marginTop: 3 }}>
+                            {forecastResponse?.physical_constraint_applied ? 'Clamped (Surge Limit)' : 'Within Physical Capacity'}
                           </div>
                           <div style={{ fontSize: 11, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
                             ≤ 1.3× nameplate rating
@@ -841,7 +1131,7 @@ export default function EnergyForecastDashboard({
                       </div>
                     </div>
 
-                    {/* Small Machine Comparison Chart */}
+                    {/* Machine Horizon-Specific Chart */}
                     <div
                       className="panel"
                       style={{
@@ -854,39 +1144,204 @@ export default function EnergyForecastDashboard({
                         marginBottom: 20,
                       }}
                     >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+                      {selectedHorizon === '15m' ? (
+                        /* 15m Horizon: Reference vs Model Forecast Comparison */
                         <div>
-                          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--white)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: 1 }}>
-                            Reference vs Model Forecast Comparison
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+                            <div>
+                              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--white)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: 1 }}>
+                                Reference vs Model Forecast Comparison
+                              </div>
+                              <div style={{ fontSize: 11, color: 'var(--slate-500)', marginTop: 2 }}>
+                                Constant-load reference estimate (P × 0.25h) compared to model predicted interval energy.
+                              </div>
+                            </div>
+                            <div
+                              style={{
+                                fontSize: 10,
+                                fontFamily: 'var(--font-mono)',
+                                color: 'var(--white)',
+                                whiteSpace: 'nowrap',
+                                flexShrink: 0,
+                                background: 'rgba(90, 75, 55, 0.08)',
+                                border: '1px solid var(--border)',
+                                padding: '3px 8px',
+                                borderRadius: 4,
+                              }}
+                            >
+                              Difference: <strong style={{ color: deltaKwh <= 0 ? 'var(--cyan)' : 'var(--amber)' }}>{deltaKwh >= 0 ? `+${deltaKwh.toFixed(3)}` : deltaKwh.toFixed(3)} kWh</strong> ({deltaPct > 0 ? `+${deltaPct}%` : `${deltaPct}%`})
+                            </div>
                           </div>
-                          <div style={{ fontSize: 11, color: 'var(--slate-500)', marginTop: 2 }}>
-                            Constant-load reference estimate (P × 0.25h) compared to model predicted interval energy.
+
+                          <MachineForecastIntervalChart points={chartPoints} />
+
+                          <div style={{ fontSize: 10, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)', marginTop: 8 }}>
+                            *Notice: Difference relative to static constant-load extrapolation. Does not indicate verified operational energy savings or plant waste.
                           </div>
                         </div>
-                        {fc && (
-                          <div
-                            style={{
-                              fontSize: 10,
-                              fontFamily: 'var(--font-mono)',
-                              color: 'var(--white)',
-                              whiteSpace: 'nowrap',
-                              flexShrink: 0,
-                              background: 'rgba(90, 75, 55, 0.08)',
-                              border: '1px solid var(--border)',
-                              padding: '3px 8px',
-                              borderRadius: 4,
-                            }}
-                          >
-                            Difference: <strong style={{ color: fc.delta_kwh <= 0 ? 'var(--cyan)' : 'var(--amber)' }}>{fc.delta_kwh >= 0 ? `+${fc.delta_kwh.toFixed(3)}` : fc.delta_kwh.toFixed(3)} kWh</strong> ({fc.delta_percentage > 0 ? `+${fc.delta_percentage}%` : `${fc.delta_percentage}%`})
+                      ) : selectedHorizon === '1d' ? (
+                        /* 1d Horizon: 24-Hour Hourly Profile for Machine */
+                        <div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+                            <div>
+                              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--white)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: 1 }}>
+                                Next 24-Hour Equipment Profile ({selectedAsset.name})
+                              </div>
+                              <div style={{ fontSize: 11, color: 'var(--slate-500)', marginTop: 2 }}>
+                                Predicted hourly electricity consumption (kWh) over the next 24 consecutive hours.
+                              </div>
+                            </div>
+                            <div
+                              style={{
+                                fontSize: 10,
+                                fontFamily: 'var(--font-mono)',
+                                color: 'var(--white)',
+                                whiteSpace: 'nowrap',
+                                flexShrink: 0,
+                                background: 'rgba(90, 75, 55, 0.08)',
+                                border: '1px solid var(--border)',
+                                padding: '3px 8px',
+                                borderRadius: 4,
+                              }}
+                            >
+                              24h Total: <strong style={{ color: 'var(--white)' }}>{predictedEnergyKwh.toFixed(2)} kWh</strong>
+                            </div>
                           </div>
-                        )}
-                      </div>
 
-                      <MachineForecastIntervalChart points={chartPoints} />
+                          <ResponsiveContainer width="100%" height={230}>
+                            <BarChart
+                              data={forecastResponse?.time_series || []}
+                              margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
+                            >
+                              <CartesianGrid stroke="rgba(90, 75, 55, 0.08)" strokeDasharray="3 3" vertical={false} />
+                              <XAxis
+                                dataKey="interval_label"
+                                tickFormatter={(val: string) => {
+                                  const match = val.match(/Hour (\d+)/i);
+                                  return match ? `H${match[1]}` : val;
+                                }}
+                                tick={{ fill: 'var(--slate-500)', fontSize: 9.5, fontFamily: 'var(--font-mono)' }}
+                                axisLine={false}
+                                tickLine={false}
+                              />
+                              <YAxis tick={{ fill: 'var(--slate-500)', fontSize: 10, fontFamily: 'var(--font-mono)' }} unit=" kWh" axisLine={false} tickLine={false} />
+                              <Tooltip
+                                content={({ active, payload }) => {
+                                  if (!active || !payload?.length) return null;
+                                  const pt = payload[0].payload as ForecastTimeSeriesPoint;
+                                  return (
+                                    <div
+                                      style={{
+                                        background: '#DDD0BC',
+                                        border: '1px solid var(--border)',
+                                        borderRadius: 6,
+                                        padding: '8px 12px',
+                                        fontFamily: 'var(--font-mono)',
+                                        fontSize: 11,
+                                        boxShadow: '0 4px 16px rgba(60, 45, 25, 0.12)',
+                                      }}
+                                    >
+                                      <div style={{ fontWeight: 700, color: '#1C1917', marginBottom: 4 }}>
+                                        {pt.interval_label}
+                                      </div>
+                                      <div style={{ color: cfg.color }}>
+                                        Predicted Energy: <strong>{pt.predicted_energy_kwh.toFixed(3)} kWh</strong>
+                                      </div>
+                                      <div style={{ color: 'var(--slate-500)', fontSize: 10, marginTop: 2 }}>
+                                        Equiv. Power: <strong>{pt.equivalent_average_power_kw.toFixed(2)} kW</strong>
+                                      </div>
+                                    </div>
+                                  );
+                                }}
+                              />
+                              <Bar dataKey="predicted_energy_kwh" fill={cfg.color} radius={[3, 3, 0, 0]} maxBarSize={22} />
+                            </BarChart>
+                          </ResponsiveContainer>
 
-                      <div style={{ fontSize: 10, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)', marginTop: 8 }}>
-                        *Notice: Difference relative to static constant-load extrapolation. Does not indicate verified operational energy savings or plant waste.
-                      </div>
+                          <div style={{ fontSize: 10, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)', marginTop: 8 }}>
+                            * Hourly model prediction profile summing to {predictedEnergyKwh.toFixed(2)} kWh. Average power = {(predictedEnergyKwh / 24.0).toFixed(2)} kW.
+                          </div>
+                        </div>
+                      ) : (
+                        /* 1w Horizon: 7-Day Daily Profile for Machine */
+                        <div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+                            <div>
+                              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--white)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: 1 }}>
+                                Next 7-Day Equipment Profile ({selectedAsset.name})
+                              </div>
+                              <div style={{ fontSize: 11, color: 'var(--slate-500)', marginTop: 2 }}>
+                                Predicted daily electricity consumption (kWh) over the upcoming 7 days.
+                              </div>
+                            </div>
+                            <div
+                              style={{
+                                fontSize: 10,
+                                fontFamily: 'var(--font-mono)',
+                                color: 'var(--white)',
+                                whiteSpace: 'nowrap',
+                                flexShrink: 0,
+                                background: 'rgba(90, 75, 55, 0.08)',
+                                border: '1px solid var(--border)',
+                                padding: '3px 8px',
+                                borderRadius: 4,
+                              }}
+                            >
+                              7d Total: <strong style={{ color: 'var(--white)' }}>{predictedEnergyKwh.toFixed(1)} kWh</strong>
+                            </div>
+                          </div>
+
+                          <ResponsiveContainer width="100%" height={230}>
+                            <BarChart
+                              data={forecastResponse?.time_series || []}
+                              margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
+                            >
+                              <CartesianGrid stroke="rgba(90, 75, 55, 0.08)" strokeDasharray="3 3" vertical={false} />
+                              <XAxis
+                                dataKey="interval_label"
+                                tick={{ fill: 'var(--slate-500)', fontSize: 10, fontFamily: 'var(--font-mono)', fontWeight: 600 }}
+                                axisLine={false}
+                                tickLine={false}
+                              />
+                              <YAxis tick={{ fill: 'var(--slate-500)', fontSize: 10, fontFamily: 'var(--font-mono)' }} unit=" kWh" axisLine={false} tickLine={false} />
+                              <Tooltip
+                                content={({ active, payload }) => {
+                                  if (!active || !payload?.length) return null;
+                                  const pt = payload[0].payload as ForecastTimeSeriesPoint;
+                                  return (
+                                    <div
+                                      style={{
+                                        background: '#DDD0BC',
+                                        border: '1px solid var(--border)',
+                                        borderRadius: 6,
+                                        padding: '8px 12px',
+                                        fontFamily: 'var(--font-mono)',
+                                        fontSize: 11,
+                                        boxShadow: '0 4px 16px rgba(60, 45, 25, 0.12)',
+                                      }}
+                                    >
+                                      <div style={{ fontWeight: 700, color: '#1C1917', marginBottom: 4 }}>
+                                        {pt.interval_label}
+                                      </div>
+                                      <div style={{ color: cfg.color }}>
+                                        Predicted Energy: <strong>{pt.predicted_energy_kwh.toFixed(2)} kWh</strong>
+                                      </div>
+                                      <div style={{ color: 'var(--slate-500)', fontSize: 10, marginTop: 2 }}>
+                                        Equiv. Power: <strong>{pt.equivalent_average_power_kw.toFixed(2)} kW</strong>
+                                      </div>
+                                    </div>
+                                  );
+                                }}
+                              />
+                              <Bar dataKey="predicted_energy_kwh" fill={cfg.color} radius={[4, 4, 0, 0]} maxBarSize={36} />
+                            </BarChart>
+                          </ResponsiveContainer>
+
+                          <div style={{ fontSize: 10, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)', marginTop: 8 }}>
+                            * Daily model prediction profile summing to {predictedEnergyKwh.toFixed(1)} kWh. Average power = {(predictedEnergyKwh / 168.0).toFixed(2)} kW.
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -927,7 +1382,7 @@ export default function EnergyForecastDashboard({
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <Cpu size={14} color="var(--violet)" />
               <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--white)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: 1.5 }}>
-                Model Information & Lineage
+                Multi-Horizon Model Information & Lineage ({selectedHorizon.toUpperCase()})
               </span>
             </div>
             {showModelInfo ? <ChevronDown size={14} color="var(--slate-500)" /> : <ChevronRight size={14} color="var(--slate-500)" />}
@@ -948,15 +1403,25 @@ export default function EnergyForecastDashboard({
                       <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--white)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
                         HistGradientBoostingRegressor
                       </div>
-                      <div style={{ fontSize: 10, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>Scikit-Learn Pipeline</div>
+                      <div style={{ fontSize: 10, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
+                        {selectedHorizon === '15m' && '15-Minute Tactical Pipeline'}
+                        {selectedHorizon === '1d' && '24-Hour Hourly Profile Pipeline'}
+                        {selectedHorizon === '1w' && '7-Day Daily Profile Pipeline'}
+                      </div>
                     </div>
 
                     <div style={{ background: '#DDD0BC', border: '1px solid var(--border)', padding: '10px 12px', borderRadius: 6 }}>
                       <div style={{ fontSize: 9.5, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)', letterSpacing: 1, textTransform: 'uppercase' }}>TARGET HORIZON</div>
                       <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--violet)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
-                        target_next_15min_energy_kwh
+                        {selectedHorizon === '15m' && 'target_next_15min_energy_kwh'}
+                        {selectedHorizon === '1d' && 'target_hourly_energy_kwh (24h Sum)'}
+                        {selectedHorizon === '1w' && 'target_daily_energy_kwh (7d Sum)'}
                       </div>
-                      <div style={{ fontSize: 10, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>Upcoming 15-minute interval</div>
+                      <div style={{ fontSize: 10, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
+                        {selectedHorizon === '15m' && 'Next 15-minute window'}
+                        {selectedHorizon === '1d' && '24 consecutive hourly predictions'}
+                        {selectedHorizon === '1w' && '7 consecutive daily predictions'}
+                      </div>
                     </div>
 
                     <div style={{ background: '#DDD0BC', border: '1px solid var(--border)', padding: '10px 12px', borderRadius: 6 }}>
@@ -968,16 +1433,22 @@ export default function EnergyForecastDashboard({
                     </div>
 
                     <div style={{ background: '#DDD0BC', border: '1px solid var(--border)', padding: '10px 12px', borderRadius: 6 }}>
-                      <div style={{ fontSize: 9.5, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)', letterSpacing: 1, textTransform: 'uppercase' }}>SYNTHETIC BENCHMARK</div>
+                      <div style={{ fontSize: 9.5, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)', letterSpacing: 1, textTransform: 'uppercase' }}>TEST BENCHMARK</div>
                       <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--emerald)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
-                        R² = 0.652 | MAE = 0.940 kWh
+                        {selectedHorizon === '15m' && 'R² = 0.652 | MAE = 0.940 kWh'}
+                        {selectedHorizon === '1d' && 'R² = 0.997 | MAE = 0.255 kWh'}
+                        {selectedHorizon === '1w' && 'R² = 0.998 | MAE = 3.238 kWh'}
                       </div>
-                      <div style={{ fontSize: 10, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>Unseen Fleet R² = 0.617</div>
+                      <div style={{ fontSize: 10, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
+                        {selectedHorizon === '15m' && 'WAPE = 12.4% | Unseen Fleet R² = 0.617'}
+                        {selectedHorizon === '1d' && 'WAPE = 2.89% | Chronological test split'}
+                        {selectedHorizon === '1w' && 'WAPE = 1.53% | Chronological test split'}
+                      </div>
                     </div>
                   </div>
 
                   <p style={{ margin: '12px 0 0', fontSize: 11, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)', lineHeight: 1.5 }}>
-                    *Notice: Model benchmarked on synthetic industrial energy dataset; factory-specific accuracy has not been established on physical field sub-meters. Unseen machine IDs are handled safely via one-hot encoder zero-encoding.
+                    *Notice: Synthetic industrial energy dataset provenance disclosed. Multi-horizon gradient boosting pipelines are independently trained on chronological 70/15/15 splits to prevent leakage. 1-day predictions aggregate 24 hourly intervals and 1-week predictions aggregate 7 daily intervals to preserve mathematical consistency with total energy (kWh) and equivalent average power (kW = kWh / hours).
                   </p>
                 </div>
               </motion.div>
@@ -1059,10 +1530,10 @@ export default function EnergyForecastDashboard({
 
                     <div style={{ background: '#DDD0BC', padding: 10, borderRadius: 6, border: '1px solid var(--border)' }}>
                       <div style={{ fontWeight: 700, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)', fontSize: 11, marginBottom: 2 }}>
-                        Lag Fallback (Zero-Leakage)
+                        Multi-Horizon Aggregations
                       </div>
                       <div style={{ color: 'var(--white)', fontFamily: 'var(--font-mono)', fontSize: 10 }}>
-                        Past lags default to current-interval draw (y_t) due to lack of a FIFO buffer. No future target leakage.
+                        Daily models aggregate 96 intervals/day; hourly models aggregate 4 intervals/hour. No flat line repetition or arbitrary multiplier extrapolation.
                       </div>
                     </div>
                   </div>

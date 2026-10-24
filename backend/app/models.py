@@ -281,6 +281,63 @@ class EnergyForecastResponse(BaseModel):
     data_provenance: str = "PREDICTED_HIST_GB_MODEL"
 
 
+class ForecastHorizon(str, Enum):
+    """Supported forecasting horizons for machine and fleet energy intelligence."""
+    NEXT_15MIN = "15m"
+    NEXT_DAY = "1d"
+    NEXT_WEEK = "1w"
+
+
+class ForecastTimeSeriesPoint(BaseModel):
+    """Single discrete interval projection in a multi-step forecast."""
+    timestamp: str = Field(description="ISO 8601 start timestamp of interval")
+    interval_label: str = Field(description="Display label (e.g., '14:00', 'Day 1 (Mon)')")
+    predicted_energy_kwh: float = Field(description="Forecast electrical energy in kWh")
+    equivalent_average_power_kw: float = Field(description="Equivalent average electrical power in kW")
+
+
+class MachineForecastBreakdown(BaseModel):
+    """Machine contribution item in fleet-level energy forecast."""
+    machine_id: str
+    machine_name: str
+    machine_type: str
+    predicted_energy_kwh: float
+    equivalent_average_power_kw: float
+    percentage_of_fleet: float
+    is_fallback: bool = False
+
+
+class HorizonForecastResponse(BaseModel):
+    """Standardized response schema across all three forecasting horizons (15m, 1d, 1w)."""
+    forecast_horizon: str = Field(description="'15m' (15 Minutes), '1d' (1 Day / 24 Hours), or '1w' (1 Week / 7 Days)")
+    forecast_target: str = Field(description="Prediction target definition")
+    forecast_start: str = Field(description="ISO 8601 start timestamp")
+    forecast_end: str = Field(description="ISO 8601 end timestamp")
+    forecast_duration_hours: float = Field(description="Total duration in hours (0.25, 24.0, 168.0)")
+    machine_id: str = Field(description="'PLANT' or unique machine ID")
+    machine_type: Optional[str] = None
+    predicted_energy_kwh: float = Field(description="Total electrical energy in kWh expected over horizon")
+    energy_unit: str = "kWh"
+    equivalent_average_power_kw: float = Field(description="Equivalent average power demand in kW (kWh / duration_hours)")
+    power_unit: str = "kW"
+    granularity: str = Field(description="'15-minute', 'hourly', or 'daily'")
+    time_series: List[ForecastTimeSeriesPoint] = Field(default_factory=list, description="Ordered time-series points for charts")
+    machine_breakdown: List[MachineForecastBreakdown] = Field(default_factory=list, description="Fleet machine contributions when machine_id is 'PLANT'")
+    model_metadata: Dict[str, Any] = Field(default_factory=dict)
+    data_provenance: str = "PREDICTED_HIST_GB_MODEL"
+    physical_constraint_applied: bool = False
+    coverage_count: int = Field(default=1, description="Number of machines with valid predictions")
+    total_machines: int = Field(default=1, description="Total machines queried")
+    is_complete_coverage: bool = True
+    assumptions: List[str] = Field(default_factory=list, description="Transparent operating schedule and shift assumptions")
+
+
+class FleetForecastRequest(BaseModel):
+    """Payload for multi-horizon plant fleet forecast."""
+    horizon: ForecastHorizon = Field(default=ForecastHorizon.NEXT_15MIN)
+    machines: List[EnergyForecastInput] = Field(description="Telemetry inputs for the fleet machines")
+
+
 # Re-export AI schemas for unified access
 from backend.app.schemas.ai import (
     ExplainContext,

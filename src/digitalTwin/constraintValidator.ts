@@ -16,6 +16,8 @@ export function validateScenarioConstraints(
   const machineId = resolveMachineId(rawId);
   const profile = MACHINE_PROFILES[machineId];
 
+  const PROVENANCE = 'Simulated Engineering Assumption (PrecisionWorks Benchmark)';
+
   // 1. Machine existence check
   if (!profile) {
     violations.push({
@@ -23,6 +25,7 @@ export function validateScenarioConstraints(
       severity: 'error',
       machine_id: rawId,
       message: `Machine ID '${rawId}' is not registered in factory digital twin profiles.`,
+      provenance: PROVENANCE,
     });
     return { feasibility: 'blocked', violations };
   }
@@ -40,6 +43,7 @@ export function validateScenarioConstraints(
         severity: 'error',
         machine_id: machineId,
         message: `Proposed target power (${p} kW) cannot be negative.`,
+        provenance: PROVENANCE,
       });
     } else if (p > ratedKw) {
       violations.push({
@@ -47,6 +51,9 @@ export function validateScenarioConstraints(
         severity: 'error',
         machine_id: machineId,
         message: `Target power of ${p} kW exceeds rated motor/element capacity (${ratedKw} kW) on ${profile.name}.`,
+        limit_value: ratedKw,
+        simulated_value: p,
+        provenance: PROVENANCE,
       });
     }
   }
@@ -58,6 +65,7 @@ export function validateScenarioConstraints(
       severity: 'error',
       machine_id: machineId,
       message: `Proposed operating state '${action.target_state}' is not permitted for ${machineId}. Permitted: ${permittedStates.join(', ')}.`,
+      provenance: PROVENANCE,
     });
   }
 
@@ -70,6 +78,9 @@ export function validateScenarioConstraints(
           severity: 'error',
           machine_id: machineId,
           message: `Heat-treatment furnace (FURN-01) holding cycle requires a minimum thermal threshold of ${profile.expected_idle_power_kw} kW. Interruption or premature cooling causes metallurgy quench defects.`,
+          limit_value: profile.expected_idle_power_kw,
+          simulated_value: action.target_power_kw,
+          provenance: PROVENANCE,
         });
       }
     }
@@ -87,6 +98,9 @@ export function validateScenarioConstraints(
           severity: 'error',
           machine_id: 'PAINT-01',
           message: 'Mandatory exhaust ventilation (min 5.0 kW) must remain active during painting operations to comply with factory VOC health and safety interlocks.',
+          limit_value: 5.0,
+          simulated_value: 0.0,
+          provenance: PROVENANCE,
         });
       }
     }
@@ -108,6 +122,9 @@ export function validateScenarioConstraints(
         severity: 'warning',
         machine_id: machineId,
         message: `Proposed schedule produces only ${scenProd} units, which is below the daily quota of ${minTarget} units (baseline achieved ${baseProd} units).`,
+        limit_value: minTarget,
+        simulated_value: scenProd,
+        provenance: PROVENANCE,
       });
     }
   }
@@ -121,6 +138,9 @@ export function validateScenarioConstraints(
         severity: 'error',
         machine_id: machineId,
         message: `Target pressure (${action.target_pressure_bar} bar) is below the pneumatic ring main minimum operating limit of ${minBar} bar. Pneumatic clamps may lose torque.`,
+        limit_value: minBar,
+        simulated_value: action.target_pressure_bar,
+        provenance: PROVENANCE,
       });
     }
   }
@@ -139,6 +159,7 @@ export function validateScenarioConstraints(
     severity: 'info',
     machine_id: machineId,
     message: 'Scenario passed physical constraints. Advisory simulation: plant energy manager must sign off before DCS/SCADA implementation.',
+    provenance: PROVENANCE,
   });
 
   if (hasWarning) {

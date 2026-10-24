@@ -120,6 +120,8 @@ export const TRADE_OFF_CANDIDATES = [
     productionUnits: 140,
     pressureBar: 5.8,
     furnaceKw: 10.0,
+    interlocks_triggered: ['ERR_PROTECTED_PROCESS_VIOLATION', 'ERR_PRESSURE_BELOW_MINIMUM'],
+    provenance: 'Simulated Engineering Assumption: PrecisionWorks SOP #402',
     diagnostics:
       'Violates furnace metallurgical quench holding floor (≥ 15.0 kW) and drops below CNC-01 / PAINT-01 pneumatic clamp floor (6.5 bar). Part slippage and batch defect risk.',
   },
@@ -135,6 +137,8 @@ export const TRADE_OFF_CANDIDATES = [
     productionUnits: 110,
     pressureBar: 7.5,
     furnaceKw: 48.0,
+    interlocks_triggered: ['WARN_PRODUCTION_DEFICIT'],
+    provenance: 'Simulated Engineering Assumption: PrecisionWorks Shift Quota',
     diagnostics:
       'Achieves low electricity cost, but CNC production output drops to 110 parts (violates daily minimum delivery quota of ≥ 140 parts before morning shift handover).',
   },
@@ -150,6 +154,8 @@ export const TRADE_OFF_CANDIDATES = [
     productionUnits: 148,
     pressureBar: 6.8,
     furnaceKw: 48.0,
+    interlocks_triggered: [],
+    provenance: 'Simulated Engineering Assumption: PrecisionWorks Benchmark',
     diagnostics:
       'Eliminates 96 kW morning peak spike (shaves to 74 kW, zero penalty). Preserves 148 parts production. Pressure maintained at 6.8 bar (≥ 6.5 bar floor). Saves ₹270/day.',
   },

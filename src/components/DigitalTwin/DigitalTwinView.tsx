@@ -958,6 +958,11 @@ export default function DigitalTwinView({
                       <div style={{ fontSize: 10, color: isBlocked ? 'var(--red)' : isInfeasible ? 'var(--amber)' : 'var(--slate-400)', marginTop: 8, lineHeight: 1.4 }}>
                         <strong>Diagnostic Assessment:</strong> {cand.diagnostics}
                       </div>
+                      {cand.provenance && (
+                        <div style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--slate-500)', marginTop: 4 }}>
+                          [{cand.provenance}]
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -971,17 +976,25 @@ export default function DigitalTwinView({
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                 <div>
                   <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color: 'var(--white)', textTransform: 'uppercase' }}>
-                    Sensor Sufficiency &amp; 3-Tier Payback Projection (Idea A)
+                    Sensor Sufficiency &amp; Value of Information (Idea A)
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--slate-400)', marginTop: 2 }}>
-                    Epistemic Humility: Knows what it doesn't know · Quantifies value of additional flowmeter
+                    Diagnostic Humility: Resolves physical ambiguity · Evaluates sensor Value of Information (VOI)
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 4, background: inv.evidence_grade === 'A' ? 'rgba(16,185,129,0.12)' : 'rgba(245,158,11,0.12)', border: `1px solid ${inv.evidence_grade === 'A' ? 'rgba(16,185,129,0.4)' : 'rgba(245,158,11,0.4)'}`, color: inv.evidence_grade === 'A' ? 'var(--emerald)' : 'var(--amber)', fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700 }}>
                   <Award size={13} />
-                  EVIDENCE GRADE {inv.evidence_grade}
+                  TELEMETRY READINESS {inv.evidence_grade}
                 </div>
               </div>
+
+              {/* Physical Diagnostic Ambiguity Banner */}
+              {inv.diagnostic_ambiguity && (
+                <div style={{ background: hasFlowMeter ? 'rgba(16,185,129,0.06)' : 'rgba(245,158,11,0.06)', border: `1px solid ${hasFlowMeter ? 'rgba(16,185,129,0.3)' : 'rgba(245,158,11,0.3)'}`, borderRadius: 6, padding: '10px 14px', marginBottom: 12, fontSize: 11, lineHeight: 1.5, color: 'var(--slate-300)' }}>
+                  <strong style={{ color: hasFlowMeter ? 'var(--emerald)' : 'var(--amber)' }}>Physical Hypothesis Resolution: </strong>
+                  {inv.diagnostic_ambiguity}
+                </div>
+              )}
 
               {/* Interactive Value of Information (VOI) Toggle */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-elevated)', border: '1px solid var(--border-active)', borderRadius: 6, padding: '10px 14px', marginBottom: 14 }}>
@@ -994,7 +1007,7 @@ export default function DigitalTwinView({
                     <div style={{ fontSize: 10, color: 'var(--slate-400)' }}>
                       {hasFlowMeter
                         ? 'Confirmed zero break airflow. 100% of 18 kW draw is recoverable timer blow-off.'
-                        : 'Uncertainty present: 40%–65% of idle draw could be unmetered pipe leaks. Conservative ROI applied.'}
+                        : 'Uncertainty present: 40%–65% of idle draw could be unmetered pipe leaks. VOI Ratio: 4.5x.'}
                     </div>
                   </div>
                 </div>
@@ -1108,29 +1121,34 @@ export default function DigitalTwinView({
 
               {/* Idea B Counterfactual Waterfall Comparison Card */}
               <div style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-active)', borderRadius: 6, padding: '12px 14px', marginBottom: 14 }}>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--cyan)', textTransform: 'uppercase', fontWeight: 600, marginBottom: 8 }}>
-                  Audit Case Study: Day +7 Post-Implementation Normalization
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--cyan)', textTransform: 'uppercase', fontWeight: 600 }}>
+                    Case Study A: Shift Contraction Audit (IPMVP Option B/C Reconciled)
+                  </div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--emerald)', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', padding: '2px 8px', borderRadius: 3 }}>
+                    Reconciliation: 170.57 + 14.43 = 185.00 kWh (100% Match)
+                  </div>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, fontFamily: 'var(--font-mono)', fontSize: 11 }}>
                   <div style={{ background: 'var(--bg-surface)', padding: '8px 10px', borderRadius: 4 }}>
-                    <div style={{ fontSize: 9, color: 'var(--slate-400)' }}>1. Raw Meter Drop</div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--white)', margin: '4px 0 2px' }}>-185 kWh (-14.0%)</div>
-                    <div style={{ fontSize: 9, color: 'var(--slate-500)' }}>Naive dashboard claim</div>
+                    <div style={{ fontSize: 9, color: 'var(--slate-400)' }}>1. Raw Submeter Drop</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--white)', margin: '4px 0 2px' }}>-185.00 kWh (-14.01%)</div>
+                    <div style={{ fontSize: 9, color: 'var(--slate-500)' }}>1,320.0 → 1,135.0 kWh</div>
                   </div>
                   <div style={{ background: 'var(--bg-surface)', padding: '8px 10px', borderRadius: 4 }}>
-                    <div style={{ fontSize: 9, color: 'var(--slate-400)' }}>2. Production Output</div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--amber)', margin: '4px 0 2px' }}>122 vs 140 parts</div>
+                    <div style={{ fontSize: 9, color: 'var(--slate-400)' }}>2. Shift Output Deficit</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--amber)', margin: '4px 0 2px' }}>122 vs 140 parts (-12.86%)</div>
                     <div style={{ fontSize: 9, color: 'var(--slate-500)' }}>Material delay on CNC</div>
                   </div>
                   <div style={{ background: 'var(--bg-surface)', padding: '8px 10px', borderRadius: 4 }}>
                     <div style={{ fontSize: 9, color: 'var(--slate-400)' }}>3. Production Drop Effect</div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--slate-300)', margin: '4px 0 2px' }}>-121 kWh (-9.2%)</div>
-                    <div style={{ fontSize: 9, color: 'var(--slate-500)' }}>Not energy efficiency!</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--slate-300)', margin: '4px 0 2px' }}>-170.57 kWh (-12.92%)</div>
+                    <div style={{ fontSize: 9, color: 'var(--slate-500)' }}>Output loss, not efficiency!</div>
                   </div>
                   <div style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid var(--emerald)', padding: '8px 10px', borderRadius: 4 }}>
-                    <div style={{ fontSize: 9, color: 'var(--emerald)' }}>4. Verified Efficiency</div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--emerald)', margin: '4px 0 2px' }}>-64 kWh (-4.8%)</div>
-                    <div style={{ fontSize: 9, color: 'var(--slate-400)' }}>52.5 kg CO₂e Scope 2</div>
+                    <div style={{ fontSize: 9, color: 'var(--emerald)' }}>4. True Verified Efficiency</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--emerald)', margin: '4px 0 2px' }}>-14.43 kWh/day (-1.09%)</div>
+                    <div style={{ fontSize: 9, color: 'var(--slate-400)' }}>11.83 kg CO₂e (72.15 kWh/wk)</div>
                   </div>
                 </div>
               </div>

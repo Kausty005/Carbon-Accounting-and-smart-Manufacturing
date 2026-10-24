@@ -33,21 +33,29 @@ export function calculateInvestmentCase(
   const paybackConservative = conservativeAnnual > 0 ? Number(((capex / conservativeAnnual) * 12).toFixed(1)) : 99.9;
   const paybackBest = bestCaseAnnual > 0 ? Number(((capex / bestCaseAnnual) * 12).toFixed(1)) : 99.9;
 
-  // NIST Data Evidence Grade (Idea A: Epistemic Humility)
+  // NIST Data Evidence Grade (Idea A: Diagnostic Humility)
   const evidenceGrade: EvidenceGrade = hasFlowMeter ? 'A' : 'B';
   const evidenceDescription = hasFlowMeter
-    ? 'Grade A (High Trust): Direct submetering + inline ultrasonic flowmeter confirms zero downstream demand during break periods.'
-    : 'Grade B (Moderate Trust): Electrical submeter verified, but downstream airflow unmetered. 40%–65% of idle draw could be pipe leaks rather than control waste.';
+    ? 'Grade A (High Instrumentation): Electrical power + inline ultrasonic flowmeter confirms zero downstream demand during break periods.'
+    : 'Grade B (Telemetry Heuristic): Electrical smart submeter verified (Class 0.5), but downstream pneumatic airflow is unmetered.';
+
+  const diagnosticAmbiguity = hasFlowMeter
+    ? 'RESOLVED: Flow transducer confirms 0.0 Nm³/min flow during lunch break. 100% of the 10 kW idle excess is control blow-off timer waste, solvable via auto-cutoff relay.'
+    : 'DIAGNOSTIC AMBIGUITY: Electrical power alone cannot distinguish between Hypothesis 1 (blow-off timer stuck in load mode, solvable via ₹2,000 relay) vs Hypothesis 2 (downstream ring-main leaks, requiring physical pipe repair). Auto-cutoff without flow verification risks header pressure collapse below 6.5 bar.';
+
+  const flowmeterCapex = 12000;
+  const annualUncertaintySpan = Math.max(0, expectedAnnual - conservativeAnnual);
+  const voiRatio = Number((annualUncertaintySpan / (flowmeterCapex || 1)).toFixed(2));
 
   const missingSensors = hasFlowMeter
     ? [
-        'Flow meter installed (Nm³/min) — 100% of idle draw confirmed recoverable via timer cutoff.',
+        'Flow transducer validated (Nm³/min) — 100% of idle draw confirmed recoverable via timer cutoff.',
         'Line pressure transducer at furthest machine tool (CNC-01 pneumatic drop test verified ≥ 6.5 bar).',
       ]
     : [
-        'MISSING: Compressed air mass flow meter (Nm³/min) — Cannot isolate compressor unload blow-off from pipe leaks.',
-        'MISSING: Point-of-use pressure transducer at CNC-01 chuck line.',
-        'VALUE OF INFORMATION: A ₹12,000 temporary flowmeter narrows payback uncertainty from 4–11 months to 2.8 months.',
+        'MISSING: Compressed air mass flow transducer (Nm³/min) — Cannot isolate compressor unload blow-off from pipe leaks.',
+        'MISSING: Point-of-use pressure transducer at CNC-01 pneumatic chuck.',
+        `VALUE OF INFORMATION (VOI): Deploying a ₹${flowmeterCapex.toLocaleString()} temporary ultrasonic flowmeter delivers a VOI Ratio of ${voiRatio}x, narrowing payback uncertainty from 4–11 months to 2.8 months.`,
       ];
 
   return {
@@ -61,5 +69,9 @@ export function calculateInvestmentCase(
     evidence_grade: evidenceGrade,
     evidence_description: evidenceDescription,
     missing_measurements_sensitivity: missingSensors,
+    diagnostic_ambiguity: diagnosticAmbiguity,
+    recommended_instrument: 'Temporary Clamp-on Ultrasonic Airflow Transducer',
+    voi_ratio: voiRatio,
+    voi_annual_uncertainty_inr: annualUncertaintySpan,
   };
 }

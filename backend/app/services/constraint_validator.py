@@ -20,13 +20,16 @@ class ConstraintValidator:
         machine_id = action.get("machine_id", "")
         profile = self.profile_store.get_profile(machine_id)
 
+        provenance = "Simulated Engineering Assumption (PrecisionWorks Benchmark)"
+
         # 1. Machine existence check
         if not profile:
             violations.append({
                 "code": "ERR_UNKNOWN_MACHINE",
                 "severity": "error",
                 "machine_id": machine_id,
-                "message": f"Machine ID '{machine_id}' is not recognized in factory profiles."
+                "message": f"Machine ID '{machine_id}' is not recognized in factory profiles.",
+                "provenance": provenance
             })
             return "blocked", violations
 
@@ -42,14 +45,18 @@ class ConstraintValidator:
                     "code": "ERR_POWER_NEGATIVE",
                     "severity": "error",
                     "machine_id": machine_id,
-                    "message": f"Target power ({target_power} kW) cannot be negative."
+                    "message": f"Target power ({target_power} kW) cannot be negative.",
+                    "provenance": provenance
                 })
             elif target_power > rated_kw:
                 violations.append({
                     "code": "ERR_POWER_EXCEEDS_RATED",
                     "severity": "error",
                     "machine_id": machine_id,
-                    "message": f"Target power ({target_power} kW) exceeds rated capacity ({rated_kw} kW) of {machine_id}."
+                    "message": f"Target power ({target_power} kW) exceeds rated capacity ({rated_kw} kW) of {machine_id}.",
+                    "limit_value": rated_kw,
+                    "simulated_value": target_power,
+                    "provenance": provenance
                 })
 
         # 3. State check
@@ -59,7 +66,8 @@ class ConstraintValidator:
                 "code": "ERR_INVALID_STATE",
                 "severity": "error",
                 "machine_id": machine_id,
-                "message": f"Proposed state '{target_state}' is not permitted for {machine_id}. Allowed: {permitted_states}."
+                "message": f"Proposed state '{target_state}' is not permitted for {machine_id}. Allowed: {permitted_states}.",
+                "provenance": provenance
             })
 
         # 4. Protected process block check (e.g. FURN-01)
@@ -72,7 +80,10 @@ class ConstraintValidator:
                         "code": "ERR_PROTECTED_PROCESS_VIOLATION",
                         "severity": "error",
                         "machine_id": machine_id,
-                        "message": f"Heat-treatment cycle on {machine_id} is a protected metallurgical process; cutting below thermal holding limit ({profile.get('expected_idle_power_kw')} kW) will ruin heat-treatment batch."
+                        "message": f"Heat-treatment cycle on {machine_id} is a protected metallurgical process; cutting below thermal holding limit ({profile.get('expected_idle_power_kw')} kW) will ruin heat-treatment batch.",
+                        "limit_value": float(profile.get("expected_idle_power_kw", 15.0)),
+                        "simulated_value": target_power,
+                        "provenance": provenance
                     })
 
         # 5. Paint ventilation check (e.g. PAINT-01)
@@ -85,7 +96,8 @@ class ConstraintValidator:
                             "code": "ERR_VENTILATION_REQUIRED",
                             "severity": "error",
                             "machine_id": "PAINT-01",
-                            "message": "Mandatory exhaust ventilation must remain active during painting operations for VOC environmental safety."
+                            "message": "Mandatory exhaust ventilation must remain active during painting operations for VOC environmental safety.",
+                            "provenance": provenance
                         })
                         break
 

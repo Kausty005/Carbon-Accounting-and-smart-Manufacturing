@@ -111,6 +111,9 @@ export interface ConstraintViolation {
   severity: 'error' | 'warning' | 'info';
   machine_id: string;
   message: string;
+  limit_value?: number;
+  simulated_value?: number;
+  provenance?: string;
 }
 
 export interface MachineMetrics {
@@ -176,6 +179,10 @@ export interface InvestmentCase {
   evidence_grade: EvidenceGrade;
   evidence_description: string;
   missing_measurements_sensitivity: string[];
+  diagnostic_ambiguity?: string;
+  recommended_instrument?: string;
+  voi_ratio?: number;
+  voi_annual_uncertainty_inr?: number;
 }
 
 export interface MVLedgerEntry {
@@ -183,6 +190,7 @@ export interface MVLedgerEntry {
   title: string;
   target_asset: string;
   implementation_date: string;
+  case_type?: 'contraction' | 'expansion';
   baseline_kwh: number;
   baseline_units: number;
   baseline_sec: number;
@@ -190,9 +198,12 @@ export interface MVLedgerEntry {
   actual_units: number;
   actual_sec: number;
   adjusted_baseline_kwh: number;
+  raw_submeter_drop_kwh?: number;
+  production_volume_effect_kwh?: number;
   expected_savings_kwh: number;
   realized_savings_kwh: number;
   realization_rate_pct: number;
+  verified_scope2_kg_co2e?: number;
   status: 'verified' | 'investigating';
   variance_notes: string;
 }
@@ -226,6 +237,8 @@ export interface TradeOffCandidate {
   pressureBar: number;
   furnaceKw: number;
   diagnostics: string;
+  provenance?: string;
+  interlocks_triggered?: string[];
 }
 
 export interface ScenarioPreset {
@@ -237,4 +250,83 @@ export interface ScenarioPreset {
   assumptions: Record<string, any>;
   description: string;
   expectedOutcome: string;
+}
+
+/**
+ * Unified Versioned Decision Record Schema (UVDR-v1)
+ * Enforces a single source of truth across digital twin simulation,
+ * uncertainty profiling, constraint checks, and ISO 50001 audit exports.
+ */
+export interface UnifiedDecisionRecord {
+  record_id: string;
+  timestamp: string;
+  calculation_engine_version: string;
+  verification_status: 'simulated' | 'estimated' | 'verified';
+  input_data_window: {
+    start_time: string;
+    end_time: string;
+    duration_hours: number;
+    records_count: number;
+    telemetry_status: 'validated_telemetry' | 'uncalibrated_heuristic';
+  };
+  intervention: {
+    action_type: string;
+    target_machine_id: string;
+    parameters: Record<string, any>;
+    assumptions_provenance: string;
+  };
+  constraint_evaluations: Array<{
+    code: string;
+    severity: 'error' | 'warning';
+    limit_value: number;
+    simulated_value: number;
+    status: 'PASSED' | 'VIOLATED';
+    provenance: string;
+    diagnostic_message: string;
+  }>;
+  overall_feasibility: FeasibilityStatus;
+  metrics: {
+    baseline_energy_kwh: number;
+    scenario_energy_kwh: number;
+    energy_delta_kwh: number;
+    baseline_cost_inr: number;
+    scenario_cost_inr: number;
+    cost_delta_inr: number;
+    baseline_peak_kw: number;
+    scenario_peak_kw: number;
+    peak_delta_kw: number;
+    scope1_kg_co2e_daily: number;
+    scope2_kg_co2e_delta: number | null;
+  };
+  uncertainty_profile: {
+    quantified: boolean;
+    evidence_grade: EvidenceGrade;
+    diagnostic_ambiguity: string;
+    conservative_savings_inr_daily: number;
+    expected_savings_inr_daily: number;
+    value_of_information: {
+      recommended_instrument: string;
+      capex_inr: number;
+      expected_variance_reduction_pct: number;
+      voi_ratio: number;
+    };
+  };
+  counterfactual_mv: {
+    methodology: string;
+    baseline_production_units: number;
+    actual_production_units: number;
+    adjusted_baseline_kwh: number;
+    raw_submeter_savings_kwh: number;
+    production_volume_effect_kwh: number;
+    verified_operational_savings_kwh: number;
+    realization_rate_pct: number;
+  };
+  governance: {
+    emission_factor_provenance: {
+      scope1_lpg: string;
+      scope2_grid: string;
+    };
+    requires_human_signoff: boolean;
+    plant_energy_manager_approval: 'pending' | 'approved' | 'rejected';
+  };
 }

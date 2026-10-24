@@ -39,19 +39,19 @@
       "sample_count": 115222
     },
     "RandomForestRegressor": {
-      "mae_kwh": 0.9704,
-      "rmse_kwh": 1.4971,
-      "r2_score": 0.6425,
-      "wape_pct": 43.65,
-      "smape_pct": 82.97,
+      "mae_kwh": 0.9706,
+      "rmse_kwh": 1.4975,
+      "r2_score": 0.6423,
+      "wape_pct": 43.66,
+      "smape_pct": 82.95,
       "sample_count": 115222
     },
     "HistGradientBoostingRegressor": {
-      "mae_kwh": 0.9382,
-      "rmse_kwh": 1.4675,
-      "r2_score": 0.6565,
-      "wape_pct": 42.2,
-      "smape_pct": 82.57,
+      "mae_kwh": 0.9386,
+      "rmse_kwh": 1.4683,
+      "r2_score": 0.656,
+      "wape_pct": 42.22,
+      "smape_pct": 82.64,
       "sample_count": 115222
     }
   },
@@ -73,159 +73,159 @@
       "sample_count": 111098
     },
     "RandomForestRegressor": {
-      "mae_kwh": 0.9843,
-      "rmse_kwh": 1.5067,
-      "r2_score": 0.6377,
+      "mae_kwh": 0.9844,
+      "rmse_kwh": 1.5057,
+      "r2_score": 0.6382,
       "wape_pct": 44.57,
-      "smape_pct": 83.76,
+      "smape_pct": 83.77,
       "sample_count": 111098
     },
     "HistGradientBoostingRegressor": {
       "mae_kwh": 0.9403,
-      "rmse_kwh": 1.4763,
-      "r2_score": 0.6522,
+      "rmse_kwh": 1.4754,
+      "r2_score": 0.6526,
       "wape_pct": 42.57,
-      "smape_pct": 82.91,
+      "smape_pct": 83.01,
       "sample_count": 111098
     }
   },
   "selected_model_test_metrics": {
     "mae_kwh": 0.9403,
-    "rmse_kwh": 1.4763,
-    "r2_score": 0.6522,
+    "rmse_kwh": 1.4754,
+    "r2_score": 0.6526,
     "wape_pct": 42.57,
-    "smape_pct": 82.91,
+    "smape_pct": 83.01,
     "sample_count": 111098
   },
   "performance_by_machine_type": {
     "AIR_COMPRESSOR": {
-      "mae_kwh": 1.0082,
-      "rmse_kwh": 1.4101,
-      "r2_score": 0.5788,
-      "wape_pct": 39.01,
-      "smape_pct": 78.92,
+      "mae_kwh": 1.0075,
+      "rmse_kwh": 1.4092,
+      "r2_score": 0.5794,
+      "wape_pct": 38.98,
+      "smape_pct": 79.01,
       "sample_count": 10342
     },
     "CNC_MILL": {
-      "mae_kwh": 0.9207,
-      "rmse_kwh": 1.2144,
-      "r2_score": 0.5051,
-      "wape_pct": 37.92,
-      "smape_pct": 63.21,
+      "mae_kwh": 0.9215,
+      "rmse_kwh": 1.2137,
+      "r2_score": 0.5056,
+      "wape_pct": 37.95,
+      "smape_pct": 63.24,
       "sample_count": 10332
     },
     "CONVEYOR": {
-      "mae_kwh": 0.3759,
-      "rmse_kwh": 0.5039,
-      "r2_score": 0.5104,
-      "wape_pct": 38.94,
-      "smape_pct": 68.77,
+      "mae_kwh": 0.3769,
+      "rmse_kwh": 0.5044,
+      "r2_score": 0.5092,
+      "wape_pct": 39.04,
+      "smape_pct": 68.94,
       "sample_count": 10333
     },
     "FAN_BLOWER": {
-      "mae_kwh": 0.6108,
-      "rmse_kwh": 0.8611,
-      "r2_score": 0.5803,
-      "wape_pct": 38.72,
-      "smape_pct": 82.65,
+      "mae_kwh": 0.6084,
+      "rmse_kwh": 0.8607,
+      "r2_score": 0.5807,
+      "wape_pct": 38.57,
+      "smape_pct": 82.55,
       "sample_count": 7749
     },
     "GRINDER": {
-      "mae_kwh": 0.8751,
-      "rmse_kwh": 1.1646,
-      "r2_score": 0.5083,
-      "wape_pct": 45.86,
-      "smape_pct": 85.95,
+      "mae_kwh": 0.8765,
+      "rmse_kwh": 1.1636,
+      "r2_score": 0.5092,
+      "wape_pct": 45.94,
+      "smape_pct": 86.1,
       "sample_count": 7745
     },
     "HYDRAULIC_PRESS": {
-      "mae_kwh": 1.3371,
-      "rmse_kwh": 1.8676,
-      "r2_score": 0.5388,
-      "wape_pct": 48.72,
-      "smape_pct": 93.91,
+      "mae_kwh": 1.3389,
+      "rmse_kwh": 1.8682,
+      "r2_score": 0.5385,
+      "wape_pct": 48.78,
+      "smape_pct": 93.9,
       "sample_count": 10338
     },
     "INDUSTRIAL_MIXER": {
-      "mae_kwh": 0.6198,
-      "rmse_kwh": 0.8633,
-      "r2_score": 0.6203,
-      "wape_pct": 42.67,
-      "smape_pct": 88.79,
+      "mae_kwh": 0.6224,
+      "rmse_kwh": 0.8646,
+      "r2_score": 0.6192,
+      "wape_pct": 42.84,
+      "smape_pct": 89.23,
       "sample_count": 10336
     },
     "INJECTION_MOLDER": {
-      "mae_kwh": 1.3433,
-      "rmse_kwh": 1.8383,
-      "r2_score": 0.5543,
-      "wape_pct": 46.11,
-      "smape_pct": 92.91,
+      "mae_kwh": 1.3414,
+      "rmse_kwh": 1.8369,
+      "r2_score": 0.555,
+      "wape_pct": 46.04,
+      "smape_pct": 92.84,
       "sample_count": 10341
     },
     "OVEN_FURNACE": {
-      "mae_kwh": 2.4695,
-      "rmse_kwh": 3.4011,
-      "r2_score": 0.5114,
-      "wape_pct": 40.36,
-      "smape_pct": 81.75,
+      "mae_kwh": 2.4667,
+      "rmse_kwh": 3.3972,
+      "r2_score": 0.5125,
+      "wape_pct": 40.32,
+      "smape_pct": 81.73,
       "sample_count": 7739
     },
     "PACKAGING_MACHINE": {
-      "mae_kwh": 0.6485,
-      "rmse_kwh": 0.8599,
-      "r2_score": 0.5262,
-      "wape_pct": 39.71,
-      "smape_pct": 67.15,
+      "mae_kwh": 0.6444,
+      "rmse_kwh": 0.8587,
+      "r2_score": 0.5276,
+      "wape_pct": 39.46,
+      "smape_pct": 66.82,
       "sample_count": 7754
     },
     "PUMP": {
-      "mae_kwh": 0.4495,
-      "rmse_kwh": 0.6762,
-      "r2_score": 0.6368,
-      "wape_pct": 43.23,
-      "smape_pct": 102.17,
+      "mae_kwh": 0.4508,
+      "rmse_kwh": 0.6759,
+      "r2_score": 0.6371,
+      "wape_pct": 43.36,
+      "smape_pct": 102.67,
       "sample_count": 10339
     },
     "WELDING_STATION": {
-      "mae_kwh": 0.8025,
-      "rmse_kwh": 1.0636,
-      "r2_score": 0.4902,
-      "wape_pct": 50.54,
-      "smape_pct": 85.93,
+      "mae_kwh": 0.8045,
+      "rmse_kwh": 1.0643,
+      "r2_score": 0.4894,
+      "wape_pct": 50.66,
+      "smape_pct": 86.08,
       "sample_count": 7750
     }
   },
   "performance_by_operating_state": {
     "0_off": {
-      "mae_kwh": 0.7186,
-      "rmse_kwh": 1.4024,
-      "r2_score": 0.0577,
-      "wape_pct": 155.6,
-      "smape_pct": 165.53,
+      "mae_kwh": 0.7199,
+      "rmse_kwh": 1.4029,
+      "r2_score": 0.057,
+      "wape_pct": 155.88,
+      "smape_pct": 166.05,
       "sample_count": 23943
     },
     "1_idle": {
-      "mae_kwh": 1.2626,
-      "rmse_kwh": 1.7313,
-      "r2_score": 0.387,
-      "wape_pct": 80.94,
-      "smape_pct": 98.28,
+      "mae_kwh": 1.2614,
+      "rmse_kwh": 1.7296,
+      "r2_score": 0.3882,
+      "wape_pct": 80.86,
+      "smape_pct": 98.18,
       "sample_count": 24597
     },
     "2_running": {
-      "mae_kwh": 0.8991,
-      "rmse_kwh": 1.3936,
-      "r2_score": 0.6872,
+      "mae_kwh": 0.8992,
+      "rmse_kwh": 1.3927,
+      "r2_score": 0.6876,
       "wape_pct": 28.59,
-      "smape_pct": 44.77,
+      "smape_pct": 44.79,
       "sample_count": 62264
     },
     "3_maintenance": {
-      "mae_kwh": 0.7481,
-      "rmse_kwh": 1.1566,
-      "r2_score": 0.0623,
-      "wape_pct": 171.73,
-      "smape_pct": 144.29,
+      "mae_kwh": 0.7443,
+      "rmse_kwh": 1.1481,
+      "r2_score": 0.0761,
+      "wape_pct": 170.87,
+      "smape_pct": 143.77,
       "sample_count": 294
     }
   },
@@ -239,19 +239,19 @@
       "MACHINE_003"
     ],
     "metrics": {
-      "mae_kwh": 0.8975,
-      "rmse_kwh": 1.3178,
-      "r2_score": 0.6174,
-      "wape_pct": 44.5,
-      "smape_pct": 86.59,
+      "mae_kwh": 0.8969,
+      "rmse_kwh": 1.3236,
+      "r2_score": 0.6141,
+      "wape_pct": 44.47,
+      "smape_pct": 86.39,
       "sample_count": 103353
     },
     "analysis": "Evaluates model transferability to unobserved physical assets. Leverages machine_type and rated_power_kw physics features."
   },
   "plot_artifacts": {
-    "actual_vs_predicted": "D:\\OMKAR\\OMKAR\\Carbon-Accounting-and-smart-Manufacturing\\ml\\energy_forecasting\\plots\\actual_vs_predicted.png",
-    "residual_distribution": "D:\\OMKAR\\OMKAR\\Carbon-Accounting-and-smart-Manufacturing\\ml\\energy_forecasting\\plots\\residual_distribution.png",
-    "metrics_by_machine_type": "D:\\OMKAR\\OMKAR\\Carbon-Accounting-and-smart-Manufacturing\\ml\\energy_forecasting\\plots\\metrics_by_machine_type.png"
+    "actual_vs_predicted": "C:\\Users\\Utkarsh Ghom\\Downloads\\kirlosker hack\\Carbon-Accounting-and-smart-Manufacturing\\ml\\energy_forecasting\\plots\\actual_vs_predicted.png",
+    "residual_distribution": "C:\\Users\\Utkarsh Ghom\\Downloads\\kirlosker hack\\Carbon-Accounting-and-smart-Manufacturing\\ml\\energy_forecasting\\plots\\residual_distribution.png",
+    "metrics_by_machine_type": "C:\\Users\\Utkarsh Ghom\\Downloads\\kirlosker hack\\Carbon-Accounting-and-smart-Manufacturing\\ml\\energy_forecasting\\plots\\metrics_by_machine_type.png"
   },
-  "total_pipeline_duration_seconds": 62.39
+  "total_pipeline_duration_seconds": 42.04
 }

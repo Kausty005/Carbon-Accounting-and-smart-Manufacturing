@@ -16,7 +16,7 @@ import EnergyConduits from './EnergyConduits';
 import type { Asset } from '../../data/mockData';
 import {
   Maximize2, Eye, Zap, Shield, Tag, Compass,
-  Layers, ChevronRight, Activity, AlertTriangle,
+  Layers, ChevronRight, Activity, AlertTriangle, X,
 } from 'lucide-react';
 
 interface Factory3DSceneProps {
@@ -79,94 +79,312 @@ function CameraController({
   return null;
 }
 
-// ─── Floating 3D Machine Holographic Badge ──────────────────────────────────
+// ─── Floating 3D Machine Inspection Card ────────────────────────────────────
 function MachineHudBadge({
   asset,
   isSelected,
-  onSelect,
+  onClose,
 }: {
   asset: Asset;
   isSelected: boolean;
-  onSelect: (id: string) => void;
+  onClose: () => void;
 }) {
-  const statusColors = {
+  const statusColors: Record<string, string> = {
     OPTIMAL: '#10b981',
     WARNING: '#f59e0b',
     PEAK:    '#ef4444',
     IDLE:    '#64748b',
   };
-  const color = statusColors[asset.status] || '#38bdf8';
+  const statusColor = statusColors[asset.status] || '#10b981';
 
-  const keyMetric = asset.id === 'compressor'
-    ? `${asset.dischargePressureBar ?? 7.2} bar · P.F. ${asset.pf}`
-    : asset.id === 'cnc'
-    ? `${asset.secKwhPerPart ?? 1.8} kWh/part · P.F. ${asset.pf}`
-    : asset.id === 'furnace'
-    ? `${asset.tempC ?? 840}°C · P.F. ${asset.pf}`
-    : `COP ${asset.cop ?? 4.1} · P.F. ${asset.pf}`;
+  const machineAccents: Record<string, string> = {
+    compressor: '#d97706',
+    cnc:        '#0284c7',
+    furnace:    '#dc2626',
+    cooling:    '#059669',
+  };
+  const accent = machineAccents[asset.id] || '#0284c7';
+
+  const bayLabels: Record<string, string> = {
+    compressor: 'BAY 01 · COMP-01',
+    cnc:        'BAY 02 · CNC-01',
+    furnace:    'BAY 03 · FURN-01',
+    cooling:    'BAY 04 · CHILL-01',
+  };
+
+  const rowStyle: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '3px 0',
+    fontSize: 10,
+    fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
+  };
+
+  const labelStyle: React.CSSProperties = {
+    color: '#64748b',
+    fontWeight: 500,
+  };
+
+  const valueStyle: React.CSSProperties = {
+    fontWeight: 700,
+    color: '#0f172a',
+    textAlign: 'right',
+  };
+
+  const subUnitStyle: React.CSSProperties = {
+    fontSize: 8.5,
+    color: '#94a3b8',
+    fontWeight: 400,
+  };
+
+  const renderMetrics = () => {
+    switch (asset.id) {
+      case 'compressor':
+        return (
+          <>
+            <div style={rowStyle}>
+              <span style={labelStyle}>Power Draw</span>
+              <span style={valueStyle}>
+                {asset.currentKw != null ? `${asset.currentKw} kW` : '—'}{' '}
+                <span style={subUnitStyle}>({Math.round((asset.currentKw / (asset.ratedKw || 45)) * 100)}% load)</span>
+              </span>
+            </div>
+            <div style={rowStyle}>
+              <span style={labelStyle}>Idle Modulation</span>
+              <span style={{ ...valueStyle, color: '#f59e0b' }}>
+                {asset.idleKw != null ? `${asset.idleKw} kW` : '18.0 kW'}
+              </span>
+            </div>
+            <div style={rowStyle}>
+              <span style={labelStyle}>Discharge Pressure</span>
+              <span style={valueStyle}>
+                {asset.dischargePressureBar != null ? `${asset.dischargePressureBar} bar` : '7.2 bar'}
+              </span>
+            </div>
+            <div style={rowStyle}>
+              <span style={labelStyle}>Power Factor (PF)</span>
+              <span style={{ ...valueStyle, color: asset.pf < 0.85 ? '#f59e0b' : '#10b981' }}>
+                {asset.pf != null ? asset.pf.toFixed(2) : '0.78'}
+              </span>
+            </div>
+          </>
+        );
+      case 'cnc':
+        return (
+          <>
+            <div style={rowStyle}>
+              <span style={labelStyle}>Machining Load</span>
+              <span style={valueStyle}>
+                {asset.currentKw != null ? `${asset.currentKw} kW` : '—'}{' '}
+                <span style={subUnitStyle}>({Math.round((asset.currentKw / (asset.ratedKw || 32)) * 100)}% load)</span>
+              </span>
+            </div>
+            <div style={rowStyle}>
+              <span style={labelStyle}>Specific Energy (SEC)</span>
+              <span style={valueStyle}>
+                {asset.secKwhPerPart != null ? `${asset.secKwhPerPart} kWh/part` : '1.80 kWh/part'}
+              </span>
+            </div>
+            <div style={rowStyle}>
+              <span style={labelStyle}>Operating State</span>
+              <span style={{ ...valueStyle, color: statusColor }}>
+                {asset.status} <span style={subUnitStyle}>({asset.apparentKva != null ? `${asset.apparentKva} kVA` : ''})</span>
+              </span>
+            </div>
+            <div style={rowStyle}>
+              <span style={labelStyle}>Power Factor (PF)</span>
+              <span style={{ ...valueStyle, color: asset.pf < 0.85 ? '#f59e0b' : '#10b981' }}>
+                {asset.pf != null ? asset.pf.toFixed(2) : '0.94'}
+              </span>
+            </div>
+          </>
+        );
+      case 'furnace':
+        return (
+          <>
+            <div style={rowStyle}>
+              <span style={labelStyle}>Thermal Draw</span>
+              <span style={valueStyle}>
+                {asset.currentKw != null ? `${asset.currentKw} kW` : '—'}{' '}
+                <span style={subUnitStyle}>({Math.round((asset.currentKw / (asset.ratedKw || 85)) * 100)}% load)</span>
+              </span>
+            </div>
+            <div style={rowStyle}>
+              <span style={labelStyle}>Chamber Temp</span>
+              <span style={{ ...valueStyle, color: '#dc2626' }}>
+                {asset.tempC != null ? `${asset.tempC} °C` : '840 °C'}
+              </span>
+            </div>
+            <div style={rowStyle}>
+              <span style={labelStyle}>Operating State</span>
+              <span style={{ ...valueStyle, color: statusColor }}>
+                {asset.status} <span style={subUnitStyle}>({asset.apparentKva != null ? `${asset.apparentKva} kVA` : ''})</span>
+              </span>
+            </div>
+            <div style={rowStyle}>
+              <span style={labelStyle}>Power Factor (PF)</span>
+              <span style={{ ...valueStyle, color: asset.pf < 0.85 ? '#f59e0b' : '#10b981' }}>
+                {asset.pf != null ? asset.pf.toFixed(2) : '0.88'}
+              </span>
+            </div>
+          </>
+        );
+      case 'cooling':
+        return (
+          <>
+            <div style={rowStyle}>
+              <span style={labelStyle}>Chiller Power Draw</span>
+              <span style={valueStyle}>
+                {asset.currentKw != null ? `${asset.currentKw} kW` : '—'}{' '}
+                <span style={subUnitStyle}>({Math.round((asset.currentKw / (asset.ratedKw || 28)) * 100)}% load)</span>
+              </span>
+            </div>
+            <div style={rowStyle}>
+              <span style={labelStyle}>Cooling Performance</span>
+              <span style={{ ...valueStyle, color: '#059669' }}>
+                {asset.cop != null ? `COP ${asset.cop}` : 'COP 4.1'}
+              </span>
+            </div>
+            <div style={rowStyle}>
+              <span style={labelStyle}>Operating State</span>
+              <span style={{ ...valueStyle, color: statusColor }}>
+                {asset.status} <span style={subUnitStyle}>({asset.apparentKva != null ? `${asset.apparentKva} kVA` : ''})</span>
+              </span>
+            </div>
+            <div style={rowStyle}>
+              <span style={labelStyle}>Power Factor (PF)</span>
+              <span style={{ ...valueStyle, color: asset.pf < 0.85 ? '#f59e0b' : '#10b981' }}>
+                {asset.pf != null ? asset.pf.toFixed(2) : '0.92'}
+              </span>
+            </div>
+          </>
+        );
+      default:
+        return (
+          <div style={{ fontSize: 10, color: '#64748b', padding: '4px 0' }}>
+            Machine telemetry offline or unavailable
+          </div>
+        );
+    }
+  };
 
   return (
     <Html
-      position={[0, 2.4, 0]}
+      position={[0, 2.7, 0]}
       center
       distanceFactor={11}
+      zIndexRange={[100, 0]}
       style={{ pointerEvents: 'auto', userSelect: 'none' }}
     >
       <div
-        onClick={(e) => {
-          e.stopPropagation();
-          onSelect(asset.id);
-        }}
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+        onDoubleClick={(e) => e.stopPropagation()}
+        onWheel={(e) => e.stopPropagation()}
         style={{
-          background: 'rgba(255, 255, 255, 0.92)',
-          backdropFilter: 'blur(10px)',
-          border: `1px solid ${isSelected ? '#0284c7' : 'rgba(0, 0, 0, 0.1)'}`,
-          boxShadow: isSelected ? '0 0 16px rgba(2, 132, 199, 0.25)' : '0 4px 16px rgba(0,0,0,0.08)',
+          background: 'rgba(255, 255, 255, 0.96)',
+          backdropFilter: 'blur(14px)',
+          WebkitBackdropFilter: 'blur(14px)',
+          border: `1.5px solid ${accent}`,
+          boxShadow: `0 8px 24px rgba(0, 0, 0, 0.12), 0 0 16px ${accent}25`,
           borderRadius: 8,
-          padding: '7px 14px',
+          padding: '10px 14px',
           fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
-          cursor: 'pointer',
-          minWidth: 170,
+          cursor: 'default',
+          width: 236,
           transition: 'all 0.2s ease',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 3 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span
-              style={{
-                width: 7,
-                height: 7,
-                borderRadius: '50%',
-                background: color,
-                boxShadow: `0 0 8px ${color}`,
-                display: 'inline-block',
-              }}
-            />
-            <span style={{ fontSize: 11, fontWeight: 700, color: '#0f172a', letterSpacing: 0.5 }}>
-              {asset.name}
+        {/* Header: Machine Name, Status Badge, Close Button */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 6, marginBottom: 4 }}>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span
+                style={{
+                  width: 7,
+                  height: 7,
+                  borderRadius: '50%',
+                  background: statusColor,
+                  boxShadow: `0 0 8px ${statusColor}`,
+                  display: 'inline-block',
+                  flexShrink: 0,
+                }}
+              />
+              <span style={{ fontSize: 11, fontWeight: 800, color: '#0f172a', letterSpacing: 0.3 }}>
+                {asset.name}
+              </span>
+            </div>
+            <span style={{ fontSize: 8.5, color: '#64748b', marginTop: 2, paddingLeft: 13 }}>
+              {bayLabels[asset.id] || asset.id.toUpperCase()} · {asset.model}
             </span>
           </div>
-          <span
-            style={{
-              fontSize: 9,
-              padding: '1px 5px',
-              borderRadius: 3,
-              background: `${color}18`,
-              color: color,
-              border: `1px solid ${color}33`,
-              fontWeight: 700,
-            }}
-          >
-            {asset.status}
-          </span>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span
+              style={{
+                fontSize: 8.5,
+                padding: '1px 5px',
+                borderRadius: 3,
+                background: `${statusColor}18`,
+                color: statusColor,
+                border: `1px solid ${statusColor}33`,
+                fontWeight: 700,
+              }}
+            >
+              {asset.status}
+            </span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onClose();
+              }}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '2px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#94a3b8',
+                borderRadius: 4,
+                lineHeight: 1,
+              }}
+              title="Close inspection card"
+            >
+              <X size={12} />
+            </button>
+          </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
-          <span style={{ fontSize: 13, fontWeight: 800, color: '#0284c7' }}>
-            {asset.currentKw} <span style={{ fontSize: 10, color: '#64748b' }}>kW</span>
+        {/* Divider */}
+        <div style={{ height: 1, background: 'rgba(0, 0, 0, 0.07)', margin: '6px 0' }} />
+
+        {/* Machine-Specific Live Telemetry Rows */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+          {renderMetrics()}
+        </div>
+
+        {/* Bottom Telemetry Footer */}
+        <div
+          style={{
+            marginTop: 6,
+            paddingTop: 5,
+            borderTop: '1px dashed rgba(0, 0, 0, 0.08)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            fontSize: 8,
+            color: '#94a3b8',
+          }}
+        >
+          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ width: 4, height: 4, borderRadius: '50%', background: '#10b981' }} />
+            LIVE TELEMETRY
           </span>
-          <span style={{ fontSize: 10, color: '#64748b' }}>
-            {keyMetric}
+          <span style={{ color: accent, fontWeight: 700 }}>
+            {asset.energyKwh != null ? `${asset.energyKwh} kWh today` : 'ONLINE'}
           </span>
         </div>
       </div>
@@ -183,7 +401,7 @@ function MachineNode({
 }: {
   asset: Asset;
   isSelected: boolean;
-  onSelect: (id: string) => void;
+  onSelect: (id: string | null) => void;
   showHud: boolean;
 }) {
   const [hovered, setHovered] = useState(false);
@@ -217,6 +435,20 @@ function MachineNode({
       {/* 3D Mechanical Model */}
       {renderModel()}
 
+      {/* Invisible Interactive Hit Box to guarantee 100% reliable click/hover detection */}
+      <mesh
+        position={[0, 1.1, 0]}
+        onClick={(e) => {
+          e.stopPropagation();
+          onSelect(asset.id);
+        }}
+        onPointerOver={() => setHovered(true)}
+        onPointerOut={() => setHovered(false)}
+      >
+        <boxGeometry args={[3.2, 2.6, 2.6]} />
+        <meshBasicMaterial visible={false} />
+      </mesh>
+
       {/* Holographic Wireframe Selection Box */}
       {(isSelected || hovered) && (
         <mesh position={[0, 1.0, 0]}>
@@ -230,12 +462,12 @@ function MachineNode({
         </mesh>
       )}
 
-      {/* Floating HUD Badge */}
-      {showHud && (
+      {/* Floating HUD Inspection Card - Only visible when this machine is selected */}
+      {showHud && isSelected && (
         <MachineHudBadge
           asset={asset}
           isSelected={isSelected}
-          onSelect={onSelect}
+          onClose={() => onSelect(null)}
         />
       )}
     </group>
@@ -276,6 +508,17 @@ export default function Factory3DScene({
     },
     [onSelect]
   );
+
+  // Sync camera target when selectedId changes externally (e.g. from left sidebar asset list)
+  useEffect(() => {
+    if (selectedId && ASSET_POSITIONS[selectedId]) {
+      const p = ASSET_POSITIONS[selectedId];
+      setCamTarget({
+        pos: new THREE.Vector3(p[0] + 3.8, 3.2, p[2] + 4.5),
+        look: new THREE.Vector3(p[0], 0.8, p[2]),
+      });
+    }
+  }, [selectedId]);
 
   // Preset Views
   const setPreset = (preset: 'isometric' | 'topdown' | 'compressor' | 'cnc' | 'furnace' | 'cooling') => {

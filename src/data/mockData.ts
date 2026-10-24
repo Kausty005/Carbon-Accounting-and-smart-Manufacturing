@@ -28,6 +28,8 @@ export interface Asset {
   secKwhPerPart?: number;
 }
 
+export type Machine = Asset;
+
 export const ASSETS: Asset[] = [
   {
     id: 'compressor',

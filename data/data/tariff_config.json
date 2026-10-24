@@ -1,0 +1,54 @@
+{
+  "currency": "INR",
+  "energy_rate_inr_per_kwh": 9.0,
+  "tariff_type": "time_of_day",
+  "tou_rates": [
+    {
+      "zone": "OFF_PEAK",
+      "hours": [
+        22,
+        23,
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "multiplier": 0.85,
+      "rate_inr_per_kwh": 7.65
+    },
+    {
+      "zone": "NORMAL",
+      "hours": [
+        6,
+        7,
+        8,
+        13,
+        14,
+        15,
+        16,
+        17
+      ],
+      "multiplier": 1.0,
+      "rate_inr_per_kwh": 9.0
+    },
+    {
+      "zone": "PEAK",
+      "hours": [
+        9,
+        10,
+        11,
+        12,
+        18,
+        19,
+        20,
+        21
+      ],
+      "multiplier": 1.2,
+      "rate_inr_per_kwh": 10.8
+    }
+  ],
+  "contract_demand_limit_kw": 85.0,
+  "demand_penalty_charge_inr_per_kw": 350.0
+}

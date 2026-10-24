@@ -1,0 +1,308 @@
+import { writeFileSync, mkdirSync } from 'fs';
+import { join } from 'path';
+
+const base = 'src';
+
+// ─── index.css ────────────────────────────────────────────────────────────────
+writeFileSync(join(base, 'index.css'), `
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600;700&display=swap');
+:root {
+  --bg-root:#0B0F17;--bg-panel:#111827;--bg-surface:#1a2235;--bg-elevated:#1f2d45;--bg-input:#0d1525;
+  --border:#1e293b;--border-muted:rgba(30,41,59,0.7);--border-active:#334155;
+  --cyan:#22d3ee;--cyan-dim:rgba(34,211,238,0.15);
+  --emerald:#10b981;--emerald-dim:rgba(16,185,129,0.15);
+  --amber:#f59e0b;--amber-dim:rgba(245,158,11,0.15);
+  --red:#ef4444;--red-dim:rgba(239,68,68,0.15);
+  --violet:#8b5cf6;--slate-400:#94a3b8;--slate-500:#64748b;--slate-300:#cbd5e1;--white:#f8fafc;
+  --font-mono:'IBM Plex Mono','Courier New',monospace;--font-ui:'Inter',system-ui,sans-serif;
+  --topbar-h:52px;--telebar-h:36px;--sidebar-w:220px;--inspector-w:360px;--r:6px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body,#root{width:100%;height:100%;overflow:hidden;background:var(--bg-root);color:var(--white);font-family:var(--font-ui);-webkit-font-smoothing:antialiased;}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border-active);border-radius:4px}::-webkit-scrollbar-thumb:hover{background:var(--slate-500)}
+.app-shell{display:grid;grid-template-rows:var(--topbar-h) var(--telebar-h) 1fr;grid-template-columns:var(--sidebar-w) 1fr var(--inspector-w);grid-template-areas:"topbar topbar topbar""telebar telebar telebar""sidebar main inspector";width:100%;height:100%}
+.topbar{grid-area:topbar;display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:var(--bg-panel);border-bottom:1px solid var(--border);z-index:200}
+.topbar-brand{display:flex;align-items:center;gap:10px;font-family:var(--font-mono);font-size:13px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--cyan)}
+.topbar-center{display:flex;align-items:center;gap:16px}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.topbar-divider{width:1px;height:20px;background:var(--border)}
+.live-badge{display:flex;align-items:center;gap:5px;padding:3px 10px;border-radius:4px;font-family:var(--font-mono);font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);color:var(--emerald)}
+.live-badge.sim{background:rgba(245,158,11,0.1);border-color:rgba(245,158,11,0.3);color:var(--amber)}
+.pulse-dot{width:6px;height:6px;border-radius:50%;background:currentColor;animation:pulse 1.8s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(0.7)}}
+.topbar-clock{font-family:var(--font-mono);font-size:11px;color:var(--slate-400);letter-spacing:1px}
+.shift-badge{font-family:var(--font-mono);font-size:10px;letter-spacing:1px;color:var(--slate-400);text-transform:uppercase}
+.tod-badge{font-family:var(--font-mono);font-size:10px;letter-spacing:1px;padding:2px 8px;border-radius:3px;text-transform:uppercase}
+.tod-badge.peak{background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);color:var(--red)}
+.tod-badge.offpeak{background:rgba(34,211,238,0.08);border:1px solid rgba(34,211,238,0.2);color:var(--cyan)}
+.telebar{grid-area:telebar;display:flex;align-items:center;background:#0d1525;border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;z-index:190}
+.tele-item{display:flex;align-items:center;gap:8px;padding:0 14px;height:36px;border-right:1px solid var(--border);flex-shrink:0}
+.tele-item:last-child{border-right:none}
+.tele-label{font-family:var(--font-mono);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--slate-500);white-space:nowrap}
+.tele-value{font-family:var(--font-mono);font-size:12px;font-weight:600;white-space:nowrap}
+.tele-value.cyan{color:var(--cyan)}.tele-value.emerald{color:var(--emerald)}.tele-value.amber{color:var(--amber)}.tele-value.red{color:var(--red)}.tele-value.white{color:var(--white)}.tele-value.violet{color:var(--violet)}
+.sidebar{grid-area:sidebar;display:flex;flex-direction:column;background:var(--bg-panel);border-right:1px solid var(--border);overflow-y:auto;z-index:100}
+.sidebar-section-label{font-family:var(--font-mono);font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--slate-500);padding:10px 16px 4px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;font-size:12px;font-weight:500;color:var(--slate-400);border-left:2px solid transparent;transition:all 0.15s ease;user-select:none}
+.nav-item:hover{background:rgba(255,255,255,0.03);color:var(--slate-300)}
+.nav-item.active{background:rgba(34,211,238,0.06);border-left-color:var(--cyan);color:var(--cyan)}
+.sidebar-divider{height:1px;background:var(--border);margin:4px 0}
+.sidebar-footer{margin-top:auto;padding:10px 16px;border-top:1px solid var(--border);font-family:var(--font-mono);font-size:9px;color:var(--slate-500);line-height:1.8}
+.main-content{grid-area:main;overflow:hidden;position:relative;background:var(--bg-root)}
+.scroll-area{height:100%;overflow-y:auto;padding:16px}
+.inspector-panel{grid-area:inspector;background:var(--bg-panel);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;z-index:100}
+.inspector-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
+.inspector-tab{flex:1;padding:9px 4px;font-family:var(--font-mono);font-size:9px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--slate-500);text-align:center;cursor:pointer;border-bottom:2px solid transparent;transition:all 0.15s;background:none;border-top:none;border-left:none;border-right:none}
+.inspector-tab:hover{color:var(--slate-300)}
+.inspector-tab.active{color:var(--cyan);border-bottom-color:var(--cyan);background:rgba(34,211,238,0.04)}
+.inspector-body{flex:1;overflow-y:auto;padding:14px}
+.section-title{font-family:var(--font-mono);font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--slate-500);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.panel{background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--r);margin-bottom:10px}
+.panel-hdr{font-family:var(--font-mono);font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--slate-500);padding:9px 14px 8px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:7px 14px;border-bottom:1px solid var(--border-muted)}
+.stat-row:last-child{border-bottom:none}
+.stat-label{font-family:var(--font-mono);font-size:10px;color:var(--slate-500)}
+.stat-value{font-family:var(--font-mono);font-size:12px;font-weight:600;color:var(--white)}
+.stat-value.cyan{color:var(--cyan)}.stat-value.emerald{color:var(--emerald)}.stat-value.amber{color:var(--amber)}.stat-value.red{color:var(--red)}.stat-value.violet{color:var(--violet)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--r);font-family:var(--font-mono);font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all 0.15s;border:1px solid var(--border-active);background:var(--bg-surface);color:var(--slate-300)}
+.btn:hover{border-color:var(--slate-400);color:var(--white)}
+.btn-cyan{background:rgba(34,211,238,0.08);border-color:rgba(34,211,238,0.3);color:var(--cyan)}
+.btn-cyan:hover{background:rgba(34,211,238,0.15);border-color:var(--cyan)}
+.btn-emerald{background:rgba(16,185,129,0.08);border-color:rgba(16,185,129,0.3);color:var(--emerald)}
+.btn-emerald:hover{background:rgba(16,185,129,0.15);border-color:var(--emerald)}
+.btn-amber{background:rgba(245,158,11,0.08);border-color:rgba(245,158,11,0.3);color:var(--amber)}
+.btn-sm{padding:4px 10px;font-size:9px}.btn-full{width:100%;justify-content:center}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:3px;font-family:var(--font-mono);font-size:9px;font-weight:600;letter-spacing:1px;text-transform:uppercase}
+.badge-emerald{background:var(--emerald-dim);color:var(--emerald);border:1px solid rgba(16,185,129,0.3)}
+.badge-amber{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(245,158,11,0.3)}
+.badge-red{background:var(--red-dim);color:var(--red);border:1px solid rgba(239,68,68,0.3)}
+.badge-cyan{background:var(--cyan-dim);color:var(--cyan);border:1px solid rgba(34,211,238,0.3)}
+.badge-violet{background:rgba(139,92,246,0.15);color:var(--violet);border:1px solid rgba(139,92,246,0.3)}
+.toggle-wrap{display:flex;align-items:center;gap:10px;cursor:pointer;padding:6px 0}
+.toggle{position:relative;width:36px;height:18px;background:var(--bg-input);border:1px solid var(--border-active);border-radius:9px;transition:all 0.2s;flex-shrink:0}
+.toggle.on{background:rgba(34,211,238,0.15);border-color:var(--cyan)}
+.toggle::after{content:'';position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:var(--slate-500);transition:all 0.2s}
+.toggle.on::after{left:20px;background:var(--cyan);box-shadow:0 0 6px rgba(34,211,238,0.6)}
+.toggle-label{font-family:var(--font-mono);font-size:10px;color:var(--slate-400);flex:1}
+.slider-wrap{margin-bottom:14px}
+.slider-header{display:flex;justify-content:space-between;margin-bottom:6px}
+.slider-title{font-family:var(--font-mono);font-size:10px;color:var(--slate-400)}
+.slider-val{font-family:var(--font-mono);font-size:11px;font-weight:600;color:var(--cyan)}
+input[type=range]{-webkit-appearance:none;width:100%;height:3px;background:var(--bg-input);border-radius:2px;outline:none;border:1px solid var(--border-active)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--cyan);cursor:pointer;box-shadow:0 0 6px rgba(34,211,238,0.5)}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.kpi-card{background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;position:relative;overflow:hidden}
+.kpi-card:hover{border-color:var(--border-active)}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--kpi-color,var(--cyan))}
+.kpi-label{font-family:var(--font-mono);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--slate-500);margin-bottom:5px}
+.kpi-value{font-family:var(--font-mono);font-size:20px;font-weight:600;color:var(--white);line-height:1.1}
+.kpi-unit{font-size:11px;font-weight:400;color:var(--slate-400);margin-left:3px}
+.kpi-change{font-family:var(--font-mono);font-size:10px;margin-top:4px}
+.kpi-change.pos{color:var(--emerald)}.kpi-change.neg{color:var(--red)}.kpi-change.warn{color:var(--amber)}
+.scada-container{width:100%;height:100%;position:relative;overflow:hidden;background:var(--bg-root)}
+@keyframes flow-normal{0%{stroke-dashoffset:0}100%{stroke-dashoffset:-40}}
+@keyframes flow-warn{0%{stroke-dashoffset:0;stroke:#f59e0b;opacity:1}50%{stroke:#ef4444;opacity:0.7}100%{stroke-dashoffset:-40;stroke:#f59e0b;opacity:1}}
+.pline-ok{stroke-dasharray:8 4;animation:flow-normal 1.2s linear infinite}
+.pline-warn{stroke-dasharray:8 4;animation:flow-warn 1s ease-in-out infinite}
+.alert-banner{border-radius:var(--r);padding:10px 12px;margin-bottom:8px;border-left:3px solid}
+.alert-banner.warn{background:var(--amber-dim);border-color:var(--amber)}
+.alert-banner.crit{background:var(--red-dim);border-color:var(--red)}
+.alert-banner.ok{background:var(--emerald-dim);border-color:var(--emerald)}
+.alert-title{font-family:var(--font-mono);font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
+.alert-banner.warn .alert-title{color:var(--amber)}.alert-banner.crit .alert-title{color:var(--red)}.alert-banner.ok .alert-title{color:var(--emerald)}
+.alert-body{font-size:11px;color:var(--slate-300);line-height:1.5}
+.alert-rec{font-family:var(--font-mono);font-size:10px;color:var(--cyan);margin-top:6px;padding:4px 8px;background:var(--cyan-dim);border-radius:3px}
+.compare-table{width:100%;border-collapse:collapse;font-family:var(--font-mono);font-size:11px}
+.compare-table th{padding:7px 10px;text-align:left;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--slate-500);border-bottom:1px solid var(--border)}
+.compare-table td{padding:8px 10px;border-bottom:1px solid var(--border-muted)}
+.compare-table tr:last-child td{border-bottom:none}
+.td-label{color:var(--slate-300)}.td-baseline{color:var(--amber);font-weight:600}.td-proposed{color:var(--emerald);font-weight:600}.td-delta{color:var(--cyan);font-weight:600}
+.formula-box{background:var(--bg-input);border:1px solid var(--border);border-radius:4px;padding:8px 10px;font-family:var(--font-mono);font-size:10px;color:var(--cyan);line-height:1.7;margin:10px 0}
+.formula-comment{color:var(--slate-500)}
+.scope-card{background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:10px}
+.scope-hdr{display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--slate-400);margin-bottom:10px}
+.scope-value{font-family:var(--font-mono);font-size:22px;font-weight:700;margin-bottom:6px}
+.scope-formula{font-family:var(--font-mono);font-size:10px;color:var(--slate-500);line-height:1.8;background:var(--bg-input);border-radius:4px;padding:8px 10px;margin-top:8px;border:1px solid var(--border)}
+.report-page{background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--r);padding:24px;margin-bottom:12px}
+.report-heading{font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--slate-300);border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:12px;font-family:var(--font-mono)}
+.report-kv{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border-muted);font-family:var(--font-mono);font-size:11px}
+.report-kv:last-child{border-bottom:none}.report-k{color:var(--slate-400)}.report-v{color:var(--white);font-weight:600}
+.load-bar-wrap{margin:6px 0}
+.load-bar-lbl{font-family:var(--font-mono);font-size:9px;color:var(--slate-500);margin-bottom:3px;display:flex;justify-content:space-between}
+.load-bar-bg{height:6px;background:var(--bg-input);border-radius:3px;overflow:hidden;border:1px solid var(--border)}
+.load-bar-fill{height:100%;border-radius:3px;transition:width 0.4s}
+.inline-input{background:var(--bg-input);border:1px solid var(--border-active);border-radius:4px;padding:4px 8px;font-family:var(--font-mono);font-size:11px;color:var(--white);width:90px;outline:none}
+.inline-input:focus{border-color:var(--cyan)}
+.recharts-default-tooltip{background:#111827 !important;border:1px solid #334155 !important;border-radius:6px !important;font-family:'IBM Plex Mono','Courier New',monospace !important;font-size:11px !important}
+.recharts-cartesian-axis-tick-value{font-family:'IBM Plex Mono',monospace;fill:#64748b;font-size:9px}
+@media print{body{background:white !important;color:black !important}.no-print{display:none !important}.report-page{background:white !important;color:black !important;border:1px solid #ccc !important}}
+`);
+
+// ─── data/mockData.ts ─────────────────────────────────────────────────────────
+writeFileSync(join(base, 'data/mockData.ts'), `
+// PrecisionWorks Manufacturing — SCADA Data Model
+export const PLANT = {
+  name: 'PrecisionWorks Manufacturing',
+  tariff: 8,            // ₹/kWh
+  gridEF: 0.82,         // kg CO2e/kWh (CEA India)
+  baselineEnergy: 12480, // kWh/period
+  baselineCost: 99840,   // ₹
+};
+
+export type AssetStatus = 'OPTIMAL' | 'WARNING' | 'PEAK' | 'IDLE';
+
+export interface Asset {
+  id: string;
+  name: string;
+  model: string;
+  ratedKw: number;
+  currentKw: number;
+  energyKwh: number;
+  status: AssetStatus;
+  pf: number;
+  // extras
+  idleKw?: number;
+  idleHrsPerDay?: number;
+  dischargePressureBar?: number;
+  tempC?: number;
+  cop?: number;
+  secKwhPerPart?: number;
+}
+
+export const ASSETS: Asset[] = [
+  {
+    id: 'compressor',
+    name: 'Air Compressor',
+    model: 'ELGi EN 45',
+    ratedKw: 45,
+    currentKw: 18,
+    energyKwh: 3120,
+    status: 'WARNING',
+    pf: 0.78,
+    idleKw: 18,
+    idleHrsPerDay: 3.2,
+    dischargePressureBar: 7.2,
+  },
+  {
+    id: 'cnc',
+    name: 'CNC Machining Center',
+    model: 'DMG MORI NLX-2500',
+    ratedKw: 32,
+    currentKw: 28,
+    energyKwh: 4200,
+    status: 'OPTIMAL',
+    pf: 0.94,
+    secKwhPerPart: 1.8,
+  },
+  {
+    id: 'furnace',
+    name: 'Industrial Furnace',
+    model: 'Thermic Intl IF-85',
+    ratedKw: 85,
+    currentKw: 85,
+    energyKwh: 3600,
+    status: 'PEAK',
+    pf: 0.88,
+    tempC: 840,
+  },
+  {
+    id: 'cooling',
+    name: 'Chilled Water Cooling',
+    model: 'Carrier AquaForce 30XW',
+    ratedKw: 28,
+    currentKw: 22,
+    energyKwh: 1560,
+    status: 'OPTIMAL',
+    pf: 0.92,
+    cop: 4.1,
+  },
+];
+
+export const HOURLY_BASE = Array.from({length: 24}, (_, h) => {
+  const peak = (h >= 9 && h <= 12) || (h >= 18 && h <= 21);
+  const idle = (h === 7) || (h >= 12 && h <= 13) || (h >= 17 && h <= 18);
+  return {
+    h,
+    label: \`\${String(h).padStart(2,'0')}:00\`,
+    compressor: idle ? 18 : 40,
+    cnc: h >= 7 && h <= 19 ? 28 : 0,
+    furnace: h >= 6 && h <= 18 ? 82 : 0,
+    cooling: h >= 8 && h <= 20 ? 22 : 0,
+    tariff: peak ? 'PEAK' : 'OFF-PEAK',
+    total: 0,
+  };
+}).map(d => ({...d, total: d.compressor + d.cnc + d.furnace + d.cooling}));
+
+export function buildOptimizedHourly(params: SimParams) {
+  return HOURLY_BASE.map(d => {
+    let comp = d.compressor;
+    if (params.autoIdleCutoff && (d.h === 7 || (d.h >= 12 && d.h <= 13) || (d.h >= 17 && d.h <= 18))) {
+      comp = 0;
+    }
+    // stagger furnace preheat
+    let furn = d.furnace;
+    if (params.staggerFurnace && d.h === 6) furn = 0; // delay 45 min
+    const total = comp + d.cnc + furn + d.cooling;
+    return { ...d, compressor: comp, furnace: furn, total };
+  });
+}
+
+export interface SimParams {
+  autoIdleCutoff: boolean;
+  pressureSetpoint: number;  // bar, default 7.5, range 6.5-7.5
+  staggerFurnace: boolean;
+}
+
+export function calcSimResult(params: SimParams) {
+  const optimized = buildOptimizedHourly(params);
+  const baseEnergy = PLANT.baselineEnergy;
+
+  // Compressor idle savings: 18 kW × 3.2 h
+  const idleSavingsKwh = params.autoIdleCutoff ? 18 * 3.2 : 0;
+  // Pressure savings: each 0.1 bar reduction saves ~1% compressor energy
+  const pressureReduction = 7.5 - params.pressureSetpoint;
+  const pressureSavingsKwh = pressureReduction * 10 * 3120 / 100;
+  // Stagger furnace: reduces peak demand 18%
+  const furnacePeakReductionKw = params.staggerFurnace ? 85 * 0.18 : 0;
+
+  const totalSavingsKwh = +(idleSavingsKwh + pressureSavingsKwh).toFixed(1);
+  const optimizedEnergy = +(baseEnergy - totalSavingsKwh).toFixed(0);
+  const savingsCost = +(totalSavingsKwh * PLANT.tariff).toFixed(2);
+  const savingsCarbon = +(totalSavingsKwh * PLANT.gridEF / 1000).toFixed(3);
+  const baselineCost = PLANT.baselineCost;
+  const optimizedCost = +(baselineCost - savingsCost).toFixed(2);
+  const baseCarbon = +(baseEnergy * PLANT.gridEF / 1000).toFixed(2);
+  const optCarbon = +(optimizedEnergy * PLANT.gridEF / 1000).toFixed(2);
+
+  return {
+    baseEnergy, optimizedEnergy, savingsKwh: totalSavingsKwh,
+    baselineCost, optimizedCost, savingsCost,
+    baseCarbon, optCarbon, savingsCarbon,
+    furnacePeakReductionKw: +furnacePeakReductionKw.toFixed(1),
+    hourlyBase: HOURLY_BASE,
+    hourlyOpt: optimized,
+    idleSavingsKwh: +idleSavingsKwh.toFixed(1),
+    pressureSavingsKwh: +pressureSavingsKwh.toFixed(1),
+    roi: savingsCost > 0 ? +(200000 / (savingsCost * 22 * 12)).toFixed(1) : null,
+  };
+}
+
+// Carbon
+export const CARBON = {
+  // Scope 1: LPG furnace – 2.98 kg CO2e/kg LPG, ~5 kg LPG/hr, 12 hrs/day
+  lpgKgPerHr: 5,
+  lpgHrsPerDay: 12,
+  lpgEF: 2.98,  // kg CO2e / kg LPG
+  scope1Calc: () => {
+    const kgLPG = 5 * 12;
+    const kgCO2 = kgLPG * 2.98;
+    return { kgLPG, kgCO2e: +(kgCO2/1000).toFixed(3), formula: \`\${kgLPG} kg LPG/day × 2.98 kg CO₂e/kg = \${(kgLPG*2.98).toFixed(1)} kg = \${(kgLPG*2.98/1000).toFixed(3)} tCO₂e\` };
+  },
+  scope2Calc: (kwh: number = 12480, ef: number = 0.82) => {
+    const kgCO2 = kwh * ef;
+    return { kgCO2e: +(kgCO2/1000).toFixed(2), formula: \`\${kwh.toLocaleString()} kWh × \${ef} kg CO₂e/kWh ÷ 1000 = \${(kgCO2/1000).toFixed(2)} tCO₂e\` };
+  },
+};
+`);
+
+console.log('mockData.ts written');

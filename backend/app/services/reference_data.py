@@ -91,16 +91,16 @@ class ReferenceDataService:
         # Row 16: Build Margin
         # Row 17: Combined Margin (1)
         row_definitions = [
-            (13, CeaMethodology.WEIGHTED_AVG_THERMAL, "Weighted Average Emission Rate (Thermal Fossil)", False),
-            (14, CeaMethodology.WEIGHTED_AVG_WITH_RES, "Weighted Average Grid Emission Rate (Incl. RES, Captive)", True),
-            (15, CeaMethodology.OPERATING_MARGIN, "Simple Operating Margin", False),
-            (16, CeaMethodology.BUILD_MARGIN, "Build Margin", False),
-            (17, CeaMethodology.COMBINED_MARGIN, "Combined Margin (50% OM + 50% BM)", False),
+            (13, CeaMethodology.WEIGHTED_AVG_THERMAL, "Weighted Average Emission Rate (Thermal Fossil)", False, "Thermal Generation Intensity (Fossil Only)"),
+            (14, CeaMethodology.WEIGHTED_AVG_WITH_RES, "Weighted Average Grid Emission Rate (Incl. RES, Captive)", True, "Scope 2 Location-Based (Grid Average with RES & Captive)"),
+            (15, CeaMethodology.OPERATING_MARGIN, "Simple Operating Margin", False, "CDM / Article 6 Operating Margin (OM)"),
+            (16, CeaMethodology.BUILD_MARGIN, "Build Margin", False, "CDM / Article 6 Build Margin (BM)"),
+            (17, CeaMethodology.COMBINED_MARGIN, "Combined Margin (50% OM + 50% BM)", False, "CDM / Article 6 Combined Margin (CM)"),
         ]
 
         factors_by_key: Dict[str, Dict[str, CeaFactorMetadata]] = {}
 
-        for row_idx, meth_enum, meth_name, is_loc_rec in row_definitions:
+        for row_idx, meth_enum, meth_name, is_loc_rec, approach_name in row_definitions:
             factors_by_key[meth_enum.value] = {}
 
             # Parse factors excluding imports
@@ -121,7 +121,8 @@ class ReferenceDataService:
                             authority="Central Electricity Authority (Ministry of Power, Govt. of India)",
                             database_version=version_val,
                             includes_imports=False,
-                            is_recommended_location_based=is_loc_rec
+                            is_recommended_location_based=is_loc_rec,
+                            accounting_approach=approach_name
                         )
                     except (ValueError, TypeError):
                         pass
@@ -144,7 +145,8 @@ class ReferenceDataService:
                             authority="Central Electricity Authority (Ministry of Power, Govt. of India)",
                             database_version=version_val,
                             includes_imports=True,
-                            is_recommended_location_based=False
+                            is_recommended_location_based=False,
+                            accounting_approach=f"{approach_name} (Adjusted for Net Imports)"
                         )
                     except (ValueError, TypeError):
                         pass

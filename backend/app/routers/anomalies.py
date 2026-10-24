@@ -16,14 +16,17 @@ Endpoints:
 
 import io
 import json
+import math
+import random
 import re
+import warnings
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
-from fastapi import APIRouter, File, Form, HTTPException, Query, Response, UploadFile, status
+from fastapi import APIRouter, File, Form, HTTPException, Query, Request, Response, UploadFile, status
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
@@ -31,7 +34,7 @@ from backend.ai_intelligence.src.incident_report_generator import (
     generate_docx_incident_report,
     generate_pdf_incident_report,
 )
-from backend.ai_intelligence.src.incident_store import IncidentStore
+from backend.ai_intelligence.src.incident_store import IncidentStore, normalize_incident_dict
 from backend.ai_intelligence.src.inference import EnergyIntelligencePipeline
 from backend.ai_intelligence.src.forecast_adapter import (
     ForecastServiceAdapter,
@@ -336,13 +339,18 @@ def get_data_quality_health():
     }
 
 
+@router.get("/api/anomalies/{incident_id}/report")
 @router.post("/api/anomalies/{incident_id}/report")
+@router.get("/api/anomalies/{incident_id}/report/pdf")
+@router.get("/api/anomalies/{incident_id}/report/docx")
 def download_incident_report(
     incident_id: str,
-    format: str = Query("pdf", pattern="^(pdf|docx)$", description="Report format: 'pdf' or 'docx'"),
+    format: Optional[str] = Query(None, description="Report format: 'pdf' or 'docx'"),
+    request: Request = None,
 ):
     """
     Generate and stream a genuine, downloadable PDF or Word (.docx) incident report.
+    Supports both GET/POST methods and direct /pdf and /docx extension endpoints.
     """
     store = get_incident_store()
     inc = store.get_incident(incident_id)
@@ -358,12 +366,25 @@ def download_incident_report(
         window_minutes=30,
     )
 
+    # Determine format from path or query parameter
+    req_path = str(request.url.path).lower() if request else ""
+    if req_path.endswith("/docx"):
+        resolved_format = "docx"
+    elif req_path.endswith("/pdf"):
+        resolved_format = "pdf"
+    elif format is not None:
+        if format.lower() not in ["pdf", "docx"]:
+            raise HTTPException(status_code=400, detail="Unsupported report format. Must be 'pdf' or 'docx'.")
+        resolved_format = format.lower()
+    else:
+        resolved_format = "pdf"
+
     eq_safe = re.sub(r"[^A-Za-z0-9_-]", "", inc.get("equipment_id", "EQ"))
     ts_safe = str(inc.get("timestamp", "")).replace(":", "").replace("-", "").replace("T", "_")[:15]
     reports_temp_dir = BASE_DIR / "reports" / "generated_downloads"
     reports_temp_dir.mkdir(parents=True, exist_ok=True)
 
-    if format.lower() == "pdf":
+    if resolved_format == "pdf":
         file_name = f"incident_{eq_safe}_{ts_safe}.pdf"
         out_path = reports_temp_dir / file_name
         generate_pdf_incident_report(inc, telemetry_window, out_path)
@@ -371,8 +392,12 @@ def download_incident_report(
             path=str(out_path),
             media_type="application/pdf",
             filename=file_name,
+            headers={
+                "Content-Disposition": f'attachment; filename="{file_name}"',
+                "Access-Control-Expose-Headers": "Content-Disposition",
+            },
         )
-    elif format.lower() == "docx":
+    elif resolved_format == "docx":
         file_name = f"incident_{eq_safe}_{ts_safe}.docx"
         out_path = reports_temp_dir / file_name
         generate_docx_incident_report(inc, telemetry_window, out_path)
@@ -380,9 +405,406 @@ def download_incident_report(
             path=str(out_path),
             media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             filename=file_name,
+            headers={
+                "Content-Disposition": f'attachment; filename="{file_name}"',
+                "Access-Control-Expose-Headers": "Content-Disposition",
+            },
         )
     else:
         raise HTTPException(status_code=400, detail="Unsupported report format. Must be 'pdf' or 'docx'.")
+
+
+# ------------------------------------------------------------------------------
+# Real-Time Telemetry Simulation & Live Anomaly Detection Engine
+# ------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+# Real-Time CSV SCADA Telemetry Streaming & ML Anomaly Detection Engine
+# ------------------------------------------------------------------------------
+
+_simulation_state: Dict[str, Any] = {
+    "tick": 0,
+    "last_timestamp": None,
+    "injected_anomaly": None,
+    "history": [],
+}
+
+_csv_telemetry_df: Optional[pd.DataFrame] = None
+_csv_timestamps: Optional[List[str]] = None
+_csv_stream_pointer: int = 980  # Starts at 2024-01-04T09:40:00 (4 normal ticks, then Furnace anomaly at 984!)
+
+ANOMALY_JUMP_INDICES = {
+    "FURNACE-01": 984,      # At 984: excessive_idle_heating (83.48 kW)
+    "AIR-COMP-01": 1548,    # At 1548: pressure_loss_leak (4.94 bar, 73.9 kW)
+    "CHILLER-01": 3889,     # At 3889: low_delta_t_syndrome (12.05 kW)
+    "CNC-01": 3036,         # At 3036: bearing_degradation & tool wear (34.81 kW)
+}
+
+
+def _load_telemetry_csv_stream():
+    """Load synthetic_v1/telemetry.csv into memory once for high-throughput streaming."""
+    global _csv_telemetry_df, _csv_timestamps
+    if _csv_telemetry_df is None:
+        csv_path = BASE_DIR / "data" / "synthetic_v1" / "telemetry.csv"
+        if not csv_path.exists():
+            return None, None
+        df = pd.read_csv(csv_path)
+        _csv_telemetry_df = df
+        _csv_timestamps = list(df["timestamp"].unique())
+    return _csv_telemetry_df, _csv_timestamps
+
+
+class InjectedAnomalyRequest(BaseModel):
+    equipment_id: Optional[str] = "FURNACE-01"
+    anomaly_type: Optional[str] = "excessive_power"
+
+
+@router.post("/api/anomalies/live-stream/inject")
+def inject_live_anomaly(payload: InjectedAnomalyRequest):
+    """
+    Queue a manual anomaly fault: advances the CSV stream directly to the target machine's
+    real anomaly event in telemetry.csv on the immediate next simulation tick.
+    """
+    eq = (payload.equipment_id or "FURNACE-01").upper()
+    _simulation_state["injected_anomaly"] = {
+        "equipment_id": eq,
+        "anomaly_type": payload.anomaly_type or "excessive_power",
+    }
+    return {
+        "status": "queued",
+        "equipment_id": eq,
+        "message": f"Stream pointer queued to real {eq} anomaly sequence in telemetry.csv.",
+    }
+
+
+@router.get("/api/anomalies/live-stream/tick")
+def get_live_simulation_tick():
+    """
+    Heartbeat endpoint called every 2 seconds.
+    Streams actual high-frequency SCADA sensor telemetry from telemetry.csv,
+    runs the AI anomaly models (Supervised RF, Baseline & DualPath) in real time,
+    detects live operational deviations, and persists live incidents to the store.
+    """
+    global _csv_stream_pointer
+
+    df, timestamps = _load_telemetry_csv_stream()
+    _simulation_state["tick"] += 1
+    t = _simulation_state["tick"]
+    now_dt = datetime.now()
+    now_iso = now_dt.strftime("%Y-%m-%d %H:%M:%S")
+
+    store = get_incident_store()
+    pipeline = get_pipeline()
+    threshold_reg = get_threshold_registry()
+    dual_detector = DualPathAnomalyDetector(threshold_reg)
+
+    # Check for manual fault injection jump
+    injected = _simulation_state.get("injected_anomaly")
+    _simulation_state["injected_anomaly"] = None
+    if injected:
+        eq_req = injected.get("equipment_id", "FURNACE-01")
+        if eq_req in ANOMALY_JUMP_INDICES:
+            _csv_stream_pointer = ANOMALY_JUMP_INDICES[eq_req]
+        else:
+            _csv_stream_pointer = 984
+
+    # Grab the current CSV timestamp chunk (4 machines per timestamp)
+    if timestamps and df is not None:
+        curr_ts = timestamps[_csv_stream_pointer % len(timestamps)]
+        _csv_stream_pointer += 1
+        chunk = df[df["timestamp"] == curr_ts].copy()
+    else:
+        curr_ts = now_iso
+        chunk = pd.DataFrame()
+
+    # Run Real-Time AI Model Inference on clean sensor readings
+    detected_incidents_list = []
+    if not chunk.empty:
+        # Strip ground-truth label columns to ensure pure ML feature inference
+        drop_cols = ["is_anomaly", "anomaly_type", "severity", "is_energy_waste", "alert_code", "data_provenance"]
+        clean_chunk = chunk.drop(columns=[c for c in drop_cols if c in chunk.columns], errors="ignore")
+
+        # 1. Primary Model: EnergyIntelligencePipeline (Supervised RF + Baseline + Isolation Forest)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            ml_results = pipeline.predict_new_readings(clean_chunk, model_preference="supervised")
+        ml_anomalies = ml_results.get("anomaly_records", [])
+
+        # 2. Dual-Path Anomaly Detector (Physics Envelope Rules + MAD Residuals)
+        dual_alerts = []
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            for _, r in chunk.iterrows():
+                r_dict = r.to_dict()
+                for al in dual_detector.detect_anomalies(r_dict):
+                    if al.alert_category != "sensor_data_quality_warning":
+                        dual_alerts.append(al)
+
+        # Merge detected anomalies from both models
+        detected_eq_set = set()
+        for anom in ml_anomalies:
+            eq = anom.get("equipment_id")
+            detected_eq_set.add(eq)
+            
+            # Map clean sensor readings
+            row_match = chunk[chunk["equipment_id"] == eq]
+            s_readings = {}
+            if not row_match.empty:
+                s_readings = {
+                    k: float(v) if isinstance(v, (int, float, np.number)) and not np.isnan(v) else str(v)
+                    for k, v in row_match.iloc[0].to_dict().items()
+                    if k not in ["is_anomaly", "alert_code"]
+                }
+
+            # Check if an active live incident already exists for this equipment in store within last 30s
+            existing_active_id = None
+            for ex_id, ex_inc in list(store.incidents.items())[-30:]:
+                if (
+                    ex_inc.get("equipment_id") == eq
+                    and ex_inc.get("is_live") is True
+                    and ex_inc.get("status") in ["New", "Investigating"]
+                ):
+                    existing_active_id = ex_id
+                    break
+
+            if existing_active_id:
+                inc_id = existing_active_id
+                target_inc = store.incidents[existing_active_id]
+                target_inc["latest_occurrence"] = now_iso
+                target_inc["recurrence_count"] = int(target_inc.get("recurrence_count", 1)) + 1
+                target_inc["actual_power_kw"] = round(float(anom.get("actual_power_kw", 0)), 2)
+                target_inc["deviation_kw"] = round(float(anom.get("deviation_kw", 0)), 2)
+                target_inc["sensor_readings"] = s_readings
+                target_inc["csv_timestamp"] = str(curr_ts)
+                if anom.get("model_name") == "Supervised Random Forest":
+                    target_inc["confidence"] = anom.get("model_score")
+                    target_inc["confidence_available"] = True
+                    target_inc["model_score"] = anom.get("model_score")
+                    target_inc["model_name"] = anom.get("model_name")
+                    target_inc["detection_method"] = "supervised_random_forest"
+                norm_target = normalize_incident_dict(target_inc)
+                store.incidents[existing_active_id] = norm_target
+                detected_incidents_list.append(norm_target)
+            else:
+                inc_id = f"INC-LIVE-{eq}-{now_dt.strftime('%Y%m%d_%H%M%S')}"
+                inc_obj = {
+                    "incident_id": inc_id,
+                    "timestamp": now_iso,
+                    "equipment_id": eq,
+                    "machine_type": anom.get("equipment_type", eq.lower()),
+                    "operating_mode": str(anom.get("operating_mode", "production")),
+                    "anomaly_type": str(anom.get("anomaly_type", "operational_deviation")),
+                    "detection_method": "supervised_random_forest" if anom.get("model_name") == "Supervised Random Forest" else "condition_aware_baseline",
+                    "model_name": anom.get("model_name", "Supervised Random Forest"),
+                    "model_score": anom.get("model_score"),
+                    "confidence": anom.get("model_score") if anom.get("model_name") == "Supervised Random Forest" else None,
+                    "confidence_available": anom.get("model_name") == "Supervised Random Forest",
+                    "severity": str(anom.get("severity", "high")),
+                    "status": "New",
+                    "is_live": True,
+                    "actual_power_kw": round(float(anom.get("actual_power_kw", 0)), 2),
+                    "expected_power_kw": round(float(anom.get("expected_power_kw", 0)), 2),
+                    "deviation_kw": round(float(anom.get("deviation_kw", 0)), 2),
+                    "deviation_pct": round(float(anom.get("deviation_pct", 0)), 1),
+                    "estimated_excess_energy_kwh": round(float(anom.get("estimated_excess_energy_kwh", 0)), 3) if anom.get("estimated_excess_energy_kwh") else 0.18,
+                    "evidence": anom.get("evidence", [f"Anomaly flagged by real-time {anom.get('model_name')} on incoming telemetry chunk."]),
+                    "possible_causes": anom.get("possible_causes", ["Operating parameters outside nominal baseline envelope."]),
+                    "recommended_action": anom.get("recommended_action", "Inspect machine telemetry and verify operating conditions according to SOP."),
+                    "sensor_readings": s_readings,
+                    "data_provenance": "live_csv_scada_stream",
+                    "source_file": "telemetry.csv",
+                    "csv_timestamp": str(curr_ts),
+                }
+                norm = normalize_incident_dict(inc_obj)
+                store.incidents[inc_id] = norm
+                detected_incidents_list.append(norm)
+
+        for al in dual_alerts:
+            eq = al.machine_id
+            if eq not in detected_eq_set:
+                detected_eq_set.add(eq)
+                existing_active_id = None
+                for ex_id, ex_inc in list(store.incidents.items())[-30:]:
+                    if (
+                        ex_inc.get("equipment_id") == eq
+                        and ex_inc.get("is_live") is True
+                        and ex_inc.get("status") in ["New", "Investigating"]
+                    ):
+                        existing_active_id = ex_id
+                        break
+
+                if existing_active_id:
+                    target_inc = store.incidents[existing_active_id]
+                    target_inc["latest_occurrence"] = now_iso
+                    target_inc["recurrence_count"] = int(target_inc.get("recurrence_count", 1)) + 1
+                    raw_s = al.sensor_readings or {}
+                    target_inc["sensor_readings"] = {
+                        k: float(v) if isinstance(v, (int, float, np.number)) and not (np.isnan(v) or np.isinf(v)) else str(v)
+                        for k, v in raw_s.items()
+                        if not (isinstance(v, (float, np.floating)) and (np.isnan(v) or np.isinf(v)))
+                        and str(v).lower() not in ["nan", "none", "null"]
+                    }
+                    norm_target = normalize_incident_dict(target_inc)
+                    store.incidents[existing_active_id] = norm_target
+                    detected_incidents_list.append(norm_target)
+                else:
+                    inc_id = f"INC-LIVE-{eq}-{now_dt.strftime('%Y%m%d_%H%M%S')}"
+                    inc_obj = {
+                        "incident_id": inc_id,
+                        "timestamp": now_iso,
+                        "equipment_id": eq,
+                        "machine_type": al.machine_type.lower(),
+                        "operating_mode": "running",
+                        "anomaly_type": al.alert_category,
+                        "detection_method": al.detection_method,
+                        "model_name": al.detection_method_label,
+                        "model_score": al.detector_score,
+                        "confidence": None,
+                        "confidence_available": False,
+                        "severity": al.severity,
+                        "status": "New",
+                        "is_live": True,
+                        "actual_power_kw": round(float(al.observed_value or 0), 2),
+                        "expected_power_kw": round(float(al.expected_value or al.observed_value or 0), 2),
+                        "deviation_kw": round(float(al.residual_kwh or 0), 2),
+                        "deviation_pct": round(float(al.relative_deviation_pct or 0), 1),
+                        "estimated_excess_energy_kwh": round(float(al.abs_residual_kwh or 0.15), 3),
+                        "evidence": al.evidence or [al.explanation],
+                        "possible_causes": ["Pneumatic/thermal subsystem parameter deviation exceeding physical envelope."],
+                        "recommended_action": al.recommended_action,
+                        "sensor_readings": al.sensor_readings or {},
+                        "data_provenance": "live_csv_scada_stream",
+                        "source_file": "telemetry.csv",
+                        "csv_timestamp": str(curr_ts),
+                    }
+                    norm = normalize_incident_dict(inc_obj)
+                    store.incidents[inc_id] = norm
+                    detected_incidents_list.append(norm)
+
+        # Cap live store to avoid unbounded in-memory growth (keep baseline + last 100 live incidents)
+        if len(store.incidents) > 900:
+            live_keys = [k for k, v in store.incidents.items() if v.get("is_live")]
+            if len(live_keys) > 100:
+                for k in live_keys[:-100]:
+                    del store.incidents[k]
+
+    # Build the 4 machine telemetry objects from actual CSV rows
+    machine_readings: List[Dict[str, Any]] = []
+    total_plant_kw = 0.0
+
+    machine_configs = [
+        {"equipment_id": "AIR-COMP-01", "name": "ELGi Industrial Air Compressor", "equipment_type": "air_compressor", "base_kw": 24.5},
+        {"equipment_id": "CNC-01", "name": "5-Axis CNC Machining Center", "equipment_type": "cnc_machine", "base_kw": 10.4},
+        {"equipment_id": "FURNACE-01", "name": "Industrial Heat Treating Furnace", "equipment_type": "furnace", "base_kw": 48.5},
+        {"equipment_id": "CHILLER-01", "name": "Central Chilled Water System", "equipment_type": "chiller", "base_kw": 22.8},
+    ]
+
+    for cfg in machine_configs:
+        eq_id = cfg["equipment_id"]
+        m_rows = chunk[chunk["equipment_id"] == eq_id] if not chunk.empty else pd.DataFrame()
+        if not m_rows.empty:
+            r = m_rows.iloc[0]
+            p_kw = round(float(r["power_consumption_kw"]), 2)
+            is_anom = any(d["equipment_id"] == eq_id for d in detected_incidents_list)
+            op_mode = str(r.get("operating_mode", "normal"))
+
+            exp_kw = cfg["base_kw"]
+            if pipeline.energy_baseline_model is not None and getattr(pipeline.energy_baseline_model, "is_fitted", False):
+                try:
+                    exp_kw = round(float(pipeline.energy_baseline_model.get_expected_power(eq_id, op_mode)[0]), 2)
+                except Exception:
+                    pass
+
+            def _flt(col, dec=1):
+                v = r.get(col)
+                if pd.notna(v):
+                    try:
+                        return round(float(v), dec)
+                    except Exception:
+                        return None
+                return None
+
+            reading = {
+                "equipment_id": eq_id,
+                "name": cfg["name"],
+                "equipment_type": cfg["equipment_type"],
+                "status": "ANOMALY" if is_anom else "NORMAL",
+                "power_kw": p_kw,
+                "expected_power_kw": exp_kw,
+                "operating_mode": op_mode,
+                "temperature_c": _flt("temperature_c", 1) or _flt("discharge_temp_c", 1),
+                "temp_setpoint_c": _flt("temp_setpoint_c", 1) or (850.0 if "FURN" in eq_id else None),
+                "discharge_pressure_bar": _flt("discharge_pressure_bar", 2),
+                "airflow_cfm": _flt("airflow_cfm", 1),
+                "vibration_mm_s": _flt("vibration_mm_s", 3),
+                "spindle_rpm": _flt("spindle_rpm", 0),
+                "spindle_load_pct": _flt("spindle_load_pct", 1),
+                "supply_temp_c": _flt("supply_temp_c", 1),
+                "delta_t_c": _flt("delta_t_c", 1),
+                "water_flow_m3h": _flt("water_flow_m3h", 1),
+            }
+        else:
+            p_kw = cfg["base_kw"]
+            reading = {
+                "equipment_id": eq_id,
+                "name": cfg["name"],
+                "equipment_type": cfg["equipment_type"],
+                "status": "NORMAL",
+                "power_kw": p_kw,
+                "expected_power_kw": p_kw,
+            }
+
+        machine_readings.append(reading)
+        total_plant_kw += p_kw
+
+    active_detected_incident = detected_incidents_list[0] if detected_incidents_list else None
+
+    # Store rolling history
+    _simulation_state["last_timestamp"] = now_iso
+    history_entry = {
+        "tick": t,
+        "timestamp": now_iso,
+        "csv_timestamp": str(curr_ts),
+        "plant_power_kw": round(total_plant_kw, 2),
+        "has_anomaly": active_detected_incident is not None,
+    }
+    _simulation_state["history"].append(history_entry)
+    if len(_simulation_state["history"]) > 60:
+        _simulation_state["history"] = _simulation_state["history"][-60:]
+
+    return {
+        "tick": t,
+        "timestamp": now_iso,
+        "csv_timestamp": str(curr_ts),
+        "interval_seconds": 2.0,
+        "plant_power_kw": round(total_plant_kw, 2),
+        "machines": machine_readings,
+        "active_anomaly": active_detected_incident,
+        "new_anomalies": detected_incidents_list,
+        "total_incidents": len(store.incidents),
+    }
+
+
+@router.get("/api/anomalies/live-stream/history")
+def get_live_simulation_history():
+    """Retrieve rolling history of recent simulation ticks."""
+    return {
+        "current_tick": _simulation_state["tick"],
+        "history": _simulation_state["history"],
+    }
+
+
+@router.post("/api/anomalies/live-stream/reset")
+def reset_live_simulation():
+    """Reset simulation tick counter."""
+    global _csv_stream_pointer
+    _simulation_state["tick"] = 0
+    _simulation_state["history"] = []
+    _simulation_state["injected_anomaly"] = None
+    _csv_stream_pointer = 980
+    return {"status": "reset", "tick": 0}
+
+
 
 
 @router.get("/api/equipment/registry")
@@ -515,16 +937,17 @@ async def upload_telemetry(
         if excess_kwh is not None:
             excess_kwh = round(float(excess_kwh), 2)
 
+        raw_score = anom.get("model_score")
         incident_obj = {
             "incident_id": inc_id,
             "timestamp": str(anom.get("timestamp")),
             "equipment_id": str(anom.get("equipment_id")),
             "operating_mode": str(anom.get("operating_mode", "normal")),
             "anomaly_type": str(anom.get("anomaly_type", "operational_deviation")),
-            "detection_method": str(anom.get("detection_method", "AI Model")),
-            "model_name": str(anom.get("model_name", "Supervised RF")),
-            "model_score": float(anom.get("model_score", 0.85)),
-            "confidence": float(anom.get("model_score", 0.85)),
+            "detection_method": str(anom.get("detection_method", "supervised_random_forest" if anom.get("model_name") == "Supervised RF" else "condition_aware_baseline")),
+            "model_name": str(anom.get("model_name", "Supervised Random Forest")),
+            "model_score": raw_score,
+            "confidence": raw_score if anom.get("model_name") == "Supervised RF" else None,
             "severity": str(anom.get("severity", "medium")),
             "status": "New",
             "actual_power_kw": round(float(anom.get("actual_power_kw", anom.get("power_consumption_kw", 0))), 2),
@@ -539,7 +962,8 @@ async def upload_telemetry(
             "data_provenance": "user_uploaded_telemetry",
             "source_file": filename,
         }
-        store.incidents.insert(0, incident_obj)
+        normalized_inc = normalize_incident_dict(incident_obj)
+        store.incidents[inc_id] = normalized_inc
         new_incidents_count += 1
 
     if new_incidents_count > 0:

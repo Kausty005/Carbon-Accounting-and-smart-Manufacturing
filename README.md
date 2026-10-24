@@ -1,13 +1,13 @@
 # WattWise AI — Digital Twin & Energy Optimisation Module
-**KPCL Hackathon — Problem Statement 1: AI-Driven Carbon Accounting & Intelligent Energy Management for Sustainable Manufacturing**  
-*Industry Partner: Kirloskar Pneumatic Company Limited (KPCL)*  
+**KPCL Hackathon — Problem Statement 1: AI-Driven Carbon Accounting & Intelligent Energy Management for Sustainable Manufacturing**
+*Industry Partner: Kirloskar Pneumatic Company Limited (KPCL)*
 *Theme: Sustainable Manufacturing | Green Technology | AI & Data Analytics*
 
 ---
 
 ## 1. Executive Summary & Objective
 
-The **Digital Twin Module** inside **WattWise AI** is a time-indexed, physical energy system scenario engine designed for the fictional reference plant **PrecisionWorks Manufacturing**. 
+The **Digital Twin Module** inside **WattWise AI** is a time-indexed, physical energy system scenario engine designed for the fictional reference plant **PrecisionWorks Manufacturing**.
 
 It allows plant managers and energy auditors to test operational modifications (such as reducing compressor idle power, shifting flexible machine schedules, or tuning pneumatic pressure setpoints) and dynamically computes their exact impact on:
 - **Interval & Cumulative Energy Consumption (kWh)**
@@ -16,7 +16,7 @@ It allows plant managers and energy auditors to test operational modifications (
 - **Scope 2 Indirect Greenhouse Gas Emissions (kg / t CO₂e)**
 - **Physical Safety & Metallurgical Process Interlocks**
 
-> **Core Product Promise:**  
+> **Core Product Promise:**
 > *"Test a factory energy decision in the Digital Twin before trying it on the factory floor."*
 
 ---

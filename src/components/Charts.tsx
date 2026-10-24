@@ -153,6 +153,88 @@ export function ScopePie({ scope1, scope2 }: { scope1: number; scope2: number })
   );
 }
 
+// ─── Machine Tactical Energy Forecast Interval Chart ──────────────────────────
+export interface ForecastIntervalPoint {
+  label: string; // e.g. "Current Interval", "Target Interval (+15m)"
+  timeWindow: string; // e.g. "10:00-10:15", "10:15-10:30"
+  energyKwh: number;
+  equivalentKw: number;
+  isForecast: boolean;
+  statusLabel: string; // e.g. "SIMULATED TELEMETRY" or "ML MODEL FORECAST"
+}
+
+function ForecastTooltip({ active, payload }: any) {
+  if (!active || !payload?.length) return null;
+  const d: ForecastIntervalPoint = payload[0]?.payload;
+  if (!d) return null;
+
+  return (
+    <div style={{
+      background: 'rgba(235, 226, 212, 0.96)',
+      backdropFilter: 'blur(16px)',
+      border: '1px solid rgba(90, 75, 55, 0.2)',
+      boxShadow: '0 8px 24px -4px rgba(60, 45, 25, 0.15)',
+      borderRadius: 8, padding: '8px 12px',
+      fontFamily: MONO, fontSize: 10,
+      minWidth: 160,
+    }}>
+      <div style={{ color: '#1C1917', fontWeight: 700, marginBottom: 4 }}>
+        {d.label}
+      </div>
+      <div style={{ color: '#78716C', fontSize: 9, marginBottom: 6 }}>
+        Window: {d.timeWindow}
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 14, marginBottom: 3 }}>
+        <span style={{ color: '#57534E' }}>Energy:</span>
+        <span style={{ fontWeight: 700, color: d.isForecast ? '#7c3aed' : '#0284c7' }}>
+          {d.energyKwh.toFixed(3)} kWh
+        </span>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 14, marginBottom: 4 }}>
+        <span style={{ color: '#57534E' }}>Equiv. Power:</span>
+        <span style={{ fontWeight: 600, color: '#1C1917' }}>
+          {d.equivalentKw.toFixed(2)} kW
+        </span>
+      </div>
+      <div style={{
+        marginTop: 6, paddingTop: 4, borderTop: '1px solid rgba(90, 75, 55, 0.1)',
+        fontSize: 8.5, color: d.isForecast ? '#7c3aed' : '#0284c7', fontWeight: 700,
+        letterSpacing: 0.5, textTransform: 'uppercase',
+      }}>
+        {d.statusLabel}
+      </div>
+    </div>
+  );
+}
+
+export function MachineForecastIntervalChart({
+  points,
+}: {
+  points: ForecastIntervalPoint[];
+}) {
+  return (
+    <ResponsiveContainer width="100%" height={150}>
+      <BarChart data={points} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+        <CartesianGrid stroke="rgba(90, 75, 55, 0.08)" strokeDasharray="3 3" />
+        <XAxis dataKey="label" tick={{ fill: '#78716C', fontSize: 8.5, fontFamily: MONO }} />
+        <YAxis tick={{ fill: '#78716C', fontSize: 9, fontFamily: MONO }} unit=" kWh" />
+        <Tooltip content={<ForecastTooltip />} />
+        <Bar dataKey="energyKwh" radius={[4, 4, 0, 0]}>
+          {points.map((p, i) => (
+            <Cell
+              key={i}
+              fill={p.isForecast ? 'rgba(124, 58, 237, 0.85)' : 'rgba(2, 132, 199, 0.85)'}
+              stroke={p.isForecast ? '#7c3aed' : '#0284c7'}
+              strokeWidth={1.5}
+              strokeDasharray={p.isForecast ? '3 2' : undefined}
+            />
+          ))}
+        </Bar>
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}
+
 // ─── Machine Energy & Cost Share Donut Chart ────────────────────────────────
 export function MachineEnergyDonut({
   assets,

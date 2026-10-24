@@ -1,0 +1,187 @@
+{
+  "dataset_metadata": {
+    "file_name": "industrial_energy_forecasting_synthetic.csv",
+    "designation": "Synthetic Industrial Energy Dataset (Demo Benchmark)",
+    "is_synthetic": true,
+    "verification_note": "Verified synthetic dataset for industrial energy forecasting. Does NOT represent real measured factory telemetry.",
+    "record_count": 740748,
+    "columns": [
+      "timestamp",
+      "site_id",
+      "machine_id",
+      "machine_type",
+      "rated_power_kw",
+      "shift_pattern",
+      "hour",
+      "day_of_week",
+      "is_weekend",
+      "ambient_temp_c",
+      "process_temp_c",
+      "relative_humidity_pct",
+      "operating_state",
+      "load_factor",
+      "operating_minutes",
+      "production_units",
+      "power_kw",
+      "energy_kwh",
+      "sensor_quality",
+      "target_next_15min_energy_kwh",
+      "target_timestamp"
+    ],
+    "total_missing_values": 2244
+  },
+  "temporal_coverage": {
+    "start_timestamp": "2025-01-01T00:00:00",
+    "end_timestamp": "2025-06-29T23:30:00",
+    "expected_interval_minutes": 15,
+    "all_machines_monotonically_sorted": true,
+    "total_duplicate_timestamps": 0,
+    "non_15min_interval_transitions": 2244,
+    "interval_anomaly_explanation": "2244 single-interval sensor dropouts (30-min jumps) simulated in telemetry transmission."
+  },
+  "fleet_composition": {
+    "machine_count": 43,
+    "site_count": 3,
+    "machine_types": {
+      "CONVEYOR": 68928,
+      "CNC_MILL": 68919,
+      "INJECTION_MOLDER": 68916,
+      "INDUSTRIAL_MIXER": 68908,
+      "HYDRAULIC_PRESS": 68903,
+      "AIR_COMPRESSOR": 68900,
+      "PUMP": 68885,
+      "FAN_BLOWER": 51689,
+      "PACKAGING_MACHINE": 51686,
+      "WELDING_STATION": 51679,
+      "OVEN_FURNACE": 51668,
+      "GRINDER": 51667
+    }
+  },
+  "data_quality_and_integrity": {
+    "missing_values_by_column": {
+      "timestamp": 0,
+      "site_id": 0,
+      "machine_id": 0,
+      "machine_type": 0,
+      "rated_power_kw": 0,
+      "shift_pattern": 0,
+      "hour": 0,
+      "day_of_week": 0,
+      "is_weekend": 0,
+      "ambient_temp_c": 0,
+      "process_temp_c": 0,
+      "relative_humidity_pct": 0,
+      "operating_state": 0,
+      "load_factor": 0,
+      "operating_minutes": 0,
+      "production_units": 0,
+      "power_kw": 0,
+      "energy_kwh": 2244,
+      "sensor_quality": 0,
+      "target_next_15min_energy_kwh": 0,
+      "target_timestamp": 0
+    },
+    "sensor_quality_distribution": {
+      "good": 729608,
+      "suspect": 8896,
+      "missing": 2244
+    },
+    "power_to_energy_max_abs_diff_kwh": 2.8896949999999997,
+    "power_to_energy_mean_abs_diff_kwh": 0.003391084239218745,
+    "power_to_energy_large_mismatches_gt_0_01": 6853,
+    "physical_consistency_by_sensor_quality": {
+      "good": {
+        "record_count": 729608,
+        "max_abs_diff_kwh": 1.5000000001208491e-05,
+        "mean_abs_diff_kwh": 5.787354305325849e-06,
+        "mismatches_gt_0_01_kwh": 0,
+        "is_physically_consistent": true
+      },
+      "suspect": {
+        "record_count": 8896,
+        "max_abs_diff_kwh": 2.8896949999999997,
+        "mean_abs_diff_kwh": 0.28103718244154674,
+        "mismatches_gt_0_01_kwh": 6853,
+        "is_physically_consistent": false
+      },
+      "missing": {
+        "record_count": 2244,
+        "note": "All energy values missing as expected for communication dropout."
+      }
+    },
+    "good_sensors_physically_consistent": true
+  },
+  "target_verification": {
+    "target_column": "target_next_15min_energy_kwh",
+    "target_timestamp_column": "target_timestamp",
+    "target_vs_subsequent_row_max_diff": 0.0,
+    "target_vs_subsequent_row_large_mismatches": 0,
+    "target_alignment_verified": true,
+    "records_with_unmatched_subsequent_row": 2287
+  },
+  "summary_statistics": {
+    "rated_power_kw": {
+      "mean": 19.8013,
+      "std": 9.16544,
+      "min": 6.132,
+      "25%": 12.561,
+      "50%": 18.284,
+      "75%": 24.488,
+      "max": 44.663
+    },
+    "load_factor": {
+      "mean": 0.40226,
+      "std": 0.34948,
+      "min": 0.0,
+      "25%": 0.0342,
+      "50%": 0.4729,
+      "75%": 0.7194,
+      "max": 1.0
+    },
+    "operating_minutes": {
+      "mean": 8.44884,
+      "std": 7.43974,
+      "min": 0.0,
+      "25%": 0.0,
+      "50%": 15.0,
+      "75%": 15.0,
+      "max": 15.0
+    },
+    "production_units": {
+      "mean": 1.01405,
+      "std": 1.58924,
+      "min": 0.0,
+      "25%": 0.0,
+      "50%": 0.0,
+      "75%": 2.0,
+      "max": 17.0
+    },
+    "power_kw": {
+      "mean": 8.81835,
+      "std": 9.94056,
+      "min": 0.0,
+      "25%": 0.6254,
+      "50%": 6.7829,
+      "75%": 13.57572,
+      "max": 51.3622
+    },
+    "energy_kwh": {
+      "mean": 2.20448,
+      "std": 2.48559,
+      "min": 0.0,
+      "25%": 0.1563,
+      "50%": 1.69479,
+      "75%": 3.3939,
+      "max": 14.85848
+    },
+    "target_next_15min_energy_kwh": {
+      "mean": 2.20448,
+      "std": 2.48555,
+      "min": 0.0,
+      "25%": 0.15626,
+      "50%": 1.6949,
+      "75%": 3.3938,
+      "max": 14.85848
+    }
+  }
+}

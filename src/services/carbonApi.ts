@@ -34,6 +34,10 @@ export interface Scope1Input {
   provenance?: ProvenanceType;
   include_non_co2_ghg?: boolean;
   custom_emission_factor?: number;
+  custom_direct_co2_factor?: number;
+  custom_total_co2e_factor?: number;
+  custom_factor_unit?: string;
+  custom_factor_provenance?: string;
   custom_ncv_mj_per_unit?: number;
   activity_period?: ReportingPeriodInput;
 }
@@ -66,7 +70,7 @@ export interface CarbonCalculateRequest {
 // ─── Response Interfaces ───────────────────────────────────────────────────────
 
 export interface Scope1FactorBreakdown {
-  direct_co2_kg_per_kg: number;
+  direct_co2_kg_per_kg?: number | null;
   ch4_emitted_g_per_kg: number;
   ch4_converted_kg_per_kg: number;
   ch4_gwp_ar6: number;
@@ -84,11 +88,14 @@ export interface Scope1CalculationResult {
   activity: {
     value: number;
     unit: string;
+    effective_mass_kg?: number | null;
+    conversion_applied?: string | null;
     provenance: string;
     basis: string;
+    normalization?: any;
   };
   factor_breakdown: Scope1FactorBreakdown;
-  emissions_direct_co2_t: number;
+  emissions_direct_co2_t?: number | null;
   emissions_total_co2e_t: number;
   emissions_evaluated_t_co2e: number;
   formula: string;
@@ -108,6 +115,7 @@ export interface CeaFactorMetadata {
   database_version: string;
   includes_imports: boolean;
   is_recommended_location_based: boolean;
+  accounting_approach?: string;
 }
 
 export interface Scope2CalculationResult {
@@ -116,6 +124,7 @@ export interface Scope2CalculationResult {
     unit: string;
     provenance: string;
     basis: string;
+    normalization?: any;
   };
   factor_metadata: CeaFactorMetadata;
   emissions_total_co2e_t: number;
@@ -135,7 +144,7 @@ export interface GrossFootprintResult {
   scope1?: Scope1CalculationResult;
   scope2?: Scope2CalculationResult;
   total_gross_co2e_t: number;
-  direct_co2_only_total_t: number;
+  direct_co2_only_total_t?: number | null;
 }
 
 export interface ScenarioComparisonResult {
@@ -147,6 +156,8 @@ export interface ScenarioComparisonResult {
   proposed_electricity_kwh?: number;
   electricity_savings_kwh?: number;
   avoided_emissions_t_co2e?: number;
+  scope1_t_co2e?: number;
+  proposed_scope2_t_co2e?: number;
   provenance?: ProvenanceType;
   accounting_note?: string;
 }
@@ -273,6 +284,7 @@ export function getOfflineFallbackCalculation(
 ): CarbonCalculateResponse {
   const periodDays = request.period.duration_days || 30.0;
   const s1Val = request.scope1?.activity_value ?? 1800.0;
+  const s1Unit = (request.scope1?.activity_unit || 'kg').toLowerCase();
   const s2Val = request.scope2?.grid_consumption_kwh ?? 12480.0;
   const customEf = request.scope2?.custom_grid_factor ?? 0.72886; // CEA FY 2023-24 location-based default
   const savingsKwh = request.scenario_comparison?.enabled
@@ -281,16 +293,31 @@ export function getOfflineFallbackCalculation(
         : (request.scenario_comparison.proposed_savings_kwh ?? 0))
     : 0;
 
+  // LPG unit safety: 0.540 kg/L density for litres, 1000 for tonnes, 1 for kg
+  let massKg = s1Val;
+  let convNote: string | null = null;
+  if (s1Unit === 'l' || s1Unit === 'liter' || s1Unit === 'litre' || s1Unit === 'litres') {
+    massKg = +(s1Val * 0.540).toFixed(4);
+    convNote = 'Volume-to-mass conversion: 0.540 kg/L (commercial LPG blend per IS 4576)';
+  } else if (s1Unit === 't' || s1Unit === 'tonne' || s1Unit === 'tonnes') {
+    massKg = +(s1Val * 1000).toFixed(4);
+    convNote = 'Mass unit conversion: 1 tonne = 1,000 kg';
+  }
+
   // LPG factors: 2.98463 direct CO2, 2.98724 total CO2e
   const directCO2Factor = 2.98463;
   const totalCO2eFactor = 2.98724;
 
-  const s1DirectCO2 = +((s1Val * directCO2Factor) / 1000).toFixed(4);
-  const s1TotalCO2e = +((s1Val * totalCO2eFactor) / 1000).toFixed(4);
+  const s1DirectCO2 = +((massKg * directCO2Factor) / 1000).toFixed(4);
+  const s1TotalCO2e = +((massKg * totalCO2eFactor) / 1000).toFixed(4);
   const s2CO2e = +((s2Val * customEf) / 1000).toFixed(4);
   const grossTotal = +(s1TotalCO2e + s2CO2e).toFixed(4);
   const avoidedCO2e = +((savingsKwh * customEf) / 1000).toFixed(4);
-  const proposedGross = +(grossTotal - avoidedCO2e).toFixed(4);
+
+  // Proposed Scope 2 and Proposed Gross = Scope 1 + Proposed Scope 2
+  const proposedConsumptionKwh = Math.max(0, +(s2Val - savingsKwh).toFixed(2));
+  const proposedScope2CO2e = +((proposedConsumptionKwh * customEf) / 1000).toFixed(4);
+  const proposedGross = +(s1TotalCO2e + proposedScope2CO2e).toFixed(4);
 
   return {
     calculation_metadata: {
@@ -313,8 +340,10 @@ export function getOfflineFallbackCalculation(
         activity: {
           value: s1Val,
           unit: request.scope1?.activity_unit || 'kg',
+          effective_mass_kg: massKg,
+          conversion_applied: convNote,
           provenance: request.scope1?.provenance || 'ESTIMATED',
-          basis: `${s1Val.toLocaleString()} kg consumed over ${periodDays} days (Demo Sample)`,
+          basis: `${s1Val.toLocaleString()} ${request.scope1?.activity_unit || 'kg'} consumed over ${periodDays} days${convNote ? ` [${convNote}]` : ''}`,
         },
         factor_breakdown: {
           direct_co2_kg_per_kg: directCO2Factor,
@@ -331,7 +360,7 @@ export function getOfflineFallbackCalculation(
         emissions_direct_co2_t: s1DirectCO2,
         emissions_total_co2e_t: s1TotalCO2e,
         emissions_evaluated_t_co2e: s1TotalCO2e,
-        formula: `${s1Val.toLocaleString()} kg LPG × ${totalCO2eFactor} kg CO₂e/kg ÷ 1000 = ${s1TotalCO2e} tCO₂e`,
+        formula: `${massKg.toLocaleString()} kg LPG × ${totalCO2eFactor} kg CO₂e/kg ÷ 1000 = ${s1TotalCO2e} tCO₂e`,
         source_reference: 'IPCC 2006 Vol. 2 Ch. 2 Table 2.3 (Demo Cache)',
         verification_status: 'SIMULATED_CLIENT_DEMO',
       },
@@ -354,6 +383,7 @@ export function getOfflineFallbackCalculation(
           database_version: '22.0',
           includes_imports: false,
           is_recommended_location_based: true,
+          accounting_approach: 'Scope 2 Location-Based (Grid Average with RES & Captive)',
         },
         emissions_total_co2e_t: s2CO2e,
         formula: `${s2Val.toLocaleString()} kWh × ${customEf} kg CO₂/kWh ÷ 1000 = ${s2CO2e} tCO₂e`,
@@ -375,11 +405,13 @@ export function getOfflineFallbackCalculation(
       net_reduction_t_co2e: avoidedCO2e,
       reduction_percentage: grossTotal > 0 ? +((avoidedCO2e / grossTotal) * 100).toFixed(2) : 0,
       baseline_electricity_kwh: s2Val,
-      proposed_electricity_kwh: +(s2Val - savingsKwh).toFixed(2),
+      proposed_electricity_kwh: proposedConsumptionKwh,
       electricity_savings_kwh: savingsKwh,
       avoided_emissions_t_co2e: avoidedCO2e,
+      scope1_t_co2e: s1TotalCO2e,
+      proposed_scope2_t_co2e: proposedScope2CO2e,
       provenance: 'SIMULATED',
-      accounting_note: 'Digital twin simulation. Avoided emissions are tracked separately and never subtracted from baseline gross operational emissions. Scope 1 fuel emissions remain unchanged.',
+      accounting_note: 'Digital twin simulation. Avoided emissions are tracked separately and never subtracted from baseline gross operational emissions. Scope 1 fuel emissions remain unchanged. Proposed gross = Scope 1 + proposed Scope 2.',
     },
   };
 }

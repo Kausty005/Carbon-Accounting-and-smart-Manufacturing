@@ -9,9 +9,9 @@ export const API_BASE_URL: string =
     ? `http://${window.location.hostname}:8000`
     : '');
 
-const FETCH_TIMEOUT_MS = 8000;
+const FETCH_TIMEOUT_MS = 12000;
 
-async function fetchWithTimeout(url: string, options: RequestInit = {}): Promise<Response> {
+async function fetchWithTimeout(url: string, options: RequestInit = {}, retries = 1): Promise<Response> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
@@ -20,8 +20,12 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}): Promise
     return res;
   } catch (err: any) {
     clearTimeout(timeoutId);
+    if (retries > 0 && err.name !== 'AbortError') {
+      await new Promise((r) => setTimeout(r, 350));
+      return fetchWithTimeout(url, options, retries - 1);
+    }
     if (err.name === 'AbortError') {
-      throw new Error(`API request timed out after ${FETCH_TIMEOUT_MS / 1000}s. Verify backend service is running on port 8000.`);
+      throw new Error(`API request timed out (${FETCH_TIMEOUT_MS / 1000}s). Retrying or verify backend on port 8000.`);
     }
     throw new Error(err.message || 'Network error connecting to backend API');
   }
@@ -54,10 +58,19 @@ export interface AnomalyIncident {
   alert_category?: string;
   severity: 'critical' | 'high' | 'medium' | 'low';
   is_energy_waste?: boolean;
+  is_live?: boolean;
   status: string;
   model_name?: string;
-  model_score?: number;
-  confidence?: number;
+  model_score?: number | null;
+  confidence?: number | null;
+  model_confidence?: number | null;
+  confidence_available?: boolean;
+  anomaly_score?: number | null;
+  detection_method?: string;
+  detection_method_label?: string;
+  observed_value?: number | null;
+  expected_value?: number | null;
+  deviation_percent?: number | null;
   actual_power_kw?: number;
   expected_power_kw?: number;
   deviation_kw?: number;
@@ -221,26 +234,99 @@ export async function updateIncidentStatus(
   return res.json();
 }
 
+export function getIncidentReportDownloadUrl(incidentId: string, format: 'pdf' | 'docx' = 'pdf'): string {
+  return `${API_BASE_URL}/api/anomalies/${encodeURIComponent(incidentId)}/report/${format}`;
+}
+
 export async function downloadIncidentReport(incidentId: string, format: 'pdf' | 'docx' = 'pdf'): Promise<void> {
-  const res = await fetchWithTimeout(
-    `${API_BASE_URL}/api/anomalies/${encodeURIComponent(incidentId)}/report?format=${format}`,
-    { method: 'POST' }
-  );
+  const targetUrl = `${API_BASE_URL}/api/anomalies/${encodeURIComponent(incidentId)}/report?format=${format}`;
+  let res = await fetchWithTimeout(targetUrl, { method: 'GET' });
+  if (!res.ok) {
+    res = await fetchWithTimeout(targetUrl, { method: 'POST' });
+  }
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.detail || `Report generation failed (HTTP ${res.status})`);
   }
 
+  const mimeType = format === 'pdf'
+    ? 'application/pdf'
+    : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
   const blob = await res.blob();
-  const url = window.URL.createObjectURL(blob);
+  const fileBlob = new Blob([blob], { type: mimeType });
+  const objectUrl = window.URL.createObjectURL(fileBlob);
+
   const a = document.createElement('a');
-  a.href = url;
+  a.href = objectUrl;
   a.download = `incident_${incidentId}.${format}`;
+  a.style.display = 'none';
   document.body.appendChild(a);
   a.click();
-  window.URL.revokeObjectURL(url);
-  document.body.removeChild(a);
+
+  // Delay revocation to ensure Chromium/Edge finishes writing to disk
+  setTimeout(() => {
+    window.URL.revokeObjectURL(objectUrl);
+    if (a.parentNode) {
+      a.parentNode.removeChild(a);
+    }
+  }, 4000);
 }
+
+export interface LiveMachineReading {
+  equipment_id: string;
+  name: string;
+  equipment_type: string;
+  status: 'NORMAL' | 'ANOMALY';
+  power_kw: number;
+  expected_power_kw: number;
+  temperature_c?: number;
+  temp_setpoint_c?: number;
+  vibration_mm_s?: number;
+  discharge_pressure_bar?: number;
+  airflow_cfm?: number;
+  spindle_rpm?: number;
+  spindle_load_pct?: number;
+  coolant_temp_c?: number;
+  supply_temp_c?: number;
+  delta_t_c?: number;
+  water_flow_m3h?: number;
+}
+
+export interface LiveSimulationTickResponse {
+  tick: number;
+  timestamp: string;
+  interval_seconds: number;
+  plant_power_kw: number;
+  machines: LiveMachineReading[];
+  active_anomaly: AnomalyIncident | null;
+  total_incidents: number;
+}
+
+export async function fetchLiveSimulationTick(): Promise<LiveSimulationTickResponse> {
+  const res = await fetchWithTimeout(`${API_BASE_URL}/api/anomalies/live-stream/tick`);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Live simulation tick failed (HTTP ${res.status})`);
+  }
+  return res.json();
+}
+
+export async function injectLiveSimulationAnomaly(payload: {
+  equipment_id?: string;
+  anomaly_type?: string;
+}): Promise<{ status: string; message: string }> {
+  const res = await fetchWithTimeout(`${API_BASE_URL}/api/anomalies/live-stream/inject`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Inject anomaly failed (HTTP ${res.status})`);
+  }
+  return res.json();
+}
+
 
 export async function fetchEquipmentRegistry(): Promise<Record<string, any>> {
   const res = await fetchWithTimeout(`${API_BASE_URL}/api/equipment/registry`);

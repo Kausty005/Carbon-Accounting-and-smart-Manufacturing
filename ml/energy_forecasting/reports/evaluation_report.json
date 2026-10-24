@@ -1,0 +1,257 @@
+{
+  "model_artifact": "energy_forecasting_model.joblib",
+  "selected_model": "HistGradientBoostingRegressor",
+  "selection_rationale": "Highest validation R\u00b2 and lowest validation MAE among all candidates.",
+  "dataset_metadata": {
+    "source_file": "industrial_energy_forecasting_synthetic.csv",
+    "dataset_hash_sha256": "06229d9556da29c4",
+    "total_records": 740748,
+    "is_synthetic": true,
+    "designation": "Synthetic Industrial Energy Dataset (Demo Benchmark)"
+  },
+  "chronological_split": {
+    "total_unique_dates": 180,
+    "train_dates_count": 125,
+    "train_range": "2025-01-01 to 2025-05-05",
+    "train_records": 514428,
+    "val_dates_count": 28,
+    "val_range": "2025-05-06 to 2025-06-02",
+    "val_records": 115222,
+    "test_dates_count": 27,
+    "test_range": "2025-06-03 to 2025-06-29",
+    "test_records": 111098
+  },
+  "validation_performance_comparison": {
+    "PersistenceBaseline": {
+      "mae_kwh": 1.0692,
+      "rmse_kwh": 2.0193,
+      "r2_score": 0.3495,
+      "wape_pct": 48.1,
+      "smape_pct": 73.5,
+      "sample_count": 115222
+    },
+    "SameHourPreviousDayBaseline": {
+      "mae_kwh": 1.3675,
+      "rmse_kwh": 2.3706,
+      "r2_score": 0.1035,
+      "wape_pct": 61.51,
+      "smape_pct": 88.82,
+      "sample_count": 115222
+    },
+    "RandomForestRegressor": {
+      "mae_kwh": 0.9704,
+      "rmse_kwh": 1.4971,
+      "r2_score": 0.6425,
+      "wape_pct": 43.65,
+      "smape_pct": 82.97,
+      "sample_count": 115222
+    },
+    "HistGradientBoostingRegressor": {
+      "mae_kwh": 0.9382,
+      "rmse_kwh": 1.4675,
+      "r2_score": 0.6565,
+      "wape_pct": 42.2,
+      "smape_pct": 82.57,
+      "sample_count": 115222
+    }
+  },
+  "test_performance_comparison": {
+    "PersistenceBaseline": {
+      "mae_kwh": 1.0693,
+      "rmse_kwh": 2.0335,
+      "r2_score": 0.3401,
+      "wape_pct": 48.41,
+      "smape_pct": 73.9,
+      "sample_count": 111098
+    },
+    "SameHourPreviousDayBaseline": {
+      "mae_kwh": 1.335,
+      "rmse_kwh": 2.3404,
+      "r2_score": 0.1259,
+      "wape_pct": 60.45,
+      "smape_pct": 86.6,
+      "sample_count": 111098
+    },
+    "RandomForestRegressor": {
+      "mae_kwh": 0.9843,
+      "rmse_kwh": 1.5067,
+      "r2_score": 0.6377,
+      "wape_pct": 44.57,
+      "smape_pct": 83.76,
+      "sample_count": 111098
+    },
+    "HistGradientBoostingRegressor": {
+      "mae_kwh": 0.9403,
+      "rmse_kwh": 1.4763,
+      "r2_score": 0.6522,
+      "wape_pct": 42.57,
+      "smape_pct": 82.91,
+      "sample_count": 111098
+    }
+  },
+  "selected_model_test_metrics": {
+    "mae_kwh": 0.9403,
+    "rmse_kwh": 1.4763,
+    "r2_score": 0.6522,
+    "wape_pct": 42.57,
+    "smape_pct": 82.91,
+    "sample_count": 111098
+  },
+  "performance_by_machine_type": {
+    "AIR_COMPRESSOR": {
+      "mae_kwh": 1.0082,
+      "rmse_kwh": 1.4101,
+      "r2_score": 0.5788,
+      "wape_pct": 39.01,
+      "smape_pct": 78.92,
+      "sample_count": 10342
+    },
+    "CNC_MILL": {
+      "mae_kwh": 0.9207,
+      "rmse_kwh": 1.2144,
+      "r2_score": 0.5051,
+      "wape_pct": 37.92,
+      "smape_pct": 63.21,
+      "sample_count": 10332
+    },
+    "CONVEYOR": {
+      "mae_kwh": 0.3759,
+      "rmse_kwh": 0.5039,
+      "r2_score": 0.5104,
+      "wape_pct": 38.94,
+      "smape_pct": 68.77,
+      "sample_count": 10333
+    },
+    "FAN_BLOWER": {
+      "mae_kwh": 0.6108,
+      "rmse_kwh": 0.8611,
+      "r2_score": 0.5803,
+      "wape_pct": 38.72,
+      "smape_pct": 82.65,
+      "sample_count": 7749
+    },
+    "GRINDER": {
+      "mae_kwh": 0.8751,
+      "rmse_kwh": 1.1646,
+      "r2_score": 0.5083,
+      "wape_pct": 45.86,
+      "smape_pct": 85.95,
+      "sample_count": 7745
+    },
+    "HYDRAULIC_PRESS": {
+      "mae_kwh": 1.3371,
+      "rmse_kwh": 1.8676,
+      "r2_score": 0.5388,
+      "wape_pct": 48.72,
+      "smape_pct": 93.91,
+      "sample_count": 10338
+    },
+    "INDUSTRIAL_MIXER": {
+      "mae_kwh": 0.6198,
+      "rmse_kwh": 0.8633,
+      "r2_score": 0.6203,
+      "wape_pct": 42.67,
+      "smape_pct": 88.79,
+      "sample_count": 10336
+    },
+    "INJECTION_MOLDER": {
+      "mae_kwh": 1.3433,
+      "rmse_kwh": 1.8383,
+      "r2_score": 0.5543,
+      "wape_pct": 46.11,
+      "smape_pct": 92.91,
+      "sample_count": 10341
+    },
+    "OVEN_FURNACE": {
+      "mae_kwh": 2.4695,
+      "rmse_kwh": 3.4011,
+      "r2_score": 0.5114,
+      "wape_pct": 40.36,
+      "smape_pct": 81.75,
+      "sample_count": 7739
+    },
+    "PACKAGING_MACHINE": {
+      "mae_kwh": 0.6485,
+      "rmse_kwh": 0.8599,
+      "r2_score": 0.5262,
+      "wape_pct": 39.71,
+      "smape_pct": 67.15,
+      "sample_count": 7754
+    },
+    "PUMP": {
+      "mae_kwh": 0.4495,
+      "rmse_kwh": 0.6762,
+      "r2_score": 0.6368,
+      "wape_pct": 43.23,
+      "smape_pct": 102.17,
+      "sample_count": 10339
+    },
+    "WELDING_STATION": {
+      "mae_kwh": 0.8025,
+      "rmse_kwh": 1.0636,
+      "r2_score": 0.4902,
+      "wape_pct": 50.54,
+      "smape_pct": 85.93,
+      "sample_count": 7750
+    }
+  },
+  "performance_by_operating_state": {
+    "0_off": {
+      "mae_kwh": 0.7186,
+      "rmse_kwh": 1.4024,
+      "r2_score": 0.0577,
+      "wape_pct": 155.6,
+      "smape_pct": 165.53,
+      "sample_count": 23943
+    },
+    "1_idle": {
+      "mae_kwh": 1.2626,
+      "rmse_kwh": 1.7313,
+      "r2_score": 0.387,
+      "wape_pct": 80.94,
+      "smape_pct": 98.28,
+      "sample_count": 24597
+    },
+    "2_running": {
+      "mae_kwh": 0.8991,
+      "rmse_kwh": 1.3936,
+      "r2_score": 0.6872,
+      "wape_pct": 28.59,
+      "smape_pct": 44.77,
+      "sample_count": 62264
+    },
+    "3_maintenance": {
+      "mae_kwh": 0.7481,
+      "rmse_kwh": 1.1566,
+      "r2_score": 0.0623,
+      "wape_pct": 171.73,
+      "smape_pct": 144.29,
+      "sample_count": 294
+    }
+  },
+  "unseen_machine_generalization": {
+    "held_out_machines": [
+      "MACHINE_001",
+      "MACHINE_011",
+      "MACHINE_008",
+      "MACHINE_006",
+      "MACHINE_007",
+      "MACHINE_003"
+    ],
+    "metrics": {
+      "mae_kwh": 0.8975,
+      "rmse_kwh": 1.3178,
+      "r2_score": 0.6174,
+      "wape_pct": 44.5,
+      "smape_pct": 86.59,
+      "sample_count": 103353
+    },
+    "analysis": "Evaluates model transferability to unobserved physical assets. Leverages machine_type and rated_power_kw physics features."
+  },
+  "plot_artifacts": {
+    "actual_vs_predicted": "D:\\OMKAR\\OMKAR\\Carbon-Accounting-and-smart-Manufacturing\\ml\\energy_forecasting\\plots\\actual_vs_predicted.png",
+    "residual_distribution": "D:\\OMKAR\\OMKAR\\Carbon-Accounting-and-smart-Manufacturing\\ml\\energy_forecasting\\plots\\residual_distribution.png",
+    "metrics_by_machine_type": "D:\\OMKAR\\OMKAR\\Carbon-Accounting-and-smart-Manufacturing\\ml\\energy_forecasting\\plots\\metrics_by_machine_type.png"
+  },
+  "total_pipeline_duration_seconds": 62.39
+}

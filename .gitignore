@@ -23,7 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 
-# Python
+# Python cache & virtualenvs
 __pycache__/
 *.py[cod]
 *$py.class
@@ -36,6 +36,9 @@ venv/
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Large dataset files (>100MB)
+industrial_energy_forecasting_synthetic.csv
 
 # Temporary generated reports and uploads
 backend/ai_intelligence/data/uploads/*

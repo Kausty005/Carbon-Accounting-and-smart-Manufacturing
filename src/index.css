@@ -853,6 +853,15 @@ input[type=range]::-webkit-slider-thumb {
   font-weight: 600;
   color: #0f172a;
 }
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.spin-anim {
+  animation: spin 1s linear infinite;
+}
+
 /* ─── Digital Twin Workbench (Ceramic Alabaster Modernized) ─────────────────── */
 .app-shell.no-inspector {
   grid-template-columns: var(--sidebar-w) 1fr 0px;

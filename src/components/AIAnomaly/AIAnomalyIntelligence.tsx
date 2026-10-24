@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
+  Activity,
   AlertTriangle,
   CheckCircle2,
   Clock,
@@ -7,15 +8,23 @@ import {
   FileSpreadsheet,
   FileText,
   Filter,
+  Flame,
+  Gauge,
   Info,
   Layers,
+  Pause,
+  Play,
+  Radio,
   RefreshCw,
+  RotateCcw,
   Search,
   Shield,
   ShieldAlert,
   Sliders,
+  Sparkles,
   TrendingDown,
   Upload,
+  Wind,
   X,
   Zap,
 } from 'lucide-react';
@@ -35,11 +44,16 @@ import {
   fetchIncidentDetails,
   updateIncidentStatus,
   downloadIncidentReport,
+  getIncidentReportDownloadUrl,
+  fetchLiveSimulationTick,
+  injectLiveSimulationAnomaly,
   uploadTelemetry,
   type AnomalyIncident,
   type ActionRecommendation,
   type DashboardSummaryResponse,
   type IncidentDetailsResponse,
+  type LiveMachineReading,
+  type LiveSimulationTickResponse,
 } from '../../services/anomalyApi';
 
 export default function AIAnomalyIntelligence() {
@@ -61,6 +75,66 @@ export default function AIAnomalyIntelligence() {
   const [page, setPage] = useState(1);
   const pageSize = 15;
 
+  // Live Telemetry Simulation Engine State
+  const [isStreaming, setIsStreaming] = useState(true);
+  const [streamSpeed, setStreamSpeed] = useState<number>(2000); // 2000ms = 2s tick
+  const [liveTick, setLiveTick] = useState<number>(1);
+  const [livePlantPower, setLivePlantPower] = useState<number>(106.2);
+  const [liveMachines, setLiveMachines] = useState<LiveMachineReading[]>([
+    {
+      equipment_id: 'AIR-COMP-01',
+      name: 'ELGi Industrial Air Compressor',
+      equipment_type: 'air_compressor',
+      status: 'NORMAL',
+      power_kw: 24.5,
+      expected_power_kw: 24.5,
+      discharge_pressure_bar: 7.2,
+      airflow_cfm: 125.0,
+      vibration_mm_s: 1.25,
+      temperature_c: 77.5,
+    },
+    {
+      equipment_id: 'CNC-01',
+      name: '5-Axis CNC Machining Center',
+      equipment_type: 'cnc_machine',
+      status: 'NORMAL',
+      power_kw: 10.4,
+      expected_power_kw: 10.4,
+      spindle_rpm: 4250,
+      spindle_load_pct: 42.0,
+      vibration_mm_s: 0.58,
+      coolant_temp_c: 24.2,
+    },
+    {
+      equipment_id: 'FURNACE-01',
+      name: 'Industrial Heat Treating Furnace',
+      equipment_type: 'furnace',
+      status: 'NORMAL',
+      power_kw: 48.5,
+      expected_power_kw: 48.5,
+      temperature_c: 850.0,
+      temp_setpoint_c: 850.0,
+      vibration_mm_s: 0.32,
+    },
+    {
+      equipment_id: 'CHILLER-01',
+      name: 'Central Chilled Water System',
+      equipment_type: 'chiller',
+      status: 'NORMAL',
+      power_kw: 22.8,
+      expected_power_kw: 22.8,
+      supply_temp_c: 7.2,
+      delta_t_c: 5.4,
+      water_flow_m3h: 40.5,
+      vibration_mm_s: 0.78,
+    },
+  ]);
+  const [lastTickTime, setLastTickTime] = useState<string>(new Date().toLocaleTimeString());
+  const [isTickPulse, setIsTickPulse] = useState(false);
+  const [activeLiveAlert, setActiveLiveAlert] = useState<AnomalyIncident | null>(null);
+  const [liveAnomalyCount, setLiveAnomalyCount] = useState<number>(0);
+  const [injectingFault, setInjectingFault] = useState<string | null>(null);
+
   // Drawer & Modal State
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null);
   const [drawerData, setDrawerData] = useState<IncidentDetailsResponse | null>(null);
@@ -73,6 +147,7 @@ export default function AIAnomalyIntelligence() {
   const [savingStatus, setSavingStatus] = useState(false);
   const [statusSuccess, setStatusSuccess] = useState(false);
   const [downloadingReport, setDownloadingReport] = useState<'pdf' | 'docx' | null>(null);
+  const [downloadSuccessMessage, setDownloadSuccessMessage] = useState<string | null>(null);
 
   // Upload modal
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -96,11 +171,14 @@ export default function AIAnomalyIntelligence() {
     }
   }, []);
 
-  // Load Anomalies Table
-  const loadAnomalies = useCallback(async () => {
+  // Load Anomalies Table with auto-retry and resilience
+  const retryTimerRef = useRef<any>(null);
+
+  const loadAnomalies = useCallback(async (isAutoRetry = false) => {
     try {
-      setTableLoading(true);
-      setTableError(null);
+      if (anomalies.length === 0) {
+        setTableLoading(true);
+      }
       const res = await fetchAnomalies({
         equipmentId: equipmentId || undefined,
         anomalyType: anomalyType || undefined,
@@ -112,12 +190,20 @@ export default function AIAnomalyIntelligence() {
       });
       setAnomalies(res.items || []);
       setTotalAnomalies(res.total || 0);
+      setTableError(null);
     } catch (err: any) {
+      console.warn('loadAnomalies fetch notice:', err);
       setTableError(err.message || 'Failed to load anomaly incidents.');
+      if (!isAutoRetry) {
+        if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+        retryTimerRef.current = setTimeout(() => {
+          loadAnomalies(true);
+        }, 2200);
+      }
     } finally {
       setTableLoading(false);
     }
-  }, [equipmentId, anomalyType, severity, statusFilter, searchTerm, page]);
+  }, [equipmentId, anomalyType, severity, statusFilter, searchTerm, page, pageSize, anomalies.length]);
 
   useEffect(() => {
     loadSummary();
@@ -126,6 +212,75 @@ export default function AIAnomalyIntelligence() {
   useEffect(() => {
     loadAnomalies();
   }, [loadAnomalies]);
+
+  // ─── 2-Second Live Telemetry Streaming & Anomaly Detection Loop ───
+  useEffect(() => {
+    if (!isStreaming) return;
+
+    let isMounted = true;
+    const intervalId = setInterval(async () => {
+      try {
+        const tickData = await fetchLiveSimulationTick();
+        if (!isMounted) return;
+
+        setLiveTick(tickData.tick);
+        setLivePlantPower(tickData.plant_power_kw);
+        if (tickData.machines && tickData.machines.length > 0) {
+          setLiveMachines(tickData.machines);
+        }
+        setLastTickTime(new Date().toLocaleTimeString());
+
+        // Visual flash indicating live data arrival
+        setIsTickPulse(true);
+        setTimeout(() => {
+          if (isMounted) setIsTickPulse(false);
+        }, 450);
+
+        // Process any real-time anomalies detected on this tick
+        const incomingAnomalies: AnomalyIncident[] =
+          (tickData as any).new_anomalies && (tickData as any).new_anomalies.length > 0
+            ? (tickData as any).new_anomalies
+            : tickData.active_anomaly
+            ? [tickData.active_anomaly]
+            : [];
+
+        if (incomingAnomalies.length > 0) {
+          const firstLive = incomingAnomalies[0];
+          setActiveLiveAlert(firstLive);
+          setLiveAnomalyCount((c) => c + incomingAnomalies.length);
+
+          // Prepend new anomalies to incident list in real-time
+          setAnomalies((prev) => {
+            const existingIds = new Set(prev.map((x) => x.incident_id));
+            const freshItems = incomingAnomalies.filter((item) => !existingIds.has(item.incident_id));
+            if (freshItems.length === 0) return prev;
+            return [...freshItems, ...prev];
+          });
+          setTotalAnomalies((prev) => prev + incomingAnomalies.length);
+        }
+      } catch (err) {
+        console.warn('Live simulation tick failed:', err);
+      }
+    }, streamSpeed);
+
+    return () => {
+      isMounted = false;
+      clearInterval(intervalId);
+    };
+  }, [isStreaming, streamSpeed]);
+
+  const handleInjectFault = async (eqId: string, faultType: string) => {
+    try {
+      setInjectingFault(eqId);
+      await injectLiveSimulationAnomaly({ equipment_id: eqId, anomaly_type: faultType });
+      // Ensure streaming is active
+      setIsStreaming(true);
+    } catch (err: any) {
+      alert(`Fault injection failed: ${err.message}`);
+    } finally {
+      setTimeout(() => setInjectingFault(null), 1200);
+    }
+  };
 
   // Load Drawer Details
   useEffect(() => {
@@ -187,8 +342,14 @@ export default function AIAnomalyIntelligence() {
     try {
       setDownloadingReport(format);
       await downloadIncidentReport(selectedIncidentId, format);
+      setDownloadSuccessMessage(`✓ Downloaded incident report as ${format.toUpperCase()}`);
+      setTimeout(() => setDownloadSuccessMessage(null), 4000);
     } catch (err: any) {
-      alert(`Report download error: ${err.message}`);
+      // Fallback: open direct link in new tab if blob API had any issue
+      const directUrl = getIncidentReportDownloadUrl(selectedIncidentId, format);
+      window.open(directUrl, '_blank');
+      setDownloadSuccessMessage(`✓ Report opened via direct stream (${format.toUpperCase()})`);
+      setTimeout(() => setDownloadSuccessMessage(null), 4000);
     } finally {
       setDownloadingReport(null);
     }
@@ -308,6 +469,398 @@ export default function AIAnomalyIntelligence() {
           {summary?.simulation_disclaimer || 'KPCL Hackathon Benchmarking Demonstrator (Not real factory data)'}
         </div>
       </div>
+
+      {/* ─── Real-Time SCADA Telemetry Streaming & Anomaly Simulation Ribbon ─── */}
+      <div
+        style={{
+          background: 'var(--bg-surface)',
+          border: isTickPulse ? '1px solid var(--emerald)' : '1px solid var(--border)',
+          borderRadius: 'var(--r)',
+          padding: '12px 16px',
+          marginBottom: 16,
+          boxShadow: isTickPulse ? '0 0 16px rgba(16, 185, 129, 0.2)' : '0 2px 8px rgba(0,0,0,0.04)',
+          transition: 'all 0.3s ease',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+          {/* Left: Streaming Status Beacon & Indicators */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                background: isStreaming ? 'rgba(16, 185, 129, 0.12)' : 'rgba(100, 116, 139, 0.12)',
+                border: isStreaming ? '1px solid var(--emerald)' : '1px solid var(--slate-400)',
+                padding: '4px 10px',
+                borderRadius: 20,
+              }}
+            >
+              <span
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  background: isStreaming ? 'var(--emerald)' : 'var(--slate-400)',
+                  display: 'inline-block',
+                  boxShadow: isStreaming ? '0 0 8px var(--emerald)' : 'none',
+                  animation: isStreaming ? 'pulse 1.5s infinite' : 'none',
+                }}
+              />
+              <span style={{ fontSize: 11, fontWeight: 700, fontFamily: 'var(--font-mono)', color: isStreaming ? 'var(--emerald)' : 'var(--slate-400)', letterSpacing: 0.5 }}>
+                {isStreaming ? 'LIVE TELEMETRY STREAMING' : 'STREAM PAUSED'}
+              </span>
+            </div>
+
+            <div style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--slate-400)', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span>
+                Tick: <strong style={{ color: 'var(--white)' }}>#{liveTick}</strong>
+              </span>
+              <span>•</span>
+              <span>
+                Rate: <strong style={{ color: 'var(--cyan)' }}>{(streamSpeed / 1000).toFixed(1)}s</strong>
+              </span>
+              <span>•</span>
+              <span>
+                Plant Power: <strong style={{ color: 'var(--amber)' }}>{livePlantPower.toFixed(1)} kW</strong>
+              </span>
+              <span>•</span>
+              <span style={{ color: isTickPulse ? 'var(--emerald)' : 'var(--slate-500)', transition: 'color 0.2s ease' }}>
+                {isTickPulse ? '⚡ NEW PACKET RECEIVED' : `Updated: ${lastTickTime}`}
+              </span>
+            </div>
+          </div>
+
+          {/* Right: Stream Controls & Anomaly Injection */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <button
+              className={`btn btn-sm ${isStreaming ? 'btn-ghost' : 'btn-cyan'}`}
+              onClick={() => setIsStreaming(!isStreaming)}
+              title={isStreaming ? 'Pause live telemetry stream' : 'Resume live telemetry stream'}
+              style={{ fontSize: 11, height: 28, padding: '0 10px' }}
+            >
+              {isStreaming ? (
+                <>
+                  <Pause size={12} /> Pause (2s)
+                </>
+              ) : (
+                <>
+                  <Play size={12} /> Resume Stream
+                </>
+              )}
+            </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'var(--bg-panel)', padding: '2px 4px', borderRadius: 4, border: '1px solid var(--border)' }}>
+              <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--slate-400)', padding: '0 4px' }}>SPEED:</span>
+              {[1000, 2000, 5000].map((speed) => (
+                <button
+                  key={speed}
+                  onClick={() => setStreamSpeed(speed)}
+                  style={{
+                    background: streamSpeed === speed ? 'var(--cyan)' : 'transparent',
+                    color: streamSpeed === speed ? '#fff' : 'var(--slate-400)',
+                    border: 'none',
+                    borderRadius: 3,
+                    fontSize: 9,
+                    fontFamily: 'var(--font-mono)',
+                    padding: '2px 6px',
+                    cursor: 'pointer',
+                    fontWeight: streamSpeed === speed ? 700 : 400,
+                  }}
+                >
+                  {speed / 1000}s
+                </button>
+              ))}
+            </div>
+
+            {/* Quick Anomaly Injection Dropdown/Buttons */}
+            <div style={{ position: 'relative', display: 'inline-block' }}>
+              <button
+                className="btn btn-sm"
+                onClick={() => handleInjectFault('FURNACE-01', 'excessive_power')}
+                disabled={injectingFault !== null}
+                style={{
+                  background: 'rgba(234, 88, 12, 0.12)',
+                  color: 'var(--amber)',
+                  border: '1px solid var(--amber)',
+                  fontSize: 11,
+                  height: 28,
+                  padding: '0 10px',
+                }}
+                title="Force a real-time thermal anomaly on Furnace to test live detection"
+              >
+                <Sparkles size={11} /> {injectingFault ? 'Injecting...' : '⚡ Simulate Anomaly'}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* ─── 4 Monitored Equipment Live Telemetry Cards ─── */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 12, marginTop: 12 }}>
+          {liveMachines.map((m) => {
+            const isAnomaly = m.status === 'ANOMALY';
+            const devPct = m.expected_power_kw ? Math.round(((m.power_kw - m.expected_power_kw) / m.expected_power_kw) * 100) : 0;
+            const isFurnace = m.equipment_id.includes('FURN');
+            const isComp = m.equipment_id.includes('COMP');
+            const isCnc = m.equipment_id.includes('CNC');
+
+            const accentColor = isAnomaly
+              ? 'var(--red)'
+              : isFurnace
+              ? '#f97316'
+              : isComp
+              ? 'var(--cyan)'
+              : isCnc
+              ? 'var(--violet)'
+              : 'var(--emerald)';
+
+            return (
+              <div
+                key={m.equipment_id}
+                style={{
+                  background: isAnomaly ? 'rgba(239, 68, 68, 0.08)' : 'var(--bg-panel)',
+                  border: isAnomaly
+                    ? '2px solid var(--red)'
+                    : isTickPulse
+                    ? `1px solid ${accentColor}`
+                    : '1px solid var(--border)',
+                  borderRadius: 8,
+                  padding: '12px 14px',
+                  boxShadow: isAnomaly
+                    ? '0 0 16px rgba(239, 68, 68, 0.25)'
+                    : '0 2px 8px rgba(0,0,0,0.04)',
+                  transition: 'all 0.25s ease',
+                  position: 'relative',
+                  overflow: 'hidden',
+                }}
+              >
+                {/* Header: Icon, ID & Status Badge */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                    <div
+                      style={{
+                        width: 26,
+                        height: 26,
+                        borderRadius: 6,
+                        background: `rgba(${isAnomaly ? '239,68,68' : '2,132,199'}, 0.12)`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: accentColor,
+                      }}
+                    >
+                      {isFurnace ? (
+                        <Flame size={15} />
+                      ) : isComp ? (
+                        <Wind size={15} />
+                      ) : isCnc ? (
+                        <Activity size={15} />
+                      ) : (
+                        <Gauge size={15} />
+                      )}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--white)' }}>
+                        {m.equipment_id}
+                      </div>
+                      <div style={{ fontSize: 9, color: 'var(--slate-400)', textTransform: 'capitalize' }}>
+                        {m.equipment_type?.replace(/_/g, ' ') || 'Industrial Unit'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <span
+                    style={{
+                      fontSize: 9.5,
+                      fontWeight: 800,
+                      padding: '2px 8px',
+                      borderRadius: 12,
+                      fontFamily: 'var(--font-mono)',
+                      background: isAnomaly ? 'var(--red)' : 'rgba(16, 185, 129, 0.15)',
+                      color: isAnomaly ? '#fff' : 'var(--emerald)',
+                      border: isAnomaly ? '1px solid #ef4444' : '1px solid rgba(16, 185, 129, 0.3)',
+                      letterSpacing: 0.5,
+                      boxShadow: isAnomaly ? '0 0 8px rgba(239, 68, 68, 0.4)' : 'none',
+                    }}
+                  >
+                    {isAnomaly ? '🚨 FAULT DETECTED' : '● NOMINAL'}
+                  </span>
+                </div>
+
+                {/* Power & Baseline Comparator */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 10, background: 'rgba(0,0,0,0.03)', padding: '6px 10px', borderRadius: 6 }}>
+                  <div>
+                    <span style={{ fontSize: 20, fontWeight: 900, color: isAnomaly ? 'var(--red)' : 'var(--white)', letterSpacing: -0.5 }}>
+                      {m.power_kw.toFixed(1)}
+                    </span>
+                    <span style={{ fontSize: 11, color: 'var(--slate-400)', marginLeft: 4, fontWeight: 600 }}>kW</span>
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 10,
+                      fontFamily: 'var(--font-mono)',
+                      fontWeight: 700,
+                      padding: '2px 6px',
+                      borderRadius: 4,
+                      background: isAnomaly
+                        ? 'rgba(239, 68, 68, 0.15)'
+                        : devPct > 10
+                        ? 'rgba(245, 158, 11, 0.15)'
+                        : 'rgba(16, 185, 129, 0.12)',
+                      color: isAnomaly
+                        ? 'var(--red)'
+                        : devPct > 10
+                        ? 'var(--amber)'
+                        : 'var(--emerald)',
+                    }}
+                  >
+                    {devPct > 0 ? `+${devPct}%` : `${devPct}%`} vs base ({m.expected_power_kw?.toFixed(1) || '--'} kW)
+                  </div>
+                </div>
+
+                {/* Sub-sensor telemetry metrics */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5, fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--slate-400)', marginBottom: 10 }}>
+                  {m.temperature_c !== undefined && (
+                    <div style={{ background: 'rgba(0,0,0,0.02)', padding: '3px 6px', borderRadius: 4 }}>
+                      Temp: <strong style={{ color: isAnomaly && m.temperature_c > 800 ? 'var(--red)' : 'var(--white)' }}>{m.temperature_c}°C</strong>
+                    </div>
+                  )}
+                  {m.temp_setpoint_c !== undefined && (
+                    <div style={{ background: 'rgba(0,0,0,0.02)', padding: '3px 6px', borderRadius: 4 }}>
+                      Setpoint: <strong style={{ color: 'var(--slate-300)' }}>{m.temp_setpoint_c}°C</strong>
+                    </div>
+                  )}
+                  {m.discharge_pressure_bar !== undefined && (
+                    <div style={{ background: 'rgba(0,0,0,0.02)', padding: '3px 6px', borderRadius: 4 }}>
+                      Press: <strong style={{ color: isAnomaly && m.discharge_pressure_bar < 5.5 ? 'var(--red)' : 'var(--white)' }}>{m.discharge_pressure_bar} bar</strong>
+                    </div>
+                  )}
+                  {m.airflow_cfm !== undefined && (
+                    <div style={{ background: 'rgba(0,0,0,0.02)', padding: '3px 6px', borderRadius: 4 }}>
+                      Flow: <strong style={{ color: 'var(--white)' }}>{m.airflow_cfm} CFM</strong>
+                    </div>
+                  )}
+                  {m.spindle_rpm !== undefined && (
+                    <div style={{ background: 'rgba(0,0,0,0.02)', padding: '3px 6px', borderRadius: 4 }}>
+                      RPM: <strong style={{ color: 'var(--white)' }}>{m.spindle_rpm}</strong>
+                    </div>
+                  )}
+                  {m.spindle_load_pct !== undefined && (
+                    <div style={{ background: 'rgba(0,0,0,0.02)', padding: '3px 6px', borderRadius: 4 }}>
+                      Load: <strong style={{ color: isAnomaly ? 'var(--red)' : 'var(--white)' }}>{m.spindle_load_pct}%</strong>
+                    </div>
+                  )}
+                  {m.delta_t_c !== undefined && (
+                    <div style={{ background: 'rgba(0,0,0,0.02)', padding: '3px 6px', borderRadius: 4 }}>
+                      ΔT: <strong style={{ color: isAnomaly && m.delta_t_c < 3.0 ? 'var(--red)' : 'var(--white)' }}>{m.delta_t_c}°C</strong>
+                    </div>
+                  )}
+                  {m.vibration_mm_s !== undefined && (
+                    <div style={{ background: 'rgba(0,0,0,0.02)', padding: '3px 6px', borderRadius: 4 }}>
+                      Vib: <strong style={{ color: isAnomaly && m.vibration_mm_s > 1.0 ? 'var(--red)' : 'var(--white)' }}>{m.vibration_mm_s} mm/s</strong>
+                    </div>
+                  )}
+                </div>
+
+                {/* Direct card action button */}
+                <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+                  {isAnomaly ? (
+                    <button
+                      className="btn btn-xs btn-cyan"
+                      style={{ width: '100%', fontSize: 10, fontWeight: 700, padding: '4px 0' }}
+                      onClick={() => {
+                        const matching = anomalies.find((a) => a.equipment_id === m.equipment_id);
+                        if (matching) setSelectedIncidentId(matching.incident_id);
+                        else if (activeLiveAlert?.equipment_id === m.equipment_id) setSelectedIncidentId(activeLiveAlert.incident_id);
+                      }}
+                    >
+                      Inspect Live Fault Incident →
+                    </button>
+                  ) : (
+                    <button
+                      className="btn btn-xs btn-ghost"
+                      style={{ width: '100%', fontSize: 9.5, padding: '3px 0', borderColor: 'var(--border)' }}
+                      onClick={() => handleInjectFault(m.equipment_id, isFurnace ? 'excessive_power' : isComp ? 'pressure_leak' : isCnc ? 'tool_wear' : 'low_delta_t')}
+                      disabled={injectingFault !== null}
+                    >
+                      <Sparkles size={10} /> Test Anomaly on {m.equipment_id}
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ─── Real-Time Live Anomaly Alert Toast Banner ─── */}
+      {activeLiveAlert && (
+        <div
+          style={{
+            background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(245, 158, 11, 0.12))',
+            border: '1px solid var(--red)',
+            borderRadius: 'var(--r)',
+            padding: '12px 16px',
+            marginBottom: 16,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            boxShadow: '0 4px 16px rgba(220, 38, 38, 0.15)',
+            animation: 'fadeIn 0.3s ease',
+            flexWrap: 'wrap',
+            gap: 10,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div
+              style={{
+                background: 'var(--red)',
+                color: '#fff',
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 0 10px rgba(220, 38, 38, 0.5)',
+              }}
+            >
+              <AlertTriangle size={18} />
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--red)', letterSpacing: 0.5 }}>
+                  🚨 LIVE SCADA ANOMALY DETECTED IN REAL-TIME
+                </span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, background: 'var(--red)', color: '#fff', padding: '1px 6px', borderRadius: 3, fontWeight: 700 }}>
+                  TICK #{liveTick}
+                </span>
+              </div>
+              <p style={{ fontSize: 11, color: 'var(--white)', margin: '2px 0 0 0' }}>
+                <strong>{activeLiveAlert.equipment_id}</strong> — {activeLiveAlert.anomaly_type.replace(/_/g, ' ').toUpperCase()}: Measured <strong>{activeLiveAlert.actual_power_kw} kW</strong> vs expected {activeLiveAlert.expected_power_kw} kW (+{activeLiveAlert.deviation_kw} kW deviation).
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button
+              className="btn btn-sm btn-cyan"
+              onClick={() => setSelectedIncidentId(activeLiveAlert.incident_id)}
+              style={{ fontSize: 11, height: 28 }}
+            >
+              Inspect Incident & Report
+            </button>
+            <button
+              className="btn btn-sm btn-ghost"
+              onClick={() => setActiveLiveAlert(null)}
+              style={{ padding: 4, height: 28 }}
+              title="Dismiss banner"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ─── Error Notification if Backend Offline ─── */}
       {summaryError && (
@@ -481,99 +1034,187 @@ export default function AIAnomalyIntelligence() {
         </div>
       </div>
 
-      {/* ─── 3. Filter Controls Bar ─── */}
+      {/* ─── 3. Filter Controls Bar & Quick Filter Chips ─── */}
       <div
         style={{
           background: 'var(--bg-panel)',
           border: '1px solid var(--border)',
           borderRadius: 'var(--r)',
-          padding: '12px 16px',
+          padding: '14px 16px',
           marginBottom: 16,
           display: 'flex',
+          flexDirection: 'column',
           gap: 12,
-          alignItems: 'center',
-          flexWrap: 'wrap',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: 'var(--slate-400)', fontFamily: 'var(--font-mono)' }}>
-          <Filter size={12} /> Filters:
+        {/* Quick Filter Chips Row */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+          {/* Equipment Chips */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--slate-400)', fontFamily: 'var(--font-mono)', marginRight: 2 }}>
+              MACHINE:
+            </span>
+            {[
+              { id: '', label: 'All Equipment' },
+              { id: 'FURNACE-01', label: '🔥 Furnace' },
+              { id: 'AIR-COMP-01', label: '💨 Compressor' },
+              { id: 'CNC-01', label: '⚙️ CNC 5-Axis' },
+              { id: 'CHILLER-01', label: '❄️ Chiller' },
+            ].map((eq) => {
+              const active = equipmentId === eq.id;
+              return (
+                <button
+                  key={eq.id}
+                  onClick={() => { setEquipmentId(eq.id); setPage(1); }}
+                  style={{
+                    background: active ? 'var(--cyan)' : 'var(--bg-input)',
+                    color: active ? '#fff' : 'var(--slate-300)',
+                    border: active ? '1px solid var(--cyan)' : '1px solid var(--border)',
+                    borderRadius: 20,
+                    padding: '3px 10px',
+                    fontSize: 11,
+                    fontFamily: 'var(--font-mono)',
+                    fontWeight: active ? 700 : 500,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  {eq.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Severity Chips */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--slate-400)', fontFamily: 'var(--font-mono)', marginRight: 2 }}>
+              SEVERITY:
+            </span>
+            {[
+              { id: '', label: 'All' },
+              { id: 'critical', label: '🔴 Critical', color: 'var(--red)' },
+              { id: 'high', label: '🟠 High', color: 'var(--amber)' },
+              { id: 'medium', label: '🟣 Medium', color: 'var(--violet)' },
+            ].map((s) => {
+              const active = severity === s.id;
+              return (
+                <button
+                  key={s.id}
+                  onClick={() => { setSeverity(s.id); setPage(1); }}
+                  style={{
+                    background: active ? (s.color || 'var(--cyan)') : 'var(--bg-input)',
+                    color: active ? '#fff' : 'var(--slate-300)',
+                    border: active ? `1px solid ${s.color || 'var(--cyan)'}` : '1px solid var(--border)',
+                    borderRadius: 20,
+                    padding: '3px 9px',
+                    fontSize: 10.5,
+                    fontFamily: 'var(--font-mono)',
+                    fontWeight: active ? 700 : 500,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  {s.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        {/* Equipment */}
-        <select
-          value={equipmentId}
-          onChange={(e) => { setEquipmentId(e.target.value); setPage(1); }}
-          style={{ background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: 4, padding: '4px 8px', fontSize: 11, color: 'var(--white)' }}
-        >
-          <option value="">All Equipment</option>
-          <option value="FURNACE-01">FURNACE-01 (Heat Furnace)</option>
-          <option value="AIR-COMP-01">AIR-COMP-01 (Screw Compressor)</option>
-          <option value="CNC-01">CNC-01 (5-Axis Machining)</option>
-          <option value="CHILLER-01">CHILLER-01 (Water Chiller)</option>
-        </select>
+        {/* Search, Status Dropdown & Reset */}
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', paddingTop: 8, borderTop: '1px solid var(--border)' }}>
+          {/* Free Text Search */}
+          <div style={{ display: 'flex', alignItems: 'center', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: 6, padding: '4px 10px', gap: 8, flexGrow: 1, minWidth: 220 }}>
+            <Search size={13} color="var(--slate-400)" />
+            <input
+              type="text"
+              placeholder="Search incident ID, evidence text, mechanism, equipment..."
+              value={searchTerm}
+              onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
+              style={{ background: 'transparent', border: 'none', outline: 'none', fontSize: 11, color: 'var(--white)', width: '100%' }}
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                style={{ background: 'none', border: 'none', color: 'var(--slate-400)', cursor: 'pointer', padding: 0 }}
+              >
+                <X size={12} />
+              </button>
+            )}
+          </div>
 
-        {/* Severity */}
-        <select
-          value={severity}
-          onChange={(e) => { setSeverity(e.target.value); setPage(1); }}
-          style={{ background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: 4, padding: '4px 8px', fontSize: 11, color: 'var(--white)' }}
-        >
-          <option value="">All Severities</option>
-          <option value="critical">Critical</option>
-          <option value="high">High</option>
-          <option value="medium">Medium</option>
-          <option value="low">Low</option>
-        </select>
+          {/* Status Select */}
+          <select
+            value={statusFilter}
+            onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+            style={{ background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: 6, padding: '5px 10px', fontSize: 11, color: 'var(--white)', height: 32 }}
+          >
+            <option value="">All Statuses</option>
+            <option value="New">New</option>
+            <option value="Investigating">Investigating</option>
+            <option value="Resolved">Resolved</option>
+            <option value="False Positive">False Positive</option>
+          </select>
 
-        {/* Status */}
-        <select
-          value={statusFilter}
-          onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-          style={{ background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: 4, padding: '4px 8px', fontSize: 11, color: 'var(--white)' }}
-        >
-          <option value="">All Statuses</option>
-          <option value="New">New</option>
-          <option value="Investigating">Investigating</option>
-          <option value="Resolved">Resolved</option>
-          <option value="False Positive">False Positive</option>
-        </select>
+          {/* Active Results Count Badge */}
+          <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--slate-400)', whiteSpace: 'nowrap' }}>
+            <strong style={{ color: 'var(--cyan)' }}>{totalAnomalies}</strong> incidents
+          </span>
 
-        {/* Search */}
-        <div style={{ display: 'flex', alignItems: 'center', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: 4, padding: '2px 8px', gap: 6, flexGrow: 1, minWidth: 160 }}>
-          <Search size={12} color="var(--slate-400)" />
-          <input
-            type="text"
-            placeholder="Search incident ID, evidence, machine..."
-            value={searchTerm}
-            onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
-            style={{ background: 'transparent', border: 'none', outline: 'none', fontSize: 11, color: 'var(--white)', width: '100%' }}
-          />
+          <button className="btn btn-ghost btn-sm" onClick={resetFilters} style={{ height: 32, fontSize: 11 }}>
+            <RotateCcw size={11} /> Reset
+          </button>
         </div>
-
-        <button className="btn btn-ghost btn-sm" onClick={resetFilters}>
-          Reset
-        </button>
       </div>
 
       {/* ─── 4. Anomaly Table ─── */}
       <div className="panel-card" style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: 'var(--r)', overflow: 'hidden', marginBottom: 20 }}>
+        {/* Stale-while-revalidate reconnection banner if background fetch stutters */}
+        {tableError && anomalies.length > 0 && (
+          <div
+            style={{
+              background: 'rgba(245, 158, 11, 0.08)',
+              borderBottom: '1px solid rgba(245, 158, 11, 0.3)',
+              padding: '8px 16px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              fontSize: 11,
+              fontFamily: 'var(--font-mono)',
+              color: 'var(--amber)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <RefreshCw size={12} className="spin" />
+              <span>Live incident sync reconnecting — displaying {anomalies.length} active incidents</span>
+            </div>
+            <button
+              className="btn btn-xs btn-ghost"
+              onClick={() => loadAnomalies(false)}
+              style={{ color: 'var(--amber)', borderColor: 'rgba(245, 158, 11, 0.4)', height: 24, fontSize: 10 }}
+            >
+              Retry Sync Now
+            </button>
+          </div>
+        )}
+
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 11 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 11.5 }}>
             <thead>
-              <tr style={{ background: 'rgba(0,0,0,0.03)', borderBottom: '1px solid var(--border)', fontFamily: 'var(--font-mono)', color: 'var(--slate-400)' }}>
-                <th style={{ padding: '10px 14px' }}>Incident ID</th>
-                <th style={{ padding: '10px 14px' }}>Equipment</th>
-                <th style={{ padding: '10px 14px' }}>Timestamp</th>
-                <th style={{ padding: '10px 14px' }}>Mechanism</th>
-                <th style={{ padding: '10px 14px' }}>Severity</th>
-                <th style={{ padding: '10px 14px' }}>Category</th>
-                <th style={{ padding: '10px 14px' }}>Score</th>
-                <th style={{ padding: '10px 14px' }}>Status</th>
-                <th style={{ padding: '10px 14px', textAlign: 'right' }}>Actions</th>
+              <tr style={{ background: 'rgba(0,0,0,0.04)', borderBottom: '1px solid var(--border)', fontFamily: 'var(--font-mono)', color: 'var(--slate-400)', letterSpacing: 0.5 }}>
+                <th style={{ padding: '11px 14px', fontWeight: 700 }}>Incident ID</th>
+                <th style={{ padding: '11px 14px', fontWeight: 700 }}>Equipment</th>
+                <th style={{ padding: '11px 14px', fontWeight: 700 }}>Timestamp</th>
+                <th style={{ padding: '11px 14px', fontWeight: 700 }}>Mechanism</th>
+                <th style={{ padding: '11px 14px', fontWeight: 700 }}>Severity</th>
+                <th style={{ padding: '11px 14px', fontWeight: 700 }}>Category</th>
+                <th style={{ padding: '11px 14px', fontWeight: 700 }}>Model Score</th>
+                <th style={{ padding: '11px 14px', fontWeight: 700 }}>Status</th>
+                <th style={{ padding: '11px 14px', textAlign: 'right', fontWeight: 700 }}>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {tableLoading ? (
+              {tableLoading && anomalies.length === 0 ? (
                 <tr>
                   <td colSpan={9} style={{ padding: 40, textAlign: 'center', color: 'var(--slate-400)', fontFamily: 'var(--font-mono)' }}>
                     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
@@ -581,19 +1222,26 @@ export default function AIAnomalyIntelligence() {
                     </div>
                   </td>
                 </tr>
-              ) : tableError ? (
+              ) : tableError && anomalies.length === 0 ? (
                 <tr>
-                  <td colSpan={9} style={{ padding: 40, textAlign: 'center', color: 'var(--red)', fontFamily: 'var(--font-mono)' }}>
-                    <div>⚠️ {tableError}</div>
-                    <button className="btn btn-sm btn-ghost" onClick={loadAnomalies} style={{ marginTop: 8 }}>
-                      Retry
-                    </button>
+                  <td colSpan={9} style={{ padding: 40, textAlign: 'center' }}>
+                    <div style={{ maxWidth: 420, margin: '0 auto', background: 'rgba(239, 68, 68, 0.06)', border: '1px solid rgba(239, 68, 68, 0.25)', borderRadius: 8, padding: '20px 24px' }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--red)', marginBottom: 6 }}>
+                        ⚠️ Telemetry Service Reconnecting
+                      </div>
+                      <p style={{ fontSize: 11, color: 'var(--slate-400)', fontFamily: 'var(--font-mono)', margin: '0 0 14px 0' }}>
+                        {tableError}
+                      </p>
+                      <button className="btn btn-sm btn-cyan" onClick={() => loadAnomalies(false)}>
+                        <RefreshCw size={12} /> Reconnect to Backend API
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ) : anomalies.length === 0 ? (
                 <tr>
                   <td colSpan={9} style={{ padding: 40, textAlign: 'center', color: 'var(--slate-400)', fontFamily: 'var(--font-mono)' }}>
-                    No matching anomaly incidents found.
+                    No matching anomaly incidents found for current filters.
                   </td>
                 </tr>
               ) : (
@@ -602,43 +1250,103 @@ export default function AIAnomalyIntelligence() {
                   const isHigh = item.severity === 'high';
                   const sevColor = isCrit ? 'var(--red)' : isHigh ? 'var(--amber)' : item.severity === 'medium' ? 'var(--violet)' : 'var(--cyan)';
 
+                  const isLiveItem = Boolean(item.is_live || item.incident_id.includes('LIVE'));
+
                   return (
                     <tr
                       key={item.incident_id}
                       style={{
                         borderBottom: '1px solid var(--border)',
+                        borderLeft: isLiveItem ? '3px solid var(--red)' : '3px solid transparent',
+                        background: isLiveItem ? 'rgba(239, 68, 68, 0.05)' : 'transparent',
                         cursor: 'pointer',
-                        transition: 'background 0.15s ease',
+                        transition: 'all 0.2s ease',
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(0,0,0,0.02)')}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = isLiveItem ? 'rgba(239, 68, 68, 0.09)' : 'rgba(0,0,0,0.02)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = isLiveItem ? 'rgba(239, 68, 68, 0.05)' : 'transparent')}
                       onClick={() => setSelectedIncidentId(item.incident_id)}
                     >
                       <td style={{ padding: '10px 14px', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--white)' }}>
-                        {item.incident_id}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span>{item.incident_id}</span>
+                          {(item.is_live || item.incident_id.includes('LIVE')) && (
+                            <span
+                              style={{
+                                fontSize: 9,
+                                fontWeight: 700,
+                                background: 'linear-gradient(135deg, #ef4444, #f59e0b)',
+                                color: '#fff',
+                                padding: '1px 5px',
+                                borderRadius: 3,
+                                letterSpacing: 0.5,
+                                boxShadow: '0 0 8px rgba(239, 68, 68, 0.4)',
+                              }}
+                            >
+                              ⚡ LIVE
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td style={{ padding: '10px 14px' }}>
-                        <span style={{ fontFamily: 'var(--font-mono)', background: 'var(--cyan-dim)', color: 'var(--cyan)', padding: '2px 6px', borderRadius: 4, fontWeight: 600 }}>
+                        <span
+                          style={{
+                            fontFamily: 'var(--font-mono)',
+                            background: item.equipment_id.includes('FURN')
+                              ? 'rgba(249, 115, 22, 0.15)'
+                              : item.equipment_id.includes('COMP')
+                              ? 'rgba(6, 182, 212, 0.15)'
+                              : item.equipment_id.includes('CNC')
+                              ? 'rgba(139, 92, 246, 0.15)'
+                              : 'rgba(16, 185, 129, 0.15)',
+                            color: item.equipment_id.includes('FURN')
+                              ? '#ea580c'
+                              : item.equipment_id.includes('COMP')
+                              ? '#0284c7'
+                              : item.equipment_id.includes('CNC')
+                              ? '#7c3aed'
+                              : '#059669',
+                            border: `1px solid ${
+                              item.equipment_id.includes('FURN')
+                                ? 'rgba(249, 115, 22, 0.3)'
+                                : item.equipment_id.includes('COMP')
+                                ? 'rgba(6, 182, 212, 0.3)'
+                                : item.equipment_id.includes('CNC')
+                                ? 'rgba(139, 92, 246, 0.3)'
+                                : 'rgba(16, 185, 129, 0.3)'
+                            }`,
+                            padding: '3px 8px',
+                            borderRadius: 6,
+                            fontWeight: 700,
+                            fontSize: 10.5,
+                          }}
+                        >
                           {item.equipment_id}
                         </span>
                       </td>
-                      <td style={{ padding: '10px 14px', fontFamily: 'var(--font-mono)', color: 'var(--slate-400)' }}>
+                      <td style={{ padding: '10px 14px', fontFamily: 'var(--font-mono)', color: 'var(--slate-300)', fontSize: 10.5 }}>
                         {item.timestamp?.replace('T', ' ')}
                       </td>
-                      <td style={{ padding: '10px 14px', textTransform: 'capitalize', color: 'var(--white)', fontWeight: 500 }}>
+                      <td style={{ padding: '10px 14px', textTransform: 'capitalize', color: 'var(--white)', fontWeight: 600 }}>
                         {item.anomaly_type.replace(/_/g, ' ')}
                       </td>
                       <td style={{ padding: '10px 14px' }}>
                         <span
                           style={{
-                            color: sevColor,
-                            background: `rgba(${isCrit ? '220,38,38' : isHigh ? '234,88,12' : '124,58,237'}, 0.1)`,
-                            border: `1px solid ${sevColor}`,
-                            padding: '2px 6px',
-                            borderRadius: 4,
-                            fontSize: 10,
-                            fontWeight: 700,
+                            color: '#fff',
+                            background: isCrit
+                              ? '#dc2626'
+                              : isHigh
+                              ? '#d97706'
+                              : item.severity === 'medium'
+                              ? '#7c3aed'
+                              : '#0284c7',
+                            padding: '2px 8px',
+                            borderRadius: 12,
+                            fontSize: 9.5,
+                            fontWeight: 800,
+                            letterSpacing: 0.5,
                             textTransform: 'uppercase',
+                            display: 'inline-block',
                           }}
                         >
                           {item.severity}
@@ -646,24 +1354,56 @@ export default function AIAnomalyIntelligence() {
                       </td>
                       <td style={{ padding: '10px 14px' }}>
                         {item.is_energy_waste ? (
-                          <span style={{ color: 'var(--violet)', background: 'rgba(124,58,237,0.1)', padding: '2px 6px', borderRadius: 4, fontSize: 10, fontWeight: 600 }}>
+                          <span style={{ color: '#7c3aed', background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.25)', padding: '2px 7px', borderRadius: 6, fontSize: 10, fontWeight: 700 }}>
                             ⚡ Energy Waste
                           </span>
                         ) : (
-                          <span style={{ color: 'var(--emerald)', background: 'var(--emerald-dim)', padding: '2px 6px', borderRadius: 4, fontSize: 10, fontWeight: 600 }}>
+                          <span style={{ color: '#059669', background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.25)', padding: '2px 7px', borderRadius: 6, fontSize: 10, fontWeight: 700 }}>
                             🛡️ Health Risk
                           </span>
                         )}
                       </td>
-                      <td style={{ padding: '10px 14px', fontFamily: 'var(--font-mono)', color: 'var(--slate-500)' }}>
-                        {item.model_score !== undefined ? `${(item.model_score * 100).toFixed(0)}%` : '--'}
+                      <td style={{ padding: '10px 14px', fontFamily: 'var(--font-mono)' }}>
+                        {item.confidence_available && item.confidence != null ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ color: 'var(--cyan)', fontWeight: 800, fontSize: 11 }}>
+                              {(item.confidence * 100).toFixed(1)}%
+                            </span>
+                            <span style={{ fontSize: 9, color: 'var(--slate-400)', background: 'rgba(0,0,0,0.03)', padding: '1px 4px', borderRadius: 3 }}>
+                              RF Model
+                            </span>
+                          </div>
+                        ) : item.anomaly_score != null ? (
+                          <span title={`Detector margin score: ${item.anomaly_score}`} style={{ color: 'var(--slate-300)', fontSize: 11 }}>
+                            Margin {typeof item.anomaly_score === 'number' ? item.anomaly_score.toFixed(3) : item.anomaly_score}
+                          </span>
+                        ) : (
+                          <span
+                            title={item.detection_method_label || 'Deterministic threshold baseline'}
+                            style={{ color: 'var(--slate-400)', fontSize: 9.5, background: 'rgba(255,255,255,0.04)', padding: '2px 6px', borderRadius: 4 }}
+                          >
+                            Baseline Rule
+                          </span>
+                        )}
                       </td>
                       <td style={{ padding: '10px 14px' }}>
                         <span
                           style={{
                             fontFamily: 'var(--font-mono)',
                             fontSize: 10,
-                            color: item.status === 'Resolved' ? 'var(--emerald)' : item.status === 'Investigating' ? 'var(--amber)' : 'var(--slate-400)',
+                            fontWeight: 700,
+                            padding: '2px 7px',
+                            borderRadius: 4,
+                            background: item.status === 'Resolved'
+                              ? 'rgba(16,185,129,0.12)'
+                              : item.status === 'Investigating'
+                              ? 'rgba(245,158,11,0.12)'
+                              : 'rgba(2,132,199,0.12)',
+                            color: item.status === 'Resolved'
+                              ? 'var(--emerald)'
+                              : item.status === 'Investigating'
+                              ? 'var(--amber)'
+                              : 'var(--cyan)',
                           }}
                         >
                           {item.status || 'New'}
@@ -672,7 +1412,7 @@ export default function AIAnomalyIntelligence() {
                       <td style={{ padding: '10px 14px', textAlign: 'right' }}>
                         <button
                           className="btn btn-ghost btn-sm"
-                          style={{ fontSize: 10, padding: '3px 8px' }}
+                          style={{ fontSize: 10.5, fontWeight: 600, padding: '3px 10px', borderColor: 'var(--border)' }}
                           onClick={(e) => {
                             e.stopPropagation();
                             setSelectedIncidentId(item.incident_id);
@@ -759,16 +1499,18 @@ export default function AIAnomalyIntelligence() {
                   onClick={() => handleDownload('pdf')}
                   disabled={downloadingReport === 'pdf'}
                   title="Download Official Incident PDF Report"
+                  style={{ fontSize: 11 }}
                 >
-                  <Download size={11} /> {downloadingReport === 'pdf' ? 'Generating PDF...' : 'PDF'}
+                  <Download size={12} /> {downloadingReport === 'pdf' ? 'Generating PDF...' : 'Download PDF (.pdf)'}
                 </button>
                 <button
                   className="btn btn-ghost btn-sm"
                   onClick={() => handleDownload('docx')}
                   disabled={downloadingReport === 'docx'}
                   title="Download Word DOCX Incident Report"
+                  style={{ fontSize: 11 }}
                 >
-                  <FileText size={11} /> {downloadingReport === 'docx' ? 'Generating...' : 'DOCX'}
+                  <FileText size={12} /> {downloadingReport === 'docx' ? 'Generating DOCX...' : 'Download Word (.docx)'}
                 </button>
                 <button
                   onClick={() => setSelectedIncidentId(null)}
@@ -778,6 +1520,25 @@ export default function AIAnomalyIntelligence() {
                 </button>
               </div>
             </div>
+
+            {/* Download Status Toast Notification */}
+            {downloadSuccessMessage && (
+              <div
+                style={{
+                  background: 'var(--emerald-dim)',
+                  color: 'var(--emerald)',
+                  borderBottom: '1px solid var(--emerald)',
+                  padding: '8px 20px',
+                  fontSize: 11,
+                  fontFamily: 'var(--font-mono)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                }}
+              >
+                <CheckCircle2 size={13} /> {downloadSuccessMessage}
+              </div>
+            )}
 
             {/* Drawer Content */}
             <div style={{ padding: 20, overflowY: 'auto', flexGrow: 1 }}>
@@ -812,8 +1573,32 @@ export default function AIAnomalyIntelligence() {
                       </div>
                       <div>
                         <div style={{ fontSize: 10, color: 'var(--slate-400)', fontFamily: 'var(--font-mono)' }}>Model Confidence</div>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--cyan)', marginTop: 2 }}>
-                          {selectedInc?.model_score !== undefined ? `${(selectedInc.model_score * 100).toFixed(1)}%` : '--'}
+                        <div
+                          style={{
+                            fontSize: 12,
+                            fontWeight: 700,
+                            color: selectedInc?.confidence_available && selectedInc?.confidence != null ? 'var(--cyan)' : 'var(--slate-400)',
+                            marginTop: 2,
+                          }}
+                        >
+                          {selectedInc?.confidence_available && selectedInc?.confidence != null
+                            ? `${(selectedInc.confidence * 100).toFixed(1)}%`
+                            : 'Not calibrated'}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 9,
+                            color: 'var(--slate-500)',
+                            fontFamily: 'var(--font-mono)',
+                            marginTop: 2,
+                            maxWidth: 150,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                          title={selectedInc?.detection_method_label || selectedInc?.model_name || 'Condition-Aware Energy Baseline'}
+                        >
+                          {selectedInc?.detection_method_label || selectedInc?.model_name || 'Condition-Aware Baseline'}
                         </div>
                       </div>
                       <div>
@@ -868,9 +1653,16 @@ export default function AIAnomalyIntelligence() {
 
                   {/* Sensor Measurements Grid */}
                   <div>
-                    <h4 style={{ fontSize: 12, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 8, color: 'var(--white)' }}>
-                      Active Sensor Telemetry
-                    </h4>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, flexWrap: 'wrap', gap: 6 }}>
+                      <h4 style={{ fontSize: 12, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: 'var(--white)', margin: 0 }}>
+                        Active Sensor Telemetry
+                      </h4>
+                      {selectedInc?.anomaly_score != null && (
+                        <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--cyan)', background: 'rgba(2, 132, 199, 0.1)', padding: '2px 8px', borderRadius: 4, border: '1px solid rgba(2, 132, 199, 0.2)' }}>
+                          Detector Score: {typeof selectedInc.anomaly_score === 'number' ? selectedInc.anomaly_score.toFixed(3) : selectedInc.anomaly_score}
+                        </span>
+                      )}
+                    </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
                       <div style={{ background: 'var(--bg-panel)', padding: 10, borderRadius: 6, border: '1px solid var(--border)' }}>
                         <span style={{ fontSize: 10, color: 'var(--slate-400)', fontFamily: 'var(--font-mono)' }}>Active Electrical Power</span>
@@ -878,7 +1670,7 @@ export default function AIAnomalyIntelligence() {
                           {selectedInc?.actual_power_kw ?? selectedInc?.sensor_readings?.power_consumption_kw ?? '--'} kW
                         </div>
                         <div style={{ fontSize: 10, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)' }}>
-                          Expected: {selectedInc?.expected_power_kw ?? '--'} kW ({selectedInc?.deviation_pct ?? 0}%)
+                          Expected: {selectedInc?.expected_power_kw ?? '--'} kW ({selectedInc?.deviation_pct ? `${selectedInc.deviation_pct > 0 ? '+' : ''}${selectedInc.deviation_pct}% deviation` : 'nominal'})
                         </div>
                       </div>
 

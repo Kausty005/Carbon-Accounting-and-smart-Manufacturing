@@ -12,14 +12,17 @@ function ScadaTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
     <div style={{
-      background: '#111827', border: '1px solid #334155',
-      borderRadius: 6, padding: '8px 12px',
+      background: 'rgba(255, 255, 255, 0.95)',
+      backdropFilter: 'blur(12px)',
+      border: '1px solid rgba(0, 0, 0, 0.1)',
+      boxShadow: '0 8px 24px -4px rgba(0, 0, 0, 0.08)',
+      borderRadius: 8, padding: '8px 12px',
       fontFamily: MONO, fontSize: 10,
     }}>
-      <div style={{ color: '#64748b', marginBottom: 6, letterSpacing: 1 }}>{label}</div>
+      <div style={{ color: '#475569', marginBottom: 6, letterSpacing: 1, fontWeight: 600 }}>{label}</div>
       {payload.map((p: any) => (
         <div key={p.dataKey} style={{ color: p.color, display: 'flex', justifyContent: 'space-between', gap: 16, marginBottom: 2 }}>
-          <span>{p.name}</span>
+          <span style={{ color: '#334155' }}>{p.name}</span>
           <span style={{ fontWeight: 700 }}>{typeof p.value === 'number' ? p.value.toFixed(1) : p.value} {p.unit || 'kW'}</span>
         </div>
       ))}
@@ -34,23 +37,23 @@ export function DemandAreaChart({ data }: { data: any[] }) {
       <AreaChart data={data} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
         <defs>
           <linearGradient id="gComp" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.25} />
+            <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.35} />
             <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
           </linearGradient>
           <linearGradient id="gCnc" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#22d3ee" stopOpacity={0.2} />
-            <stop offset="95%" stopColor="#22d3ee" stopOpacity={0} />
+            <stop offset="5%" stopColor="#0284c7" stopOpacity={0.3} />
+            <stop offset="95%" stopColor="#0284c7" stopOpacity={0} />
           </linearGradient>
           <linearGradient id="gFurn" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#ef4444" stopOpacity={0.2} />
-            <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+            <stop offset="5%" stopColor="#dc2626" stopOpacity={0.3} />
+            <stop offset="95%" stopColor="#dc2626" stopOpacity={0} />
           </linearGradient>
           <linearGradient id="gCool" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#10b981" stopOpacity={0.2} />
+            <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
             <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
           </linearGradient>
         </defs>
-        <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" />
+        <CartesianGrid stroke="rgba(0, 0, 0, 0.08)" strokeDasharray="3 3" />
         <XAxis dataKey="label" tick={TICK} interval={3} />
         <YAxis tick={TICK} unit=" kW" />
         <Tooltip content={<ScadaTooltip />} />
@@ -81,7 +84,7 @@ export function ComparisonLineChart({ base, opt }: { base: any[]; opt: any[] }) 
   return (
     <ResponsiveContainer width="100%" height={200}>
       <LineChart data={merged} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
-        <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" />
+        <CartesianGrid stroke="rgba(0, 0, 0, 0.08)" strokeDasharray="3 3" />
         <XAxis dataKey="label" tick={TICK} interval={3} />
         <YAxis tick={TICK} unit=" kW" />
         <Tooltip content={<ScadaTooltip />} />
@@ -103,7 +106,7 @@ export function AssetEnergyBar({ assets }: { assets: { name: string; energyKwh: 
   return (
     <ResponsiveContainer width="100%" height={140}>
       <BarChart data={data} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
-        <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" />
+        <CartesianGrid stroke="rgba(0, 0, 0, 0.08)" strokeDasharray="3 3" />
         <XAxis dataKey="name" tick={{ ...TICK, fontSize: 8 }} />
         <YAxis tick={TICK} unit=" kWh" />
         <Tooltip content={<ScadaTooltip />} />

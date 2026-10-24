@@ -1,6 +1,7 @@
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState, useCallback, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Html } from '@react-three/drei';
+import { motion } from 'framer-motion';
 import * as THREE from 'three';
 import {
   AirCompressorModel,
@@ -25,7 +26,7 @@ interface Factory3DSceneProps {
   onSimulate?: (id: string) => void;
 }
 
-// ─── Camera Controller with Smooth Transitions ──────────────────────────────
+// ─── Camera Controller with Smooth Transitions (Releases to OrbitControls on drag) ─
 function CameraController({
   targetPos,
   targetLookAt,
@@ -33,13 +34,46 @@ function CameraController({
   targetPos: THREE.Vector3;
   targetLookAt: THREE.Vector3;
 }) {
-  const { camera } = useThree();
-  const currentLookAt = useRef(new THREE.Vector3(0, 0, 0));
+  const { camera, controls } = useThree();
+  const isTransitioning = useRef(true);
+  const lastTarget = useRef<string>('');
+
+  // Trigger smooth flight only when a new preset or machine is selected
+  useEffect(() => {
+    const key = `${targetPos.x.toFixed(1)},${targetPos.y.toFixed(1)},${targetPos.z.toFixed(1)}`;
+    if (key !== lastTarget.current) {
+      lastTarget.current = key;
+      isTransitioning.current = true;
+    }
+  }, [targetPos]);
+
+  // When user begins dragging or zooming, immediately yield 100% control to OrbitControls
+  useEffect(() => {
+    const ctrl = controls as any;
+    if (!ctrl) return;
+    const handleStart = () => {
+      isTransitioning.current = false;
+    };
+    ctrl.addEventListener('start', handleStart);
+    return () => {
+      ctrl.removeEventListener('start', handleStart);
+    };
+  }, [controls]);
 
   useFrame(() => {
-    camera.position.lerp(targetPos, 0.05);
-    currentLookAt.current.lerp(targetLookAt, 0.05);
-    camera.lookAt(currentLookAt.current);
+    if (!isTransitioning.current) return;
+    const ctrl = controls as any;
+    camera.position.lerp(targetPos, 0.06);
+    if (ctrl && ctrl.target) {
+      ctrl.target.lerp(targetLookAt, 0.06);
+      ctrl.update();
+    } else {
+      camera.lookAt(targetLookAt);
+    }
+    // Complete transition when close enough so user has totally free control
+    if (camera.position.distanceTo(targetPos) < 0.1) {
+      isTransitioning.current = false;
+    }
   });
 
   return null;
@@ -84,15 +118,15 @@ function MachineHudBadge({
           onSelect(asset.id);
         }}
         style={{
-          background: 'rgba(10, 15, 26, 0.92)',
-          backdropFilter: 'blur(8px)',
-          border: `1px solid ${isSelected ? '#38bdf8' : 'rgba(56, 189, 248, 0.25)'}`,
-          boxShadow: isSelected ? '0 0 16px rgba(56, 189, 248, 0.35)' : '0 4px 12px rgba(0,0,0,0.6)',
-          borderRadius: 6,
-          padding: '6px 12px',
+          background: 'rgba(255, 255, 255, 0.92)',
+          backdropFilter: 'blur(10px)',
+          border: `1px solid ${isSelected ? '#0284c7' : 'rgba(0, 0, 0, 0.1)'}`,
+          boxShadow: isSelected ? '0 0 16px rgba(2, 132, 199, 0.25)' : '0 4px 16px rgba(0,0,0,0.08)',
+          borderRadius: 8,
+          padding: '7px 14px',
           fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
           cursor: 'pointer',
-          minWidth: 160,
+          minWidth: 170,
           transition: 'all 0.2s ease',
         }}
       >
@@ -108,7 +142,7 @@ function MachineHudBadge({
                 display: 'inline-block',
               }}
             />
-            <span style={{ fontSize: 11, fontWeight: 700, color: '#f8fafc', letterSpacing: 0.5 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#0f172a', letterSpacing: 0.5 }}>
               {asset.name}
             </span>
           </div>
@@ -117,10 +151,10 @@ function MachineHudBadge({
               fontSize: 9,
               padding: '1px 5px',
               borderRadius: 3,
-              background: `${color}22`,
+              background: `${color}18`,
               color: color,
-              border: `1px solid ${color}44`,
-              fontWeight: 600,
+              border: `1px solid ${color}33`,
+              fontWeight: 700,
             }}
           >
             {asset.status}
@@ -128,10 +162,10 @@ function MachineHudBadge({
         </div>
 
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
-          <span style={{ fontSize: 13, fontWeight: 800, color: '#38bdf8' }}>
-            {asset.currentKw} <span style={{ fontSize: 10, color: '#94a3b8' }}>kW</span>
+          <span style={{ fontSize: 13, fontWeight: 800, color: '#0284c7' }}>
+            {asset.currentKw} <span style={{ fontSize: 10, color: '#64748b' }}>kW</span>
           </span>
-          <span style={{ fontSize: 10, color: '#94a3b8' }}>
+          <span style={{ fontSize: 10, color: '#64748b' }}>
             {keyMetric}
           </span>
         </div>
@@ -270,22 +304,40 @@ export default function Factory3DScene({
   };
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%', background: '#070b14', overflow: 'hidden' }}>
+    <div style={{ position: 'relative', width: '100%', height: '100%', background: '#edeae4', overflow: 'hidden' }}>
       {/* 3D WebGL Canvas */}
       <Canvas
-        camera={{ position: [12, 11, 15], fov: 38, near: 0.1, far: 250 }}
-        gl={{ antialias: true, alpha: false, toneMapping: THREE.ACESFilmicToneMapping }}
+        shadows
+        camera={{ position: [12, 11, 15], fov: 38, near: 0.1, far: 350 }}
+        gl={{ antialias: true, alpha: false, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.05 }}
         onPointerMissed={() => onSelect(null)}
-        style={{ width: '100%', height: '100%' }}
+        style={{ width: '100%', height: '100%', background: '#edeae4' }}
+        onCreated={({ scene }) => {
+          scene.background = new THREE.Color('#edeae4');
+          scene.fog = new THREE.FogExp2('#edeae4', 0.018);
+        }}
       >
-        {/* Cinematic Industrial Lighting */}
-        <ambientLight intensity={0.5} color="#bae6fd" />
-        <directionalLight position={[12, 18, 12]} intensity={0.9} color="#f8fafc" castShadow />
-        <directionalLight position={[-10, 12, -8]} intensity={0.4} color="#38bdf8" />
-        <pointLight position={[0, 4.5, -4]} intensity={0.6} color="#38bdf8" distance={20} />
-
-        {/* Subtle Atmospheric Fog */}
-        <fog attach="fog" args={['#070b14', 18, 55]} />
+        {/* Warm Sky Hemisphere Dome */}
+        <hemisphereLight args={['#fdf8ef', '#e5e1d7', 0.5]} />
+        {/* Primary Soft Architectural Lighting */}
+        <ambientLight intensity={0.7} color="#faf7f2" />
+        <directionalLight
+          position={[14, 20, 14]}
+          intensity={1.25}
+          color="#fffdf7"
+          castShadow
+          shadow-mapSize-width={2048}
+          shadow-mapSize-height={2048}
+          shadow-bias={-0.0001}
+          shadow-camera-far={80}
+          shadow-camera-left={-20}
+          shadow-camera-right={20}
+          shadow-camera-top={20}
+          shadow-camera-bottom={-20}
+        />
+        <directionalLight position={[-10, 12, -8]} intensity={0.4} color="#dedad0" />
+        <directionalLight position={[0, 8, -14]} intensity={0.2} color="#cfe2ff" />
+        <pointLight position={[0, 5, -5]} intensity={0.6} color="#0284c7" distance={22} />
 
         {/* Camera Lerp Controller */}
         <CameraController targetPos={camTarget.pos} targetLookAt={camTarget.look} />
@@ -313,14 +365,19 @@ export default function Factory3DScene({
           />
         ))}
 
-        {/* Smooth Orbit Controls */}
+        {/* Free Orbit Controls - no restrictions */}
         <OrbitControls
           makeDefault
           enableDamping
-          dampingFactor={0.06}
-          minDistance={3}
-          maxDistance={35}
-          maxPolarAngle={Math.PI / 2.1}
+          dampingFactor={0.07}
+          enableRotate={true}
+          enablePan={true}
+          enableZoom={true}
+          minDistance={2}
+          maxDistance={48}
+          maxPolarAngle={Math.PI / 2.05}
+          panSpeed={0.8}
+          rotateSpeed={0.7}
         />
       </Canvas>
 
@@ -343,40 +400,46 @@ export default function Factory3DScene({
             display: 'flex',
             alignItems: 'center',
             gap: 6,
-            background: 'rgba(11, 15, 23, 0.85)',
-            backdropFilter: 'blur(8px)',
-            border: '1px solid rgba(51, 65, 85, 0.6)',
-            borderRadius: 6,
-            padding: '4px 6px',
+            background: 'rgba(255, 255, 255, 0.88)',
+            backdropFilter: 'blur(12px)',
+            border: '1px solid rgba(0, 0, 0, 0.08)',
+            borderRadius: 8,
+            padding: '5px 8px',
             pointerEvents: 'auto',
+            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.05)',
           }}
         >
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--slate-400)', padding: '0 6px', letterSpacing: 1 }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--slate-400)', padding: '0 6px', letterSpacing: 1, fontWeight: 700 }}>
             CAMERA:
           </span>
-          <button
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             className="cam-btn"
             onClick={() => setPreset('isometric')}
             style={{
               background: 'transparent',
               border: 'none',
-              color: '#f8fafc',
+              color: '#0f172a',
               fontSize: 11,
               fontFamily: 'var(--font-mono)',
+              fontWeight: 600,
               padding: '3px 8px',
               borderRadius: 4,
               cursor: 'pointer',
             }}
           >
             Overview
-          </button>
-          <button
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             className="cam-btn"
             onClick={() => setPreset('topdown')}
             style={{
               background: 'transparent',
               border: 'none',
-              color: '#94a3b8',
+              color: '#64748b',
               fontSize: 11,
               fontFamily: 'var(--font-mono)',
               padding: '3px 8px',
@@ -385,72 +448,84 @@ export default function Factory3DScene({
             }}
           >
             Top-Down
-          </button>
-          <span style={{ color: 'var(--slate-700)' }}>|</span>
-          <button
+          </motion.button>
+          <span style={{ color: 'rgba(0, 0, 0, 0.15)' }}>|</span>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             className="cam-btn"
             onClick={() => setPreset('compressor')}
             style={{
-              background: selectedId === 'compressor' ? 'rgba(245, 158, 11, 0.2)' : 'transparent',
+              background: selectedId === 'compressor' ? 'rgba(234, 88, 12, 0.12)' : 'transparent',
               border: 'none',
-              color: '#f59e0b',
+              color: '#ea580c',
               fontSize: 11,
               fontFamily: 'var(--font-mono)',
+              fontWeight: 600,
               padding: '3px 8px',
               borderRadius: 4,
               cursor: 'pointer',
             }}
           >
             Compressor
-          </button>
-          <button
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             className="cam-btn"
             onClick={() => setPreset('cnc')}
             style={{
-              background: selectedId === 'cnc' ? 'rgba(34, 211, 238, 0.2)' : 'transparent',
+              background: selectedId === 'cnc' ? 'rgba(2, 132, 199, 0.12)' : 'transparent',
               border: 'none',
-              color: '#22d3ee',
+              color: '#0284c7',
               fontSize: 11,
               fontFamily: 'var(--font-mono)',
+              fontWeight: 600,
               padding: '3px 8px',
               borderRadius: 4,
               cursor: 'pointer',
             }}
           >
             CNC Cell
-          </button>
-          <button
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             className="cam-btn"
             onClick={() => setPreset('furnace')}
             style={{
-              background: selectedId === 'furnace' ? 'rgba(239, 68, 68, 0.2)' : 'transparent',
+              background: selectedId === 'furnace' ? 'rgba(220, 38, 38, 0.12)' : 'transparent',
               border: 'none',
-              color: '#ef4444',
+              color: '#dc2626',
               fontSize: 11,
               fontFamily: 'var(--font-mono)',
+              fontWeight: 600,
               padding: '3px 8px',
               borderRadius: 4,
               cursor: 'pointer',
             }}
           >
             Furnace
-          </button>
-          <button
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             className="cam-btn"
             onClick={() => setPreset('cooling')}
             style={{
-              background: selectedId === 'cooling' ? 'rgba(16, 185, 129, 0.2)' : 'transparent',
+              background: selectedId === 'cooling' ? 'rgba(16, 185, 129, 0.12)' : 'transparent',
               border: 'none',
               color: '#10b981',
               fontSize: 11,
               fontFamily: 'var(--font-mono)',
+              fontWeight: 600,
               padding: '3px 8px',
               borderRadius: 4,
               cursor: 'pointer',
             }}
           >
             Cooling
-          </button>
+          </motion.button>
         </div>
 
         {/* Right: Layer Toggles */}
@@ -459,68 +534,78 @@ export default function Factory3DScene({
             display: 'flex',
             alignItems: 'center',
             gap: 6,
-            background: 'rgba(11, 15, 23, 0.85)',
-            backdropFilter: 'blur(8px)',
-            border: '1px solid rgba(51, 65, 85, 0.6)',
-            borderRadius: 6,
-            padding: '4px 6px',
+            background: 'rgba(255, 255, 255, 0.88)',
+            backdropFilter: 'blur(12px)',
+            border: '1px solid rgba(0, 0, 0, 0.08)',
+            borderRadius: 8,
+            padding: '5px 8px',
             pointerEvents: 'auto',
+            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.05)',
           }}
         >
-          <button
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => setShowConduits(!showConduits)}
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: 4,
-              background: showConduits ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
-              border: `1px solid ${showConduits ? '#38bdf8' : 'transparent'}`,
-              color: showConduits ? '#38bdf8' : '#94a3b8',
+              background: showConduits ? 'rgba(2, 132, 199, 0.12)' : 'transparent',
+              border: `1px solid ${showConduits ? '#0284c7' : 'transparent'}`,
+              color: showConduits ? '#0284c7' : '#64748b',
               fontSize: 11,
               fontFamily: 'var(--font-mono)',
+              fontWeight: 600,
               padding: '3px 8px',
               borderRadius: 4,
               cursor: 'pointer',
             }}
           >
             <Zap size={11} /> Power Grid
-          </button>
-          <button
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => setShowSafetyZones(!showSafetyZones)}
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: 4,
-              background: showSafetyZones ? 'rgba(234, 179, 8, 0.15)' : 'transparent',
-              border: `1px solid ${showSafetyZones ? '#eab308' : 'transparent'}`,
-              color: showSafetyZones ? '#eab308' : '#94a3b8',
+              background: showSafetyZones ? 'rgba(234, 88, 12, 0.12)' : 'transparent',
+              border: `1px solid ${showSafetyZones ? '#ea580c' : 'transparent'}`,
+              color: showSafetyZones ? '#ea580c' : '#64748b',
               fontSize: 11,
               fontFamily: 'var(--font-mono)',
+              fontWeight: 600,
               padding: '3px 8px',
               borderRadius: 4,
               cursor: 'pointer',
             }}
           >
             <Shield size={11} /> Safety Bays
-          </button>
-          <button
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => setShowHud(!showHud)}
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: 4,
-              background: showHud ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
+              background: showHud ? 'rgba(16, 185, 129, 0.12)' : 'transparent',
               border: `1px solid ${showHud ? '#10b981' : 'transparent'}`,
-              color: showHud ? '#10b981' : '#94a3b8',
+              color: showHud ? '#10b981' : '#64748b',
               fontSize: 11,
               fontFamily: 'var(--font-mono)',
+              fontWeight: 600,
               padding: '3px 8px',
               borderRadius: 4,
               cursor: 'pointer',
             }}
           >
             <Tag size={11} /> 3D HUD
-          </button>
+          </motion.button>
         </div>
       </div>
 
@@ -533,22 +618,23 @@ export default function Factory3DScene({
           display: 'flex',
           alignItems: 'center',
           gap: 12,
-          background: 'rgba(11, 15, 23, 0.85)',
-          backdropFilter: 'blur(8px)',
-          border: '1px solid rgba(51, 65, 85, 0.6)',
-          borderRadius: 6,
-          padding: '4px 10px',
+          background: 'rgba(255, 255, 255, 0.88)',
+          backdropFilter: 'blur(12px)',
+          border: '1px solid rgba(0, 0, 0, 0.08)',
+          borderRadius: 8,
+          padding: '5px 12px',
           fontFamily: 'var(--font-mono)',
           fontSize: 10,
-          color: 'var(--slate-400)',
+          color: '#475569',
+          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.05)',
           pointerEvents: 'none',
         }}
       >
-        <span>DIGITAL TWIN · PRECISIONWORKS</span>
-        <span style={{ color: 'var(--slate-600)' }}>|</span>
+        <span style={{ fontWeight: 700, color: '#0f172a' }}>PRECISIONWORKS DIGITAL TWIN</span>
+        <span style={{ color: 'rgba(0, 0, 0, 0.15)' }}>|</span>
         <span>DRAG TO ROTATE · SCROLL TO ZOOM · CLICK ASSET TO INSPECT</span>
-        <span style={{ color: 'var(--slate-600)' }}>|</span>
-        <span style={{ color: '#10b981' }}>● 60 FPS WEBGL</span>
+        <span style={{ color: 'rgba(0, 0, 0, 0.15)' }}>|</span>
+        <span style={{ color: '#10b981', fontWeight: 600 }}>● 60 FPS WEBGL</span>
       </div>
     </div>
   );

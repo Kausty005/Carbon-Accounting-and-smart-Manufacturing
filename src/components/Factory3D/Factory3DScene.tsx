@@ -136,6 +136,9 @@ function MachineHudBadge({
   };
 
   const renderMetrics = () => {
+    const pfNum = Number(asset.pf ?? 0.78);
+    const currKw = Number(asset.currentKw ?? 0);
+
     switch (asset.id) {
       case 'compressor':
         return (
@@ -143,26 +146,26 @@ function MachineHudBadge({
             <div style={rowStyle}>
               <span style={labelStyle}>Power Draw</span>
               <span style={valueStyle}>
-                <span style={{ color: accent }}>{asset.currentKw != null ? `${asset.currentKw} kW` : '—'}</span>
-                {' '}<span style={{ fontSize: 7.5, color: '#94a3b8', fontWeight: 400 }}>({Math.round((asset.currentKw / (asset.ratedKw || 45)) * 100)}%)</span>
-              </span>
-            </div>
-            <div style={rowStyle}>
-              <span style={labelStyle}>Idle Draw</span>
-              <span style={{ ...valueStyle, color: '#f59e0b' }}>
-                {asset.idleKw != null ? `${asset.idleKw} kW` : '18.0 kW'}
+                <span style={{ color: accent }}>{asset.currentKw != null ? `${currKw.toFixed(1)} kW` : '—'}</span>
+                {' '}<span style={{ fontSize: 7.5, color: '#94a3b8', fontWeight: 400 }}>({Math.round((currKw / (asset.ratedKw || 45)) * 100)}%)</span>
               </span>
             </div>
             <div style={rowStyle}>
               <span style={labelStyle}>Discharge</span>
               <span style={valueStyle}>
-                {asset.dischargePressureBar != null ? `${asset.dischargePressureBar} bar` : '7.2 bar'}
+                {asset.dischargePressureBar != null ? `${Number(asset.dischargePressureBar).toFixed(1)} bar` : '7.2 bar'}
+              </span>
+            </div>
+            <div style={rowStyle}>
+              <span style={labelStyle}>Operating State</span>
+              <span style={{ ...valueStyle, color: statusColor }}>
+                {asset.status || 'OPTIMAL'}
               </span>
             </div>
             <div style={rowStyle}>
               <span style={labelStyle}>Power Factor</span>
-              <span style={{ ...valueStyle, color: asset.pf < 0.85 ? '#f59e0b' : '#10b981' }}>
-                {asset.pf != null ? asset.pf.toFixed(2) : '0.78'}
+              <span style={{ ...valueStyle, color: pfNum < 0.85 ? '#f59e0b' : '#10b981' }}>
+                {pfNum.toFixed(2)}
               </span>
             </div>
           </>
@@ -173,8 +176,8 @@ function MachineHudBadge({
             <div style={rowStyle}>
               <span style={labelStyle}>Machining Load</span>
               <span style={valueStyle}>
-                <span style={{ color: accent }}>{asset.currentKw != null ? `${asset.currentKw} kW` : '—'}</span>
-                {' '}<span style={{ fontSize: 7.5, color: '#94a3b8', fontWeight: 400 }}>({Math.round((asset.currentKw / (asset.ratedKw || 32)) * 100)}%)</span>
+                <span style={{ color: accent }}>{asset.currentKw != null ? `${currKw.toFixed(1)} kW` : '—'}</span>
+                {' '}<span style={{ fontSize: 7.5, color: '#94a3b8', fontWeight: 400 }}>({Math.round((currKw / (asset.ratedKw || 32)) * 100)}%)</span>
               </span>
             </div>
             <div style={rowStyle}>
@@ -191,8 +194,8 @@ function MachineHudBadge({
             </div>
             <div style={rowStyle}>
               <span style={labelStyle}>Power Factor</span>
-              <span style={{ ...valueStyle, color: asset.pf < 0.85 ? '#f59e0b' : '#10b981' }}>
-                {asset.pf != null ? asset.pf.toFixed(2) : '0.94'}
+              <span style={{ ...valueStyle, color: pfNum < 0.85 ? '#f59e0b' : '#10b981' }}>
+                {pfNum.toFixed(2)}
               </span>
             </div>
           </>
@@ -203,8 +206,8 @@ function MachineHudBadge({
             <div style={rowStyle}>
               <span style={labelStyle}>Thermal Draw</span>
               <span style={valueStyle}>
-                <span style={{ color: accent }}>{asset.currentKw != null ? `${asset.currentKw} kW` : '—'}</span>
-                {' '}<span style={{ fontSize: 7.5, color: '#94a3b8', fontWeight: 400 }}>({Math.round((asset.currentKw / (asset.ratedKw || 85)) * 100)}%)</span>
+                <span style={{ color: accent }}>{asset.currentKw != null ? `${currKw.toFixed(1)} kW` : '—'}</span>
+                {' '}<span style={{ fontSize: 7.5, color: '#94a3b8', fontWeight: 400 }}>({Math.round((currKw / (asset.ratedKw || 85)) * 100)}%)</span>
               </span>
             </div>
             <div style={rowStyle}>
@@ -221,8 +224,8 @@ function MachineHudBadge({
             </div>
             <div style={rowStyle}>
               <span style={labelStyle}>Power Factor</span>
-              <span style={{ ...valueStyle, color: asset.pf < 0.85 ? '#f59e0b' : '#10b981' }}>
-                {asset.pf != null ? asset.pf.toFixed(2) : '0.88'}
+              <span style={{ ...valueStyle, color: pfNum < 0.85 ? '#f59e0b' : '#10b981' }}>
+                {pfNum.toFixed(2)}
               </span>
             </div>
           </>
@@ -233,8 +236,8 @@ function MachineHudBadge({
             <div style={rowStyle}>
               <span style={labelStyle}>Chiller Power</span>
               <span style={valueStyle}>
-                <span style={{ color: accent }}>{asset.currentKw != null ? `${asset.currentKw} kW` : '—'}</span>
-                {' '}<span style={{ fontSize: 7.5, color: '#94a3b8', fontWeight: 400 }}>({Math.round((asset.currentKw / (asset.ratedKw || 28)) * 100)}%)</span>
+                <span style={{ color: accent }}>{asset.currentKw != null ? `${currKw.toFixed(1)} kW` : '—'}</span>
+                {' '}<span style={{ fontSize: 7.5, color: '#94a3b8', fontWeight: 400 }}>({Math.round((currKw / (asset.ratedKw || 28)) * 100)}%)</span>
               </span>
             </div>
             <div style={rowStyle}>
@@ -251,8 +254,8 @@ function MachineHudBadge({
             </div>
             <div style={rowStyle}>
               <span style={labelStyle}>Power Factor</span>
-              <span style={{ ...valueStyle, color: asset.pf < 0.85 ? '#f59e0b' : '#10b981' }}>
-                {asset.pf != null ? asset.pf.toFixed(2) : '0.92'}
+              <span style={{ ...valueStyle, color: pfNum < 0.85 ? '#f59e0b' : '#10b981' }}>
+                {pfNum.toFixed(2)}
               </span>
             </div>
           </>
@@ -266,12 +269,13 @@ function MachineHudBadge({
     }
   };
 
+  const badgeY = asset.id === 'compressor' ? 2.65 : 2.45;
+
   return (
     <Html
-      position={[0, 2.35, 0]}
+      position={[0, badgeY, 0]}
       center
       distanceFactor={11}
-      zIndexRange={[100, 0]}
       style={{ pointerEvents: 'auto', userSelect: 'none' }}
     >
       <div
@@ -436,6 +440,7 @@ function MachineNode({
       {/* Floating HUD Inspection Card - Visible all the time */}
       {showHud && (
         <MachineHudBadge
+          key={`hud-${asset.id}`}
           asset={asset}
           isSelected={isSelected}
           onSelect={() => onSelect(asset.id)}

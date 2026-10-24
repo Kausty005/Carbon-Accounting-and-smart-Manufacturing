@@ -11,6 +11,7 @@ import ScadaFloorMap from './components/ScadaFloorMap';
 import Factory3DScene from './components/Factory3D/Factory3DScene';
 import HomePage from './components/HomePage/HomePage';
 import LoginModal from './components/Auth/LoginModal';
+import AIAnomalyIntelligence from './components/AIAnomaly/AIAnomalyIntelligence';
 import { DemandAreaChart, ComparisonLineChart, ScopePie } from './components/Charts';
 import {
   PLANT, ASSETS, HOURLY_BASE, CARBON,
@@ -34,13 +35,14 @@ const PAGE_VARIANTS = {
   exit:    { opacity: 0, y: -8, transition: { duration: 0.2, ease: 'easeIn' as const } },
 };
 
-type View = 'overview' | 'scada' | 'simulator' | 'carbon' | 'reports';
+type View = 'overview' | 'scada' | 'simulator' | 'carbon' | 'anomalies' | 'reports';
 
 const NAV: { id: View; icon: React.ReactNode; label: string }[] = [
   { id: 'overview',  icon: <LayoutGrid size={14} />,   label: 'Overview' },
   { id: 'scada',     icon: <Box size={14} />,          label: '3D Factory Twin' },
   { id: 'simulator', icon: <Sliders size={14} />,       label: 'Digital Twin' },
   { id: 'carbon',    icon: <Leaf size={14} />,          label: 'Carbon Accounting' },
+  { id: 'anomalies', icon: <Activity size={14} />,      label: 'AI Anomaly Intelligence' },
   { id: 'reports',   icon: <FileText size={14} />,      label: 'Audit Report' },
 ];
 
@@ -203,9 +205,9 @@ function OverviewView({
           PrecisionWorks Manufacturing — Plant Dashboard
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn btn-amber btn-sm" onClick={() => setView('scada')}>
+          <button className="btn btn-amber btn-sm" onClick={() => setView('anomalies')}>
             <AlertTriangle size={10} />
-            1 Anomaly Active
+            Active AI Anomalies
           </button>
           <button className="btn btn-cyan btn-sm" onClick={() => setView('simulator')}>
             <Sliders size={10} />
@@ -1873,6 +1875,11 @@ export default function App() {
                 setCeaMethodology={setCeaMethodology}
                 availableYears={availableYears}
               />
+            </motion.div>
+          )}
+          {view === 'anomalies' && (
+            <motion.div key="anomalies" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%' }}>
+              <AIAnomalyIntelligence />
             </motion.div>
           )}
           {view === 'reports' && (

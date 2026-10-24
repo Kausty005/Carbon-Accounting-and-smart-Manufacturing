@@ -1,0 +1,1405 @@
+{
+  "report_metadata": {
+    "report_id": "REP-20261024-082837",
+    "generated_at": "2026-10-24T08:28:37.665643Z",
+    "system": "PrecisionWorks AI Energy Intelligence",
+    "version": "1.1.0"
+  },
+  "model_metadata": {
+    "version": "1.1.0",
+    "training_timestamp": "2026-10-24T08:28:37.584934Z",
+    "selected_model": "Supervised Random Forest Classifier",
+    "random_seed": 42,
+    "feature_names": [
+      "equipment_id",
+      "operating_mode",
+      "temperature_c",
+      "vibration_mm_s",
+      "pressure_kpa",
+      "motor_rpm",
+      "flow_rate_lpm",
+      "power_consumption_kw",
+      "coolant_temp_c",
+      "acoustic_level_db",
+      "oil_viscosity_cst",
+      "humidity_pct",
+      "ambient_temp_c",
+      "equipment_age_hours",
+      "hours_since_maintenance",
+      "press_cond_dev",
+      "press_cond_z",
+      "flow_pressure_ratio",
+      "press_diff_5m",
+      "temp_dev_30m",
+      "press_dev_30m",
+      "vib_dev_30m",
+      "power_dev_30m",
+      "temp_gradient",
+      "coolant_efficiency",
+      "power_rpm_ratio",
+      "vib_acoustic_interaction",
+      "hour_of_day",
+      "day_of_week"
+    ],
+    "decision_threshold": 0.38,
+    "tuning_results": {
+      "optimal_threshold": 0.38,
+      "val_f1": 0.7649,
+      "val_precision": 0.8991,
+      "val_recall": 0.6656
+    },
+    "leakage_columns_excluded": [
+      "is_anomaly",
+      "anomaly_type",
+      "rolling_anomaly_rate",
+      "maintenance_priority_score",
+      "alert_code",
+      "reading_id"
+    ],
+    "configuration": {
+      "grid_emission_factor": {
+        "value": 0.82,
+        "unit": "kg CO2e / kWh",
+        "source": "CEA India CO2 Baseline Database v18 (2023), User Guide Table 1"
+      },
+      "electricity_tariff": {
+        "value": 8.0,
+        "unit": "INR / kWh",
+        "source": "PrecisionWorks Manufacturing SCADA Baseline Contract (mockData.ts)"
+      },
+      "integration_rules": {
+        "default_sampling_interval_hours": 0.016666666666666666,
+        "max_integration_gap_hours": 0.25
+      },
+      "energy_thresholds": {
+        "z_score_threshold": 2.5,
+        "pct_deviation_threshold": 20.0,
+        "persistent_steps_threshold": 3
+      },
+      "disclaimer": "Note: Avoidable excess energy, cost savings, and Scope 2 carbon footprint reductions are model estimates based on operating-condition power baselines and configured CEA India grid emission factors. Scope 1 direct fossil fuel emissions are excluded as this telemetry stream meters electrical power only."
+    },
+    "test_metrics": {
+      "dummy_baseline": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1_score": 0.0,
+        "accuracy": 0.9363,
+        "false_positive_rate": 0.0,
+        "roc_auc": null,
+        "pr_auc": null,
+        "confusion_matrix": {
+          "true_negatives": 7022,
+          "false_positives": 0,
+          "false_negatives": 478,
+          "true_positives": 0
+        }
+      },
+      "supervised_random_forest": {
+        "precision": 0.7685,
+        "recall": 0.3264,
+        "f1_score": 0.4581,
+        "accuracy": 0.9508,
+        "false_positive_rate": 0.0067,
+        "roc_auc": 0.857,
+        "pr_auc": 0.5814,
+        "confusion_matrix": {
+          "true_negatives": 6975,
+          "false_positives": 47,
+          "false_negatives": 322,
+          "true_positives": 156
+        }
+      },
+      "unsupervised_isolation_forest": {
+        "precision": 0.1574,
+        "recall": 0.6862,
+        "f1_score": 0.256,
+        "accuracy": 0.7459,
+        "false_positive_rate": 0.2501,
+        "roc_auc": 0.755,
+        "pr_auc": 0.1219,
+        "confusion_matrix": {
+          "true_negatives": 5266,
+          "false_positives": 1756,
+          "false_negatives": 150,
+          "true_positives": 328
+        }
+      },
+      "energy_baseline_detector": {
+        "precision": 0.0551,
+        "recall": 0.0146,
+        "f1_score": 0.0231,
+        "accuracy": 0.9212,
+        "false_positive_rate": 0.0171,
+        "roc_auc": null,
+        "pr_auc": null,
+        "confusion_matrix": {
+          "true_negatives": 6902,
+          "false_positives": 120,
+          "false_negatives": 471,
+          "true_positives": 7
+        }
+      }
+    }
+  },
+  "evaluation_metrics": {
+    "dummy_baseline": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1_score": 0.0,
+      "accuracy": 0.9363,
+      "false_positive_rate": 0.0,
+      "roc_auc": null,
+      "pr_auc": null,
+      "confusion_matrix": {
+        "true_negatives": 7022,
+        "false_positives": 0,
+        "false_negatives": 478,
+        "true_positives": 0
+      }
+    },
+    "supervised_random_forest": {
+      "precision": 0.7685,
+      "recall": 0.3264,
+      "f1_score": 0.4581,
+      "accuracy": 0.9508,
+      "false_positive_rate": 0.0067,
+      "roc_auc": 0.857,
+      "pr_auc": 0.5814,
+      "confusion_matrix": {
+        "true_negatives": 6975,
+        "false_positives": 47,
+        "false_negatives": 322,
+        "true_positives": 156
+      }
+    },
+    "unsupervised_isolation_forest": {
+      "precision": 0.1574,
+      "recall": 0.6862,
+      "f1_score": 0.256,
+      "accuracy": 0.7459,
+      "false_positive_rate": 0.2501,
+      "roc_auc": 0.755,
+      "pr_auc": 0.1219,
+      "confusion_matrix": {
+        "true_negatives": 5266,
+        "false_positives": 1756,
+        "false_negatives": 150,
+        "true_positives": 328
+      }
+    },
+    "energy_baseline_detector": {
+      "precision": 0.0551,
+      "recall": 0.0146,
+      "f1_score": 0.0231,
+      "accuracy": 0.9212,
+      "false_positive_rate": 0.0171,
+      "roc_auc": null,
+      "pr_auc": null,
+      "confusion_matrix": {
+        "true_negatives": 6902,
+        "false_positives": 120,
+        "false_negatives": 471,
+        "true_positives": 7
+      }
+    },
+    "rf_per_anomaly_type": {
+      "normal": {
+        "total_occurrences": 7022,
+        "detected_count": 47,
+        "detection_rate": 0.0067
+      },
+      "sensor_malfunction": {
+        "total_occurrences": 86,
+        "detected_count": 31,
+        "detection_rate": 0.3605
+      },
+      "pressure_leak": {
+        "total_occurrences": 233,
+        "detected_count": 15,
+        "detection_rate": 0.0644
+      },
+      "thermal_runaway": {
+        "total_occurrences": 108,
+        "detected_count": 61,
+        "detection_rate": 0.5648
+      },
+      "bearing_degradation": {
+        "total_occurrences": 51,
+        "detected_count": 49,
+        "detection_rate": 0.9608
+      }
+    },
+    "rf_per_equipment": {
+      "EQ-001": {
+        "total_readings": 1500,
+        "actual_anomalies": 45,
+        "predicted_anomalies": 21,
+        "precision": 0.9524,
+        "recall": 0.4444,
+        "f1_score": 0.6061
+      },
+      "EQ-002": {
+        "total_readings": 1500,
+        "actual_anomalies": 83,
+        "predicted_anomalies": 16,
+        "precision": 0.625,
+        "recall": 0.1205,
+        "f1_score": 0.202
+      },
+      "EQ-003": {
+        "total_readings": 1500,
+        "actual_anomalies": 56,
+        "predicted_anomalies": 56,
+        "precision": 0.4643,
+        "recall": 0.4643,
+        "f1_score": 0.4643
+      },
+      "EQ-004": {
+        "total_readings": 1500,
+        "actual_anomalies": 164,
+        "predicted_anomalies": 58,
+        "precision": 0.8966,
+        "recall": 0.3171,
+        "f1_score": 0.4685
+      },
+      "EQ-005": {
+        "total_readings": 1500,
+        "actual_anomalies": 130,
+        "predicted_anomalies": 52,
+        "precision": 0.9231,
+        "recall": 0.3692,
+        "f1_score": 0.5275
+      }
+    }
+  },
+  "energy_and_carbon_kpis": {
+    "plant_kpis": {
+      "total_measured_energy_kwh": 5878.27,
+      "average_power_kw": 47.8,
+      "peak_power_kw": 64.12,
+      "min_power_kw": 2.33,
+      "total_readings": 7500,
+      "equipment_health_anomalies": 478,
+      "equipment_health_anomaly_rate_pct": 6.37,
+      "excess_energy_anomalies": 127,
+      "excess_energy_anomaly_rate_pct": 1.69,
+      "estimated_excess_energy_kwh": 31.91,
+      "estimated_excess_energy_cost_inr": 255.29
+    },
+    "carbon_accounting": {
+      "scope_2_electricity_emissions_kg_co2e": 4820.18,
+      "scope_2_avoidable_excess_emissions_kg_co2e": 26.17,
+      "grid_emission_factor_used": "0.82 kg CO2e / kWh (CEA India CO2 Baseline Database v18 (2023), User Guide Table 1)",
+      "electricity_tariff_used": "INR 8.0 / kWh",
+      "scope_1_note": "Scope 1 direct emissions are excluded as this dataset tracks electrical metering only.",
+      "disclaimer": "Note: Avoidable excess energy, cost savings, and Scope 2 carbon footprint reductions are model estimates based on operating-condition power baselines and configured CEA India grid emission factors. Scope 1 direct fossil fuel emissions are excluded as this telemetry stream meters electrical power only."
+    },
+    "equipment_breakdown": {
+      "EQ-001": {
+        "total_energy_kwh": 1202.76,
+        "energy_share_pct": 20.46,
+        "avg_power_kw": 48.99,
+        "peak_power_kw": 62.15,
+        "total_readings": 1500,
+        "equipment_health_anomalies": 45,
+        "health_anomaly_rate_pct": 3.0,
+        "energy_excess_anomalies": 14,
+        "estimated_excess_energy_kwh": 6.09,
+        "estimated_excess_cost_inr": 48.68
+      },
+      "EQ-002": {
+        "total_energy_kwh": 1296.95,
+        "energy_share_pct": 22.06,
+        "avg_power_kw": 52.83,
+        "peak_power_kw": 55.36,
+        "total_readings": 1500,
+        "equipment_health_anomalies": 83,
+        "health_anomaly_rate_pct": 5.53,
+        "energy_excess_anomalies": 17,
+        "estimated_excess_energy_kwh": 6.3,
+        "estimated_excess_cost_inr": 50.39
+      },
+      "EQ-003": {
+        "total_energy_kwh": 1023.19,
+        "energy_share_pct": 17.41,
+        "avg_power_kw": 41.48,
+        "peak_power_kw": 57.95,
+        "total_readings": 1500,
+        "equipment_health_anomalies": 56,
+        "health_anomaly_rate_pct": 3.73,
+        "energy_excess_anomalies": 37,
+        "estimated_excess_energy_kwh": 6.27,
+        "estimated_excess_cost_inr": 50.14
+      },
+      "EQ-004": {
+        "total_energy_kwh": 1242.91,
+        "energy_share_pct": 21.14,
+        "avg_power_kw": 50.49,
+        "peak_power_kw": 64.12,
+        "total_readings": 1500,
+        "equipment_health_anomalies": 164,
+        "health_anomaly_rate_pct": 10.93,
+        "energy_excess_anomalies": 30,
+        "estimated_excess_energy_kwh": 7.01,
+        "estimated_excess_cost_inr": 56.09
+      },
+      "EQ-005": {
+        "total_energy_kwh": 1112.45,
+        "energy_share_pct": 18.92,
+        "avg_power_kw": 45.25,
+        "peak_power_kw": 50.78,
+        "total_readings": 1500,
+        "equipment_health_anomalies": 130,
+        "health_anomaly_rate_pct": 8.67,
+        "energy_excess_anomalies": 29,
+        "estimated_excess_energy_kwh": 6.25,
+        "estimated_excess_cost_inr": 49.99
+      }
+    },
+    "operating_mode_breakdown": {
+      "cooldown": {
+        "total_energy_kwh": 85.71,
+        "energy_share_pct": 1.46,
+        "avg_power_kw": 23.17,
+        "reading_count": 226
+      },
+      "high_load": {
+        "total_energy_kwh": 286.33,
+        "energy_share_pct": 4.87,
+        "avg_power_kw": 60.28,
+        "reading_count": 290
+      },
+      "idle": {
+        "total_energy_kwh": 13.49,
+        "energy_share_pct": 0.23,
+        "avg_power_kw": 4.01,
+        "reading_count": 207
+      },
+      "normal": {
+        "total_energy_kwh": 5439.29,
+        "energy_share_pct": 92.53,
+        "avg_power_kw": 49.67,
+        "reading_count": 6678
+      },
+      "startup": {
+        "total_energy_kwh": 53.45,
+        "energy_share_pct": 0.91,
+        "avg_power_kw": 32.72,
+        "reading_count": 99
+      }
+    },
+    "highest_priority_equipment": [
+      "EQ-004",
+      "EQ-005",
+      "EQ-002",
+      "EQ-003",
+      "EQ-001"
+    ]
+  },
+  "sample_detected_anomalies": [
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-06T21:50:00",
+      "is_anomaly": true,
+      "anomaly_type": "thermal_runaway",
+      "severity": "critical",
+      "actual_power_kw": 49.12,
+      "expected_power_kw": 49.51,
+      "deviation_kw": -0.39,
+      "deviation_pct": -0.79,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.94,
+      "evidence": [
+        "Power consumption (49.12 kW) is within normal operating limits for normal mode (no excess energy waste).",
+        "Operating temperature (132.5 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 112.6 \u00b0C."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-06T21:56:00",
+      "is_anomaly": true,
+      "anomaly_type": "thermal_runaway",
+      "severity": "critical",
+      "actual_power_kw": 49.66,
+      "expected_power_kw": 49.51,
+      "deviation_kw": 0.16,
+      "deviation_pct": 0.31,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.7268,
+      "evidence": [
+        "Power consumption (49.66 kW) is within normal operating limits for normal mode (no excess energy waste).",
+        "Operating temperature (133.8 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 114.1 \u00b0C."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-06T22:00:00",
+      "is_anomaly": true,
+      "anomaly_type": "thermal_runaway",
+      "severity": "critical",
+      "actual_power_kw": 49.78,
+      "expected_power_kw": 49.51,
+      "deviation_kw": 0.27,
+      "deviation_pct": 0.54,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.81,
+      "evidence": [
+        "Power consumption (49.78 kW) is within normal operating limits for normal mode (no excess energy waste).",
+        "Operating temperature (132.8 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 112.8 \u00b0C."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-06T22:06:00",
+      "is_anomaly": true,
+      "anomaly_type": "thermal_runaway",
+      "severity": "critical",
+      "actual_power_kw": 50.59,
+      "expected_power_kw": 49.51,
+      "deviation_kw": 1.08,
+      "deviation_pct": 2.18,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.4699,
+      "evidence": [
+        "Power consumption (50.59 kW) is within normal operating limits for normal mode (no excess energy waste).",
+        "Operating temperature (133.6 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 113.4 \u00b0C."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-06T22:12:00",
+      "is_anomaly": true,
+      "anomaly_type": "thermal_runaway",
+      "severity": "critical",
+      "actual_power_kw": 49.42,
+      "expected_power_kw": 49.51,
+      "deviation_kw": -0.09,
+      "deviation_pct": -0.17,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.94,
+      "evidence": [
+        "Power consumption (49.42 kW) is within normal operating limits for normal mode (no excess energy waste).",
+        "Operating temperature (134.0 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 113.8 \u00b0C."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-06T22:16:00",
+      "is_anomaly": true,
+      "anomaly_type": "thermal_runaway",
+      "severity": "critical",
+      "actual_power_kw": 50.09,
+      "expected_power_kw": 49.51,
+      "deviation_kw": 0.58,
+      "deviation_pct": 1.17,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.7589,
+      "evidence": [
+        "Power consumption (50.09 kW) is within normal operating limits for normal mode (no excess energy waste).",
+        "Operating temperature (134.7 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 114.3 \u00b0C."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-06T22:48:00",
+      "is_anomaly": true,
+      "anomaly_type": "thermal_runaway",
+      "severity": "critical",
+      "actual_power_kw": 49.84,
+      "expected_power_kw": 49.51,
+      "deviation_kw": 0.33,
+      "deviation_pct": 0.67,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.77,
+      "evidence": [
+        "Power consumption (49.84 kW) is within normal operating limits for normal mode (no excess energy waste).",
+        "Operating temperature (133.8 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 112.4 \u00b0C."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-06T22:51:00",
+      "is_anomaly": true,
+      "anomaly_type": "thermal_runaway",
+      "severity": "critical",
+      "actual_power_kw": 48.95,
+      "expected_power_kw": 49.51,
+      "deviation_kw": -0.56,
+      "deviation_pct": -1.12,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.7559,
+      "evidence": [
+        "Power consumption (48.95 kW) is within normal operating limits for normal mode (no excess energy waste).",
+        "Operating temperature (133.9 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 113.0 \u00b0C."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-06T22:58:00",
+      "is_anomaly": true,
+      "anomaly_type": "thermal_runaway",
+      "severity": "critical",
+      "actual_power_kw": 50.5,
+      "expected_power_kw": 49.51,
+      "deviation_kw": 0.99,
+      "deviation_pct": 2.0,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.78,
+      "evidence": [
+        "Power consumption (50.50 kW) is within normal operating limits for normal mode (no excess energy waste).",
+        "Operating temperature (134.8 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 114.3 \u00b0C."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-06T23:06:00",
+      "is_anomaly": true,
+      "anomaly_type": "thermal_runaway",
+      "severity": "critical",
+      "actual_power_kw": 49.78,
+      "expected_power_kw": 49.51,
+      "deviation_kw": 0.27,
+      "deviation_pct": 0.55,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.7879,
+      "evidence": [
+        "Power consumption (49.78 kW) is within normal operating limits for normal mode (no excess energy waste).",
+        "Operating temperature (134.0 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 112.9 \u00b0C."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-06T23:19:00",
+      "is_anomaly": true,
+      "anomaly_type": "pressure_leak",
+      "severity": "critical",
+      "actual_power_kw": 50.51,
+      "expected_power_kw": 49.51,
+      "deviation_kw": 1.0,
+      "deviation_pct": 2.02,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.7698,
+      "evidence": [
+        "Power consumption (50.51 kW) is within normal operating limits for normal mode (no excess energy waste).",
+        "Operating temperature (135.3 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 114.1 \u00b0C.",
+        "Operating pressure (143.6 kPa) dropped 4.0\u03c3 below condition baseline."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.; Inspect pneumatic lines, seal integrity, and pressure regulators for leakage.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-06T23:23:00",
+      "is_anomaly": true,
+      "anomaly_type": "pressure_leak",
+      "severity": "critical",
+      "actual_power_kw": 50.07,
+      "expected_power_kw": 49.51,
+      "deviation_kw": 0.57,
+      "deviation_pct": 1.14,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.7663,
+      "evidence": [
+        "Power consumption (50.07 kW) is within normal operating limits for normal mode (no excess energy waste).",
+        "Operating temperature (135.0 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 113.2 \u00b0C.",
+        "Operating pressure (140.7 kPa) dropped 5.9\u03c3 below condition baseline."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.; Inspect pneumatic lines, seal integrity, and pressure regulators for leakage.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-06T23:28:00",
+      "is_anomaly": true,
+      "anomaly_type": "pressure_leak",
+      "severity": "critical",
+      "actual_power_kw": 51.11,
+      "expected_power_kw": 49.51,
+      "deviation_kw": 1.61,
+      "deviation_pct": 3.25,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Power consumption (51.11 kW) is within normal operating limits for normal mode (no excess energy waste).",
+        "Operating temperature (136.2 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 114.4 \u00b0C.",
+        "Operating pressure (136.2 kPa) dropped 8.9\u03c3 below condition baseline."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.; Inspect pneumatic lines, seal integrity, and pressure regulators for leakage.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-06T23:29:00",
+      "is_anomaly": true,
+      "anomaly_type": "pressure_leak",
+      "severity": "critical",
+      "actual_power_kw": 50.65,
+      "expected_power_kw": 49.51,
+      "deviation_kw": 1.14,
+      "deviation_pct": 2.3,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.7436,
+      "evidence": [
+        "Power consumption (50.65 kW) is within normal operating limits for normal mode (no excess energy waste).",
+        "Operating temperature (135.2 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 114.2 \u00b0C.",
+        "Operating pressure (137.4 kPa) dropped 8.1\u03c3 below condition baseline."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.; Inspect pneumatic lines, seal integrity, and pressure regulators for leakage.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-06T23:30:00",
+      "is_anomaly": true,
+      "anomaly_type": "pressure_leak",
+      "severity": "critical",
+      "actual_power_kw": 51.52,
+      "expected_power_kw": 49.51,
+      "deviation_kw": 2.02,
+      "deviation_pct": 4.07,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Power consumption (51.52 kW) is within normal operating limits for normal mode (no excess energy waste).",
+        "Operating temperature (134.5 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 112.8 \u00b0C.",
+        "Operating pressure (136.1 kPa) dropped 8.9\u03c3 below condition baseline."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.; Inspect pneumatic lines, seal integrity, and pressure regulators for leakage.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-06T23:31:00",
+      "is_anomaly": true,
+      "anomaly_type": "pressure_leak",
+      "severity": "critical",
+      "actual_power_kw": 50.65,
+      "expected_power_kw": 49.51,
+      "deviation_kw": 1.14,
+      "deviation_pct": 2.31,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.95,
+      "evidence": [
+        "Power consumption (50.65 kW) is within normal operating limits for normal mode (no excess energy waste).",
+        "Operating temperature (134.6 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 112.9 \u00b0C.",
+        "Operating pressure (136.2 kPa) dropped 8.9\u03c3 below condition baseline."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.; Inspect pneumatic lines, seal integrity, and pressure regulators for leakage.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-06T23:38:00",
+      "is_anomaly": true,
+      "anomaly_type": "pressure_leak",
+      "severity": "critical",
+      "actual_power_kw": 51.12,
+      "expected_power_kw": 49.51,
+      "deviation_kw": 1.61,
+      "deviation_pct": 3.25,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Power consumption (51.12 kW) is within normal operating limits for normal mode (no excess energy waste).",
+        "Operating temperature (135.2 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 113.7 \u00b0C.",
+        "Operating pressure (132.6 kPa) dropped 11.3\u03c3 below condition baseline."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.; Inspect pneumatic lines, seal integrity, and pressure regulators for leakage.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-06T23:39:00",
+      "is_anomaly": true,
+      "anomaly_type": "pressure_leak",
+      "severity": "high",
+      "actual_power_kw": 51.75,
+      "expected_power_kw": 49.51,
+      "deviation_kw": 2.24,
+      "deviation_pct": 4.53,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Power consumption (51.75 kW) is within normal operating limits for normal mode (no excess energy waste).",
+        "Operating temperature (134.5 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 113.0 \u00b0C."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-06T23:42:00",
+      "is_anomaly": true,
+      "anomaly_type": "pressure_leak",
+      "severity": "critical",
+      "actual_power_kw": 52.45,
+      "expected_power_kw": 49.51,
+      "deviation_kw": 2.95,
+      "deviation_pct": 5.95,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Power consumption (52.45 kW) is within normal operating limits for normal mode (no excess energy waste).",
+        "Operating temperature (134.5 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 112.4 \u00b0C.",
+        "Operating pressure (128.6 kPa) dropped 13.9\u03c3 below condition baseline."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.; Inspect pneumatic lines, seal integrity, and pressure regulators for leakage.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-06T23:44:00",
+      "is_anomaly": true,
+      "anomaly_type": "thermal_runaway",
+      "severity": "critical",
+      "actual_power_kw": 49.19,
+      "expected_power_kw": 49.51,
+      "deviation_kw": -0.32,
+      "deviation_pct": -0.65,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.4141,
+      "evidence": [
+        "Power consumption (49.19 kW) is within normal operating limits for normal mode (no excess energy waste).",
+        "Operating temperature (137.4 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 115.3 \u00b0C."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-06T23:47:00",
+      "is_anomaly": true,
+      "anomaly_type": "thermal_runaway",
+      "severity": "critical",
+      "actual_power_kw": 50.08,
+      "expected_power_kw": 49.51,
+      "deviation_kw": 0.57,
+      "deviation_pct": 1.15,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.4065,
+      "evidence": [
+        "Power consumption (50.08 kW) is within normal operating limits for normal mode (no excess energy waste).",
+        "Operating temperature (136.0 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 114.6 \u00b0C."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-06T23:52:00",
+      "is_anomaly": true,
+      "anomaly_type": "thermal_runaway",
+      "severity": "critical",
+      "actual_power_kw": 49.55,
+      "expected_power_kw": 49.51,
+      "deviation_kw": 0.04,
+      "deviation_pct": 0.08,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.3957,
+      "evidence": [
+        "Power consumption (49.55 kW) is within normal operating limits for normal mode (no excess energy waste).",
+        "Operating temperature (134.9 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 112.9 \u00b0C."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-07T00:01:00",
+      "is_anomaly": true,
+      "anomaly_type": "thermal_runaway",
+      "severity": "critical",
+      "actual_power_kw": 50.27,
+      "expected_power_kw": 49.51,
+      "deviation_kw": 0.77,
+      "deviation_pct": 1.55,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.409,
+      "evidence": [
+        "Power consumption (50.27 kW) is within normal operating limits for normal mode (no excess energy waste).",
+        "Operating temperature (137.4 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 116.2 \u00b0C."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-07T00:15:00",
+      "is_anomaly": true,
+      "anomaly_type": "thermal_runaway",
+      "severity": "critical",
+      "actual_power_kw": 49.56,
+      "expected_power_kw": 49.51,
+      "deviation_kw": 0.05,
+      "deviation_pct": 0.11,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.3817,
+      "evidence": [
+        "Power consumption (49.56 kW) is within normal operating limits for normal mode (no excess energy waste).",
+        "Operating temperature (137.3 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 115.2 \u00b0C."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-07T00:23:00",
+      "is_anomaly": true,
+      "anomaly_type": "thermal_runaway",
+      "severity": "critical",
+      "actual_power_kw": 48.77,
+      "expected_power_kw": 49.51,
+      "deviation_kw": -0.74,
+      "deviation_pct": -1.49,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.4132,
+      "evidence": [
+        "Power consumption (48.77 kW) is within normal operating limits for normal mode (no excess energy waste).",
+        "Operating temperature (136.1 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 113.5 \u00b0C."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-07T03:54:00",
+      "is_anomaly": true,
+      "anomaly_type": "thermal_runaway",
+      "severity": "critical",
+      "actual_power_kw": 51.62,
+      "expected_power_kw": 49.51,
+      "deviation_kw": 2.11,
+      "deviation_pct": 4.26,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Power consumption (51.62 kW) is within normal operating limits for normal mode (no excess energy waste).",
+        "Operating temperature (141.0 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 115.7 \u00b0C."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-07T06:12:00",
+      "is_anomaly": true,
+      "anomaly_type": "thermal_runaway",
+      "severity": "critical",
+      "actual_power_kw": 50.11,
+      "expected_power_kw": 49.51,
+      "deviation_kw": 0.6,
+      "deviation_pct": 1.21,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.42,
+      "evidence": [
+        "Power consumption (50.11 kW) is within normal operating limits for normal mode (no excess energy waste).",
+        "Operating temperature (143.2 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 118.8 \u00b0C."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-07T06:15:00",
+      "is_anomaly": true,
+      "anomaly_type": "thermal_runaway",
+      "severity": "critical",
+      "actual_power_kw": 51.09,
+      "expected_power_kw": 49.51,
+      "deviation_kw": 1.58,
+      "deviation_pct": 3.2,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Power consumption (51.09 kW) is within normal operating limits for normal mode (no excess energy waste).",
+        "Operating temperature (141.5 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 116.8 \u00b0C."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-07T06:49:00",
+      "is_anomaly": true,
+      "anomaly_type": "thermal_runaway",
+      "severity": "critical",
+      "actual_power_kw": 49.42,
+      "expected_power_kw": 49.51,
+      "deviation_kw": -0.09,
+      "deviation_pct": -0.18,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.39,
+      "evidence": [
+        "Power consumption (49.42 kW) is within normal operating limits for normal mode (no excess energy waste).",
+        "Operating temperature (141.6 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 116.9 \u00b0C."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-07T06:57:00",
+      "is_anomaly": true,
+      "anomaly_type": "thermal_runaway",
+      "severity": "critical",
+      "actual_power_kw": 49.18,
+      "expected_power_kw": 49.51,
+      "deviation_kw": -0.32,
+      "deviation_pct": -0.66,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.4192,
+      "evidence": [
+        "Power consumption (49.18 kW) is within normal operating limits for normal mode (no excess energy waste).",
+        "Operating temperature (140.8 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 116.2 \u00b0C."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-07T07:01:00",
+      "is_anomaly": true,
+      "anomaly_type": "multivariate_sensor_anomaly",
+      "severity": "low",
+      "actual_power_kw": 49.69,
+      "expected_power_kw": 49.51,
+      "deviation_kw": 0.18,
+      "deviation_pct": 0.37,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.5592,
+      "evidence": [
+        "Power consumption (49.69 kW) is within normal operating limits for normal mode (no excess energy waste)."
+      ],
+      "recommended_action": "Conduct visual and diagnostic inspection of equipment subsystems.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-07T07:11:00",
+      "is_anomaly": true,
+      "anomaly_type": "thermal_runaway",
+      "severity": "critical",
+      "actual_power_kw": 49.46,
+      "expected_power_kw": 49.51,
+      "deviation_kw": -0.05,
+      "deviation_pct": -0.1,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.4198,
+      "evidence": [
+        "Power consumption (49.46 kW) is within normal operating limits for normal mode (no excess energy waste).",
+        "Operating temperature (141.3 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 117.1 \u00b0C."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-07T07:15:00",
+      "is_anomaly": true,
+      "anomaly_type": "thermal_runaway",
+      "severity": "critical",
+      "actual_power_kw": 49.79,
+      "expected_power_kw": 49.51,
+      "deviation_kw": 0.28,
+      "deviation_pct": 0.56,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.3992,
+      "evidence": [
+        "Power consumption (49.79 kW) is within normal operating limits for normal mode (no excess energy waste).",
+        "Operating temperature (142.3 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 118.2 \u00b0C."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-07T07:33:00",
+      "is_anomaly": true,
+      "anomaly_type": "thermal_runaway",
+      "severity": "critical",
+      "actual_power_kw": 50.27,
+      "expected_power_kw": 49.51,
+      "deviation_kw": 0.76,
+      "deviation_pct": 1.53,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.4892,
+      "evidence": [
+        "Power consumption (50.27 kW) is within normal operating limits for normal mode (no excess energy waste).",
+        "Operating temperature (140.9 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 116.8 \u00b0C."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-07T07:49:00",
+      "is_anomaly": true,
+      "anomaly_type": "thermal_runaway",
+      "severity": "critical",
+      "actual_power_kw": 49.64,
+      "expected_power_kw": 49.51,
+      "deviation_kw": 0.13,
+      "deviation_pct": 0.27,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.489,
+      "evidence": [
+        "Power consumption (49.64 kW) is within normal operating limits for normal mode (no excess energy waste).",
+        "Operating temperature (141.0 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 116.9 \u00b0C."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-07T07:54:00",
+      "is_anomaly": true,
+      "anomaly_type": "thermal_runaway",
+      "severity": "critical",
+      "actual_power_kw": 49.84,
+      "expected_power_kw": 49.51,
+      "deviation_kw": 0.33,
+      "deviation_pct": 0.67,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.4992,
+      "evidence": [
+        "Power consumption (49.84 kW) is within normal operating limits for normal mode (no excess energy waste).",
+        "Operating temperature (141.7 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 118.0 \u00b0C."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-07T07:58:00",
+      "is_anomaly": true,
+      "anomaly_type": "thermal_runaway",
+      "severity": "critical",
+      "actual_power_kw": 50.36,
+      "expected_power_kw": 49.51,
+      "deviation_kw": 0.85,
+      "deviation_pct": 1.72,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.479,
+      "evidence": [
+        "Power consumption (50.36 kW) is within normal operating limits for normal mode (no excess energy waste).",
+        "Operating temperature (141.4 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 117.5 \u00b0C."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-07T08:01:00",
+      "is_anomaly": true,
+      "anomaly_type": "thermal_runaway",
+      "severity": "critical",
+      "actual_power_kw": 48.71,
+      "expected_power_kw": 49.51,
+      "deviation_kw": -0.79,
+      "deviation_pct": -1.6,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.3892,
+      "evidence": [
+        "Power consumption (48.71 kW) is within normal operating limits for normal mode (no excess energy waste).",
+        "Operating temperature (142.1 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 118.0 \u00b0C."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-07T08:38:00",
+      "is_anomaly": true,
+      "anomaly_type": "thermal_runaway",
+      "severity": "critical",
+      "actual_power_kw": 49.32,
+      "expected_power_kw": 49.51,
+      "deviation_kw": -0.19,
+      "deviation_pct": -0.39,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.38,
+      "evidence": [
+        "Power consumption (49.32 kW) is within normal operating limits for normal mode (no excess energy waste).",
+        "Operating temperature (141.0 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 117.1 \u00b0C."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-07T10:47:00",
+      "is_anomaly": true,
+      "anomaly_type": "thermal_runaway",
+      "severity": "critical",
+      "actual_power_kw": 49.17,
+      "expected_power_kw": 49.51,
+      "deviation_kw": -0.34,
+      "deviation_pct": -0.69,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.4567,
+      "evidence": [
+        "Power consumption (49.17 kW) is within normal operating limits for normal mode (no excess energy waste).",
+        "Operating temperature (140.3 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 117.3 \u00b0C."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-07T11:54:00",
+      "is_anomaly": true,
+      "anomaly_type": "thermal_runaway",
+      "severity": "critical",
+      "actual_power_kw": 47.81,
+      "expected_power_kw": 49.51,
+      "deviation_kw": -1.7,
+      "deviation_pct": -3.43,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.5825,
+      "evidence": [
+        "Power consumption (47.81 kW) is within normal operating limits for normal mode (no excess energy waste).",
+        "Operating temperature (141.6 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 119.5 \u00b0C."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-07T11:56:00",
+      "is_anomaly": true,
+      "anomaly_type": "thermal_runaway",
+      "severity": "critical",
+      "actual_power_kw": 51.0,
+      "expected_power_kw": 49.51,
+      "deviation_kw": 1.49,
+      "deviation_pct": 3.0,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Power consumption (51.00 kW) is within normal operating limits for normal mode (no excess energy waste).",
+        "Operating temperature (141.7 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 119.7 \u00b0C."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-07T12:39:00",
+      "is_anomaly": true,
+      "anomaly_type": "thermal_runaway",
+      "severity": "critical",
+      "actual_power_kw": 51.11,
+      "expected_power_kw": 49.51,
+      "deviation_kw": 1.6,
+      "deviation_pct": 3.24,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Power consumption (51.11 kW) is within normal operating limits for normal mode (no excess energy waste).",
+        "Operating temperature (141.6 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 120.0 \u00b0C."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-07T13:25:00",
+      "is_anomaly": true,
+      "anomaly_type": "thermal_runaway",
+      "severity": "critical",
+      "actual_power_kw": 49.3,
+      "expected_power_kw": 49.51,
+      "deviation_kw": -0.21,
+      "deviation_pct": -0.43,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.7987,
+      "evidence": [
+        "Power consumption (49.30 kW) is within normal operating limits for normal mode (no excess energy waste).",
+        "Operating temperature (139.9 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 119.0 \u00b0C."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-07T15:03:00",
+      "is_anomaly": true,
+      "anomaly_type": "thermal_runaway",
+      "severity": "critical",
+      "actual_power_kw": 51.31,
+      "expected_power_kw": 49.51,
+      "deviation_kw": 1.8,
+      "deviation_pct": 3.64,
+      "model_name": "Condition-Aware Energy Baseline",
+      "model_score": null,
+      "evidence": [
+        "Power consumption (51.31 kW) is within normal operating limits for normal mode (no excess energy waste).",
+        "Operating temperature (141.6 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 121.3 \u00b0C."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-07T15:16:00",
+      "is_anomaly": true,
+      "anomaly_type": "thermal_runaway",
+      "severity": "critical",
+      "actual_power_kw": 22.55,
+      "expected_power_kw": 23.42,
+      "deviation_kw": -0.87,
+      "deviation_pct": -3.71,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.6886,
+      "evidence": [
+        "Power consumption (22.55 kW) is within normal operating limits for cooldown mode (no excess energy waste).",
+        "Operating temperature (128.1 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 107.9 \u00b0C."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-07T15:21:00",
+      "is_anomaly": true,
+      "anomaly_type": "multivariate_sensor_anomaly",
+      "severity": "low",
+      "actual_power_kw": 23.68,
+      "expected_power_kw": 23.42,
+      "deviation_kw": 0.26,
+      "deviation_pct": 1.12,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.748,
+      "evidence": [
+        "Power consumption (23.68 kW) is within normal operating limits for cooldown mode (no excess energy waste)."
+      ],
+      "recommended_action": "Conduct visual and diagnostic inspection of equipment subsystems.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-07T15:28:00",
+      "is_anomaly": true,
+      "anomaly_type": "thermal_runaway",
+      "severity": "critical",
+      "actual_power_kw": 24.0,
+      "expected_power_kw": 23.42,
+      "deviation_kw": 0.58,
+      "deviation_pct": 2.48,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.7088,
+      "evidence": [
+        "Power consumption (24.00 kW) is within normal operating limits for cooldown mode (no excess energy waste).",
+        "Operating temperature (127.7 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 108.2 \u00b0C."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-07T15:33:00",
+      "is_anomaly": true,
+      "anomaly_type": "thermal_runaway",
+      "severity": "critical",
+      "actual_power_kw": 22.74,
+      "expected_power_kw": 23.42,
+      "deviation_kw": -0.68,
+      "deviation_pct": -2.91,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.6886,
+      "evidence": [
+        "Power consumption (22.74 kW) is within normal operating limits for cooldown mode (no excess energy waste).",
+        "Operating temperature (127.0 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 107.1 \u00b0C."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.",
+      "estimated_excess_energy_kwh": null
+    },
+    {
+      "equipment_id": "EQ-001",
+      "timestamp": "2024-01-07T15:36:00",
+      "is_anomaly": true,
+      "anomaly_type": "thermal_runaway",
+      "severity": "critical",
+      "actual_power_kw": 23.97,
+      "expected_power_kw": 23.42,
+      "deviation_kw": 0.55,
+      "deviation_pct": 2.34,
+      "model_name": "Supervised Random Forest",
+      "model_score": 0.6687,
+      "evidence": [
+        "Power consumption (23.97 kW) is within normal operating limits for cooldown mode (no excess energy waste).",
+        "Operating temperature (126.5 \u00b0C) is abnormally elevated.",
+        "Thermal gradient over ambient is 106.1 \u00b0C."
+      ],
+      "recommended_action": "Verify coolant flow, check heat exchanger for clogging, and inspect lubrication.",
+      "estimated_excess_energy_kwh": null
+    }
+  ]
+}

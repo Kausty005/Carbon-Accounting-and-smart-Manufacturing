@@ -22,3 +22,27 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Temporary generated reports and uploads
+backend/ai_intelligence/data/uploads/*
+!backend/ai_intelligence/data/uploads/.gitkeep
+backend/ai_intelligence/reports/generated_downloads/*
+!backend/ai_intelligence/reports/generated_downloads/.gitkeep
+
+# Environment variables & secrets
+.env
+.env.*
+!.env.example

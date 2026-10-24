@@ -79,7 +79,7 @@ function CameraController({
   return null;
 }
 
-// ─── Floating 3D Machine Inspection Card ────────────────────────────────────
+// ─── Floating 3D Machine Inspection Card (Compact ~25% Smaller) ─────────────
 function MachineHudBadge({
   asset,
   isSelected,
@@ -116,26 +116,23 @@ function MachineHudBadge({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: '3px 0',
-    fontSize: 10,
+    padding: '1.5px 0',
+    fontSize: 8.5,
     fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
+    lineHeight: 1.25,
   };
 
   const labelStyle: React.CSSProperties = {
     color: '#64748b',
     fontWeight: 500,
+    whiteSpace: 'nowrap',
   };
 
   const valueStyle: React.CSSProperties = {
     fontWeight: 700,
     color: '#0f172a',
     textAlign: 'right',
-  };
-
-  const subUnitStyle: React.CSSProperties = {
-    fontSize: 8.5,
-    color: '#94a3b8',
-    fontWeight: 400,
+    whiteSpace: 'nowrap',
   };
 
   const renderMetrics = () => {
@@ -146,24 +143,24 @@ function MachineHudBadge({
             <div style={rowStyle}>
               <span style={labelStyle}>Power Draw</span>
               <span style={valueStyle}>
-                {asset.currentKw != null ? `${asset.currentKw} kW` : '—'}{' '}
-                <span style={subUnitStyle}>({Math.round((asset.currentKw / (asset.ratedKw || 45)) * 100)}% load)</span>
+                <span style={{ color: accent }}>{asset.currentKw != null ? `${asset.currentKw} kW` : '—'}</span>
+                {' '}<span style={{ fontSize: 7.5, color: '#94a3b8', fontWeight: 400 }}>({Math.round((asset.currentKw / (asset.ratedKw || 45)) * 100)}%)</span>
               </span>
             </div>
             <div style={rowStyle}>
-              <span style={labelStyle}>Idle Modulation</span>
+              <span style={labelStyle}>Idle Draw</span>
               <span style={{ ...valueStyle, color: '#f59e0b' }}>
                 {asset.idleKw != null ? `${asset.idleKw} kW` : '18.0 kW'}
               </span>
             </div>
             <div style={rowStyle}>
-              <span style={labelStyle}>Discharge Pressure</span>
+              <span style={labelStyle}>Discharge</span>
               <span style={valueStyle}>
                 {asset.dischargePressureBar != null ? `${asset.dischargePressureBar} bar` : '7.2 bar'}
               </span>
             </div>
             <div style={rowStyle}>
-              <span style={labelStyle}>Power Factor (PF)</span>
+              <span style={labelStyle}>Power Factor</span>
               <span style={{ ...valueStyle, color: asset.pf < 0.85 ? '#f59e0b' : '#10b981' }}>
                 {asset.pf != null ? asset.pf.toFixed(2) : '0.78'}
               </span>
@@ -176,24 +173,24 @@ function MachineHudBadge({
             <div style={rowStyle}>
               <span style={labelStyle}>Machining Load</span>
               <span style={valueStyle}>
-                {asset.currentKw != null ? `${asset.currentKw} kW` : '—'}{' '}
-                <span style={subUnitStyle}>({Math.round((asset.currentKw / (asset.ratedKw || 32)) * 100)}% load)</span>
+                <span style={{ color: accent }}>{asset.currentKw != null ? `${asset.currentKw} kW` : '—'}</span>
+                {' '}<span style={{ fontSize: 7.5, color: '#94a3b8', fontWeight: 400 }}>({Math.round((asset.currentKw / (asset.ratedKw || 32)) * 100)}%)</span>
               </span>
             </div>
             <div style={rowStyle}>
-              <span style={labelStyle}>Specific Energy (SEC)</span>
+              <span style={labelStyle}>Specific Energy</span>
               <span style={valueStyle}>
-                {asset.secKwhPerPart != null ? `${asset.secKwhPerPart} kWh/part` : '1.80 kWh/part'}
+                {asset.secKwhPerPart != null ? `${asset.secKwhPerPart} kWh/p` : '1.80 kWh/p'}
               </span>
             </div>
             <div style={rowStyle}>
               <span style={labelStyle}>Operating State</span>
               <span style={{ ...valueStyle, color: statusColor }}>
-                {asset.status} <span style={subUnitStyle}>({asset.apparentKva != null ? `${asset.apparentKva} kVA` : ''})</span>
+                {asset.status}
               </span>
             </div>
             <div style={rowStyle}>
-              <span style={labelStyle}>Power Factor (PF)</span>
+              <span style={labelStyle}>Power Factor</span>
               <span style={{ ...valueStyle, color: asset.pf < 0.85 ? '#f59e0b' : '#10b981' }}>
                 {asset.pf != null ? asset.pf.toFixed(2) : '0.94'}
               </span>
@@ -206,8 +203,8 @@ function MachineHudBadge({
             <div style={rowStyle}>
               <span style={labelStyle}>Thermal Draw</span>
               <span style={valueStyle}>
-                {asset.currentKw != null ? `${asset.currentKw} kW` : '—'}{' '}
-                <span style={subUnitStyle}>({Math.round((asset.currentKw / (asset.ratedKw || 85)) * 100)}% load)</span>
+                <span style={{ color: accent }}>{asset.currentKw != null ? `${asset.currentKw} kW` : '—'}</span>
+                {' '}<span style={{ fontSize: 7.5, color: '#94a3b8', fontWeight: 400 }}>({Math.round((asset.currentKw / (asset.ratedKw || 85)) * 100)}%)</span>
               </span>
             </div>
             <div style={rowStyle}>
@@ -219,11 +216,11 @@ function MachineHudBadge({
             <div style={rowStyle}>
               <span style={labelStyle}>Operating State</span>
               <span style={{ ...valueStyle, color: statusColor }}>
-                {asset.status} <span style={subUnitStyle}>({asset.apparentKva != null ? `${asset.apparentKva} kVA` : ''})</span>
+                {asset.status}
               </span>
             </div>
             <div style={rowStyle}>
-              <span style={labelStyle}>Power Factor (PF)</span>
+              <span style={labelStyle}>Power Factor</span>
               <span style={{ ...valueStyle, color: asset.pf < 0.85 ? '#f59e0b' : '#10b981' }}>
                 {asset.pf != null ? asset.pf.toFixed(2) : '0.88'}
               </span>
@@ -234,14 +231,14 @@ function MachineHudBadge({
         return (
           <>
             <div style={rowStyle}>
-              <span style={labelStyle}>Chiller Power Draw</span>
+              <span style={labelStyle}>Chiller Power</span>
               <span style={valueStyle}>
-                {asset.currentKw != null ? `${asset.currentKw} kW` : '—'}{' '}
-                <span style={subUnitStyle}>({Math.round((asset.currentKw / (asset.ratedKw || 28)) * 100)}% load)</span>
+                <span style={{ color: accent }}>{asset.currentKw != null ? `${asset.currentKw} kW` : '—'}</span>
+                {' '}<span style={{ fontSize: 7.5, color: '#94a3b8', fontWeight: 400 }}>({Math.round((asset.currentKw / (asset.ratedKw || 28)) * 100)}%)</span>
               </span>
             </div>
             <div style={rowStyle}>
-              <span style={labelStyle}>Cooling Performance</span>
+              <span style={labelStyle}>Performance</span>
               <span style={{ ...valueStyle, color: '#059669' }}>
                 {asset.cop != null ? `COP ${asset.cop}` : 'COP 4.1'}
               </span>
@@ -249,11 +246,11 @@ function MachineHudBadge({
             <div style={rowStyle}>
               <span style={labelStyle}>Operating State</span>
               <span style={{ ...valueStyle, color: statusColor }}>
-                {asset.status} <span style={subUnitStyle}>({asset.apparentKva != null ? `${asset.apparentKva} kVA` : ''})</span>
+                {asset.status}
               </span>
             </div>
             <div style={rowStyle}>
-              <span style={labelStyle}>Power Factor (PF)</span>
+              <span style={labelStyle}>Power Factor</span>
               <span style={{ ...valueStyle, color: asset.pf < 0.85 ? '#f59e0b' : '#10b981' }}>
                 {asset.pf != null ? asset.pf.toFixed(2) : '0.92'}
               </span>
@@ -262,8 +259,8 @@ function MachineHudBadge({
         );
       default:
         return (
-          <div style={{ fontSize: 10, color: '#64748b', padding: '4px 0' }}>
-            Machine telemetry offline or unavailable
+          <div style={{ fontSize: 8.5, color: '#64748b', padding: '2px 0' }}>
+            Telemetry offline
           </div>
         );
     }
@@ -271,7 +268,7 @@ function MachineHudBadge({
 
   return (
     <Html
-      position={[0, 2.7, 0]}
+      position={[0, 2.35, 0]}
       center
       distanceFactor={11}
       zIndexRange={[100, 0]}
@@ -284,52 +281,59 @@ function MachineHudBadge({
         onWheel={(e) => e.stopPropagation()}
         style={{
           background: 'rgba(255, 255, 255, 0.96)',
-          backdropFilter: 'blur(14px)',
-          WebkitBackdropFilter: 'blur(14px)',
-          border: `1.5px solid ${accent}`,
-          boxShadow: `0 8px 24px rgba(0, 0, 0, 0.12), 0 0 16px ${accent}25`,
-          borderRadius: 8,
-          padding: '10px 14px',
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
+          border: `1.2px solid ${accent}`,
+          boxShadow: `0 4px 16px rgba(0, 0, 0, 0.10), 0 0 10px ${accent}20`,
+          borderRadius: 6,
+          padding: '6px 9px',
           fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
           cursor: 'default',
-          width: 236,
-          transition: 'all 0.2s ease',
+          width: 172,
+          transition: 'all 0.15s ease',
         }}
       >
         {/* Header: Machine Name, Status Badge, Close Button */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 6, marginBottom: 4 }}>
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span
-                style={{
-                  width: 7,
-                  height: 7,
-                  borderRadius: '50%',
-                  background: statusColor,
-                  boxShadow: `0 0 8px ${statusColor}`,
-                  display: 'inline-block',
-                  flexShrink: 0,
-                }}
-              />
-              <span style={{ fontSize: 11, fontWeight: 800, color: '#0f172a', letterSpacing: 0.3 }}>
-                {asset.name}
-              </span>
-            </div>
-            <span style={{ fontSize: 8.5, color: '#64748b', marginTop: 2, paddingLeft: 13 }}>
-              {bayLabels[asset.id] || asset.id.toUpperCase()} · {asset.model}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4, marginBottom: 2 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, overflow: 'hidden' }}>
+            <span
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                background: statusColor,
+                boxShadow: `0 0 6px ${statusColor}`,
+                display: 'inline-block',
+                flexShrink: 0,
+              }}
+            />
+            <span
+              style={{
+                fontSize: 9.5,
+                fontWeight: 800,
+                color: '#0f172a',
+                letterSpacing: 0.2,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+              title={asset.name}
+            >
+              {asset.name}
             </span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 3, flexShrink: 0 }}>
             <span
               style={{
-                fontSize: 8.5,
-                padding: '1px 5px',
-                borderRadius: 3,
+                fontSize: 7.5,
+                padding: '1px 3.5px',
+                borderRadius: 2.5,
                 background: `${statusColor}18`,
                 color: statusColor,
                 border: `1px solid ${statusColor}33`,
                 fontWeight: 700,
+                lineHeight: 1,
               }}
             >
               {asset.status}
@@ -343,49 +347,32 @@ function MachineHudBadge({
                 background: 'transparent',
                 border: 'none',
                 cursor: 'pointer',
-                padding: '2px',
+                padding: '1px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: '#94a3b8',
-                borderRadius: 4,
+                borderRadius: 3,
                 lineHeight: 1,
               }}
               title="Close inspection card"
             >
-              <X size={12} />
+              <X size={10} />
             </button>
           </div>
         </div>
 
-        {/* Divider */}
-        <div style={{ height: 1, background: 'rgba(0, 0, 0, 0.07)', margin: '6px 0' }} />
-
-        {/* Machine-Specific Live Telemetry Rows */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-          {renderMetrics()}
+        {/* Subtitle / Bay ID */}
+        <div style={{ fontSize: 7.5, color: '#64748b', paddingLeft: 10, marginBottom: 4, letterSpacing: 0.2 }}>
+          {bayLabels[asset.id] || asset.id.toUpperCase()}
         </div>
 
-        {/* Bottom Telemetry Footer */}
-        <div
-          style={{
-            marginTop: 6,
-            paddingTop: 5,
-            borderTop: '1px dashed rgba(0, 0, 0, 0.08)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            fontSize: 8,
-            color: '#94a3b8',
-          }}
-        >
-          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span style={{ width: 4, height: 4, borderRadius: '50%', background: '#10b981' }} />
-            LIVE TELEMETRY
-          </span>
-          <span style={{ color: accent, fontWeight: 700 }}>
-            {asset.energyKwh != null ? `${asset.energyKwh} kWh today` : 'ONLINE'}
-          </span>
+        {/* Divider */}
+        <div style={{ height: 1, background: 'rgba(0, 0, 0, 0.06)', margin: '3px 0 4px' }} />
+
+        {/* Machine-Specific Live Telemetry Rows */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+          {renderMetrics()}
         </div>
       </div>
     </Html>

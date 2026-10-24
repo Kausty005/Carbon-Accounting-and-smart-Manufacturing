@@ -20,14 +20,23 @@ export function Explainable({
   className = '',
   style = {},
   showBadge = true,
+  title,
+  explanationType,
+  metric,
 }: ExplainableProps) {
+  const effectiveContext = {
+    title,
+    component_type: explanationType,
+    metric,
+    ...context,
+  };
   const { explain, activeContext, popoverStatus } = useAIExplain();
   const containerRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
 
   const isCurrentActive =
-    activeContext?.identifier === context.identifier &&
-    activeContext?.title === context.title;
+    activeContext?.identifier === effectiveContext.identifier &&
+    activeContext?.title === effectiveContext.title;
 
   const handleClick = (e: React.MouseEvent) => {
     // If the click is on an interactive button or link inside, don't hijack unless direct
@@ -37,7 +46,7 @@ export function Explainable({
     }
 
     if (containerRef.current) {
-      explain(context, containerRef.current);
+      explain(effectiveContext, containerRef.current);
     }
   };
 
@@ -45,7 +54,7 @@ export function Explainable({
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       if (containerRef.current) {
-        explain(context, containerRef.current);
+        explain(effectiveContext, containerRef.current);
       }
     }
   };

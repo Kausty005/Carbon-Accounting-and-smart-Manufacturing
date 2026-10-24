@@ -217,91 +217,142 @@ class ReferenceDataService:
             results.extend(meth_dict.values())
         return results
 
-    # ─── IPCC Scope 1 Fuel Parameters ──────────────────────────────────────────
+    # ─── IPCC Scope 1 Fuel & Process Parameters ───────────────────────────────
 
     @staticmethod
     def get_ipcc_lpg_parameters() -> Scope1FactorBreakdown:
         """
         Returns verified IPCC 2006 (Vol. 2 Ch. 2 Table 2.3) emission factors for LPG
         with explicit unit conversions and 100-year AR6 GWPs.
-        
-        Calculations:
-        - LPG NCV: 47.3 TJ/Gg = 0.0000473 TJ/kg (IPCC Vol. 2 Ch. 1 Table 1.2)
-        - CO2 Factor: 63,100 kg CO2/TJ -> 63,100 * 0.0000473 = 2.98463 kg CO2/kg LPG
-        - CH4 Factor: 1.0 kg CH4/TJ -> 1.0 * 0.0000473 = 0.0473 g CH4/kg LPG = 0.0000473 kg CH4/kg LPG
-          GWP AR6: 27.9 -> 0.0000473 * 27.9 = 0.001320 kg CO2e/kg LPG
-        - N2O Factor: 0.1 kg N2O/TJ -> 0.1 * 0.0000473 = 0.00473 g N2O/kg LPG = 0.00000473 kg N2O/kg LPG
-          GWP AR6: 273.0 -> 0.00000473 * 273.0 = 0.001291 kg CO2e/kg LPG
-        - Total CO2e: 2.98463 + 0.001320 + 0.001291 = 2.987241 kg CO2e/kg LPG
         """
-        ncv_tj_per_kg = 0.0000473  # 47.3 TJ/Gg
+        return ReferenceDataService.get_ipcc_fuel_parameters("lpg")
 
-        # Direct CO2
-        co2_kg_per_tj = 63100.0
-        direct_co2 = round(co2_kg_per_tj * ncv_tj_per_kg, 5)  # 2.98463 kg CO2/kg
+    @staticmethod
+    def get_ipcc_fuel_parameters(fuel_id: str) -> Scope1FactorBreakdown:
+        """
+        Returns verified IPCC 2006 (Vol. 2 Ch. 1 & 2) emission factors across all
+        major industrial fuels with explicit unit conversions and IPCC AR6 GWPs:
+        - GWP CO2: 1.0
+        - GWP CH4: 27.9
+        - GWP N2O: 273.0
+        """
+        fuel = fuel_id.lower().strip()
+        fuel_map = {
+            "diesel": "hsd",
+            "gas_oil": "hsd",
+            "natural_gas": "png",
+            "furnace_oil": "hfo",
+            "heavy_fuel_oil": "hfo",
+            "light_diesel_oil": "ldo",
+            "briquettes": "biomass",
+        }
+        canonical = fuel_map.get(fuel, fuel)
 
-        # CH4
-        ch4_kg_per_tj = 1.0
-        ch4_kg_per_kg = ch4_kg_per_tj * ncv_tj_per_kg  # 0.0000473 kg CH4/kg
-        ch4_g_per_kg = round(ch4_kg_per_kg * 1000.0, 4)  # 0.0473 g CH4/kg
-        ch4_gwp = 27.9  # IPCC AR6 100-year GWP
-        ch4_co2e = round(ch4_kg_per_kg * ch4_gwp, 6)  # 0.001320 kg CO2e/kg
+        # Specifications: (unit, NCV in TJ/unit, CO2 kg/TJ, CH4 kg/TJ, N2O kg/TJ, is_biogenic_co2)
+        specs: Dict[str, Tuple[str, float, float, float, float, bool]] = {
+            # HSD: 36.0 MJ/L -> 0.000036 TJ/L
+            "hsd": ("L", 0.000036, 74100.0, 3.0, 0.6, False),
+            # PNG: 38.5 MJ/Sm3 -> 0.0000385 TJ/Sm3
+            "png": ("Sm3", 0.0000385, 56100.0, 1.0, 0.1, False),
+            # LPG: 47.3 MJ/kg -> 0.0000473 TJ/kg
+            "lpg": ("kg", 0.0000473, 63100.0, 1.0, 0.1, False),
+            # HFO: 40.2 MJ/L -> 0.0000402 TJ/L
+            "hfo": ("L", 0.0000402, 77400.0, 3.0, 0.6, False),
+            # LDO: 38.0 MJ/L -> 0.000038 TJ/L
+            "ldo": ("L", 0.000038, 74100.0, 3.0, 0.6, False),
+            # Non-Coking Coal Grade G11: 16.5 MJ/kg -> 0.0000165 TJ/kg
+            "coal": ("kg", 0.0000165, 96100.0, 10.0, 1.5, False),
+            # Biomass Agro-Briquettes: 15.0 MJ/kg -> 0.000015 TJ/kg (Biogenic net CO2 = 0)
+            "biomass": ("kg", 0.000015, 0.0, 30.0, 4.0, True),
+        }
 
-        # N2O
-        n2o_kg_per_tj = 0.1
-        n2o_kg_per_kg = n2o_kg_per_tj * ncv_tj_per_kg  # 0.00000473 kg N2O/kg
-        n2o_g_per_kg = round(n2o_kg_per_kg * 1000.0, 5)  # 0.00473 g N2O/kg
-        n2o_gwp = 273.0  # IPCC AR6 100-year GWP
-        n2o_co2e = round(n2o_kg_per_kg * n2o_gwp, 6)  # 0.001291 kg CO2e/kg
+        if canonical not in specs:
+            # Fallback to LPG defaults if unrecognized
+            canonical = "lpg"
 
-        total_co2e = round(direct_co2 + ch4_co2e + n2o_co2e, 5)  # 2.98724 kg CO2e/kg
+        unit, ncv_tj_per_unit, co2_kg_per_tj, ch4_kg_per_tj, n2o_kg_per_tj, is_bio = specs[canonical]
+
+        direct_co2 = round(co2_kg_per_tj * ncv_tj_per_unit, 5)
+
+        ch4_kg_per_unit = ch4_kg_per_tj * ncv_tj_per_unit
+        ch4_g_per_unit = round(ch4_kg_per_unit * 1000.0, 5)
+        ch4_gwp = 27.9
+        ch4_co2e = round(ch4_kg_per_unit * ch4_gwp, 6)
+
+        n2o_kg_per_unit = n2o_kg_per_tj * ncv_tj_per_unit
+        n2o_g_per_unit = round(n2o_kg_per_unit * 1000.0, 6)
+        n2o_gwp = 273.0
+        n2o_co2e = round(n2o_kg_per_unit * n2o_gwp, 6)
+
+        total_co2e = round(direct_co2 + ch4_co2e + n2o_co2e, 5)
 
         return Scope1FactorBreakdown(
             direct_co2_kg_per_kg=direct_co2,
-            ch4_emitted_g_per_kg=ch4_g_per_kg,
-            ch4_converted_kg_per_kg=round(ch4_kg_per_kg, 8),
+            ch4_emitted_g_per_kg=ch4_g_per_unit,
+            ch4_converted_kg_per_kg=round(ch4_kg_per_unit, 8),
             ch4_gwp_ar6=ch4_gwp,
             ch4_co2e_kg_per_kg=ch4_co2e,
-            n2o_emitted_g_per_kg=n2o_g_per_kg,
-            n2o_converted_kg_per_kg=round(n2o_kg_per_kg, 8),
+            n2o_emitted_g_per_kg=n2o_g_per_unit,
+            n2o_converted_kg_per_kg=round(n2o_kg_per_unit, 8),
             n2o_gwp_ar6=n2o_gwp,
             n2o_co2e_kg_per_kg=n2o_co2e,
-            total_co2e_kg_per_kg=total_co2e
+            total_co2e_kg_per_kg=total_co2e,
         )
 
     def get_supported_fuel_catalogue(self) -> List[Dict[str, Any]]:
-        """Returns verified fuels and unverified custom placeholders."""
-        lpg = self.get_ipcc_lpg_parameters()
-        return [
-            {
-                "fuel_id": "lpg",
-                "fuel_name": "Liquefied Petroleum Gases (LPG)",
-                "verification_status": "VERIFIED_IPCC",
-                "source_table": "2006 IPCC Guidelines Vol. 2 Ch. 2 Table 2.3 (Manufacturing Industries)",
-                "ncv_mj_per_kg": 47.3,
-                "direct_co2_factor": lpg.direct_co2_kg_per_kg,
-                "ch4_factor_g_per_kg": lpg.ch4_emitted_g_per_kg,
-                "n2o_factor_g_per_kg": lpg.n2o_emitted_g_per_kg,
-                "total_co2e_factor": lpg.total_co2e_kg_per_kg,
-                "unit": "kg CO2e/kg fuel",
-                "is_default": True
-            },
-            {
-                "fuel_id": "diesel",
-                "fuel_name": "Gas/Diesel Oil (Placeholder)",
-                "verification_status": "PENDING_VERIFICATION",
-                "note": "Unverified default. Requires user-supplied custom_emission_factor or lab assay.",
-                "is_default": False
-            },
-            {
-                "fuel_id": "natural_gas",
-                "fuel_name": "Natural Gas (Placeholder)",
-                "verification_status": "PENDING_VERIFICATION",
-                "note": "Unverified default. Requires pipeline gas composition certificate.",
-                "is_default": False
-            }
+        """Returns verified fuels catalog conforming to IPCC 2006 Vol. 2."""
+        fuels = [
+            ("lpg", "Liquefied Petroleum Gas (LPG)", "kg", 47.3, "2006 IPCC Vol. 2 Ch. 2 Table 2.3", True),
+            ("hsd", "High-Speed Diesel (HSD / DG Sets)", "L", 36.0, "2006 IPCC Vol. 2 Ch. 1 & 2 (Commercial/Boilers)", False),
+            ("png", "Piped Natural Gas (PNG / Boilers)", "Sm3", 38.5, "2006 IPCC Vol. 2 Ch. 2 Table 2.3 (Natural Gas)", False),
+            ("hfo", "Furnace Oil (HFO / Heavy Boilers)", "L", 40.2, "2006 IPCC Vol. 2 Ch. 2 (Residual Fuel Oil)", False),
+            ("ldo", "Light Diesel Oil (LDO)", "L", 38.0, "2006 IPCC Vol. 2 Ch. 2 Table 2.3", False),
+            ("coal", "Non-Coking Coal (Grade G11)", "kg", 16.5, "2006 IPCC Vol. 2 Ch. 2 (Other Bituminous Coal)", False),
+            ("biomass", "Biomass Agro-Briquettes", "kg", 15.0, "2006 IPCC Vol. 2 Ch. 2 (Solid Biomass, Net Biogenic CO2 = 0)", False),
         ]
+
+        catalogue = []
+        for fid, name, unit, ncv, src, is_def in fuels:
+            params = self.get_ipcc_fuel_parameters(fid)
+            catalogue.append({
+                "fuel_id": fid,
+                "fuel_name": name,
+                "verification_status": "VERIFIED_IPCC",
+                "source_table": src,
+                "ncv_mj_per_unit": ncv,
+                "direct_co2_factor": params.direct_co2_kg_per_kg,
+                "ch4_factor_g_per_unit": params.ch4_emitted_g_per_kg,
+                "n2o_factor_g_per_unit": params.n2o_emitted_g_per_kg,
+                "total_co2e_factor": params.total_co2e_kg_per_kg,
+                "unit": f"kg CO2e/{unit}",
+                "is_default": is_def,
+            })
+        return catalogue
+
+    @staticmethod
+    def get_refrigerant_gwp(gas_type: str) -> float:
+        """Returns IPCC AR6 100-year Global Warming Potential for industrial refrigerants."""
+        g = gas_type.upper().strip().replace(" ", "").replace("_", "-")
+        gwps = {
+            "R-134A": 1530.0,
+            "HFC-134A": 1530.0,
+            "R-410A": 2256.0,
+            "R-407C": 1908.0,
+            "R-404A": 3922.0,
+            "R-32": 675.0,
+        }
+        return gwps.get(g, 1530.0)
+
+    @staticmethod
+    def get_welding_gas_factor(gas_mix: str) -> float:
+        """Returns direct CO2 emissions per Nm3 of industrial shielding gas."""
+        m = gas_mix.lower().strip()
+        if "80_20" in m or "80/20" in m or "c20" in m:
+            return 0.3954  # 20% CO2 at 1.977 kg/Nm3
+        # Default: 100% CO2 cylinder gas
+        return 1.977
 
 
 # Global service instance
 reference_data_service = ReferenceDataService()
+

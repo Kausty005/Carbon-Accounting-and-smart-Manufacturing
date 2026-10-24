@@ -93,6 +93,32 @@ class Scope2Input(BaseModel):
     activity_period: Optional[ReportingPeriodInput] = Field(default=None, description="Temporal period if different from root")
 
 
+class RefrigerantLeakInput(BaseModel):
+    """Fugitive refrigerant gas loss input."""
+    gas_type: str = Field(default="R-134a", description="Refrigerant classification (e.g. 'R-134a', 'R-410A', 'R-407C')")
+    leak_kg: float = Field(ge=0.0, description="Mass of refrigerant gas leaked in kilograms")
+
+
+class WeldingGasInput(BaseModel):
+    """Welding shielding gas consumption input."""
+    gas_mix: str = Field(default="80_20_ar_co2", description="Shielding gas mix (e.g. '80_20_ar_co2', '100_co2')")
+    volume_nm3: float = Field(ge=0.0, description="Volume of shielding gas consumed in Normal cubic meters (Nm3)")
+
+
+class ProcessEmissionsInput(BaseModel):
+    """Scope 1 chemical and physical process emissions (refrigerants, shielding gas, solvents)."""
+    refrigerants: List[RefrigerantLeakInput] = Field(default_factory=list)
+    welding: Optional[WeldingGasInput] = None
+    solvent_voc_kg: float = Field(default=0.0, ge=0.0, description="Volatile Organic Compounds lost from solvent baths")
+
+
+class WastewaterInput(BaseModel):
+    """Effluent treatment plant (ETP) biological emissions (IPCC 2006 Vol. 5 Ch. 6)."""
+    cod_inflow_kg: float = Field(default=0.0, ge=0.0, description="Cumulative Chemical Oxygen Demand (COD) in wastewater inflow (kg)")
+    methane_recovered_kg: float = Field(default=0.0, ge=0.0, description="Methane captured or flared (kg CH4)")
+    mcf: float = Field(default=0.30, ge=0.0, le=1.0, description="Methane Correction Factor (default: 0.30 for semi-aerobic industrial lagoons)")
+
+
 class ScenarioComparisonInput(BaseModel):
     """Digital twin what-if scenario comparison parameters."""
     enabled: bool = Field(default=False)
@@ -106,11 +132,14 @@ class CarbonCalculateRequest(BaseModel):
     period: ReportingPeriodInput
     scope1: Optional[Scope1Input] = None
     scope2: Optional[Scope2Input] = None
+    process_emissions: Optional[ProcessEmissionsInput] = None
+    wastewater: Optional[WastewaterInput] = None
     target_normalization_period: Optional[ReportingPeriodType] = Field(
         default=None,
         description="Explicit target period type to automatically normalize mismatched activity periods"
     )
     scenario_comparison: Optional[ScenarioComparisonInput] = None
+
 
 
 # ─── Response Models ──────────────────────────────────────────────────────────
@@ -177,10 +206,35 @@ class AvoidedEmissionsResult(BaseModel):
     accounting_treatment: str
 
 
+class ProcessEmissionsResult(BaseModel):
+    """Scope 1 process and chemical emissions result."""
+    refrigerant_leaks_t_co2e: float = 0.0
+    refrigerant_details: List[Dict[str, Any]] = Field(default_factory=list)
+    welding_shield_t_co2e: float = 0.0
+    welding_details: Optional[Dict[str, Any]] = None
+    solvent_voc_t_co2e: float = 0.0
+    total_process_t_co2e: float = 0.0
+    formula: str = "IPCC AR6 GWP * delta_mass / 1000"
+
+
+class WastewaterResult(BaseModel):
+    """Scope 1 & 3 ETP wastewater treatment emissions result (IPCC 2006 Vol. 5 Ch. 6)."""
+    cod_inflow_kg: float
+    methane_generated_kg: float
+    methane_recovered_kg: float
+    net_methane_emitted_kg: float
+    emissions_t_co2e: float
+    formula: str = "Net CH4 (kg) * 27.9 (AR6 GWP) / 1000"
+    mcf: float = 0.30
+    b0: float = 0.25
+
+
 class GrossFootprintResult(BaseModel):
-    """Gross operational emissions (Scope 1 + Scope 2 actuals)."""
+    """Gross operational emissions (Scope 1 stationary combustion, process, ETP, and Scope 2 grid)."""
     scope1: Optional[Scope1CalculationResult] = None
     scope2: Optional[Scope2CalculationResult] = None
+    process_emissions: Optional[ProcessEmissionsResult] = None
+    wastewater_emissions: Optional[WastewaterResult] = None
     total_gross_co2e_t: float
     direct_co2_only_total_t: Optional[float] = None
 
@@ -216,6 +270,52 @@ class CarbonCalculateResponse(BaseModel):
     gross_footprint: GrossFootprintResult
     avoided_emissions: Optional[AvoidedEmissionsResult] = None
     scenario_comparison: Optional[ScenarioComparisonResult] = None
+
+
+# ─── Hash-Chain Immutable Audit Ledger Schemas ────────────────────────────────
+
+class AuditBlock(BaseModel):
+    """A cryptographically signed 15-minute interval audit block."""
+    block_height: int
+    timestamp: str
+    prev_hash: str
+    merkle_root: str
+    telemetry_summary: Dict[str, Any]
+    gross_carbon_tco2e: Dict[str, float]
+    audit_signature: str
+
+
+class LedgerVerifyResponse(BaseModel):
+    """Result of full cryptographic verification of the audit ledger."""
+    valid: bool
+    total_blocks: int
+    tampered_block_height: Optional[int] = None
+    message: str
+
+
+# ─── Live Carbon Quota & Operational Interlock Schemas ─────────────────────────
+
+class CarbonQuotaRequest(BaseModel):
+    """Payload to evaluate plant carbon quota burn rate and operational interlocks."""
+    permitted_budget_tco2e: float = Field(default=18.0, ge=0.1, description="Statutory or internal carbon budget for interval")
+    actual_emissions_tco2e: float = Field(ge=0.0, description="Cumulative emissions incurred in interval")
+    elapsed_fraction: float = Field(default=0.75, ge=0.01, le=1.0, description="Fraction of shift or billing cycle elapsed (0.0 to 1.0)")
+
+
+class CarbonQuotaResponse(BaseModel):
+    """Evaluation result for active carbon quotas and operational guardrails."""
+    burn_rate_index: float
+    permitted_budget_tco2e: float
+    actual_emissions_tco2e: float
+    status_tier: str = Field(description="'NORMAL' | 'ADVISORY' | 'LOCKOUT'")
+    status_color: str = Field(description="'green' | 'amber' | 'red'")
+    message: str
+    countdown_hours_to_breach: Optional[float] = None
+    active_interlocks: List[str]
+    recommended_actions: List[str]
+    override_permitted: bool = False
+    audit_compliance_status: str = "COMPLIANT_WITHIN_CAP"
+
 
 
 class FactorQueryResponse(BaseModel):

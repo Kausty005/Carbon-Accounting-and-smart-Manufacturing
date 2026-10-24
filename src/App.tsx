@@ -6,7 +6,8 @@ import {
   Building2, Sun, CloudRain, Coins, Info, Wrench,
   Flame, Fan, Server, Box, Compass, LogOut, User, RotateCcw,
   PanelRightClose, PanelRightOpen, Activity, ArrowRight,
-  Shield, Gauge, Printer, Download, ShieldAlert
+  Shield, Gauge, Printer, Download, ShieldAlert,
+  Database, ShieldCheck, Award, Terminal
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -23,6 +24,10 @@ import DigitalTwinView from './components/DigitalTwin/DigitalTwinView';
 import CarbonAccountingView from './components/Carbon/CarbonAccountingView';
 import AIAnomalyIntelligence from './components/AIAnomaly/AIAnomalyIntelligence';
 import EnergyForecastDashboard from './components/ForecastDashboard/EnergyForecastDashboard';
+import { AssetLibraryConfigurator } from './components/Library/AssetLibraryConfigurator';
+import { CarbonQuotaInterlock } from './components/Carbon/CarbonQuotaInterlock';
+import { ExecutivePresentationView } from './components/Executive/ExecutivePresentationView';
+import { EngineeringDiagnosticView } from './components/Diagnostics/EngineeringDiagnosticView';
 import { AIExplainProvider } from './components/AIExplain/AIExplainContext';
 import { AIExplainPopover } from './components/AIExplain/AIExplainPopover';
 import { Explainable } from './components/AIExplain/Explainable';
@@ -63,16 +68,31 @@ const PAGE_VARIANTS = {
   exit:    { opacity: 0, y: -8, transition: { duration: 0.2, ease: 'easeIn' as const } },
 };
 
-type View = 'overview' | 'scada' | 'simulator' | 'forecast' | 'carbon' | 'anomalies' | 'reports';
+type View =
+  | 'overview'
+  | 'executive'
+  | 'diagnostics'
+  | 'scada'
+  | 'simulator'
+  | 'configurator'
+  | 'quota'
+  | 'forecast'
+  | 'carbon'
+  | 'anomalies'
+  | 'reports';
 
 const NAV: { id: View; icon: React.ReactNode; label: string }[] = [
-  { id: 'overview',  icon: <LayoutGrid size={14} />,   label: 'Overview' },
-  { id: 'scada',     icon: <Box size={14} />,          label: '3D Factory Twin' },
-  { id: 'simulator', icon: <Sliders size={14} />,       label: 'Digital Twin' },
-  { id: 'forecast',  icon: <TrendingUp size={14} />,    label: 'Energy Forecast' },
-  { id: 'carbon',    icon: <Leaf size={14} />,          label: 'Carbon Accounting' },
-  { id: 'anomalies', icon: <Activity size={14} />,      label: 'AI Anomaly Intelligence' },
-  { id: 'reports',   icon: <FileText size={14} />,      label: 'Audit Report' },
+  { id: 'overview',     icon: <LayoutGrid size={14} />,   label: 'Overview' },
+  { id: 'executive',    icon: <Award size={14} />,        label: 'Executive View' },
+  { id: 'diagnostics',  icon: <Terminal size={14} />,     label: 'Diagnostics Cockpit' },
+  { id: 'scada',        icon: <Box size={14} />,          label: '3D Factory Twin' },
+  { id: 'simulator',    icon: <Sliders size={14} />,      label: 'Digital Twin' },
+  { id: 'configurator', icon: <Database size={14} />,     label: '50-Asset Catalog' },
+  { id: 'quota',        icon: <ShieldCheck size={14} />,  label: 'Carbon Quotas & Ledger' },
+  { id: 'forecast',     icon: <TrendingUp size={14} />,   label: 'Energy Forecast' },
+  { id: 'carbon',       icon: <Leaf size={14} />,         label: 'Carbon Accounting' },
+  { id: 'anomalies',    icon: <Activity size={14} />,     label: 'AI Anomaly Intelligence' },
+  { id: 'reports',      icon: <FileText size={14} />,     label: 'Audit Report' },
 ];
 
 const ASSET_COLORS: Record<string, string> = {
@@ -2288,6 +2308,50 @@ export default function App() {
             </button>
           )}
 
+          {/* Dual-Audience Quick Mode Switcher */}
+          <div style={{ display: 'flex', background: '#E2D9CC', padding: 2, borderRadius: 8, gap: 2 }}>
+            <button
+              type="button"
+              onClick={() => setView('executive')}
+              style={{
+                border: 'none',
+                padding: '4px 10px',
+                borderRadius: 6,
+                fontSize: 11,
+                fontWeight: 600,
+                cursor: 'pointer',
+                background: view === 'executive' ? '#FFFFFF' : 'transparent',
+                color: view === 'executive' ? '#1E252D' : '#6B7280',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                boxShadow: view === 'executive' ? '0 1px 2px rgba(0,0,0,0.08)' : 'none'
+              }}
+            >
+              <Award size={12} color={view === 'executive' ? '#2563EB' : '#6B7280'} /> Executive
+            </button>
+            <button
+              type="button"
+              onClick={() => setView('diagnostics')}
+              style={{
+                border: 'none',
+                padding: '4px 10px',
+                borderRadius: 6,
+                fontSize: 11,
+                fontWeight: 600,
+                cursor: 'pointer',
+                background: view === 'diagnostics' ? '#111827' : 'transparent',
+                color: view === 'diagnostics' ? '#38BDF8' : '#6B7280',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                boxShadow: view === 'diagnostics' ? '0 1px 2px rgba(0,0,0,0.15)' : 'none'
+              }}
+            >
+              <Terminal size={12} color={view === 'diagnostics' ? '#38BDF8' : '#6B7280'} /> Diagnostics
+            </button>
+          </div>
+
           {/* Priority Alert Bell with Red Notification Dot */}
           <div
             onClick={() => setView('anomalies')}
@@ -2508,11 +2572,40 @@ export default function App() {
               <ReportView params={params} carbonData={carbonData} activeSimulation={activeSimulation} />
             </motion.div>
           )}
+          {view === 'executive' && (
+            <motion.div key="executive" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%' }}>
+              <ExecutivePresentationView
+                carbonData={carbonData}
+                onNavigateToDiagnostics={() => setView('diagnostics')}
+                onNavigateToConfigurator={() => setView('configurator')}
+              />
+            </motion.div>
+          )}
+          {view === 'diagnostics' && (
+            <motion.div key="diagnostics" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%' }}>
+              <EngineeringDiagnosticView onNavigateToExecutive={() => setView('executive')} />
+            </motion.div>
+          )}
+          {view === 'configurator' && (
+            <motion.div key="configurator" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%' }}>
+              <AssetLibraryConfigurator
+                onSelectAsset={(id) => {
+                  setSelectedAsset(id);
+                  setView('scada');
+                }}
+              />
+            </motion.div>
+          )}
+          {view === 'quota' && (
+            <motion.div key="quota" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%' }}>
+              <CarbonQuotaInterlock />
+            </motion.div>
+          )}
         </AnimatePresence>
       </main>
 
       {/* Inspector (Shown on SCADA / Digital Twin workbench views) */}
-      {view !== 'overview' && view !== 'forecast' && showInspector && (
+      {view !== 'overview' && view !== 'forecast' && view !== 'executive' && view !== 'diagnostics' && view !== 'configurator' && view !== 'quota' && showInspector && (
         <InspectorPanel
           selectedId={selectedAsset}
           setView={setView}

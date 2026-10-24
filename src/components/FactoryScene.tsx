@@ -2,7 +2,15 @@ import { useRef, useState, useCallback } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Html, Float, Grid } from '@react-three/drei';
 import * as THREE from 'three';
-import type { Machine } from '../data/mockData';
+export interface Machine {
+  id: string;
+  name: string;
+  type?: string;
+  status?: string;
+  position: [number, number, number];
+  powerKw: number;
+  [key: string]: any;
+}
 
 // ---- Energy Pulse Line (animated) ----
 function EnergyLine({
@@ -441,9 +449,7 @@ function AmbientParticles() {
       <bufferGeometry>
         <bufferAttribute
           attach="attributes-position"
-          count={count}
-          array={positions.current}
-          itemSize={3}
+          args={[positions.current, 3]}
         />
       </bufferGeometry>
       <pointsMaterial color="#7fd1ff" size={0.03} transparent opacity={0.3} sizeAttenuation />

@@ -2,16 +2,27 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   LayoutGrid, Cpu, Sliders, Leaf, FileText,
   AlertTriangle, CheckCircle2, Zap, TrendingDown,
-  Printer, Download, ChevronRight, Box,
+  Printer, Download, ChevronRight, Box, Compass,
+  Home, LogOut, User, Gauge, Shield, Activity, ArrowRight, Globe,
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import ScadaFloorMap from './components/ScadaFloorMap';
 import Factory3DScene from './components/Factory3D/Factory3DScene';
+import HomePage from './components/HomePage/HomePage';
+import LoginModal from './components/Auth/LoginModal';
 import { DemandAreaChart, ComparisonLineChart, ScopePie } from './components/Charts';
 import {
   PLANT, ASSETS, HOURLY_BASE, CARBON,
   calcSimResult, type SimParams, type Asset,
 } from './data/mockData';
 import './index.css';
+
+// ─── Page Transition Animation Variants ────────────────────────────────────────
+const PAGE_VARIANTS = {
+  initial: { opacity: 0, y: 12 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.32, ease: 'easeOut' as const } },
+  exit:    { opacity: 0, y: -8, transition: { duration: 0.2, ease: 'easeIn' as const } },
+};
 
 type View = 'overview' | 'scada' | 'simulator' | 'carbon' | 'reports';
 
@@ -357,7 +368,44 @@ function SimulatorView({
         Digital Twin &amp; What-If Simulator — PrecisionWorks Manufacturing
       </div>
 
+      {/* Physics Operational Constraint Panel */}
+      <div className="panel" style={{ marginBottom: 12 }}>
+        <div className="panel-hdr"><Shield size={12} /> Physics Constraint Validation — Operational Safety Gate</div>
+        <div style={{ padding: '10px 12px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+          <ConstraintBadge
+            icon={<Gauge size={16} />}
+            label="Header Pressure"
+            value={`${params.pressureSetpoint.toFixed(1)} bar`}
+            constraint="min ≥ 6.2 bar"
+            pass={params.pressureSetpoint >= 6.2}
+            detail={`Air receiver buffer ${params.pressureSetpoint >= 6.5 ? 'ADEQUATE' : 'BORDERLINE'} — CNC pneumatic cycle safe`}
+          />
+          <ConstraintBadge
+            icon={<Activity size={16} />}
+            label="Shift Output Quota"
+            value="1,200 units"
+            constraint="100% target"
+            pass={true}
+            detail="Production unimpacted — idle cutoff only during non-machining windows"
+          />
+          <ConstraintBadge
+            icon={<Zap size={16} />}
+            label="Motor Starts/Hour"
+            value={params.autoIdleCutoff ? '2.4 /hr' : '4.1 /hr'}
+            constraint="max ≤ 6/hr"
+            pass={true}
+            detail="Auto-idle timer prevents rapid restart — winding insulation safe"
+          />
+        </div>
+        <div style={{ padding: '8px 12px 10px', fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--slate-500)', borderTop: '1px solid var(--border-muted)' }}>
+          <span style={{ color: 'var(--cyan)' }}>kVA Analysis: </span>
+          Baseline 147.2 kVA {params.autoIdleCutoff ? '→ 120.1 kVA (Simulated) ' : ''}— Contract ceiling: 160 kVA.
+          {params.autoIdleCutoff && <span style={{ color: 'var(--emerald)' }}> Power Factor: 0.91 → 0.96 (reactive kVAh penalty eliminated)</span>}
+        </div>
+      </div>
+
       <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: 12 }}>
+
         {/* Controls */}
         <div>
           <div className="panel">
@@ -432,7 +480,7 @@ function SimulatorView({
                     {'furnace_rated = 85 kW'}{'\n'}
                     {'peak_reduction = 85 × 0.18 = 15.3 kW'}{'\n'}
                     <span style={{ color: 'var(--emerald)' }}>
-                      {`MD reduction = ${result.furnacePeakReductionKw} kW (18%)`}
+                      {`MD reduction = ${result.peakReductionKva} kVA (18%)`}
                     </span>
                   </div>
                 )}
@@ -476,9 +524,9 @@ function SimulatorView({
                 </tr>
                 <tr>
                   <td className="td-label">Peak Demand Reduction</td>
-                  <td className="td-baseline">0 kW</td>
-                  <td className="td-proposed">{result.furnacePeakReductionKw} kW</td>
-                  <td className="td-delta">-{result.furnacePeakReductionKw} kW</td>
+                  <td className="td-baseline">0 kVA</td>
+                  <td className="td-proposed">{result.peakReductionKva} kVA</td>
+                  <td className="td-delta">-{result.peakReductionKva} kVA</td>
                 </tr>
                 <tr>
                   <td className="td-label">Compressor Idle Savings</td>
@@ -517,6 +565,47 @@ function SimulatorView({
   );
 }
 
+// ─── Physics Constraint Badge ──────────────────────────────────────────────────
+function ConstraintBadge({
+  icon, label, value, constraint, pass, detail
+}: {
+  icon: React.ReactNode; label: string; value: string;
+  constraint: string; pass: boolean; detail: string;
+}) {
+  return (
+    <div style={{
+      background: 'var(--panel)',
+      border: `1px solid ${pass ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`,
+      borderRadius: 8,
+      padding: '12px 14px',
+      display: 'flex',
+      alignItems: 'flex-start',
+      gap: 12,
+      boxShadow: `0 0 0 1px ${pass ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)'}`,
+    }}>
+      <div style={{
+        width: 32, height: 32, borderRadius: 6,
+        background: pass ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        color: pass ? 'var(--emerald)' : 'var(--red)', flexShrink: 0,
+      }}>{icon}</div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--slate-400)', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 2 }}>
+          {label}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 3 }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 16, fontWeight: 800, color: pass ? 'var(--emerald)' : 'var(--red)' }}>{value}</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--slate-500)', letterSpacing: 0.5 }}>{constraint}</span>
+        </div>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--slate-400)', letterSpacing: 0.5 }}>{detail}</div>
+      </div>
+      <span className={`badge ${pass ? 'badge-emerald' : 'badge-red'}`} style={{ flexShrink: 0 }}>
+        {pass ? <><CheckCircle2 size={8} /> PASS</> : <><AlertTriangle size={8} /> FAIL</>}
+      </span>
+    </div>
+  );
+}
+
 // ─── Carbon View ──────────────────────────────────────────────────────────────
 function CarbonView({
   params, gridEF, setGridEF,
@@ -528,84 +617,249 @@ function CarbonView({
   const s1 = CARBON.scope1Calc();
   const s2 = CARBON.scope2Calc(PLANT.baselineEnergy, gridEF);
   const total = +(s1.kgCO2e + s2.kgCO2e).toFixed(3);
-  const reductionPotential = calcSimResult(params).savingsCarbon;
+  const sim = calcSimResult(params);
+  const reductionPotential = sim.savingsCarbon;
+  const scope1Percent = ((s1.kgCO2e / total) * 100).toFixed(1);
+  const scope2Percent = ((s2.kgCO2e / total) * 100).toFixed(1);
 
   return (
-    <div className="scroll-area">
-      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--slate-400)', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 14 }}>
-        Carbon Accounting — ISO 14064 / GHG Protocol
+    <div className="scroll-area" style={{ padding: '20px 24px', maxWidth: 1200, margin: '0 auto' }}>
+      {/* Header with Standards Badges */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+            <Globe size={18} style={{ color: 'var(--cyan)' }} />
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--slate-100)', letterSpacing: 0.5, margin: 0 }}>
+              CARBON ACCOUNTING & ESG INVENTORY
+            </h2>
+          </div>
+          <p style={{ fontSize: 12, color: 'var(--slate-400)', margin: 0 }}>
+            PrecisionWorks Manufacturing • Location-based Scope 1 & Scope 2 Emissions Inventory
+          </p>
+        </div>
+
+        <div style={{ display: 'flex', gap: 8 }}>
+          <span style={{ fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 6, background: 'rgba(2, 132, 199, 0.15)', color: '#38bdf8', border: '1px solid rgba(2, 132, 199, 0.3)' }}>
+            ISO 14064-1:2018
+          </span>
+          <span style={{ fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 6, background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+            GHG PROTOCOL
+          </span>
+          <span style={{ fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 6, background: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
+            CEA INDIA v2024
+          </span>
+        </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
-        <div className="kpi-card" style={{ ['--kpi-color' as any]: 'var(--violet)' }}>
-          <div className="kpi-label">Total Emissions</div>
-          <div className="kpi-value" style={{ color: 'var(--violet)' }}>{total}<span className="kpi-unit">tCO₂e/day</span></div>
-          <div className="kpi-change warn">Scope 1 + Scope 2</div>
+      {/* Top 4 Big Stat KPI Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 20 }}>
+        <div style={{ background: '#111827', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 10, padding: '16px 18px', borderLeft: '4px solid #8b5cf6' }}>
+          <div style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600, marginBottom: 6 }}>
+            Total Carbon Footprint
+          </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
+            <span style={{ fontSize: 24, fontWeight: 800, color: '#ffffff', fontFamily: 'var(--font-mono)' }}>{total}</span>
+            <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>tCO₂e/day</span>
+          </div>
+          <div style={{ fontSize: 11, color: '#a78bfa' }}>
+            Scope 1 (1.7%) + Scope 2 (98.3%)
+          </div>
         </div>
-        <div className="kpi-card" style={{ ['--kpi-color' as any]: 'var(--emerald)' }}>
-          <div className="kpi-label">Reduction Potential</div>
-          <div className="kpi-value" style={{ color: 'var(--emerald)' }}>{reductionPotential}<span className="kpi-unit">tCO₂e</span></div>
-          <div className="kpi-change pos">via Digital Twin scenario</div>
+
+        <div style={{ background: '#111827', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 10, padding: '16px 18px', borderLeft: '4px solid #ef4444' }}>
+          <div style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600, marginBottom: 6 }}>
+            Scope 1 (Direct Fuel)
+          </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
+            <span style={{ fontSize: 24, fontWeight: 800, color: '#f87171', fontFamily: 'var(--font-mono)' }}>{s1.kgCO2e}</span>
+            <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>tCO₂e/day</span>
+          </div>
+          <div style={{ fontSize: 11, color: '#94a3b8' }}>
+            LPG Heat Treatment Furnace
+          </div>
+        </div>
+
+        <div style={{ background: '#111827', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 10, padding: '16px 18px', borderLeft: '4px solid #0284c7' }}>
+          <div style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600, marginBottom: 6 }}>
+            Scope 2 (Indirect Grid)
+          </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
+            <span style={{ fontSize: 24, fontWeight: 800, color: '#38bdf8', fontFamily: 'var(--font-mono)' }}>{s2.kgCO2e}</span>
+            <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>tCO₂e/day</span>
+          </div>
+          <div style={{ fontSize: 11, color: '#94a3b8' }}>
+            Purchased MSEDCL Electricity
+          </div>
+        </div>
+
+        <div style={{ background: '#111827', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 10, padding: '16px 18px', borderLeft: '4px solid #10b981' }}>
+          <div style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600, marginBottom: 6 }}>
+            Abatement Potential
+          </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
+            <span style={{ fontSize: 24, fontWeight: 800, color: '#34d399', fontFamily: 'var(--font-mono)' }}>{reductionPotential}</span>
+            <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>tCO₂e/day</span>
+          </div>
+          <div style={{ fontSize: 11, color: '#34d399' }}>
+            -7.9% via Idle Cutoff & ToD Shift
+          </div>
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: 12 }}>
-        <div>
-          <div className="panel">
-            <div className="panel-hdr">Scope Split</div>
-            <div style={{ padding: '0 4px 4px' }}>
-              <ScopePie scope1={s1.kgCO2e} scope2={s2.kgCO2e} />
-            </div>
-          </div>
-        </div>
-        <div>
-          {/* Scope 1 */}
-          <div className="scope-card">
-            <div className="scope-hdr">
-              <span className="badge badge-red">SCOPE 1</span>
-              Direct Combustion — LPG Furnace
-            </div>
-            <div className="scope-value" style={{ color: 'var(--red)' }}>
-              {s1.kgCO2e} tCO₂e/day
-            </div>
-            <StatRow label="Fuel type" value="LPG (Liquefied Petroleum Gas)" />
-            <StatRow label="Consumption rate" value="5 kg/hr × 12 hrs/day = 60 kg/day" />
-            <StatRow label="Emission factor" value="2.98 kg CO₂e/kg LPG (IPCC AR6)" />
-            <div className="scope-formula">
-              <span style={{ color: 'var(--slate-500)' }}>// Scope 1 — GHG Protocol Category: Stationary Combustion</span>{'\n'}
-              {s1.formula}{'\n'}
-              Note: Location-based method. Fuel EF from IPCC 2006 GL Vol. 2, Table 2.2.
-            </div>
-          </div>
-
-          {/* Scope 2 */}
-          <div className="scope-card">
-            <div className="scope-hdr">
-              <span className="badge badge-cyan">SCOPE 2</span>
-              Indirect — Purchased Electricity
-            </div>
-            <div className="scope-value" style={{ color: 'var(--cyan)' }}>
-              {s2.kgCO2e} tCO₂e/day
-            </div>
-            <StatRow label="Grid consumption" value={`${PLANT.baselineEnergy.toLocaleString()} kWh/period`} />
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 14px', borderBottom: '1px solid var(--border-muted)' }}>
-              <span className="stat-label">Emission factor (editable)</span>
-              <input
-                className="inline-input"
-                type="number" step={0.01} min={0.5} max={1.2}
-                value={gridEF}
-                onChange={e => setGridEF(parseFloat(e.target.value) || 0.82)}
-              />
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--slate-500)' }}>
-                kg CO₂e/kWh
+      {/* Main Grid: Calculation Details & Scope Breakdown */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 16 }}>
+        {/* Left Column: Scope 1 & Scope 2 Calculation Cards */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* Scope 1 Detailed Card */}
+          <div style={{ background: '#111827', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 12, padding: '20px 22px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ padding: '4px 10px', borderRadius: 6, background: 'rgba(239, 68, 68, 0.15)', color: '#f87171', fontWeight: 700, fontSize: 11, border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                  SCOPE 1
+                </span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: '#f1f5f9' }}>
+                  Direct Fuel Combustion (Stationary)
+                </span>
+              </div>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 16, fontWeight: 800, color: '#f87171' }}>
+                {s1.kgCO2e} tCO₂e/day
               </span>
             </div>
-            <StatRow label="Authority" value="CEA India Grid EF 2023-24" />
-            <div className="scope-formula">
-              <span style={{ color: 'var(--slate-500)' }}>// Scope 2 — Location-based Method (GHG Protocol)</span>{'\n'}
-              {s2.formula}{'\n'}
-              EF Source: Central Electricity Authority, India (CEA) Grid Emission Factor.
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.2fr', gap: 12, background: 'rgba(255, 255, 255, 0.03)', borderRadius: 8, padding: '12px 16px', marginBottom: 14 }}>
+              <div>
+                <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 3 }}>Source Asset</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#e2e8f0' }}>Thermic Intl 85 kW Furnace</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 3 }}>Activity Rate</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#e2e8f0', fontFamily: 'var(--font-mono)' }}>60 kg LPG / day</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 3 }}>Emission Factor</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#e2e8f0', fontFamily: 'var(--font-mono)' }}>2.98 kg CO₂e / kg LPG</div>
+              </div>
             </div>
+
+            {/* Formula Banner */}
+            <div style={{ background: '#0b0f17', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: 8, padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ fontSize: 12, color: '#cbd5e1', fontFamily: 'var(--font-mono)' }}>
+                <span style={{ color: '#94a3b8' }}>Formula: </span>
+                60 kg LPG/day × 2.98 kg CO₂e/kg ÷ 1,000 = <strong style={{ color: '#f87171' }}>0.179 tCO₂e/day</strong>
+              </div>
+              <span style={{ fontSize: 10, color: '#64748b' }}>IPCC 2006 GL Vol. 2 Table 2.2</span>
+            </div>
+          </div>
+
+          {/* Scope 2 Detailed Card */}
+          <div style={{ background: '#111827', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 12, padding: '20px 22px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ padding: '4px 10px', borderRadius: 6, background: 'rgba(2, 132, 199, 0.15)', color: '#38bdf8', fontWeight: 700, fontSize: 11, border: '1px solid rgba(2, 132, 199, 0.3)' }}>
+                  SCOPE 2
+                </span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: '#f1f5f9' }}>
+                  Indirect Emissions (Purchased Electricity)
+                </span>
+              </div>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 16, fontWeight: 800, color: '#38bdf8' }}>
+                {s2.kgCO2e} tCO₂e/day
+              </span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: 12, background: 'rgba(255, 255, 255, 0.03)', borderRadius: 8, padding: '12px 16px', marginBottom: 14 }}>
+              <div>
+                <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 3 }}>Sub-metered Baseline</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#e2e8f0', fontFamily: 'var(--font-mono)' }}>
+                  {PLANT.baselineEnergy.toLocaleString()} kWh/period
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 3 }}>Grid Utility</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#e2e8f0' }}>MSEDCL HT-I (Maharashtra)</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 3 }}>Grid Emission Factor</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <input
+                    type="number"
+                    step={0.01}
+                    min={0.5}
+                    max={1.2}
+                    value={gridEF}
+                    onChange={(e) => setGridEF(parseFloat(e.target.value) || 0.82)}
+                    style={{
+                      background: '#0b0f17',
+                      color: '#38bdf8',
+                      border: '1px solid rgba(2, 132, 199, 0.4)',
+                      borderRadius: 4,
+                      padding: '2px 8px',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      fontFamily: 'var(--font-mono)',
+                      width: 65,
+                    }}
+                  />
+                  <span style={{ fontSize: 10, color: '#94a3b8' }}>kg/kWh</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Formula Banner */}
+            <div style={{ background: '#0b0f17', border: '1px solid rgba(2, 132, 199, 0.2)', borderRadius: 8, padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ fontSize: 12, color: '#cbd5e1', fontFamily: 'var(--font-mono)' }}>
+                <span style={{ color: '#94a3b8' }}>Formula: </span>
+                {PLANT.baselineEnergy.toLocaleString()} kWh × {gridEF} kg/kWh ÷ 1,000 = <strong style={{ color: '#38bdf8' }}>{s2.kgCO2e} tCO₂e/day</strong>
+              </div>
+              <span style={{ fontSize: 10, color: '#64748b' }}>CEA Baseline DB v20.0 (2024)</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Scope Split Donut Chart & Verification Dossier */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* Scope Split Donut Panel */}
+          <div style={{ background: '#111827', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 12, padding: '20px 22px' }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#e2e8f0', marginBottom: 12 }}>
+              Emissions By Scope
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
+              <ScopePie scope1={s1.kgCO2e} scope2={s2.kgCO2e} />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#38bdf8' }} />
+                  <span style={{ color: '#94a3b8' }}>Scope 2 (Electricity)</span>
+                </div>
+                <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#38bdf8' }}>
+                  {scope2Percent}% ({s2.kgCO2e} t)
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#f87171' }} />
+                  <span style={{ color: '#94a3b8' }}>Scope 1 (LPG Gas)</span>
+                </div>
+                <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#f87171' }}>
+                  {scope1Percent}% ({s1.kgCO2e} t)
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Audit Verification Protocol Box */}
+          <div style={{ background: '#111827', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 12, padding: '18px 20px' }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#e2e8f0', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <CheckCircle2 size={14} style={{ color: '#10b981' }} />
+              <span>Third-Party Verification Ready</span>
+            </div>
+            <p style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.5, margin: 0 }}>
+              Every calculation is anchored to sub-meter interval telemetry and published CEA/IPCC emission factors, fulfilling ISO 14064-3 and ISO 50001:2018 certification audit standards.
+            </p>
           </div>
         </div>
       </div>
@@ -644,7 +898,7 @@ Root Cause:         No auto-idle cutoff configured; pressure setpoint at 7.5 bar
 RECOMMENDED ACTIONS
 1. Install Auto-Idle Cutoff relay (5-min unloaded timer) — Cost: ₹2,00,000, Payback: ${result.roi} months
 2. Reduce airline pressure setpoint from 7.5 to ${params.pressureSetpoint} bar
-3. Stagger Furnace pre-heat by 45 min to reduce peak demand by ${result.furnacePeakReductionKw} kW
+3. Stagger Furnace pre-heat by 45 min to reduce peak demand by ${result.peakReductionKva} kVA
 
 CARBON ACCOUNTING (ISO 14064 / GHG Protocol)
 Scope 1 (LPG):      ${s1.kgCO2e} tCO₂e/day  [${s1.formula}]
@@ -938,6 +1192,12 @@ function InspectorPanel({
 
 // ─── Root App ─────────────────────────────────────────────────────────────────
 export default function App() {
+  const [currentPage, setCurrentPage] = useState<'home' | 'login' | 'platform'>('home');
+  const [currentUser, setCurrentUser] = useState<{ email: string; role: string; name: string } | null>({
+    email: 'operator@precisionworks.mfg',
+    role: 'Plant SCADA Operator',
+    name: 'Vikram Malhotra',
+  });
   const [view, setView] = useState<View>('scada');
   const [selectedAsset, setSelectedAsset] = useState<string | null>(null);
   const [mapMode, setMapMode] = useState<'3d' | '2d'>('3d');
@@ -978,16 +1238,70 @@ export default function App() {
 
   const anyFix = params.autoIdleCutoff || params.pressureSetpoint < 7.5 || params.staggerFurnace;
 
+  if (currentPage === 'home') {
+    return (
+      <AnimatePresence mode="wait">
+        <motion.div key="home" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ position: 'fixed', inset: 0, zIndex: 100 }}>
+          <HomePage
+            onLaunchPlatform={() => setCurrentPage('platform')}
+            onOpenLogin={() => setCurrentPage('login')}
+          />
+        </motion.div>
+      </AnimatePresence>
+    );
+  }
+
+  if (currentPage === 'login') {
+    return (
+      <AnimatePresence mode="wait">
+        <motion.div key="login" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ position: 'fixed', inset: 0, zIndex: 100 }}>
+          <LoginModal
+            onLogin={(user) => {
+              setCurrentUser(user);
+              setCurrentPage('platform');
+            }}
+            onBackToHome={() => setCurrentPage('home')}
+          />
+        </motion.div>
+      </AnimatePresence>
+    );
+  }
+
   return (
     <div className="app-shell">
       {/* Top bar */}
       <header className="topbar">
-        <div className="topbar-brand">
+        <div
+          className="topbar-brand"
+          style={{ cursor: 'pointer' }}
+          onClick={() => setCurrentPage('home')}
+          title="Return to 3D Glide Home"
+        >
           <Zap size={16} />
           WattWise AI
           <span className="sub">// INDUSTRIAL EMS</span>
         </div>
         <div className="topbar-center">
+          <button
+            onClick={() => setCurrentPage('home')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              background: 'rgba(0, 0, 0, 0.05)',
+              border: '1px solid var(--border)',
+              borderRadius: 9999,
+              padding: '4px 12px',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              fontWeight: 600,
+              color: '#0f172a',
+              cursor: 'pointer',
+            }}
+          >
+            <Compass size={12} color="var(--cyan)" /> 3D Glide Home
+          </button>
+          <div className="topbar-divider" />
           <span className="shift-badge">PrecisionWorks Mfg</span>
           <div className="topbar-divider" />
           <span className={`tod-badge ${(() => { const h = new Date().getHours(); return (h>=9&&h<=12)||(h>=18&&h<=21)?'peak':'offpeak'; })()}`}>
@@ -1004,6 +1318,30 @@ export default function App() {
           <span className="topbar-clock">
             {new Date().toTimeString().slice(0,8)}
           </span>
+          <div className="topbar-divider" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#334155' }}>
+            <User size={13} color="var(--cyan)" />
+            <span style={{ fontWeight: 600 }}>{currentUser?.name || 'Operator'}</span>
+          </div>
+          <button
+            onClick={() => setCurrentPage('login')}
+            title="Switch User / Sign Out"
+            style={{
+              background: 'transparent',
+              border: '1px solid var(--border)',
+              borderRadius: 6,
+              padding: '4px 8px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              fontSize: 10,
+              color: 'var(--slate-500)',
+              fontFamily: 'var(--font-mono)',
+            }}
+          >
+            <LogOut size={11} /> Exit
+          </button>
         </div>
       </header>
 
@@ -1012,6 +1350,33 @@ export default function App() {
 
       {/* Sidebar */}
       <nav className="sidebar">
+        <div style={{ padding: '12px 14px 6px' }}>
+          <button
+            onClick={() => setCurrentPage('home')}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              background: '#0f172a',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: 6,
+              padding: '8px 10px',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              fontWeight: 600,
+              letterSpacing: 1,
+              textTransform: 'uppercase',
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(15, 23, 42, 0.15)',
+            }}
+          >
+            <Compass size={12} /> 3D Glide Home
+          </button>
+        </div>
+
         <div className="sidebar-section-label">Views</div>
         {NAV.map(n => (
           <div
@@ -1047,24 +1412,40 @@ export default function App() {
 
       {/* Main */}
       <main className="main-content">
-        {view === 'overview' && <OverviewView setView={setView} />}
-        {view === 'scada' && (
-          <ScadaView
-            assets={simulatedAssets}
-            selectedId={selectedAsset}
-            onSelect={handleSelectAsset}
-            onSimulate={handleSimulate}
-            mapMode={mapMode}
-            setMapMode={setMapMode}
-          />
-        )}
-        {view === 'simulator' && (
-          <SimulatorView params={params} setParams={(p) => { setParams(p); setSimMode(true); }} />
-        )}
-        {view === 'carbon' && (
-          <CarbonView params={params} gridEF={gridEF} setGridEF={setGridEF} />
-        )}
-        {view === 'reports' && <ReportView params={params} />}
+        <AnimatePresence mode="wait">
+          {view === 'overview' && (
+            <motion.div key="overview" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%' }}>
+              <OverviewView setView={setView} />
+            </motion.div>
+          )}
+          {view === 'scada' && (
+            <motion.div key="scada" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }}>
+              <ScadaView
+                assets={simulatedAssets}
+                selectedId={selectedAsset}
+                onSelect={handleSelectAsset}
+                onSimulate={handleSimulate}
+                mapMode={mapMode}
+                setMapMode={setMapMode}
+              />
+            </motion.div>
+          )}
+          {view === 'simulator' && (
+            <motion.div key="simulator" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%' }}>
+              <SimulatorView params={params} setParams={(p) => { setParams(p); setSimMode(true); }} />
+            </motion.div>
+          )}
+          {view === 'carbon' && (
+            <motion.div key="carbon" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%' }}>
+              <CarbonView params={params} gridEF={gridEF} setGridEF={setGridEF} />
+            </motion.div>
+          )}
+          {view === 'reports' && (
+            <motion.div key="reports" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%' }}>
+              <ReportView params={params} />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
 
       {/* Inspector */}

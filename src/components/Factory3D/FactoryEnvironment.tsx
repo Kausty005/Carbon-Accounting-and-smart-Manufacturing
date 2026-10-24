@@ -4,10 +4,10 @@ import { Grid, Float } from '@react-three/drei';
 import * as THREE from 'three';
 
 // ─── Colors & Materials ──────────────────────────────────────────────────────
-const MAT_CRANE_YELLOW = new THREE.MeshStandardMaterial({ color: '#facc15', metalness: 0.4, roughness: 0.3 });
-const MAT_STEEL_BEAM = new THREE.MeshStandardMaterial({ color: '#1e293b', metalness: 0.85, roughness: 0.25 });
-const MAT_PILLAR = new THREE.MeshStandardMaterial({ color: '#1e293b', roughness: 0.8 });
-const MAT_VENT_DUCT = new THREE.MeshStandardMaterial({ color: '#64748b', metalness: 0.9, roughness: 0.2 });
+const MAT_CRANE_YELLOW = new THREE.MeshStandardMaterial({ color: '#f59e0b', metalness: 0.3, roughness: 0.4 });
+const MAT_STEEL_BEAM = new THREE.MeshStandardMaterial({ color: '#475569', metalness: 0.6, roughness: 0.3 });
+const MAT_PILLAR = new THREE.MeshStandardMaterial({ color: '#d8d5cb', roughness: 0.85 });
+const MAT_VENT_DUCT = new THREE.MeshStandardMaterial({ color: '#94a3b8', metalness: 0.7, roughness: 0.3 });
 
 // ─── Machine Bay Positions (matches mockData ASSETS) ─────────────────────────
 export const ASSET_POSITIONS: Record<string, [number, number, number]> = {
@@ -97,7 +97,7 @@ export function OverheadGantryCrane() {
   );
 }
 
-// ─── Concrete Structural Columns & Safety Stations ───────────────────────────
+// ─── Perimeter Safety Bollards & Workbay Anchors ─────────────────────────────
 function StructuralColumns() {
   const columnPositions: [number, number, string][] = [
     [-8, -5.5, 'C-01'],
@@ -110,22 +110,17 @@ function StructuralColumns() {
 
   return (
     <group>
-      {columnPositions.map(([x, z, label], idx) => (
+      {columnPositions.map(([x, z], idx) => (
         <group key={`col-${idx}`} position={[x, 0, z]}>
-          {/* Octagonal Heavy Column */}
-          <mesh position={[0, 2.5, 0]}>
-            <cylinderGeometry args={[0.3, 0.35, 5.0, 8]} />
+          {/* Low Safety Foundation Bollard (Non-obstructive) */}
+          <mesh position={[0, 0.35, 0]}>
+            <cylinderGeometry args={[0.22, 0.25, 0.7, 16]} />
             <primitive object={MAT_PILLAR} />
           </mesh>
-          {/* Yellow/Black Caution Base Ring */}
-          <mesh position={[0, 0.4, 0]}>
-            <cylinderGeometry args={[0.36, 0.38, 0.8, 8]} />
+          {/* Yellow Safety Base Ring */}
+          <mesh position={[0, 0.15, 0]}>
+            <cylinderGeometry args={[0.26, 0.28, 0.3, 16]} />
             <primitive object={MAT_CRANE_YELLOW} />
-          </mesh>
-          {/* Red Emergency Stop Station */}
-          <mesh position={[x > 0 ? -0.32 : 0.32, 1.2, 0]}>
-            <boxGeometry args={[0.08, 0.18, 0.12]} />
-            <meshStandardMaterial color="#ef4444" />
           </mesh>
         </group>
       ))}
@@ -263,36 +258,42 @@ export default function FactoryEnvironment({
 }) {
   return (
     <group>
-      {/* High-Tech Industrial Dark Floor */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
-        <planeGeometry args={[26, 20]} />
-        <meshStandardMaterial color="#080e1a" metalness={0.4} roughness={0.7} />
+      {/* Expansive Architectural Alabaster Ceramic Floor */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
+        <planeGeometry args={[120, 120]} />
+        <meshStandardMaterial color="#edeae4" metalness={0.04} roughness={0.9} />
       </mesh>
 
-      {/* Blueprint Subgrid */}
+      {/* Primary Plant Floor Bay */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.005, 0]} receiveShadow>
+        <planeGeometry args={[26, 20]} />
+        <meshStandardMaterial color="#e5e1d7" metalness={0.08} roughness={0.75} />
+      </mesh>
+
+      {/* Precision Blueprint Subgrid */}
       <Grid
-        args={[26, 20]}
+        args={[36, 28]}
         position={[0, 0, 0]}
         cellSize={1}
         cellThickness={0.6}
-        cellColor="#0284c7"
+        cellColor="#c9c5b8"
         sectionSize={4}
         sectionThickness={1.2}
-        sectionColor="#0ea5e9"
-        fadeDistance={28}
-        fadeStrength={1.8}
+        sectionColor="#a8a395"
+        fadeDistance={38}
+        fadeStrength={1.2}
         infiniteGrid={false}
       />
 
-      {/* Concrete Walls with Blueprint Wireframe Framing */}
+      {/* Architectural Walls with Clean Wireframe Framing */}
       {/* North Wall (Back) */}
       <mesh position={[0, 2.5, -9]}>
         <boxGeometry args={[22, 5, 0.1]} />
-        <meshBasicMaterial color="#0369a1" transparent opacity={0.03} />
+        <meshBasicMaterial color="#dedad0" transparent opacity={0.05} />
       </mesh>
       <lineSegments position={[0, 2.5, -9]}>
         <edgesGeometry args={[new THREE.BoxGeometry(22, 5, 0.1)]} />
-        <lineBasicMaterial color="#0284c7" transparent opacity={0.25} />
+        <lineBasicMaterial color="#b5b0a2" transparent opacity={0.4} />
       </lineSegments>
 
       {/* West Wall (Left) */}
@@ -318,12 +319,8 @@ export default function FactoryEnvironment({
       {/* Bay Markings & Crosswalk */}
       <MachineBayMarkings showSafetyZones={showSafetyZones} />
 
-      {/* Columns & Safety Stations */}
+      {/* Perimeter Foundation Bollards */}
       <StructuralColumns />
-
-      {/* Overhead Crane & Roof Structure */}
-      <OverheadGantryCrane />
-      <RoofArchitecture />
     </group>
   );
 }

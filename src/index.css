@@ -974,6 +974,335 @@ input[type=range]::-webkit-slider-thumb {
   border-color: #94a3b8;
 }
 
+/* ─── Case-Specific Selector Bar ─────────────────────────────────────────── */
+.dt-case-selector-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.dt-case-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.dt-case-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.dt-case-badge-guide {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: rgba(2, 132, 199, 0.08);
+  border: 1px solid rgba(2, 132, 199, 0.25);
+  color: var(--cyan);
+}
+
+.dt-case-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr) 140px;
+  gap: 10px;
+}
+
+@media (max-width: 1280px) {
+  .dt-case-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .dt-case-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dt-case-card {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  background: #fafaf9;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.dt-case-card:hover {
+  background: #ffffff;
+  border-color: rgba(2, 132, 199, 0.35);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px -2px rgba(0, 0, 0, 0.05);
+}
+
+.dt-case-card.active {
+  background: #ffffff;
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.18), 0 3px 8px -2px rgba(0, 0, 0, 0.06);
+}
+
+.dt-case-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.dt-case-tag {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.dt-case-tag.emerald {
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+}
+.dt-case-tag.cyan {
+  background: rgba(2, 132, 199, 0.1);
+  color: #0284c7;
+}
+.dt-case-tag.amber {
+  background: rgba(245, 158, 11, 0.1);
+  color: #d97706;
+}
+.dt-case-tag.red {
+  background: rgba(220, 38, 38, 0.1);
+  color: #dc2626;
+}
+.dt-case-tag.neutral {
+  background: rgba(100, 116, 139, 0.1);
+  color: #475569;
+}
+
+.dt-case-asset-lbl {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.dt-case-title {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.3;
+  margin-bottom: 3px;
+}
+
+.dt-case-card.active .dt-case-title {
+  color: var(--cyan);
+}
+
+.dt-case-desc {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  color: #64748b;
+  line-height: 1.35;
+  margin-bottom: 6px;
+  flex: 1;
+}
+
+.dt-case-target-metric {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  padding-top: 4px;
+  border-top: 1px dashed rgba(0, 0, 0, 0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* ─── Guided Demo Pipeline Bar ────────────────────────────────────────────── */
+.dt-pipeline-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+
+.dt-pipeline-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+}
+
+.dt-pipeline-btn {
+  flex: 1;
+  min-width: 140px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 6px 10px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  text-align: left;
+}
+
+.dt-pipeline-btn:hover {
+  border-color: var(--cyan);
+  background: #f8fafc;
+}
+
+.dt-pipeline-btn.active {
+  background: #ffffff;
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.2);
+}
+
+.dt-pipeline-step-hdr {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.dt-pipeline-btn.active .dt-pipeline-step-hdr {
+  color: var(--cyan);
+}
+
+.dt-pipeline-tag {
+  font-family: var(--font-ui);
+  font-size: 9.5px;
+  color: #64748b;
+  margin-top: 1px;
+}
+
+.dt-pipeline-script-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: #ffffff;
+  border: 1px solid rgba(2, 132, 199, 0.25);
+  border-left: 4px solid var(--cyan);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  color: #1e293b;
+  line-height: 1.4;
+}
+
+/* ─── Compact Machine Pill Selector ───────────────────────────────────────── */
+.dt-asset-pill-row {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.dt-asset-pill {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  background: #fafaf9;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.dt-asset-pill:hover {
+  background: #ffffff;
+  border-color: rgba(2, 132, 199, 0.3);
+}
+
+.dt-asset-pill.active {
+  background: #ffffff;
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 1.5px rgba(2, 132, 199, 0.15);
+}
+
+.dt-asset-pill .pill-id {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.dt-asset-pill .pill-kw {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: #64748b;
+}
+
+/* ─── Collapsible Advanced Telemetry Details ──────────────────────────────── */
+.dt-advanced-details {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fafaf9;
+  overflow: hidden;
+}
+
+.dt-advanced-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  user-select: none;
+}
+
+.dt-advanced-summary:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.dt-advanced-content {
+  padding: 10px 12px;
+  border-top: 1px solid var(--border);
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 /* ─── Presets Bar ──────────────────────────────────────────────────────────── */
 .dt-presets-bar {
   display: flex;

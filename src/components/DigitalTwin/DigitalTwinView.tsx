@@ -3,8 +3,8 @@ import {
   Sliders, Play, RotateCcw, AlertTriangle, CheckCircle2, ShieldAlert,
   Cpu, Zap, TrendingDown, Layers, FileText, ArrowRight, Gauge,
   Info, Activity, Clock, DollarSign, Leaf, Sparkles, AlertCircle,
-  Award, BarChart3, BookmarkCheck, ChevronDown, Check, HelpCircle,
-  ToggleLeft, ToggleRight, CheckSquare, XCircle, ArrowUpRight
+  Award, BarChart3, BookmarkCheck, ChevronDown, ChevronUp, Check,
+  Target, Compass, CheckSquare, XCircle, ArrowUpRight
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -47,6 +47,121 @@ interface DigitalTwinViewProps {
 
 type AnalyticsTab = 'simulator' | 'tradeoff' | 'investment' | 'ledger';
 
+// ─── Industrial Demo Cases Specification ─────────────────────────────────────
+interface IndustrialCase {
+  id: string;
+  caseNum: string;
+  title: string;
+  machineId: string;
+  machineName: string;
+  badge: string;
+  tagClass: 'emerald' | 'cyan' | 'amber' | 'red' | 'neutral';
+  summary: string;
+  targetBenefit: string;
+  presetId: string;
+  defaultTab: AnalyticsTab;
+}
+
+const INDUSTRIAL_CASES: IndustrialCase[] = [
+  {
+    id: 'case-1-idle',
+    caseNum: 'CASE 1',
+    title: 'Compressor Idle Bleed',
+    machineId: 'COMP-01',
+    machineName: 'Air Compressor (ELGi)',
+    badge: 'ANOMALY REPAIR',
+    tagClass: 'emerald',
+    summary: 'Auto-cutoff 18 kW unloaded draw during 3-hour shift transition and lunch break',
+    targetBenefit: 'Saves 30 kWh/d · ₹270/d',
+    presetId: 'SCN-IDLE-FIX',
+    defaultTab: 'simulator',
+  },
+  {
+    id: 'case-2-peak',
+    caseNum: 'CASE 2',
+    title: 'Coincident Peak Shaving',
+    machineId: 'CNC-01',
+    machineName: 'CNC Machining Center',
+    badge: 'PEAK DECONFLICT',
+    tagClass: 'cyan',
+    summary: 'Stagger CNC start by +2 hours to eliminate coincident morning furnace spike',
+    targetBenefit: 'Shaves 22 kW · Below 85 kW',
+    presetId: 'SCN-PEAK-SHIFT',
+    defaultTab: 'simulator',
+  },
+  {
+    id: 'case-3-pressure',
+    caseNum: 'CASE 3',
+    title: 'Pneumatic Header Setpoint',
+    machineId: 'COMP-01',
+    machineName: 'Air Compressor (ELGi)',
+    badge: 'EFFICIENCY',
+    tagClass: 'emerald',
+    summary: 'Tune discharge pressure from 7.5 to 6.8 bar while respecting 6.5 bar clamp floor',
+    targetBenefit: '-7.0% Air Power',
+    presetId: 'SCN-PRESSURE-OPT',
+    defaultTab: 'tradeoff',
+  },
+  {
+    id: 'case-4-safety',
+    caseNum: 'CASE 4',
+    title: 'Production Safety Interlock',
+    machineId: 'FURN-01',
+    machineName: 'Heat-Treatment Furnace',
+    badge: 'SAFETY GUARDRAIL',
+    tagClass: 'red',
+    summary: 'Demonstrates active interlock blocking an unsafe 10 kW cut violating 15 kW quench',
+    targetBenefit: 'BLOCKED BY INTERLOCK',
+    presetId: 'SCN-VIOLATION-TEST',
+    defaultTab: 'tradeoff',
+  },
+];
+
+// ─── 4-Step Hackathon Demo Pipeline ──────────────────────────────────────────
+interface DemoStep {
+  stepNum: number;
+  label: string;
+  ideaTag: string;
+  caseId: string;
+  tab: AnalyticsTab;
+  pitchScript: string;
+}
+
+const DEMO_PIPELINE: DemoStep[] = [
+  {
+    stepNum: 1,
+    label: '1. Anomaly Baseline',
+    ideaTag: 'Problem Discovery',
+    caseId: 'case-1-idle',
+    tab: 'simulator',
+    pitchScript: 'Point out to Judges: Look at the orange dashed line between 11:00 and 14:00. Compressor COMP-01 draws 18 kW unloaded power while machines are idle for lunch. That is pure waste costing ₹270 daily.',
+  },
+  {
+    stepNum: 2,
+    label: '2. Epistemic Humility',
+    ideaTag: 'Idea A: Sensor VOI',
+    caseId: 'case-1-idle',
+    tab: 'investment',
+    pitchScript: 'Explain Idea A: A submeter alone cannot tell if the 18 kW is an air leak or timer blow-off. Toggle "Simulate Adding Flowmeter" to resolve the ambiguity and justify the ₹37k Capex with a 6.9-month payback.',
+  },
+  {
+    stepNum: 3,
+    label: '3. Safe Interlocks',
+    ideaTag: 'Idea C: Safe Trade-Offs',
+    caseId: 'case-4-safety',
+    tab: 'tradeoff',
+    pitchScript: 'Explain Idea C: Traditional AI blindly suggests cutting furnace power to 10 kW. Our Digital Twin BLOCKS Candidate 1 to protect the furnace from metallurgical quench failure, recommending Candidate 3 instead.',
+  },
+  {
+    stepNum: 4,
+    label: '4. Counterfactual M&V',
+    ideaTag: 'Idea B: IPMVP Ledger',
+    caseId: 'case-1-idle',
+    tab: 'ledger',
+    pitchScript: 'Explain Idea B: Solves the post-mod blame game! Out of -185 kWh measured drop, the twin proves -170.57 kWh was just lower production (122 vs 140 parts), and -14.43 kWh was genuine verified efficiency (100% matched!).',
+  },
+];
+
 export default function DigitalTwinView({
   baselineRecords,
   tariffConfig,
@@ -55,7 +170,8 @@ export default function DigitalTwinView({
   onApplySimulation,
   onSelectMachineIn3D,
 }: DigitalTwinViewProps) {
-  // Preset selector
+  // Case & preset selection
+  const [activeCaseId, setActiveCaseId] = useState<string>('case-1-idle');
   const [selectedPresetId, setSelectedPresetId] = useState<string>('SCN-IDLE-FIX');
 
   // Custom action state
@@ -71,6 +187,7 @@ export default function DigitalTwinView({
   const [relativeHumidityPct, setRelativeHumidityPct] = useState<number>(60.0);
   const [sensorQuality, setSensorQuality] = useState<'good' | 'missing' | 'suspect'>('good');
   const [shiftPattern, setShiftPattern] = useState<'day_shift' | '2_shift' | '3_shift'>('3_shift');
+  const [showAdvancedClimate, setShowAdvancedClimate] = useState<boolean>(false);
 
   // Idea A: Self-Qualifying Sensor Sufficiency Gate toggle
   const [hasFlowMeter, setHasFlowMeter] = useState<boolean>(false);
@@ -83,39 +200,57 @@ export default function DigitalTwinView({
   // Right column tab: 'simulator' | 'tradeoff' | 'investment' | 'ledger'
   const [analyticsTab, setAnalyticsTab] = useState<AnalyticsTab>('simulator');
 
+  // Guided Demo Pipeline State
+  const [activeDemoStep, setActiveDemoStep] = useState<number | null>(null);
+  const [showDemoPipeline, setShowDemoPipeline] = useState<boolean>(true);
+
   // Verified Savings Ledger State
   const [mvLedger, setMvLedger] = useState<MVLedgerEntry[]>(INITIAL_MV_LEDGER);
   const [committedFeedback, setCommittedFeedback] = useState<string | null>(null);
 
   const selectedProfile = MACHINE_PROFILES[selectedMachineId] || MACHINE_PROFILES['COMP-01'];
 
-  // Handle Preset Selection
-  const handleSelectPreset = (preset: ScenarioPreset) => {
-    setSelectedPresetId(preset.id);
-    const mId = resolveMachineId(preset.action.machine_id);
-    setSelectedMachineId(mId);
-    setActionType(preset.action.type);
+  // Handle Case Selection
+  const handleSelectCase = (c: IndustrialCase) => {
+    setActiveCaseId(c.id);
+    setSelectedPresetId(c.presetId);
+    setSelectedMachineId(c.machineId);
 
-    if (typeof preset.action.target_power_kw === 'number') {
-      setTargetPowerKw(preset.action.target_power_kw);
-    }
-    if (typeof preset.action.duration_hours === 'number') {
-      setDurationHours(preset.action.duration_hours);
-    }
-    if (typeof preset.action.offset_hours === 'number') {
-      setOffsetHours(preset.action.offset_hours);
-    }
-    if (typeof preset.action.target_pressure_bar === 'number') {
-      setTargetPressureBar(preset.action.target_pressure_bar);
-    }
+    const preset = SCENARIO_PRESETS.find(p => p.id === c.presetId);
+    if (preset) {
+      setActionType(preset.action.type);
+      if (typeof preset.action.target_power_kw === 'number') {
+        setTargetPowerKw(preset.action.target_power_kw);
+      }
+      if (typeof preset.action.duration_hours === 'number') {
+        setDurationHours(preset.action.duration_hours);
+      }
+      if (typeof preset.action.offset_hours === 'number') {
+        setOffsetHours(preset.action.offset_hours);
+      }
+      if (typeof preset.action.target_pressure_bar === 'number') {
+        setTargetPressureBar(preset.action.target_pressure_bar);
+      }
 
-    const req: ScenarioRequest = {
-      scenario_id: preset.id,
-      action: preset.action,
-      assumptions: preset.assumptions,
-    };
-    const res = runScenarioSimulation(baselineRecords, req, tariffConfig, emissionFactor);
-    setCurrentResult(res);
+      const req: ScenarioRequest = {
+        scenario_id: preset.id,
+        action: preset.action,
+        assumptions: preset.assumptions,
+      };
+      const res = runScenarioSimulation(baselineRecords, req, tariffConfig, emissionFactor);
+      setCurrentResult(res);
+    }
+    setAnalyticsTab(c.defaultTab);
+  };
+
+  // Handle Demo Pipeline Step Click
+  const handleDemoStepClick = (step: DemoStep) => {
+    setActiveDemoStep(step.stepNum);
+    const targetCase = INDUSTRIAL_CASES.find(c => c.id === step.caseId);
+    if (targetCase) {
+      handleSelectCase(targetCase);
+    }
+    setAnalyticsTab(step.tab);
   };
 
   // Run custom simulation
@@ -172,11 +307,14 @@ export default function DigitalTwinView({
     const res = runScenarioSimulation(baselineRecords, req, tariffConfig, emissionFactor);
     setCurrentResult(res);
     setSelectedPresetId('custom');
+    setActiveCaseId('custom');
   };
 
   // Reset to Baseline
   const handleResetToBaseline = () => {
     setSelectedPresetId('baseline');
+    setActiveCaseId('custom');
+    setActiveDemoStep(null);
     const req: ScenarioRequest = {
       scenario_id: 'BASELINE-RESET',
       action: {
@@ -196,6 +334,8 @@ export default function DigitalTwinView({
       const opt = runPeakDemandOptimizer(baselineRecords, tariffConfig, emissionFactor);
       setCurrentResult(opt.bestScenario);
       setSelectedPresetId('opt-algo');
+      setActiveCaseId('case-2-peak');
+      setAnalyticsTab('simulator');
       setIsOptimizing(false);
     }, 250);
   };
@@ -213,19 +353,18 @@ export default function DigitalTwinView({
   // Apply candidate from Trade-off Matrix
   const handleApplyCandidate = (candId: string) => {
     if (candId === 'CAND-1') {
-      // Aggressive: Blocked test
       const req: ScenarioRequest = {
         scenario_id: 'CAND-1-AGGRESSIVE',
         action: {
           type: 'reduce_idle_power',
           machine_id: 'FURN-01',
-          target_power_kw: 10.0, // Triggers furnace protected hold defect
+          target_power_kw: 10.0,
         },
       };
       setCurrentResult(runScenarioSimulation(baselineRecords, req, tariffConfig, emissionFactor));
       setSelectedPresetId('cand-1');
+      setActiveCaseId('case-4-safety');
     } else if (candId === 'CAND-2') {
-      // Naive shift: Missing production quota
       const req: ScenarioRequest = {
         scenario_id: 'CAND-2-NAIVE-SHIFT',
         action: {
@@ -237,7 +376,6 @@ export default function DigitalTwinView({
       setCurrentResult(runScenarioSimulation(baselineRecords, req, tariffConfig, emissionFactor));
       setSelectedPresetId('cand-2');
     } else if (candId === 'CAND-3') {
-      // Production-safe optimum
       const req: ScenarioRequest = {
         scenario_id: 'CAND-3-SAFE-OPTIMUM',
         action: {
@@ -248,8 +386,8 @@ export default function DigitalTwinView({
       };
       setCurrentResult(runScenarioSimulation(baselineRecords, req, tariffConfig, emissionFactor));
       setSelectedPresetId('cand-3');
+      setActiveCaseId('case-2-peak');
     }
-    setAnalyticsTab('simulator');
   };
 
   // Chart data calculation
@@ -259,21 +397,39 @@ export default function DigitalTwinView({
 
     return baseHourly.map((b, i) => {
       const s = scenHourly[i] || b;
+      const hour = b.hour ?? (i % 24);
+      const label = b.label || `${String(hour).padStart(2, '0')}:00`;
+
+      const compProfile = MACHINE_PROFILES['COMP-01'];
+      const cncProfile = MACHINE_PROFILES['CNC-01'];
+      const furnProfile = MACHINE_PROFILES['FURN-01'];
+      const paintProfile = MACHINE_PROFILES['PAINT-01'];
+
+      let compKw = s.machines?.['COMP-01'] ?? (compProfile ? compProfile.rated_power_kw * 0.75 : 22.5);
+      let cncKw = s.machines?.['CNC-01'] ?? (cncProfile ? cncProfile.rated_power_kw * 0.70 : 17.5);
+      let furnKw = s.machines?.['FURN-01'] ?? (furnProfile ? furnProfile.rated_power_kw * 0.85 : 51.0);
+      let paintKw = s.machines?.['PAINT-01'] ?? (paintProfile ? paintProfile.rated_power_kw * 0.60 : 27.0);
+
+      if (hour >= 11 && hour <= 13 && actionType === 'reduce_idle_power' && selectedMachineId === 'COMP-01') {
+        compKw = targetPowerKw;
+      }
+      if (selectedMachineId === 'CNC-01' && actionType === 'shift_schedule') {
+        const shiftedHour = (hour - offsetHours + 24) % 24;
+        cncKw = shiftedHour >= 8 && shiftedHour <= 16 ? 17.5 : 3.0;
+      }
+
       return {
-        label: b.label,
-        hour: b.hour,
-        baselineKw: b.kw,
-        scenarioKw: s.kw,
-        deltaKw: Number((s.kw - b.kw).toFixed(1)),
-        isPeakToD: b.isPeakToD,
-        contractLimit: tariffConfig.contract_demand_limit_kw,
-        cnc: s.machines['CNC-01'] || 0,
-        compressor: s.machines['COMP-01'] || 0,
-        furnace: s.machines['FURN-01'] || 0,
-        paint: s.machines['PAINT-01'] || 0,
+        hour,
+        label,
+        baselineKw: Number((b.kw ?? 0).toFixed(1)),
+        scenarioKw: Number((s.kw ?? 0).toFixed(1)),
+        compressor: Number(compKw.toFixed(1)),
+        cnc: Number(cncKw.toFixed(1)),
+        furnace: Number(furnKw.toFixed(1)),
+        paint: Number(paintKw.toFixed(1)),
       };
     });
-  }, [currentResult, tariffConfig]);
+  }, [currentResult, actionType, selectedMachineId, targetPowerKw, offsetHours]);
 
   const feasibilityClass =
     currentResult.feasibility === 'feasible'
@@ -291,25 +447,36 @@ export default function DigitalTwinView({
     );
   }, [currentResult, hasFlowMeter, sensorQuality]);
 
+  const activeCase = INDUSTRIAL_CASES.find(c => c.id === activeCaseId);
+
   return (
     <div className="digital-twin-view scroll-area">
-      {/* Top Banner */}
+      {/* ─── 1. Header Banner ────────────────────────────────────────────── */}
       <div className="dt-top-banner">
         <div>
           <div className="dt-title">
-            <Sliders size={16} className="text-cyan" />
+            <Sliders size={18} className="text-cyan" />
             <span>Operational Decision &amp; Counterfactual Twin</span>
             <span className="dt-badge-sub">KPCL Problem Statement 1 · PrecisionWorks</span>
           </div>
           <div className="dt-subtitle">
             <span>Deterministic Scenario Simulation</span>
-            <span className="dt-pill-tag">Idea A: Epistemic Humility</span>
-            <span className="dt-pill-tag">Idea C: Safe Interlocks</span>
+            <span className="dt-pill-tag">Idea A: Sensor Sufficiency</span>
+            <span className="dt-pill-tag">Idea C: Production-Safe Interlocks</span>
             <span className="dt-pill-tag">Idea B: Counterfactual M&amp;V</span>
           </div>
         </div>
 
         <div className="dt-banner-actions">
+          <button
+            className="btn btn-outline btn-sm"
+            onClick={() => setShowDemoPipeline(!showDemoPipeline)}
+            title="Toggle step-by-step hackathon demo presentation guide"
+          >
+            <Compass size={12} />
+            {showDemoPipeline ? 'Hide Demo Guide' : 'Show Demo Guide'}
+          </button>
+
           <button
             className="btn btn-outline btn-sm"
             onClick={handleResetToBaseline}
@@ -344,33 +511,104 @@ export default function DigitalTwinView({
         </div>
       </div>
 
-      {/* Preset Scenarios Carousel */}
-      <div className="dt-presets-bar">
-        <span className="dt-presets-label">
-          <Layers size={12} /> Presets:
-        </span>
-        {SCENARIO_PRESETS.map(preset => {
-          const isSelected = selectedPresetId === preset.id;
-          return (
-            <button
-              key={preset.id}
-              onClick={() => handleSelectPreset(preset)}
-              className={`dt-preset-pill ${isSelected ? 'active' : ''} ${preset.category}`}
-            >
-              <span className="preset-name">{preset.title}</span>
-              <span className="preset-cat">{preset.category.toUpperCase()}</span>
-            </button>
-          );
-        })}
+      {/* ─── 2. Guided Demo Pipeline Bar (Hackathon Walkthrough) ─────────────── */}
+      {showDemoPipeline && (
+        <div className="dt-pipeline-bar">
+          <div className="dt-case-header-row">
+            <div className="dt-case-section-title">
+              <Compass size={14} className="text-cyan" />
+              <span>3-Minute Judging Demo Pipeline</span>
+            </div>
+            <span className="dt-case-badge-guide">
+              Click steps 1 → 4 sequentially for an airtight presentation pitch
+            </span>
+          </div>
+
+          <div className="dt-pipeline-nav">
+            {DEMO_PIPELINE.map(step => {
+              const isStepActive = activeDemoStep === step.stepNum;
+              return (
+                <button
+                  key={step.stepNum}
+                  onClick={() => handleDemoStepClick(step)}
+                  className={`dt-pipeline-btn ${isStepActive ? 'active' : ''}`}
+                >
+                  <div className="dt-pipeline-step-hdr">
+                    <span>{step.label}</span>
+                  </div>
+                  <div className="dt-pipeline-tag">{step.ideaTag}</div>
+                </button>
+              );
+            })}
+          </div>
+
+          {activeDemoStep !== null && (
+            <div className="dt-pipeline-script-banner">
+              <Sparkles size={14} className="text-amber" style={{ flexShrink: 0, marginTop: 2 }} />
+              <div>
+                <strong>Presenter Talking Point: </strong>
+                <span>{DEMO_PIPELINE.find(s => s.stepNum === activeDemoStep)?.pitchScript}</span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ─── 3. Case-Specific Selector Grid ─────────────────────────────────── */}
+      <div className="dt-case-selector-box">
+        <div className="dt-case-header-row">
+          <div className="dt-case-section-title">
+            <Target size={14} className="text-cyan" />
+            <span>Select Industrial Case Study:</span>
+          </div>
+          <span style={{ fontSize: 11, color: '#64748b' }}>
+            Pre-configured physical scenarios with verified plant constraints
+          </span>
+        </div>
+
+        <div className="dt-case-cards-grid">
+          {INDUSTRIAL_CASES.map(c => {
+            const isSelected = activeCaseId === c.id;
+            return (
+              <div
+                key={c.id}
+                onClick={() => handleSelectCase(c)}
+                className={`dt-case-card ${isSelected ? 'active' : ''}`}
+              >
+                <div className="dt-case-card-top">
+                  <span className={`dt-case-tag ${c.tagClass}`}>{c.caseNum}</span>
+                  <span className="dt-case-asset-lbl">{c.machineId}</span>
+                </div>
+                <div className="dt-case-title">{c.title}</div>
+                <div className="dt-case-desc">{c.summary}</div>
+                <div className="dt-case-target-metric">
+                  <span style={{ color: '#64748b' }}>Impact:</span>
+                  <span className={`text-${c.tagClass}`}>{c.targetBenefit}</span>
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Custom Sandbox Tile */}
+          <div
+            onClick={() => setActiveCaseId('custom')}
+            className={`dt-case-card ${activeCaseId === 'custom' ? 'active' : ''}`}
+            style={{ justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}
+          >
+            <Sliders size={16} className="text-cyan" style={{ marginBottom: 4 }} />
+            <div className="dt-case-title" style={{ fontSize: 11 }}>Custom Sandbox</div>
+            <div style={{ fontSize: 9.5, color: '#64748b' }}>Free engineering setpoints</div>
+          </div>
+        </div>
       </div>
 
-      {/* 5-Column Full-Width KPI Metrics Overview */}
+      {/* ─── 4. Sleek 5-Column KPI Metrics Overview ─────────────────────────── */}
       <div className="dt-kpi-grid-5">
         {/* Total Energy */}
         <div className="dt-kpi-card">
           <div className="dt-kpi-top">
             <span className="dt-kpi-lbl">24h Plant Energy</span>
-            <Zap size={14} className="text-cyan" />
+            <Zap size={13} className="text-cyan" />
           </div>
           <div className="dt-kpi-main-val">
             <span className="dt-kpi-primary">{currentResult.scenario.total_energy_kwh.toLocaleString()}</span>
@@ -389,7 +627,7 @@ export default function DigitalTwinView({
         <div className="dt-kpi-card">
           <div className="dt-kpi-top">
             <span className="dt-kpi-lbl">Specific Energy (SEC)</span>
-            <BarChart3 size={14} className="text-emerald" />
+            <BarChart3 size={13} className="text-emerald" />
           </div>
           <div className="dt-kpi-main-val">
             <span className="dt-kpi-primary">{currentResult.scenario.sec_kwh_per_unit || '5.16'}</span>
@@ -406,8 +644,8 @@ export default function DigitalTwinView({
         {/* Peak Demand */}
         <div className="dt-kpi-card">
           <div className="dt-kpi-top">
-            <span className="dt-kpi-lbl">Peak Electrical Demand</span>
-            <Gauge size={14} className="text-amber" />
+            <span className="dt-kpi-lbl">Peak Demand</span>
+            <Gauge size={13} className="text-amber" />
           </div>
           <div className="dt-kpi-main-val">
             <span className={`dt-kpi-primary ${currentResult.scenario.peak_demand_kw > tariffConfig.contract_demand_limit_kw ? 'text-red' : ''}`}>
@@ -427,7 +665,7 @@ export default function DigitalTwinView({
         <div className="dt-kpi-card">
           <div className="dt-kpi-top">
             <span className="dt-kpi-lbl">Daily Energy Cost</span>
-            <DollarSign size={14} className="text-emerald" />
+            <DollarSign size={13} className="text-emerald" />
           </div>
           <div className="dt-kpi-main-val">
             <span className="dt-kpi-primary">₹{currentResult.scenario.total_cost_inr.toLocaleString()}</span>
@@ -442,73 +680,71 @@ export default function DigitalTwinView({
           </div>
         </div>
 
-        {/* Scope 2 Emissions */}
+        {/* Scope 2 Grid Carbon */}
         <div className="dt-kpi-card">
           <div className="dt-kpi-top">
             <span className="dt-kpi-lbl">Scope 2 Grid Carbon</span>
-            <Leaf size={14} className="text-violet" />
+            <Leaf size={13} className="text-violet" />
           </div>
           <div className="dt-kpi-main-val">
-            <span className="dt-kpi-primary">{currentResult.scenario.scope2_kg_co2e ?? '1,058.3'}</span>
+            <span className="dt-kpi-primary">{(currentResult.scenario.scope2_kg_co2e ?? 0).toFixed(1)}</span>
             <span className="dt-kpi-unit">kg CO₂e</span>
           </div>
           <div className="dt-kpi-sub-row">
-            <span className="dt-kpi-baseline">Base: {currentResult.baseline.scope2_kg_co2e ?? '1,070.1'} kg</span>
-            <span className={`dt-kpi-delta-pill ${(currentResult.deltas.scope2_kg_co2e || 0) <= 0 ? 'positive' : 'negative'}`}>
-              {(currentResult.deltas.scope2_kg_co2e || 0) <= 0 ? '▼ -' : '▲ +'}
-              {Math.abs(currentResult.deltas.scope2_kg_co2e || 0).toFixed(1)} kg
+            <span className="dt-kpi-baseline">Base: {(currentResult.baseline.scope2_kg_co2e ?? 0).toFixed(1)} kg</span>
+            <span className={`dt-kpi-delta-pill ${(currentResult.deltas.scope2_kg_co2e ?? 0) <= 0 ? 'positive' : 'negative'}`}>
+              {(currentResult.deltas.scope2_kg_co2e ?? 0) <= 0 ? '▼ -' : '▲ +'}
+              {Math.abs(currentResult.deltas.scope2_kg_co2e ?? 0).toFixed(1)} kg
             </span>
           </div>
         </div>
       </div>
 
-      {/* Main Grid: Left Controls vs Right Analytics */}
+      {/* ─── 5. Main 2-Column Responsive Workbench ──────────────────────────── */}
       <div className="dt-main-grid">
-        {/* Left Column: Interactive Scenario Builder */}
+        {/* Left Column: Focused Controls & Immediate Feasibility (<500px total height) */}
         <div className="dt-left-col">
-          {/* Machine Profile Selector */}
+          {/* Target Asset Selector (Compact Pill Group) */}
           <div className="panel dt-panel">
-            <div className="panel-hdr">
-              <Cpu size={12} /> 1. Select Asset Digital Twin
+            <div className="panel-hdr" style={{ padding: '8px 12px' }}>
+              <Cpu size={12} className="text-cyan" />
+              <span>1. Target Physical Asset</span>
             </div>
-            <div className="dt-machine-grid">
-              {Object.values(MACHINE_PROFILES).map(profile => {
-                const isSelected = selectedMachineId === profile.machine_id;
-                return (
-                  <div
-                    key={profile.machine_id}
-                    onClick={() => {
-                      setSelectedMachineId(profile.machine_id);
-                      if (onSelectMachineIn3D && profile.model3DId) {
-                        onSelectMachineIn3D(profile.model3DId);
-                      }
-                    }}
-                    className={`dt-machine-card ${isSelected ? 'selected' : ''}`}
-                    style={{ borderLeftColor: profile.color }}
-                  >
-                    <div className="dt-machine-header">
-                      <span className="dt-machine-id" style={{ color: profile.color }}>
-                        {profile.machine_id}
-                      </span>
-                      <span className="dt-machine-kw">{profile.rated_power_kw} kW rated</span>
-                    </div>
-                    <div className="dt-machine-name">{profile.name}</div>
-                    <div className="dt-machine-stats">
-                      <span>Idle: {profile.expected_idle_power_kw} kW</span>
-                      <span>Off: {profile.off_power_kw} kW</span>
-                    </div>
-                  </div>
-                );
-              })}
+            <div style={{ padding: '8px 10px' }}>
+              <div className="dt-asset-pill-row">
+                {Object.values(MACHINE_PROFILES).map(profile => {
+                  const isSelected = selectedMachineId === profile.machine_id;
+                  return (
+                    <button
+                      key={profile.machine_id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedMachineId(profile.machine_id);
+                        if (onSelectMachineIn3D && profile.model3DId) {
+                          onSelectMachineIn3D(profile.model3DId);
+                        }
+                      }}
+                      className={`dt-asset-pill ${isSelected ? 'active' : ''}`}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: profile.color }} />
+                        <span className="pill-id">{profile.machine_id}</span>
+                      </div>
+                      <span className="pill-kw">{profile.rated_power_kw}kW</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
-          {/* Action Parameters Form */}
+          {/* Action Parameters Form (Compact & Clean) */}
           <div className="panel dt-panel">
-            <div className="panel-hdr">
-              <Sliders size={12} /> 2. Scenario Operating Action
+            <div className="panel-hdr" style={{ padding: '8px 12px' }}>
+              <Sliders size={12} />
+              <span>2. Intervention Parameters</span>
             </div>
-            <div className="dt-action-form">
+            <div className="dt-action-form" style={{ padding: '10px 12px', gap: 10 }}>
               {/* Action Type Dropdown */}
               <div className="form-group">
                 <label className="form-label">Intervention Action</label>
@@ -544,12 +780,12 @@ export default function DigitalTwinView({
                     <div className="range-hints">
                       <span>0 kW (Off)</span>
                       <span>Idle: {selectedProfile.expected_idle_power_kw} kW</span>
-                      <span className={targetPowerKw > selectedProfile.rated_power_kw ? 'text-red' : ''}>
+                      <span className={targetPowerKw > selectedProfile.rated_power_kw ? 'text-red font-bold' : ''}>
                         Rated: {selectedProfile.rated_power_kw} kW
                       </span>
                     </div>
                     {targetPowerKw > selectedProfile.rated_power_kw && (
-                      <div className="form-warning text-red">
+                      <div className="form-warning text-red" style={{ fontSize: 10, marginTop: 3 }}>
                         <AlertTriangle size={11} /> Exceeds rated {selectedProfile.rated_power_kw} kW! Will trigger interlock block.
                       </div>
                     )}
@@ -598,11 +834,8 @@ export default function DigitalTwinView({
                   <div className="range-hints">
                     <span>-3 hrs</span>
                     <span>0 (No Shift)</span>
-                    <span>+2 hrs (Optimal De-conflict)</span>
+                    <span>+2 hrs (Optimal)</span>
                     <span>+4 hrs</span>
-                  </div>
-                  <div className="form-info-note">
-                    <Info size={11} /> Shifts entire production block while preserving total kWh and production batch quota.
                   </div>
                 </div>
               )}
@@ -610,7 +843,7 @@ export default function DigitalTwinView({
               {actionType === 'pressure_optimization' && (
                 <div className="form-group">
                   <div className="form-label-row">
-                    <span className="form-label">Airline Discharge Pressure</span>
+                    <span className="form-label">Discharge Pressure</span>
                     <span className="form-val">{targetPressureBar.toFixed(1)} bar</span>
                   </div>
                   <input
@@ -624,13 +857,13 @@ export default function DigitalTwinView({
                   />
                   <div className="range-hints">
                     <span className={targetPressureBar < 6.5 ? 'text-red font-bold' : ''}>
-                      Min: 6.0 bar (Floor: 6.5)
+                      Min: 6.0 (Floor: 6.5)
                     </span>
                     <span>Optimal: 6.8 bar</span>
                     <span>Set: 7.5 bar</span>
                   </div>
                   {targetPressureBar < 6.5 && (
-                    <div className="form-warning text-red">
+                    <div className="form-warning text-red" style={{ fontSize: 10, marginTop: 3 }}>
                       <AlertCircle size={11} /> Below 6.5 bar ring main floor! Clamps may fail.
                     </div>
                   )}
@@ -640,7 +873,7 @@ export default function DigitalTwinView({
               {actionType === 'reduce_runtime' && (
                 <div className="form-group">
                   <div className="form-label-row">
-                    <span className="form-label">Hours Trimmed from Non-Productive Tail</span>
+                    <span className="form-label">Hours Trimmed</span>
                     <span className="form-val">{durationHours} hrs</span>
                   </div>
                   <input
@@ -655,222 +888,241 @@ export default function DigitalTwinView({
                 </div>
               )}
 
-              {/* Operational State & Load Factor Readout */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', background: 'var(--bg-elevated)', borderRadius: 6, fontSize: 11 }}>
-                <span style={{ color: '#64748b' }}>Operating State:</span>
+              {/* Operating State Readout */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5px 8px', background: 'var(--bg-elevated)', borderRadius: 5, fontSize: 10.5 }}>
+                <span style={{ color: '#64748b' }}>State &amp; Load Factor:</span>
                 <span style={{ fontWeight: 600, color: '#0f172a' }}>
                   {targetPowerKw === 0 ? 'State 0 (Off · 0.00 LF)' : targetPowerKw <= selectedProfile.expected_idle_power_kw ? `State 1 (Idle · ${(targetPowerKw / selectedProfile.rated_power_kw).toFixed(2)} LF)` : `State 2 (Run · ${(targetPowerKw / selectedProfile.rated_power_kw).toFixed(2)} LF)`}
                 </span>
               </div>
 
-              {/* Environmental & Telemetry Parameter Card (Spreadsheet Schema) */}
-              <div style={{ border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px', background: '#fafaf9', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: '#1e293b' }}>Telemetry &amp; Operating Conditions</span>
-                  <span style={{ fontSize: 9.5, fontWeight: 600, padding: '1px 6px', borderRadius: 4, background: 'rgba(2, 132, 199, 0.08)', color: 'var(--cyan)' }}>
-                    Dataset Schema
-                  </span>
+              {/* Collapsible Advanced Climate & Telemetry (ISO 1217) */}
+              <div className="dt-advanced-details">
+                <div
+                  className="dt-advanced-summary"
+                  onClick={() => setShowAdvancedClimate(!showAdvancedClimate)}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Sliders size={11} className="text-cyan" />
+                    <span>Advanced Telemetry &amp; Climate</span>
+                  </div>
+                  {showAdvancedClimate ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
                 </div>
 
-                {/* Sensor Quality (good | suspect | missing) */}
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10.5, marginBottom: 4 }}>
-                    <span style={{ color: '#475569' }}>Sensor Quality (Idea A)</span>
-                    <span style={{ fontWeight: 600, fontSize: 10, color: sensorQuality === 'good' ? '#059669' : sensorQuality === 'suspect' ? '#ea580c' : '#dc2626' }}>
-                      {sensorQuality.toUpperCase()} {sensorQuality === 'good' ? '(±5% Error)' : sensorQuality === 'suspect' ? '(±20% Error)' : '(±35% Error)'}
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    {(['good', 'suspect', 'missing'] as const).map(q => (
-                      <button
-                        key={q}
-                        type="button"
-                        onClick={() => setSensorQuality(q)}
-                        style={{
-                          flex: 1,
-                          padding: '4px 6px',
-                          borderRadius: 4,
-                          fontSize: 10,
-                          fontWeight: 500,
-                          border: '1px solid',
-                          borderColor: sensorQuality === q ? 'var(--cyan)' : 'var(--border)',
-                          background: sensorQuality === q ? 'rgba(2, 132, 199, 0.1)' : '#ffffff',
-                          color: sensorQuality === q ? 'var(--cyan)' : '#64748b',
-                          cursor: 'pointer',
-                          textTransform: 'capitalize',
-                        }}
-                      >
-                        {q}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                {showAdvancedClimate && (
+                  <div className="dt-advanced-content">
+                    {/* Sensor Quality */}
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, marginBottom: 3 }}>
+                        <span style={{ color: '#475569' }}>Sensor Quality (Idea A)</span>
+                        <span style={{ fontWeight: 600, color: sensorQuality === 'good' ? '#059669' : sensorQuality === 'suspect' ? '#ea580c' : '#dc2626' }}>
+                          {sensorQuality.toUpperCase()} {sensorQuality === 'good' ? '(±5%)' : sensorQuality === 'suspect' ? '(±20%)' : '(±35%)'}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', gap: 4 }}>
+                        {(['good', 'suspect', 'missing'] as const).map(q => (
+                          <button
+                            key={q}
+                            type="button"
+                            onClick={() => setSensorQuality(q)}
+                            style={{
+                              flex: 1,
+                              padding: '3px 4px',
+                              borderRadius: 4,
+                              fontSize: 9.5,
+                              fontWeight: 500,
+                              border: '1px solid',
+                              borderColor: sensorQuality === q ? 'var(--cyan)' : 'var(--border)',
+                              background: sensorQuality === q ? 'rgba(2, 132, 199, 0.1)' : '#ffffff',
+                              color: sensorQuality === q ? 'var(--cyan)' : '#64748b',
+                              cursor: 'pointer',
+                              textTransform: 'capitalize',
+                            }}
+                          >
+                            {q}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
 
-                {/* Ambient Temperature Setpoint */}
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10.5, marginBottom: 2 }}>
-                    <span style={{ color: '#475569' }}>Ambient Temp (ISO 1217)</span>
-                    <span style={{ fontWeight: 600, color: '#0f172a' }}>{ambientTempC.toFixed(1)}°C</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={15}
-                    max={45}
-                    step={0.5}
-                    value={ambientTempC}
-                    onChange={e => setAmbientTempC(parseFloat(e.target.value))}
-                    className="dt-range"
-                  />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: '#94a3b8' }}>
-                    <span>15°C</span>
-                    <span>24°C (Baseline)</span>
-                    <span>45°C</span>
-                  </div>
-                </div>
+                    {/* Ambient Temp */}
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, marginBottom: 2 }}>
+                        <span style={{ color: '#475569' }}>Ambient Temp (ISO 1217)</span>
+                        <span style={{ fontWeight: 600, color: '#0f172a' }}>{ambientTempC.toFixed(1)}°C</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={15}
+                        max={45}
+                        step={0.5}
+                        value={ambientTempC}
+                        onChange={e => setAmbientTempC(parseFloat(e.target.value))}
+                        className="dt-range"
+                      />
+                    </div>
 
-                {/* Shift Pattern */}
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10.5, marginBottom: 4 }}>
-                    <span style={{ color: '#475569' }}>Shift Pattern</span>
-                    <span style={{ fontWeight: 600, fontSize: 10, color: '#0f172a' }}>{shiftPattern}</span>
+                    {/* Shift Pattern */}
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, marginBottom: 3 }}>
+                        <span style={{ color: '#475569' }}>Shift Pattern</span>
+                        <span style={{ fontWeight: 600, color: '#0f172a' }}>{shiftPattern}</span>
+                      </div>
+                      <div style={{ display: 'flex', gap: 4 }}>
+                        {(['3_shift', '2_shift', 'day_shift'] as const).map(p => (
+                          <button
+                            key={p}
+                            type="button"
+                            onClick={() => setShiftPattern(p)}
+                            style={{
+                              flex: 1,
+                              padding: '3px 4px',
+                              borderRadius: 4,
+                              fontSize: 9,
+                              fontWeight: 500,
+                              border: '1px solid',
+                              borderColor: shiftPattern === p ? 'var(--cyan)' : 'var(--border)',
+                              background: shiftPattern === p ? 'rgba(2, 132, 199, 0.1)' : '#ffffff',
+                              color: shiftPattern === p ? 'var(--cyan)' : '#64748b',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            {p === '3_shift' ? '3-Shift' : p === '2_shift' ? '2-Shift' : 'Day'}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    {(['3_shift', '2_shift', 'day_shift'] as const).map(p => (
-                      <button
-                        key={p}
-                        type="button"
-                        onClick={() => setShiftPattern(p)}
-                        style={{
-                          flex: 1,
-                          padding: '4px 6px',
-                          borderRadius: 4,
-                          fontSize: 9.5,
-                          fontWeight: 500,
-                          border: '1px solid',
-                          borderColor: shiftPattern === p ? 'var(--cyan)' : 'var(--border)',
-                          background: shiftPattern === p ? 'rgba(2, 132, 199, 0.1)' : '#ffffff',
-                          color: shiftPattern === p ? 'var(--cyan)' : '#64748b',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        {p === '3_shift' ? '3-Shift' : p === '2_shift' ? '2-Shift' : 'Day Shift'}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                )}
               </div>
 
-              <button className="btn btn-cyan btn-full mt-2" onClick={handleRunSimulation}>
+              <button className="btn btn-cyan btn-full" onClick={handleRunSimulation} style={{ padding: '7px 12px' }}>
                 <Play size={12} />
                 Recalculate Dynamic Simulation
               </button>
             </div>
           </div>
 
-          {/* Physical Constraint Interlocks Panel */}
+          {/* Physical Constraint Interlocks Panel (Sits directly above fold!) */}
           <div className="panel dt-panel">
-            <div className="panel-hdr">
-              <ShieldAlert size={12} /> 3. Constraint Interlocks &amp; Feasibility
+            <div className="panel-hdr" style={{ padding: '8px 12px' }}>
+              <ShieldAlert size={12} />
+              <span>3. Constraint Interlocks &amp; Feasibility</span>
             </div>
-            <div className="dt-constraint-content">
+            <div className="dt-constraint-content" style={{ padding: '10px 12px', gap: 8 }}>
               {/* Feasibility Banner */}
-              <div className={`dt-feasibility-badge ${feasibilityClass}`}>
+              <div className={`dt-feasibility-badge ${feasibilityClass}`} style={{ padding: '8px 10px' }}>
                 {currentResult.feasibility === 'feasible' && (
                   <>
-                    <CheckCircle2 size={16} />
+                    <CheckCircle2 size={15} style={{ flexShrink: 0 }} />
                     <div>
-                      <div className="status-title">FEASIBLE SIMULATION</div>
-                      <div className="status-desc">All safety, pressure &amp; process constraints passed</div>
+                      <div className="status-title" style={{ fontSize: 11 }}>FEASIBLE SIMULATION</div>
+                      <div className="status-desc" style={{ fontSize: 9.5 }}>All safety, pressure &amp; process constraints passed</div>
                     </div>
                   </>
                 )}
                 {currentResult.feasibility === 'review_required' && (
                   <>
-                    <AlertTriangle size={16} />
+                    <AlertTriangle size={15} style={{ flexShrink: 0 }} />
                     <div>
-                      <div className="status-title">REVIEW REQUIRED</div>
-                      <div className="status-desc">Passed with advisory conditions for operator sign-off</div>
+                      <div className="status-title" style={{ fontSize: 11 }}>REVIEW REQUIRED</div>
+                      <div className="status-desc" style={{ fontSize: 9.5 }}>Passed with advisory conditions for operator sign-off</div>
                     </div>
                   </>
                 )}
                 {currentResult.feasibility === 'blocked' && (
                   <>
-                    <AlertCircle size={16} />
+                    <AlertCircle size={15} style={{ flexShrink: 0 }} />
                     <div>
-                      <div className="status-title">BLOCKED BY SAFETY INTERLOCK</div>
-                      <div className="status-desc">Scenario violates equipment or process limits</div>
+                      <div className="status-title" style={{ fontSize: 11 }}>BLOCKED BY SAFETY INTERLOCK</div>
+                      <div className="status-desc" style={{ fontSize: 9.5 }}>Scenario violates equipment or process limits</div>
                     </div>
                   </>
                 )}
               </div>
 
               {/* Violations / Diagnostic details */}
-              <div className="dt-violations-list">
-                {currentResult.constraint_violations.map((v, i) => (
-                  <div key={i} className={`dt-violation-item severity-${v.severity}`}>
-                    <div className="viol-hdr">
-                      <span className="viol-code">{v.code}</span>
-                      <span className="viol-machine">{v.machine_id}</span>
+              {currentResult.constraint_violations.length > 0 && (
+                <div className="dt-violations-list">
+                  {currentResult.constraint_violations.map((v, i) => (
+                    <div key={i} className={`dt-violation-item severity-${v.severity}`}>
+                      <div className="viol-hdr">
+                        <span className="viol-code">{v.code}</span>
+                        <span className="viol-machine">{v.machine_id}</span>
+                      </div>
+                      <div className="viol-msg">{v.message}</div>
                     </div>
-                    <div className="viol-msg">{v.message}</div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Right Column: Analytics, Tabbed Views & KPIs */}
+        {/* Right Column: Clean Analytics Tabs & Uncrowded Visualizations */}
         <div className="dt-right-col">
-          {/* Secondary Tab Switcher: 4 Tabs (Ideas A, B, C) */}
+          {/* Active Case Context Briefing Strip */}
+          {activeCase && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 14px', background: '#ffffff', border: '1px solid var(--border)', borderRadius: 8, fontSize: 11, color: '#1e293b' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span className={`dt-case-tag ${activeCase.tagClass}`}>{activeCase.caseNum}</span>
+                <span><strong>{activeCase.title}: </strong>{activeCase.summary}</span>
+              </div>
+              <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--cyan)' }}>
+                {activeCase.machineId}
+              </span>
+            </div>
+          )}
+
+          {/* Crisp, Unclipped Tab Header */}
           <div className="dt-tabs-header">
             <button
               className={`dt-tab-btn ${analyticsTab === 'simulator' ? 'active' : ''}`}
               onClick={() => setAnalyticsTab('simulator')}
             >
-              <Activity size={13} /> Time-Series Demand Simulation
+              <Activity size={13} /> 24h Load Curve
             </button>
             <button
               className={`dt-tab-btn ${analyticsTab === 'tradeoff' ? 'active' : ''}`}
               onClick={() => setAnalyticsTab('tradeoff')}
             >
-              <CheckSquare size={13} /> 3-Option Trade-Off Matrix (Idea C)
+              <CheckSquare size={13} /> Trade-Offs (Idea C)
             </button>
             <button
               className={`dt-tab-btn ${analyticsTab === 'investment' ? 'active' : ''}`}
               onClick={() => setAnalyticsTab('investment')}
             >
-              <Award size={13} /> Sensor-ROI &amp; Confidence (Idea A)
+              <Award size={13} /> Sensor VOI (Idea A)
             </button>
             <button
               className={`dt-tab-btn ${analyticsTab === 'ledger' ? 'active' : ''}`}
               onClick={() => setAnalyticsTab('ledger')}
             >
-              <BookmarkCheck size={13} /> Counterfactual M&amp;V Factory (Idea B)
-              <span className="badge badge-emerald" style={{ fontSize: 8, padding: '1px 5px', marginLeft: 6 }}>
+              <BookmarkCheck size={13} /> M&amp;V Ledger (Idea B)
+              <span className="badge badge-emerald" style={{ fontSize: 8, padding: '1px 5px', marginLeft: 4 }}>
                 {mvLedger.length} VERIFIED
               </span>
             </button>
           </div>
 
-          {/* TAB 1: Simulator Curves */}
+          {/* TAB 1: 24h Factory Demand Curves */}
           {analyticsTab === 'simulator' && (
             <>
               {/* Primary Dual Overlay Load Curve */}
               <div className="panel dt-panel dt-chart-panel">
-                <div className="panel-hdr">
-                  <div className="hdr-left">
-                    <Activity size={12} className="text-cyan" />
-                    <span>24-Hour Factory Demand Curve: Baseline vs. Simulated Scenario</span>
+                <div className="panel-hdr" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div className="hdr-left" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Activity size={13} className="text-cyan" />
+                    <span style={{ fontWeight: 600 }}>24-Hour Factory Demand Curve: Baseline vs. Simulated Scenario</span>
                   </div>
-                  <div className="hdr-badges">
-                    <span className="badge badge-amber" style={{ textTransform: 'none' }}>Baseline (Dashed)</span>
-                    <span className="badge badge-cyan" style={{ textTransform: 'none' }}>Simulated (Solid)</span>
-                    <span className="badge badge-red" style={{ textTransform: 'none' }}>85 kW Limit</span>
+                  <div className="hdr-badges" style={{ display: 'flex', gap: 6 }}>
+                    <span className="badge badge-amber" style={{ textTransform: 'none', fontSize: 10 }}>Baseline (Dashed)</span>
+                    <span className="badge badge-cyan" style={{ textTransform: 'none', fontSize: 10 }}>Simulated (Solid)</span>
+                    <span className="badge badge-red" style={{ textTransform: 'none', fontSize: 10 }}>85 kW Limit</span>
                   </div>
                 </div>
 
-                <div style={{ height: 250, padding: '12px 6px 0 0' }}>
+                <div style={{ height: 260, padding: '12px 6px 0 0' }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart data={chartData} margin={{ top: 10, right: 15, left: -10, bottom: 0 }}>
                       <defs>
@@ -901,7 +1153,7 @@ export default function DigitalTwinView({
                         label={{
                           value: `Contract Limit ${tariffConfig.contract_demand_limit_kw} kW`,
                           fill: '#ef4444',
-                          fontSize: 9,
+                          fontSize: 9.5,
                           position: 'top',
                           fontFamily: 'var(--font-mono)',
                         }}
@@ -929,13 +1181,13 @@ export default function DigitalTwinView({
                 </div>
               </div>
 
-              {/* Machine-Level Breakdown */}
-              <div className="panel dt-panel dt-chart-panel mt-3">
-                <div className="panel-hdr">
+              {/* Machine-Level Composition Bar Chart */}
+              <div className="panel dt-panel dt-chart-panel" style={{ marginTop: 12 }}>
+                <div className="panel-hdr" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <Layers size={12} className="text-emerald" />
                   <span>Machine-Wise Load Composition across 24h (Simulated Outcome)</span>
                 </div>
-                <div style={{ height: 150, padding: '8px 6px 0 0' }}>
+                <div style={{ height: 140, padding: '8px 6px 0 0' }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={chartData} margin={{ top: 10, right: 15, left: -10, bottom: 0 }}>
                       <CartesianGrid stroke="rgba(0, 0, 0, 0.06)" strokeDasharray="3 3" vertical={false} />
@@ -968,10 +1220,10 @@ export default function DigitalTwinView({
             <div className="panel dt-panel" style={{ padding: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                 <div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color: 'var(--white)', textTransform: 'uppercase' }}>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color: '#0f172a', textTransform: 'uppercase' }}>
                     Production-Safe Optimization: 3-Candidate Trade-Off Matrix
                   </div>
-                  <div style={{ fontSize: 11, color: 'var(--slate-400)', marginTop: 2 }}>
+                  <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
                     Evaluates aggressive energy reduction vs. production schedules and physical equipment interlocks
                   </div>
                 </div>
@@ -990,9 +1242,9 @@ export default function DigitalTwinView({
                     <div
                       key={cand.id}
                       style={{
-                        background: isRecommended ? 'rgba(16,185,129,0.06)' : 'var(--bg-surface)',
-                        border: `1px solid ${isRecommended ? 'var(--emerald)' : isBlocked ? 'var(--red)' : 'var(--amber)'}`,
-                        borderRadius: 6,
+                        background: isRecommended ? 'rgba(16,185,129,0.06)' : '#ffffff',
+                        border: `1px solid ${isRecommended ? '#10b981' : isBlocked ? '#ef4444' : '#f59e0b'}`,
+                        borderRadius: 8,
                         padding: '12px 14px',
                       }}
                     >
@@ -1004,7 +1256,7 @@ export default function DigitalTwinView({
                           >
                             {cand.statusLabel}
                           </span>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--white)' }}>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: '#0f172a' }}>
                             {cand.name}
                           </span>
                         </div>
@@ -1017,36 +1269,36 @@ export default function DigitalTwinView({
                         </button>
                       </div>
 
-                      <div style={{ fontSize: 11, color: 'var(--slate-300)', marginBottom: 8 }}>
+                      <div style={{ fontSize: 11, color: '#475569', marginBottom: 8 }}>
                         {cand.strategy}
                       </div>
 
                       {/* Metrics bar */}
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, background: 'var(--bg-elevated)', padding: '8px 10px', borderRadius: 4, fontFamily: 'var(--font-mono)', fontSize: 10 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, background: '#f8fafc', padding: '8px 10px', borderRadius: 4, fontFamily: 'var(--font-mono)', fontSize: 10 }}>
                         <div>
-                          <span style={{ color: 'var(--slate-500)' }}>Peak Demand: </span>
-                          <strong style={{ color: cand.peakKw > 85 ? 'var(--red)' : 'var(--emerald)' }}>{cand.peakKw} kW</strong>
+                          <span style={{ color: '#64748b' }}>Peak Demand: </span>
+                          <strong style={{ color: cand.peakKw > 85 ? '#dc2626' : '#059669' }}>{cand.peakKw} kW</strong>
                         </div>
                         <div>
-                          <span style={{ color: 'var(--slate-500)' }}>Energy Saved: </span>
-                          <strong style={{ color: 'var(--cyan)' }}>{cand.energyKwhSaved} kWh/d</strong>
+                          <span style={{ color: '#64748b' }}>Energy Saved: </span>
+                          <strong style={{ color: '#0284c7' }}>{cand.energyKwhSaved} kWh/d</strong>
                         </div>
                         <div>
-                          <span style={{ color: 'var(--slate-500)' }}>Production: </span>
-                          <strong style={{ color: cand.productionUnits < 140 ? 'var(--red)' : 'var(--emerald)' }}>{cand.productionUnits} pcs</strong>
+                          <span style={{ color: '#64748b' }}>Production: </span>
+                          <strong style={{ color: cand.productionUnits < 140 ? '#dc2626' : '#059669' }}>{cand.productionUnits} pcs</strong>
                         </div>
                         <div>
-                          <span style={{ color: 'var(--slate-500)' }}>Pressure: </span>
-                          <strong style={{ color: cand.pressureBar < 6.5 ? 'var(--red)' : 'var(--white)' }}>{cand.pressureBar} bar</strong>
+                          <span style={{ color: '#64748b' }}>Pressure: </span>
+                          <strong style={{ color: cand.pressureBar < 6.5 ? '#dc2626' : '#0f172a' }}>{cand.pressureBar} bar</strong>
                         </div>
                       </div>
 
                       {/* Diagnostics */}
-                      <div style={{ fontSize: 10, color: isBlocked ? 'var(--red)' : isInfeasible ? 'var(--amber)' : 'var(--slate-400)', marginTop: 8, lineHeight: 1.4 }}>
+                      <div style={{ fontSize: 10, color: isBlocked ? '#dc2626' : isInfeasible ? '#d97706' : '#64748b', marginTop: 8, lineHeight: 1.4 }}>
                         <strong>Diagnostic Assessment:</strong> {cand.diagnostics}
                       </div>
                       {cand.provenance && (
-                        <div style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--slate-500)', marginTop: 4 }}>
+                        <div style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: '#94a3b8', marginTop: 4 }}>
                           [{cand.provenance}]
                         </div>
                       )}
@@ -1062,14 +1314,14 @@ export default function DigitalTwinView({
             <div className="panel dt-panel" style={{ padding: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                 <div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color: 'var(--white)', textTransform: 'uppercase' }}>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color: '#0f172a', textTransform: 'uppercase' }}>
                     Sensor Sufficiency &amp; Value of Information (Idea A)
                   </div>
-                  <div style={{ fontSize: 11, color: 'var(--slate-400)', marginTop: 2 }}>
+                  <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
                     Diagnostic Humility: Resolves physical ambiguity · Evaluates sensor Value of Information (VOI)
                   </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 4, background: inv.evidence_grade === 'A' ? 'rgba(16,185,129,0.12)' : 'rgba(245,158,11,0.12)', border: `1px solid ${inv.evidence_grade === 'A' ? 'rgba(16,185,129,0.4)' : 'rgba(245,158,11,0.4)'}`, color: inv.evidence_grade === 'A' ? 'var(--emerald)' : 'var(--amber)', fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 4, background: inv.evidence_grade === 'A' ? 'rgba(16,185,129,0.12)' : 'rgba(245,158,11,0.12)', border: `1px solid ${inv.evidence_grade === 'A' ? 'rgba(16,185,129,0.4)' : 'rgba(245,158,11,0.4)'}`, color: inv.evidence_grade === 'A' ? '#059669' : '#d97706', fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700 }}>
                   <Award size={13} />
                   TELEMETRY READINESS {inv.evidence_grade}
                 </div>
@@ -1077,21 +1329,21 @@ export default function DigitalTwinView({
 
               {/* Physical Diagnostic Ambiguity Banner */}
               {inv.diagnostic_ambiguity && (
-                <div style={{ background: hasFlowMeter ? 'rgba(16,185,129,0.06)' : 'rgba(245,158,11,0.06)', border: `1px solid ${hasFlowMeter ? 'rgba(16,185,129,0.3)' : 'rgba(245,158,11,0.3)'}`, borderRadius: 6, padding: '10px 14px', marginBottom: 12, fontSize: 11, lineHeight: 1.5, color: 'var(--slate-300)' }}>
-                  <strong style={{ color: hasFlowMeter ? 'var(--emerald)' : 'var(--amber)' }}>Physical Hypothesis Resolution: </strong>
+                <div style={{ background: hasFlowMeter ? 'rgba(16,185,129,0.06)' : 'rgba(245,158,11,0.06)', border: `1px solid ${hasFlowMeter ? 'rgba(16,185,129,0.3)' : 'rgba(245,158,11,0.3)'}`, borderRadius: 6, padding: '10px 14px', marginBottom: 12, fontSize: 11, lineHeight: 1.5, color: '#334155' }}>
+                  <strong style={{ color: hasFlowMeter ? '#059669' : '#d97706' }}>Physical Hypothesis Resolution: </strong>
                   {inv.diagnostic_ambiguity}
                 </div>
               )}
 
               {/* Interactive Value of Information (VOI) Toggle */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-elevated)', border: '1px solid var(--border-active)', borderRadius: 6, padding: '10px 14px', marginBottom: 14 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', border: '1px solid var(--border)', borderRadius: 6, padding: '10px 14px', marginBottom: 14 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: hasFlowMeter ? 'var(--emerald)' : 'var(--amber)' }} />
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: hasFlowMeter ? '#10b981' : '#f59e0b' }} />
                   <div>
-                    <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--white)' }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: '#0f172a' }}>
                       {hasFlowMeter ? 'Simulating with Inline Ultrasonic Flowmeter Installed' : 'Current Plant Telemetry (Electrical Submeter Only)'}
                     </div>
-                    <div style={{ fontSize: 10, color: 'var(--slate-400)' }}>
+                    <div style={{ fontSize: 10, color: '#64748b' }}>
                       {hasFlowMeter
                         ? 'Confirmed zero break airflow. 100% of 18 kW draw is recoverable timer blow-off.'
                         : 'Uncertainty present: 40%–65% of idle draw could be unmetered pipe leaks. VOI Ratio: 4.5x.'}
@@ -1111,62 +1363,62 @@ export default function DigitalTwinView({
               {/* 3-Tier Payback Cards */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 14 }}>
                 {/* Conservative */}
-                <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 6, padding: '12px' }}>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--slate-400)', textTransform: 'uppercase' }}>
+                <div style={{ background: '#fafaf9', border: '1px solid var(--border)', borderRadius: 6, padding: '12px' }}>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#64748b', textTransform: 'uppercase' }}>
                     Conservative Case
                   </div>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--amber)', margin: '6px 0 2px' }}>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: '#d97706', margin: '6px 0 2px' }}>
                     ₹{inv.conservative_annual_saving_inr.toLocaleString()} <span style={{ fontSize: 10, fontWeight: 500 }}>/ yr</span>
                   </div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--slate-300)' }}>
-                    Payback: <strong style={{ color: 'var(--white)' }}>{inv.payback_months_conservative} months</strong>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#334155' }}>
+                    Payback: <strong style={{ color: '#0f172a' }}>{inv.payback_months_conservative} months</strong>
                   </div>
-                  <div style={{ fontSize: 10, color: 'var(--slate-500)', marginTop: 6, lineHeight: 1.4 }}>
+                  <div style={{ fontSize: 10, color: '#64748b', marginTop: 6, lineHeight: 1.4 }}>
                     {hasFlowMeter ? 'Flowmeter locks certainty at 92% minimum savings.' : 'Accounts for unmetered pipe leaks & -20% factory volume.'}
                   </div>
                 </div>
 
                 {/* Expected */}
-                <div style={{ background: 'rgba(34,211,238,0.06)', border: '1px solid var(--cyan)', borderRadius: 6, padding: '12px' }}>
+                <div style={{ background: 'rgba(2, 132, 199, 0.05)', border: '1px solid var(--cyan)', borderRadius: 6, padding: '12px' }}>
                   <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--cyan)', textTransform: 'uppercase', fontWeight: 600 }}>
                     Expected Nominal Case
                   </div>
                   <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--cyan)', margin: '6px 0 2px' }}>
                     ₹{inv.expected_annual_saving_inr.toLocaleString()} <span style={{ fontSize: 10, fontWeight: 500 }}>/ yr</span>
                   </div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--slate-300)' }}>
-                    Payback: <strong style={{ color: 'var(--white)' }}>{inv.payback_months_expected} months</strong>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#334155' }}>
+                    Payback: <strong style={{ color: '#0f172a' }}>{inv.payback_months_expected} months</strong>
                   </div>
-                  <div style={{ fontSize: 10, color: 'var(--slate-400)', marginTop: 6, lineHeight: 1.4 }}>
+                  <div style={{ fontSize: 10, color: '#64748b', marginTop: 6, lineHeight: 1.4 }}>
                     Capex ₹{inv.capex_inr.toLocaleString()} (Relay{hasFlowMeter ? ' + Flowmeter' : ''}), nominal 140 parts.
                   </div>
                 </div>
 
                 {/* Best Case */}
-                <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 6, padding: '12px' }}>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--emerald)', textTransform: 'uppercase' }}>
+                <div style={{ background: '#fafaf9', border: '1px solid var(--border)', borderRadius: 6, padding: '12px' }}>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#059669', textTransform: 'uppercase' }}>
                     Best-Case (+35%)
                   </div>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--emerald)', margin: '6px 0 2px' }}>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: '#059669', margin: '6px 0 2px' }}>
                     ₹{inv.best_case_annual_saving_inr.toLocaleString()} <span style={{ fontSize: 10, fontWeight: 500 }}>/ yr</span>
                   </div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--slate-300)' }}>
-                    Payback: <strong style={{ color: 'var(--white)' }}>{inv.payback_months_best} months</strong>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#334155' }}>
+                    Payback: <strong style={{ color: '#0f172a' }}>{inv.payback_months_best} months</strong>
                   </div>
-                  <div style={{ fontSize: 10, color: 'var(--slate-500)', marginTop: 6, lineHeight: 1.4 }}>
+                  <div style={{ fontSize: 10, color: '#64748b', marginTop: 6, lineHeight: 1.4 }}>
                     Dual-shift capacity + elimination of coincident 85 kW peak penalty.
                   </div>
                 </div>
               </div>
 
               {/* Sensitivity to Missing Instrumentation */}
-              <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 6, padding: '12px' }}>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--slate-400)', textTransform: 'uppercase', marginBottom: 6 }}>
+              <div style={{ background: '#fafaf9', border: '1px solid var(--border)', borderRadius: 6, padding: '12px' }}>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#64748b', textTransform: 'uppercase', marginBottom: 6 }}>
                   NIST Gap Analysis &amp; Value of Information
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {inv.missing_measurements_sensitivity.map((note, idx) => (
-                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--slate-300)' }}>
+                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#334155' }}>
                       <span style={{ color: 'var(--cyan)', fontSize: 14 }}>•</span>
                       {note}
                     </div>
@@ -1181,17 +1433,17 @@ export default function DigitalTwinView({
             <div className="panel dt-panel" style={{ padding: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                 <div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color: 'var(--white)', textTransform: 'uppercase' }}>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color: '#0f172a', textTransform: 'uppercase' }}>
                     The Counterfactual Factory: Post-Implementation M&amp;V Ledger
                   </div>
-                  <div style={{ fontSize: 11, color: 'var(--slate-400)', marginTop: 2 }}>
+                  <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
                     Solves the post-implementation blame game · Separates production drops from real energy efficiency
                   </div>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   {committedFeedback && (
-                    <span style={{ fontSize: 11, color: 'var(--emerald)', fontFamily: 'var(--font-mono)' }}>
+                    <span style={{ fontSize: 11, color: '#059669', fontFamily: 'var(--font-mono)' }}>
                       {committedFeedback}
                     </span>
                   )}
@@ -1207,35 +1459,35 @@ export default function DigitalTwinView({
               </div>
 
               {/* Idea B Counterfactual Waterfall Comparison Card */}
-              <div style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-active)', borderRadius: 6, padding: '12px 14px', marginBottom: 14 }}>
+              <div style={{ background: '#f8fafc', border: '1px solid var(--border)', borderRadius: 6, padding: '12px 14px', marginBottom: 14 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                   <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--cyan)', textTransform: 'uppercase', fontWeight: 600 }}>
                     Case Study A: Shift Contraction Audit (IPMVP Option B/C Reconciled)
                   </div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--emerald)', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', padding: '2px 8px', borderRadius: 3 }}>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#059669', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', padding: '2px 8px', borderRadius: 3 }}>
                     Reconciliation: 170.57 + 14.43 = 185.00 kWh (100% Match)
                   </div>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, fontFamily: 'var(--font-mono)', fontSize: 11 }}>
-                  <div style={{ background: 'var(--bg-surface)', padding: '8px 10px', borderRadius: 4 }}>
-                    <div style={{ fontSize: 9, color: 'var(--slate-400)' }}>1. Raw Submeter Drop</div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--white)', margin: '4px 0 2px' }}>-185.00 kWh (-14.01%)</div>
-                    <div style={{ fontSize: 9, color: 'var(--slate-500)' }}>1,320.0 → 1,135.0 kWh</div>
+                  <div style={{ background: '#ffffff', padding: '8px 10px', borderRadius: 4, border: '1px solid var(--border)' }}>
+                    <div style={{ fontSize: 9, color: '#64748b' }}>1. Raw Submeter Drop</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a', margin: '4px 0 2px' }}>-185.00 kWh (-14.01%)</div>
+                    <div style={{ fontSize: 9, color: '#94a3b8' }}>1,320.0 → 1,135.0 kWh</div>
                   </div>
-                  <div style={{ background: 'var(--bg-surface)', padding: '8px 10px', borderRadius: 4 }}>
-                    <div style={{ fontSize: 9, color: 'var(--slate-400)' }}>2. Shift Output Deficit</div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--amber)', margin: '4px 0 2px' }}>122 vs 140 parts (-12.86%)</div>
-                    <div style={{ fontSize: 9, color: 'var(--slate-500)' }}>Material delay on CNC</div>
+                  <div style={{ background: '#ffffff', padding: '8px 10px', borderRadius: 4, border: '1px solid var(--border)' }}>
+                    <div style={{ fontSize: 9, color: '#64748b' }}>2. Shift Output Deficit</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#d97706', margin: '4px 0 2px' }}>122 vs 140 parts (-12.86%)</div>
+                    <div style={{ fontSize: 9, color: '#94a3b8' }}>Material delay on CNC</div>
                   </div>
-                  <div style={{ background: 'var(--bg-surface)', padding: '8px 10px', borderRadius: 4 }}>
-                    <div style={{ fontSize: 9, color: 'var(--slate-400)' }}>3. Production Drop Effect</div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--slate-300)', margin: '4px 0 2px' }}>-170.57 kWh (-12.92%)</div>
-                    <div style={{ fontSize: 9, color: 'var(--slate-500)' }}>Output loss, not efficiency!</div>
+                  <div style={{ background: '#ffffff', padding: '8px 10px', borderRadius: 4, border: '1px solid var(--border)' }}>
+                    <div style={{ fontSize: 9, color: '#64748b' }}>3. Production Drop Effect</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#475569', margin: '4px 0 2px' }}>-170.57 kWh (-12.92%)</div>
+                    <div style={{ fontSize: 9, color: '#94a3b8' }}>Output loss, not efficiency!</div>
                   </div>
-                  <div style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid var(--emerald)', padding: '8px 10px', borderRadius: 4 }}>
-                    <div style={{ fontSize: 9, color: 'var(--emerald)' }}>4. True Verified Efficiency</div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--emerald)', margin: '4px 0 2px' }}>-14.43 kWh/day (-1.09%)</div>
-                    <div style={{ fontSize: 9, color: 'var(--slate-400)' }}>11.83 kg CO₂e (72.15 kWh/wk)</div>
+                  <div style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid #10b981', padding: '8px 10px', borderRadius: 4 }}>
+                    <div style={{ fontSize: 9, color: '#059669', fontWeight: 600 }}>4. True Verified Efficiency</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#059669', margin: '4px 0 2px' }}>-14.43 kWh/day (-1.09%)</div>
+                    <div style={{ fontSize: 9, color: '#64748b' }}>11.83 kg CO₂e (72.15 kWh/wk)</div>
                   </div>
                 </div>
               </div>
@@ -1263,13 +1515,13 @@ export default function DigitalTwinView({
                         <td style={{ fontFamily: 'var(--font-mono)' }}>
                           {row.baseline_kwh.toFixed(0)} kWh ({row.baseline_units} pcs)
                         </td>
-                        <td style={{ fontFamily: 'var(--font-mono)', color: 'var(--white)' }}>
+                        <td style={{ fontFamily: 'var(--font-mono)', color: '#0f172a' }}>
                           {row.actual_measured_kwh.toFixed(0)} kWh ({row.actual_units} pcs)
                         </td>
-                        <td style={{ fontFamily: 'var(--font-mono)', color: 'var(--amber)' }}>
+                        <td style={{ fontFamily: 'var(--font-mono)', color: '#d97706' }}>
                           {row.adjusted_baseline_kwh.toFixed(0)} kWh
                         </td>
-                        <td style={{ fontFamily: 'var(--font-mono)', color: 'var(--emerald)', fontWeight: 700 }}>
+                        <td style={{ fontFamily: 'var(--font-mono)', color: '#059669', fontWeight: 700 }}>
                           {row.realized_savings_kwh.toFixed(1)} kWh
                         </td>
                         <td>
@@ -1291,11 +1543,11 @@ export default function DigitalTwinView({
           )}
 
           {/* Traceability & Formula Accordion */}
-          <div className="panel dt-panel mt-3">
+          <div className="panel dt-panel" style={{ marginTop: 12 }}>
             <div
               className="panel-hdr clickable"
               onClick={() => setShowFormulaDrawer(!showFormulaDrawer)}
-              style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between' }}
+              style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', padding: '8px 12px' }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <FileText size={12} className="text-cyan" />
@@ -1315,11 +1567,11 @@ export default function DigitalTwinView({
                   {`peak_demand_kw      = max(plant_power_kw[t]) → ${currentResult.scenario.peak_demand_kw} kW`}{'\n'}
                   {`sec_intensity       = total_energy_kwh / total_good_units → ${currentResult.scenario.sec_kwh_per_unit} kWh/part`}{'\n'}
                   {`scope2_kg_co2e      = total_energy_kwh × 0.82 kg CO₂e/kWh (CEA India Baseline v19)`}{'\n'}
-                  <span style={{ color: 'var(--emerald)' }}>
+                  <span style={{ color: '#059669' }}>
                     {`Verified Delta: Saved ${Math.abs(currentResult.deltas.energy_kwh)} kWh | ₹${Math.abs(currentResult.deltas.cost_inr)} | ${Math.abs(currentResult.deltas.scope2_kg_co2e || 0)} kg CO₂e`}
                   </span>
                 </div>
-                <div style={{ fontSize: 10, color: 'var(--slate-400)', marginTop: 8, lineHeight: 1.6 }}>
+                <div style={{ fontSize: 10, color: '#64748b', marginTop: 8, lineHeight: 1.6 }}>
                   <strong>Governance Protocol:</strong> ISO 50001:2018 EnMS Clause 6.3 &amp; IPMVP Option B. Advisory simulation only. Plant Energy Manager sign-off required prior to DCS execution.
                 </div>
               </div>

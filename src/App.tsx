@@ -2464,6 +2464,8 @@ export default function App() {
       }
     }
     initBackend();
+    const interval = setInterval(initBackend, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   // Recalculate carbon footprint whenever inputs or scenario changes

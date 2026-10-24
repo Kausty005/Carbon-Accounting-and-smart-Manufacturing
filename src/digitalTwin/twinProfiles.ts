@@ -80,6 +80,25 @@ export const ID_ALIASES: Record<string, string> = {
   'CNC-01': 'CNC-01',
   'FURN-01': 'FURN-01',
   'PAINT-01': 'PAINT-01',
+  // Machine aliases from industrial_energy_forecasting_synthetic.csv
+  'MACHINE_011': 'COMP-01',
+  'MACHINE_012': 'COMP-01',
+  'MACHINE_013': 'COMP-01',
+  'MACHINE_017': 'COMP-01',
+  'AIR_COMPRESSOR': 'COMP-01',
+  'MACHINE_008': 'CNC-01',
+  'MACHINE_010': 'CNC-01',
+  'MACHINE_034': 'CNC-01',
+  'MACHINE_038': 'CNC-01',
+  'CNC_MILL': 'CNC-01',
+  'MACHINE_004': 'FURN-01',
+  'MACHINE_015': 'FURN-01',
+  'MACHINE_031': 'FURN-01',
+  'OVEN_FURNACE': 'FURN-01',
+  'MACHINE_023': 'PAINT-01',
+  'MACHINE_024': 'PAINT-01',
+  'MACHINE_025': 'PAINT-01',
+  'FAN_BLOWER': 'PAINT-01',
 };
 
 export function resolveMachineId(id: string): string {

@@ -4,7 +4,7 @@ import {
   AlertTriangle, CheckCircle2, Zap, TrendingDown,
   Printer, Download, ChevronRight, Box, Compass,
   Home, LogOut, User, Gauge, Shield, Activity, ArrowRight, Globe,
-  RefreshCw, RotateCcw, ShieldAlert, Check,
+  RefreshCw, RotateCcw, ShieldAlert, Check, PanelRightClose, PanelRightOpen
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ScadaFloorMap from './components/ScadaFloorMap';
@@ -1552,6 +1552,7 @@ export default function App() {
   const [carbonError, setCarbonError] = useState<string | null>(null);
 
   const [params, setParams] = useState<SimParams>(DEFAULT_SIM_PARAMS);
+  const [showInspector, setShowInspector] = useState<boolean>(true);
 
   // WattWise AI Digital Twin State (Idea A, B, C)
   const [baselineRecords] = useState<TelemetryRecord[]>(() => get24HourBaseline(6));
@@ -1721,7 +1722,8 @@ export default function App() {
   }
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${showInspector ? '' : 'no-inspector'}`}>
+
       {/* Top bar */}
       <header className="topbar">
         <div
@@ -1741,18 +1743,19 @@ export default function App() {
               display: 'flex',
               alignItems: 'center',
               gap: 6,
-              background: 'rgba(0, 0, 0, 0.05)',
+              background: '#ffffff',
               border: '1px solid var(--border)',
-              borderRadius: 9999,
-              padding: '4px 12px',
-              fontFamily: 'var(--font-mono)',
-              fontSize: 10,
+              borderRadius: 6,
+              padding: '4px 10px',
+              fontFamily: 'var(--font-ui)',
+              fontSize: 11,
               fontWeight: 600,
-              color: '#0f172a',
+              color: '#334155',
               cursor: 'pointer',
             }}
+            title="Return to Presentation Landing Page"
           >
-            <Compass size={12} color="var(--cyan)" /> 3D Glide Home
+            <Compass size={12} color="var(--cyan)" /> Overview Showcase
           </button>
           <div className="topbar-divider" />
           <span className="shift-badge">PrecisionWorks Mfg</span>
@@ -1790,7 +1793,30 @@ export default function App() {
           )}
         </div>
         <div className="topbar-right">
-          <span className="topbar-clock">
+          <button
+            onClick={() => setShowInspector(!showInspector)}
+            style={{
+              background: '#ffffff',
+              border: '1px solid var(--border)',
+              borderRadius: 6,
+              padding: '4px 10px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              fontSize: 11,
+              fontWeight: 500,
+              color: '#334155',
+              fontFamily: 'var(--font-ui)',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+            }}
+            title={showInspector ? "Collapse side inspector to expand workbench" : "Show side inspector"}
+          >
+            {showInspector ? <PanelRightClose size={13} color="var(--cyan)" /> : <PanelRightOpen size={13} color="var(--cyan)" />}
+            <span>{showInspector ? 'Hide Side Panel' : 'Show Side Panel'}</span>
+          </button>
+          <div className="topbar-divider" />
+          <span className="topbar-clock" style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--slate-500)' }}>
             {new Date().toTimeString().slice(0,8)}
           </span>
           <div className="topbar-divider" />
@@ -1831,7 +1857,7 @@ export default function App() {
 
       {/* Sidebar */}
       <nav className="sidebar">
-        <div style={{ padding: '12px 14px 6px' }}>
+        <div style={{ padding: '10px 14px 6px' }}>
           <button
             onClick={() => setCurrentPage('home')}
             style={{
@@ -1839,22 +1865,21 @@ export default function App() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: 8,
-              background: '#0f172a',
-              color: '#ffffff',
-              border: 'none',
+              gap: 6,
+              background: 'rgba(2, 132, 199, 0.08)',
+              color: 'var(--cyan)',
+              border: '1px solid rgba(2, 132, 199, 0.25)',
               borderRadius: 6,
-              padding: '8px 10px',
-              fontFamily: 'var(--font-mono)',
-              fontSize: 10,
+              padding: '7px 10px',
+              fontFamily: 'var(--font-ui)',
+              fontSize: 11,
               fontWeight: 600,
-              letterSpacing: 1,
-              textTransform: 'uppercase',
               cursor: 'pointer',
-              boxShadow: '0 2px 8px rgba(15, 23, 42, 0.15)',
+              transition: 'all 0.15s ease',
             }}
+            title="Return to Presentation & Executive Landing Page"
           >
-            <Compass size={12} /> 3D Glide Home
+            <Compass size={13} /> Landing Showcase
           </button>
         </div>
 

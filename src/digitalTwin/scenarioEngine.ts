@@ -24,7 +24,11 @@ export function runScenarioSimulation(
 
   // Apply action
   if (action.type === 'reduce_idle_power') {
-    const targetKw = action.target_power_kw ?? 8.0;
+    let targetKw = action.target_power_kw ?? 8.0;
+    if (typeof action.target_load_factor === 'number' && typeof action.target_power_kw !== 'number') {
+      const rated = machineId === 'COMP-01' ? 30.0 : machineId === 'CNC-01' ? 25.0 : machineId === 'FURN-01' ? 50.0 : 20.0;
+      targetKw = Number((rated * action.target_load_factor).toFixed(2));
+    }
     const targetState = action.target_state ?? 'idle';
     const durationHours = action.duration_hours ?? 2.0;
 
@@ -104,6 +108,19 @@ export function runScenarioSimulation(
     for (const r of scenarioRecords) {
       if (r.machine_id === machineId && r.machine_state === 'running') {
         r.power_kw = Number((r.power_kw * (1 - savingPct)).toFixed(2));
+        r.energy_kwh = r.power_kw;
+      }
+    }
+  }
+
+  // Apply ambient temperature thermodynamic sensitivity (ISO 1217) for air compression
+  if (typeof action.ambient_temp_c === 'number' && machineId === 'COMP-01') {
+    const deltaT = action.ambient_temp_c - 24.0;
+    // ~0.35% power change per °C deviation from 24°C nominal
+    const tempFactor = 1 + (deltaT * 0.0035);
+    for (const r of scenarioRecords) {
+      if (r.machine_id === machineId && r.machine_state === 'running') {
+        r.power_kw = Number((r.power_kw * tempFactor).toFixed(2));
         r.energy_kwh = r.power_kw;
       }
     }

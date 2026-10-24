@@ -23,8 +23,11 @@ export function calculateInvestmentCase(
   // Annualized savings (assuming 300 working days/year)
   const expectedAnnual = Number((dailyCostSaving * 300).toFixed(2));
   
-  // If flowmeter is missing, conservative case accounts for 60% of idle draw being unmetered pipe leaks
-  const conservativeFactor = hasFlowMeter ? 0.92 : 0.35;
+  // Factor in sensor quality from spreadsheet or flowmeter toggle
+  const quality = action.sensor_quality ?? (hasFlowMeter ? 'good' : 'suspect');
+
+  // If flowmeter is missing / suspect, conservative case accounts for unmetered pipe leaks
+  const conservativeFactor = quality === 'good' || hasFlowMeter ? 0.92 : quality === 'suspect' ? 0.60 : 0.35;
   const conservativeAnnual = Number((expectedAnnual * conservativeFactor).toFixed(2));
   const bestCaseAnnual = Number((expectedAnnual * 1.35).toFixed(2)); // +35% with full dual-shift and demand peak shaving
 
@@ -34,10 +37,12 @@ export function calculateInvestmentCase(
   const paybackBest = bestCaseAnnual > 0 ? Number(((capex / bestCaseAnnual) * 12).toFixed(1)) : 99.9;
 
   // NIST Data Evidence Grade (Idea A: Diagnostic Humility)
-  const evidenceGrade: EvidenceGrade = hasFlowMeter ? 'A' : 'B';
-  const evidenceDescription = hasFlowMeter
-    ? 'Grade A (High Instrumentation): Electrical power + inline ultrasonic flowmeter confirms zero downstream demand during break periods.'
-    : 'Grade B (Telemetry Heuristic): Electrical smart submeter verified (Class 0.5), but downstream pneumatic airflow is unmetered.';
+  const evidenceGrade: EvidenceGrade = (quality === 'good' || hasFlowMeter) ? 'A' : quality === 'suspect' ? 'B' : 'C';
+  const evidenceDescription = (quality === 'good' || hasFlowMeter)
+    ? 'Grade A (High Instrumentation): Calibrated Class 0.5S electrical power + inline ultrasonic flowmeter verified.'
+    : quality === 'suspect'
+    ? 'Grade B (Telemetry Heuristic): Electrical smart submeter active (Class 0.5), but uncalibrated CT clamp or unmetered pneumatic airflow.'
+    : 'Grade C (Missing Telemetry): Sub-line telemetry missing or incomplete. High Value of Information for sensor retrofit.';
 
   const diagnosticAmbiguity = hasFlowMeter
     ? 'RESOLVED: Flow transducer confirms 0.0 Nm³/min flow during lunch break. 100% of the 10 kW idle excess is control blow-off timer waste, solvable via auto-cutoff relay.'

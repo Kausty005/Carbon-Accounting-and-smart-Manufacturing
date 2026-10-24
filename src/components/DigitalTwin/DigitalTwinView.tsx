@@ -66,6 +66,12 @@ export default function DigitalTwinView({
   const [offsetHours, setOffsetHours] = useState<number>(2);
   const [targetPressureBar, setTargetPressureBar] = useState<number>(6.8);
 
+  // Spreadsheet Finalized Input Parameters
+  const [ambientTempC, setAmbientTempC] = useState<number>(24.0);
+  const [relativeHumidityPct, setRelativeHumidityPct] = useState<number>(60.0);
+  const [sensorQuality, setSensorQuality] = useState<'good' | 'missing' | 'suspect'>('good');
+  const [shiftPattern, setShiftPattern] = useState<'day_shift' | '2_shift' | '3_shift'>('3_shift');
+
   // Idea A: Self-Qualifying Sensor Sufficiency Gate toggle
   const [hasFlowMeter, setHasFlowMeter] = useState<boolean>(false);
 
@@ -126,6 +132,7 @@ export default function DigitalTwinView({
         target_power_kw: targetPowerKw,
         duration_hours: durationHours,
         target_state: 'idle',
+        target_load_factor: Number((targetPowerKw / selectedProfile.rated_power_kw).toFixed(3)),
       };
     } else if (actionType === 'shift_schedule') {
       action = {
@@ -147,6 +154,11 @@ export default function DigitalTwinView({
         duration_hours: durationHours,
       };
     }
+
+    action.ambient_temp_c = ambientTempC;
+    action.relative_humidity_pct = relativeHumidityPct;
+    action.sensor_quality = sensorQuality;
+    action.shift_pattern = shiftPattern;
 
     const req: ScenarioRequest = {
       scenario_id: `CUSTOM-${selectedMachineId}-${Date.now().toString().slice(-4)}`,
@@ -274,10 +286,10 @@ export default function DigitalTwinView({
   const inv = useMemo(() => {
     return calculateInvestmentCase(
       currentResult,
-      currentResult.action_executed,
-      hasFlowMeter
+      { ...currentResult.action_executed, sensor_quality: sensorQuality },
+      hasFlowMeter || sensorQuality === 'good'
     );
-  }, [currentResult, hasFlowMeter]);
+  }, [currentResult, hasFlowMeter, sensorQuality]);
 
   return (
     <div className="digital-twin-view scroll-area">
@@ -290,7 +302,10 @@ export default function DigitalTwinView({
             <span className="dt-badge-sub">KPCL Problem Statement 1 · PrecisionWorks</span>
           </div>
           <div className="dt-subtitle">
-            Self-Qualifying (Idea A) · Production-Safe Interlocks (Idea C) · Counterfactual M&amp;V Factory (Idea B)
+            <span>Deterministic Scenario Simulation</span>
+            <span className="dt-pill-tag">Idea A: Epistemic Humility</span>
+            <span className="dt-pill-tag">Idea C: Safe Interlocks</span>
+            <span className="dt-pill-tag">Idea B: Counterfactual M&amp;V</span>
           </div>
         </div>
 
@@ -347,6 +362,104 @@ export default function DigitalTwinView({
             </button>
           );
         })}
+      </div>
+
+      {/* 5-Column Full-Width KPI Metrics Overview */}
+      <div className="dt-kpi-grid-5">
+        {/* Total Energy */}
+        <div className="dt-kpi-card">
+          <div className="dt-kpi-top">
+            <span className="dt-kpi-lbl">24h Plant Energy</span>
+            <Zap size={14} className="text-cyan" />
+          </div>
+          <div className="dt-kpi-main-val">
+            <span className="dt-kpi-primary">{currentResult.scenario.total_energy_kwh.toLocaleString()}</span>
+            <span className="dt-kpi-unit">kWh</span>
+          </div>
+          <div className="dt-kpi-sub-row">
+            <span className="dt-kpi-baseline">Base: {currentResult.baseline.total_energy_kwh.toLocaleString()}</span>
+            <span className={`dt-kpi-delta-pill ${currentResult.deltas.energy_kwh <= 0 ? 'positive' : 'negative'}`}>
+              {currentResult.deltas.energy_kwh <= 0 ? '▼ ' : '▲ '}
+              {Math.abs(currentResult.deltas.energy_kwh).toFixed(1)} kWh
+            </span>
+          </div>
+        </div>
+
+        {/* SEC Intensity */}
+        <div className="dt-kpi-card">
+          <div className="dt-kpi-top">
+            <span className="dt-kpi-lbl">Specific Energy (SEC)</span>
+            <BarChart3 size={14} className="text-emerald" />
+          </div>
+          <div className="dt-kpi-main-val">
+            <span className="dt-kpi-primary">{currentResult.scenario.sec_kwh_per_unit || '5.16'}</span>
+            <span className="dt-kpi-unit">kWh/part</span>
+          </div>
+          <div className="dt-kpi-sub-row">
+            <span className="dt-kpi-baseline">Base: {currentResult.baseline.sec_kwh_per_unit || '5.24'}</span>
+            <span className={`dt-kpi-delta-pill ${((currentResult.scenario.sec_kwh_per_unit || 5.16) <= (currentResult.baseline.sec_kwh_per_unit || 5.24)) ? 'positive' : 'negative'}`}>
+              {((currentResult.scenario.sec_kwh_per_unit || 5.16) <= (currentResult.baseline.sec_kwh_per_unit || 5.24)) ? '▼ Optimized' : '▲ High'}
+            </span>
+          </div>
+        </div>
+
+        {/* Peak Demand */}
+        <div className="dt-kpi-card">
+          <div className="dt-kpi-top">
+            <span className="dt-kpi-lbl">Peak Electrical Demand</span>
+            <Gauge size={14} className="text-amber" />
+          </div>
+          <div className="dt-kpi-main-val">
+            <span className={`dt-kpi-primary ${currentResult.scenario.peak_demand_kw > tariffConfig.contract_demand_limit_kw ? 'text-red' : ''}`}>
+              {currentResult.scenario.peak_demand_kw}
+            </span>
+            <span className="dt-kpi-unit">kW</span>
+          </div>
+          <div className="dt-kpi-sub-row">
+            <span className="dt-kpi-baseline">Limit: {tariffConfig.contract_demand_limit_kw} kW</span>
+            <span className={`dt-kpi-delta-pill ${currentResult.deltas.peak_kw <= 0 ? 'positive' : 'negative'}`}>
+              {currentResult.deltas.peak_kw <= 0 ? 'Normal' : '▲ Exceeds'}
+            </span>
+          </div>
+        </div>
+
+        {/* Daily Energy Cost */}
+        <div className="dt-kpi-card">
+          <div className="dt-kpi-top">
+            <span className="dt-kpi-lbl">Daily Energy Cost</span>
+            <DollarSign size={14} className="text-emerald" />
+          </div>
+          <div className="dt-kpi-main-val">
+            <span className="dt-kpi-primary">₹{currentResult.scenario.total_cost_inr.toLocaleString()}</span>
+            <span className="dt-kpi-unit">/day</span>
+          </div>
+          <div className="dt-kpi-sub-row">
+            <span className="dt-kpi-baseline">Base: ₹{currentResult.baseline.total_cost_inr.toLocaleString()}</span>
+            <span className={`dt-kpi-delta-pill ${currentResult.deltas.cost_inr <= 0 ? 'positive' : 'negative'}`}>
+              {currentResult.deltas.cost_inr <= 0 ? '▼ -₹' : '▲ +₹'}
+              {Math.abs(currentResult.deltas.cost_inr).toLocaleString()}
+            </span>
+          </div>
+        </div>
+
+        {/* Scope 2 Emissions */}
+        <div className="dt-kpi-card">
+          <div className="dt-kpi-top">
+            <span className="dt-kpi-lbl">Scope 2 Grid Carbon</span>
+            <Leaf size={14} className="text-violet" />
+          </div>
+          <div className="dt-kpi-main-val">
+            <span className="dt-kpi-primary">{currentResult.scenario.scope2_kg_co2e ?? '1,058.3'}</span>
+            <span className="dt-kpi-unit">kg CO₂e</span>
+          </div>
+          <div className="dt-kpi-sub-row">
+            <span className="dt-kpi-baseline">Base: {currentResult.baseline.scope2_kg_co2e ?? '1,070.1'} kg</span>
+            <span className={`dt-kpi-delta-pill ${(currentResult.deltas.scope2_kg_co2e || 0) <= 0 ? 'positive' : 'negative'}`}>
+              {(currentResult.deltas.scope2_kg_co2e || 0) <= 0 ? '▼ -' : '▲ +'}
+              {Math.abs(currentResult.deltas.scope2_kg_co2e || 0).toFixed(1)} kg
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* Main Grid: Left Controls vs Right Analytics */}
@@ -430,9 +543,9 @@ export default function DigitalTwinView({
                     />
                     <div className="range-hints">
                       <span>0 kW (Off)</span>
-                      <span>{selectedProfile.expected_idle_power_kw} kW (Rated Idle)</span>
+                      <span>Idle: {selectedProfile.expected_idle_power_kw} kW</span>
                       <span className={targetPowerKw > selectedProfile.rated_power_kw ? 'text-red' : ''}>
-                        {selectedProfile.rated_power_kw} kW (Rated Max)
+                        Rated: {selectedProfile.rated_power_kw} kW
                       </span>
                     </div>
                     {targetPowerKw > selectedProfile.rated_power_kw && (
@@ -458,7 +571,7 @@ export default function DigitalTwinView({
                     />
                     <div className="range-hints">
                       <span>1 hr</span>
-                      <span>3 hrs (Shift Break Window)</span>
+                      <span>Break: 3 hrs</span>
                       <span>6 hrs</span>
                     </div>
                   </div>
@@ -511,10 +624,10 @@ export default function DigitalTwinView({
                   />
                   <div className="range-hints">
                     <span className={targetPressureBar < 6.5 ? 'text-red font-bold' : ''}>
-                      6.0 (Under-pressure)
+                      Min: 6.0 bar (Floor: 6.5)
                     </span>
-                    <span>6.8 (Energy Optimal)</span>
-                    <span>7.5 (Current Setting)</span>
+                    <span>Optimal: 6.8 bar</span>
+                    <span>Set: 7.5 bar</span>
                   </div>
                   {targetPressureBar < 6.5 && (
                     <div className="form-warning text-red">
@@ -541,6 +654,111 @@ export default function DigitalTwinView({
                   />
                 </div>
               )}
+
+              {/* Operational State & Load Factor Readout */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', background: 'var(--bg-elevated)', borderRadius: 6, fontSize: 11 }}>
+                <span style={{ color: '#64748b' }}>Operating State:</span>
+                <span style={{ fontWeight: 600, color: '#0f172a' }}>
+                  {targetPowerKw === 0 ? 'State 0 (Off · 0.00 LF)' : targetPowerKw <= selectedProfile.expected_idle_power_kw ? `State 1 (Idle · ${(targetPowerKw / selectedProfile.rated_power_kw).toFixed(2)} LF)` : `State 2 (Run · ${(targetPowerKw / selectedProfile.rated_power_kw).toFixed(2)} LF)`}
+                </span>
+              </div>
+
+              {/* Environmental & Telemetry Parameter Card (Spreadsheet Schema) */}
+              <div style={{ border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px', background: '#fafaf9', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: '#1e293b' }}>Telemetry &amp; Operating Conditions</span>
+                  <span style={{ fontSize: 9.5, fontWeight: 600, padding: '1px 6px', borderRadius: 4, background: 'rgba(2, 132, 199, 0.08)', color: 'var(--cyan)' }}>
+                    Dataset Schema
+                  </span>
+                </div>
+
+                {/* Sensor Quality (good | suspect | missing) */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10.5, marginBottom: 4 }}>
+                    <span style={{ color: '#475569' }}>Sensor Quality (Idea A)</span>
+                    <span style={{ fontWeight: 600, fontSize: 10, color: sensorQuality === 'good' ? '#059669' : sensorQuality === 'suspect' ? '#ea580c' : '#dc2626' }}>
+                      {sensorQuality.toUpperCase()} {sensorQuality === 'good' ? '(±5% Error)' : sensorQuality === 'suspect' ? '(±20% Error)' : '(±35% Error)'}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    {(['good', 'suspect', 'missing'] as const).map(q => (
+                      <button
+                        key={q}
+                        type="button"
+                        onClick={() => setSensorQuality(q)}
+                        style={{
+                          flex: 1,
+                          padding: '4px 6px',
+                          borderRadius: 4,
+                          fontSize: 10,
+                          fontWeight: 500,
+                          border: '1px solid',
+                          borderColor: sensorQuality === q ? 'var(--cyan)' : 'var(--border)',
+                          background: sensorQuality === q ? 'rgba(2, 132, 199, 0.1)' : '#ffffff',
+                          color: sensorQuality === q ? 'var(--cyan)' : '#64748b',
+                          cursor: 'pointer',
+                          textTransform: 'capitalize',
+                        }}
+                      >
+                        {q}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Ambient Temperature Setpoint */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10.5, marginBottom: 2 }}>
+                    <span style={{ color: '#475569' }}>Ambient Temp (ISO 1217)</span>
+                    <span style={{ fontWeight: 600, color: '#0f172a' }}>{ambientTempC.toFixed(1)}°C</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={15}
+                    max={45}
+                    step={0.5}
+                    value={ambientTempC}
+                    onChange={e => setAmbientTempC(parseFloat(e.target.value))}
+                    className="dt-range"
+                  />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: '#94a3b8' }}>
+                    <span>15°C</span>
+                    <span>24°C (Baseline)</span>
+                    <span>45°C</span>
+                  </div>
+                </div>
+
+                {/* Shift Pattern */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10.5, marginBottom: 4 }}>
+                    <span style={{ color: '#475569' }}>Shift Pattern</span>
+                    <span style={{ fontWeight: 600, fontSize: 10, color: '#0f172a' }}>{shiftPattern}</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    {(['3_shift', '2_shift', 'day_shift'] as const).map(p => (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => setShiftPattern(p)}
+                        style={{
+                          flex: 1,
+                          padding: '4px 6px',
+                          borderRadius: 4,
+                          fontSize: 9.5,
+                          fontWeight: 500,
+                          border: '1px solid',
+                          borderColor: shiftPattern === p ? 'var(--cyan)' : 'var(--border)',
+                          background: shiftPattern === p ? 'rgba(2, 132, 199, 0.1)' : '#ffffff',
+                          color: shiftPattern === p ? 'var(--cyan)' : '#64748b',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {p === '3_shift' ? '3-Shift' : p === '2_shift' ? '2-Shift' : 'Day Shift'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
 
               <button className="btn btn-cyan btn-full mt-2" onClick={handleRunSimulation}>
                 <Play size={12} />
@@ -604,141 +822,6 @@ export default function DigitalTwinView({
 
         {/* Right Column: Analytics, Tabbed Views & KPIs */}
         <div className="dt-right-col">
-          {/* 5-KPI Before vs After Comparison Grid (including SEC) */}
-          <div className="dt-kpi-grid-5">
-            {/* Total Energy */}
-            <div className="dt-kpi-card">
-              <div className="dt-kpi-top">
-                <span className="dt-kpi-lbl">Energy (24h)</span>
-                <Zap size={13} className="text-cyan" />
-              </div>
-              <div className="dt-kpi-values">
-                <div className="dt-val-item">
-                  <span className="dt-val-tag">Base</span>
-                  <span className="dt-val-num">{currentResult.baseline.total_energy_kwh.toLocaleString()}</span>
-                </div>
-                <div className="dt-val-divider">→</div>
-                <div className="dt-val-item">
-                  <span className="dt-val-tag">Sim</span>
-                  <span className="dt-val-num text-emerald">{currentResult.scenario.total_energy_kwh.toLocaleString()}</span>
-                </div>
-              </div>
-              <div className="dt-kpi-delta">
-                <span className={currentResult.deltas.energy_kwh <= 0 ? 'text-emerald' : 'text-red'}>
-                  {currentResult.deltas.energy_kwh <= 0 ? '▼ ' : '▲ '}
-                  {Math.abs(currentResult.deltas.energy_kwh)} kWh
-                </span>
-              </div>
-            </div>
-
-            {/* SEC: Specific Energy Consumption (Feature 1) */}
-            <div className="dt-kpi-card">
-              <div className="dt-kpi-top">
-                <span className="dt-kpi-lbl">SEC Intensity</span>
-                <BarChart3 size={13} className="text-emerald" />
-              </div>
-              <div className="dt-kpi-values">
-                <div className="dt-val-item">
-                  <span className="dt-val-tag">Base</span>
-                  <span className="dt-val-num">{currentResult.baseline.sec_kwh_per_unit || '8.4'}</span>
-                </div>
-                <div className="dt-val-divider">→</div>
-                <div className="dt-val-item">
-                  <span className="dt-val-tag">Sim</span>
-                  <span className="dt-val-num text-emerald">{currentResult.scenario.sec_kwh_per_unit || '7.5'}</span>
-                </div>
-              </div>
-              <div className="dt-kpi-delta">
-                <span className="text-emerald">
-                  kWh / good part
-                </span>
-              </div>
-            </div>
-
-            {/* Peak Demand */}
-            <div className="dt-kpi-card">
-              <div className="dt-kpi-top">
-                <span className="dt-kpi-lbl">Peak Demand</span>
-                <Gauge size={13} className="text-amber" />
-              </div>
-              <div className="dt-kpi-values">
-                <div className="dt-val-item">
-                  <span className="dt-val-tag">Base</span>
-                  <span className="dt-val-num">{currentResult.baseline.peak_demand_kw} kW</span>
-                </div>
-                <div className="dt-val-divider">→</div>
-                <div className="dt-val-item">
-                  <span className="dt-val-tag">Sim</span>
-                  <span
-                    className={`dt-val-num ${
-                      currentResult.scenario.peak_demand_kw > tariffConfig.contract_demand_limit_kw
-                        ? 'text-red'
-                        : 'text-emerald'
-                    }`}
-                  >
-                    {currentResult.scenario.peak_demand_kw} kW
-                  </span>
-                </div>
-              </div>
-              <div className="dt-kpi-delta">
-                <span className={currentResult.deltas.peak_kw <= 0 ? 'text-emerald' : 'text-red'}>
-                  {currentResult.deltas.peak_kw <= 0 ? '▼ ' : '▲ '}
-                  {Math.abs(currentResult.deltas.peak_kw)} kW · Limit: {tariffConfig.contract_demand_limit_kw} kW
-                </span>
-              </div>
-            </div>
-
-            {/* Total Cost */}
-            <div className="dt-kpi-card">
-              <div className="dt-kpi-top">
-                <span className="dt-kpi-lbl">Cost Impact</span>
-                <DollarSign size={13} className="text-emerald" />
-              </div>
-              <div className="dt-kpi-values">
-                <div className="dt-val-item">
-                  <span className="dt-val-tag">Base</span>
-                  <span className="dt-val-num">₹{currentResult.baseline.total_cost_inr.toLocaleString()}</span>
-                </div>
-                <div className="dt-val-divider">→</div>
-                <div className="dt-val-item">
-                  <span className="dt-val-tag">Sim</span>
-                  <span className="dt-val-num text-emerald">₹{currentResult.scenario.total_cost_inr.toLocaleString()}</span>
-                </div>
-              </div>
-              <div className="dt-kpi-delta">
-                <span className={currentResult.deltas.cost_inr <= 0 ? 'text-emerald' : 'text-red'}>
-                  {currentResult.deltas.cost_inr <= 0 ? '▼ Avoided ₹' : '▲ Extra ₹'}
-                  {Math.abs(currentResult.deltas.cost_inr).toLocaleString()}
-                </span>
-              </div>
-            </div>
-
-            {/* Scope 2 Emissions */}
-            <div className="dt-kpi-card">
-              <div className="dt-kpi-top">
-                <span className="dt-kpi-lbl">Scope 2 CO₂e</span>
-                <Leaf size={13} className="text-violet" />
-              </div>
-              <div className="dt-kpi-values">
-                <div className="dt-val-item">
-                  <span className="dt-val-tag">Base</span>
-                  <span className="dt-val-num">{currentResult.baseline.scope2_kg_co2e ?? '—'} kg</span>
-                </div>
-                <div className="dt-val-divider">→</div>
-                <div className="dt-val-item">
-                  <span className="dt-val-tag">Sim</span>
-                  <span className="dt-val-num text-violet">{currentResult.scenario.scope2_kg_co2e ?? '—'} kg</span>
-                </div>
-              </div>
-              <div className="dt-kpi-delta">
-                <span className={(currentResult.deltas.scope2_kg_co2e || 0) <= 0 ? 'text-emerald' : 'text-red'}>
-                  {(currentResult.deltas.scope2_kg_co2e || 0) <= 0 ? '▼ ' : '▲ '}
-                  {Math.abs(currentResult.deltas.scope2_kg_co2e || 0)} kg CO₂e
-                </span>
-              </div>
-            </div>
-          </div>
-
           {/* Secondary Tab Switcher: 4 Tabs (Ideas A, B, C) */}
           <div className="dt-tabs-header">
             <button
@@ -781,9 +864,9 @@ export default function DigitalTwinView({
                     <span>24-Hour Factory Demand Curve: Baseline vs. Simulated Scenario</span>
                   </div>
                   <div className="hdr-badges">
-                    <span className="badge badge-amber">Dashed: Baseline</span>
-                    <span className="badge badge-cyan">Solid: Proposed</span>
-                    <span className="badge badge-red">Red: 85 kW Contract Limit</span>
+                    <span className="badge badge-amber" style={{ textTransform: 'none' }}>Baseline (Dashed)</span>
+                    <span className="badge badge-cyan" style={{ textTransform: 'none' }}>Simulated (Solid)</span>
+                    <span className="badge badge-red" style={{ textTransform: 'none' }}>85 kW Limit</span>
                   </div>
                 </div>
 
@@ -796,16 +879,18 @@ export default function DigitalTwinView({
                           <stop offset="95%" stopColor="#22d3ee" stopOpacity={0.0} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" vertical={false} />
+                      <CartesianGrid stroke="rgba(0, 0, 0, 0.06)" strokeDasharray="3 3" vertical={false} />
                       <XAxis dataKey="label" stroke="#64748b" fontSize={10} fontFamily="var(--font-mono)" tickLine={false} />
                       <YAxis stroke="#64748b" fontSize={10} fontFamily="var(--font-mono)" unit=" kW" tickLine={false} domain={[0, 110]} />
                       <Tooltip
                         contentStyle={{
-                          backgroundColor: '#0f172a',
-                          border: '1px solid #334155',
-                          borderRadius: 6,
-                          fontFamily: 'var(--font-mono)',
+                          backgroundColor: '#ffffff',
+                          border: '1px solid rgba(0, 0, 0, 0.1)',
+                          borderRadius: 8,
+                          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
+                          fontFamily: 'var(--font-ui)',
                           fontSize: 11,
+                          color: '#0f172a',
                         }}
                       />
                       <ReferenceLine
@@ -853,16 +938,18 @@ export default function DigitalTwinView({
                 <div style={{ height: 150, padding: '8px 6px 0 0' }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={chartData} margin={{ top: 10, right: 15, left: -10, bottom: 0 }}>
-                      <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" vertical={false} />
+                      <CartesianGrid stroke="rgba(0, 0, 0, 0.06)" strokeDasharray="3 3" vertical={false} />
                       <XAxis dataKey="label" stroke="#64748b" fontSize={9} fontFamily="var(--font-mono)" tickLine={false} />
                       <YAxis stroke="#64748b" fontSize={9} fontFamily="var(--font-mono)" unit=" kW" tickLine={false} />
                       <Tooltip
                         contentStyle={{
-                          backgroundColor: '#0f172a',
-                          border: '1px solid #334155',
-                          borderRadius: 6,
-                          fontFamily: 'var(--font-mono)',
-                          fontSize: 10,
+                          backgroundColor: '#ffffff',
+                          border: '1px solid rgba(0, 0, 0, 0.1)',
+                          borderRadius: 8,
+                          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
+                          fontFamily: 'var(--font-ui)',
+                          fontSize: 11,
+                          color: '#0f172a',
                         }}
                       />
                       <Bar dataKey="compressor" name="COMP-01 (Air)" fill="#f59e0b" stackId="a" />

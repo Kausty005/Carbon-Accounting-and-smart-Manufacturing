@@ -32,15 +32,30 @@ export interface MachineProfile {
   model3DId?: string;
 }
 
+export type SensorQuality = 'good' | 'missing' | 'suspect';
+export type ShiftPattern = 'day_shift' | '2_shift' | '3_shift';
+
 export interface TelemetryRecord {
   timestamp: string;
+  site_id?: string;
   machine_id: string;
+  machine_type?: string;
   process: string;
+  rated_power_kw?: number;
   power_kw: number;
   energy_kwh: number;
   machine_state: MachineState;
+  operating_state?: number; // 0: Off, 1: Idle, 2: Run, 3: Standby
+  load_factor?: number; // 0.00 to 1.00
+  operating_minutes?: number; // 0 to 15
+  ambient_temp_c?: number;
+  process_temp_c?: number;
+  relative_humidity_pct?: number;
+  sensor_quality?: SensorQuality;
+  target_next_15min_energy_kwh?: number;
   production_units: number;
   shift: 'night' | 'day_a' | 'day_b';
+  shift_pattern?: ShiftPattern;
   data_source: string;
 }
 
@@ -85,6 +100,12 @@ export interface ScenarioAction {
   duration_hours?: number;
   target_power_kw?: number;
   target_state?: MachineState;
+  target_load_factor?: number;      // load_factor (0.0 to 1.0)
+  ambient_temp_c?: number;          // ambient_temp_c (15.0 to 45.0)
+  process_temp_c?: number;          // process_temp_c (20.0 to 850.0)
+  relative_humidity_pct?: number;   // relative_humidity_pct (30.0 to 95.0)
+  sensor_quality?: SensorQuality;   // sensor_quality ('good' | 'missing' | 'suspect')
+  shift_pattern?: ShiftPattern;     // shift_pattern ('day_shift' | '2_shift' | '3_shift')
   offset_hours?: number;
   target_pressure_bar?: number;
   baseline_pressure_bar?: number;

@@ -33,16 +33,19 @@ EXPECTED_COLUMNS = [
     "alert_code",
 ]
 
+_SRC_DIR = Path(__file__).resolve().parent
+_PKG_DIR = _SRC_DIR.parent
+_REPO_ROOT = _PKG_DIR.parent.parent
+
 DEFAULT_DATA_PATHS = [
+    _PKG_DIR / "data" / "synthetic_v1" / "telemetry.csv",
+    _PKG_DIR / "data" / "data.csv",
+    _REPO_ROOT / "src" / "data" / "data.csv",
     Path("data/synthetic_v1/telemetry.csv"),
     Path("data/data.csv"),
     Path("../data/synthetic_v1/telemetry.csv"),
     Path("../data/data.csv"),
-    Path("d:/coding/hackathon/ai_energy_intelligence/data/synthetic_v1/telemetry.csv"),
-    Path("d:/coding/hackathon/ai_energy_intelligence/data/data.csv"),
-    Path("../Carbon-Accounting-and-smart-Manufacturing/src/data/data.csv"),
-    Path("Carbon-Accounting-and-smart-Manufacturing/src/data/data.csv"),
-    Path("d:/coding/hackathon/Carbon-Accounting-and-smart-Manufacturing/src/data/data.csv"),
+    Path("src/data/data.csv"),
 ]
 
 SYNTHETIC_V1_REQUIRED_COLUMNS = [

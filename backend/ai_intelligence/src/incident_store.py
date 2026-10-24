@@ -99,11 +99,13 @@ class IncidentStore:
                 self.df_telemetry = None
 
         # Also cache legacy data.csv for backward-compatibility tests
+        repo_root = BASE_DIR.parent.parent
         legacy_candidates = [
             BASE_DIR / "data" / "data.csv",
-            BASE_DIR.parent / "src" / "data" / "data.csv",
-            Path("D:/coding/hackathon/ai_energy_intelligence/data/data.csv"),
-            Path("D:/coding/hackathon/Carbon-Accounting-and-smart-Manufacturing/src/data/data.csv"),
+            repo_root / "src" / "data" / "data.csv",
+            repo_root.parent / "ai_energy_intelligence" / "data" / "data.csv",
+            Path("data/data.csv"),
+            Path("src/data/data.csv"),
         ]
         for leg_path in legacy_candidates:
             if leg_path.exists():

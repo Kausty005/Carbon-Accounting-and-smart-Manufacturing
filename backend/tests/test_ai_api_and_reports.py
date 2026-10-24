@@ -353,3 +353,57 @@ def test_old_persisted_incidents_never_default_to_zero_confidence():
     assert normalized_iso["anomaly_score"] == 0.1684
     assert normalized_iso["detection_method"] == "unsupervised_isolation_forest"
 
+
+def test_live_simulation_tick_and_detection(client):
+    """Test 2-second simulation tick endpoint and live anomaly detection."""
+    res = client.get("/api/anomalies/live-stream/tick")
+    assert res.status_code == 200
+    data = res.json()
+    assert "tick" in data
+    assert "timestamp" in data
+    assert "machines" in data
+    assert len(data["machines"]) == 4
+    assert "plant_power_kw" in data
+    assert data["plant_power_kw"] > 0
+
+    # Test injecting a live anomaly fault on next tick
+    inject_res = client.post("/api/anomalies/live-stream/inject", json={
+        "equipment_id": "FURNACE-01",
+        "anomaly_type": "excessive_power",
+    })
+    assert inject_res.status_code == 200
+    assert inject_res.json()["status"] == "queued"
+
+    # Next tick should execute the injected anomaly
+    tick_after_inject = client.get("/api/anomalies/live-stream/tick").json()
+    assert tick_after_inject["active_anomaly"] is not None
+    assert tick_after_inject["active_anomaly"]["equipment_id"] == "FURNACE-01"
+    assert tick_after_inject["active_anomaly"]["is_live"] is True
+    assert tick_after_inject["active_anomaly"]["confidence"] is not None
+
+    # Verify history
+    hist_res = client.get("/api/anomalies/live-stream/history")
+    assert hist_res.status_code == 200
+    assert len(hist_res.json()["history"]) >= 2
+
+
+def test_direct_pdf_and_docx_report_routes(client):
+    """Test GET endpoints for PDF and DOCX reports with file headers."""
+    store = get_incident_store()
+    first_id = list(store.incidents.keys())[0]
+
+    # Direct GET /pdf
+    res_pdf = client.get(f"/api/anomalies/{first_id}/report/pdf")
+    assert res_pdf.status_code == 200
+    assert res_pdf.headers["content-type"] == "application/pdf"
+    assert "attachment" in res_pdf.headers.get("content-disposition", "")
+    assert ".pdf" in res_pdf.headers.get("content-disposition", "")
+
+    # Direct GET /docx
+    res_docx = client.get(f"/api/anomalies/{first_id}/report/docx")
+    assert res_docx.status_code == 200
+    assert "wordprocessingml.document" in res_docx.headers["content-type"]
+    assert "attachment" in res_docx.headers.get("content-disposition", "")
+    assert ".docx" in res_docx.headers.get("content-disposition", "")
+
+

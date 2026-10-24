@@ -56,6 +56,136 @@ import {
   type LiveSimulationTickResponse,
 } from '../../services/anomalyApi';
 
+interface EssentialMetric {
+  label: string;
+  value: string;
+  unit?: string;
+  isWarning?: boolean;
+}
+
+function getMachineTelemetryBadges(m: any): EssentialMetric[] {
+  const eq = (m.equipment_id || '').toUpperCase();
+  const metrics: EssentialMetric[] = [];
+  const isValid = (v: any) => v !== undefined && v !== null && v !== '' && !isNaN(Number(v));
+
+  if (eq.includes('COMP')) {
+    // Air Compressor (ELGi EN-45): Pressure, Air Temp, Vibration
+    if (isValid(m.discharge_pressure_bar)) {
+      const p = Number(m.discharge_pressure_bar);
+      metrics.push({
+        label: 'Pressure',
+        value: p.toFixed(2),
+        unit: 'bar',
+        isWarning: p < 6.5 || p > 8.5,
+      });
+    }
+    if (isValid(m.temperature_c)) {
+      const t = Number(m.temperature_c);
+      metrics.push({
+        label: 'Air Temp',
+        value: t.toFixed(1),
+        unit: '°C',
+        isWarning: t > 90,
+      });
+    }
+    if (isValid(m.vibration_mm_s)) {
+      const v = Number(m.vibration_mm_s);
+      metrics.push({
+        label: 'Vibration',
+        value: v.toFixed(2),
+        unit: 'mm/s',
+        isWarning: v > 1.2,
+      });
+    }
+  } else if (eq.includes('FURN')) {
+    // Heat Furnace (IF-85): Chamber Temp, Setpoint, Thermal Offset
+    if (isValid(m.temperature_c)) {
+      const t = Number(m.temperature_c);
+      metrics.push({
+        label: 'Chamber Temp',
+        value: t.toFixed(0),
+        unit: '°C',
+        isWarning: t > 950 || t < 700,
+      });
+    }
+    if (isValid(m.temp_setpoint_c)) {
+      const sp = Number(m.temp_setpoint_c);
+      metrics.push({
+        label: 'Setpoint',
+        value: sp.toFixed(0),
+        unit: '°C',
+      });
+    }
+    if (isValid(m.temperature_c) && isValid(m.temp_setpoint_c)) {
+      const diff = Number(m.temperature_c) - Number(m.temp_setpoint_c);
+      metrics.push({
+        label: 'Thermal Offset',
+        value: `${diff >= 0 ? '+' : ''}${diff.toFixed(1)}`,
+        unit: '°C',
+        isWarning: Math.abs(diff) > 25,
+      });
+    }
+  } else if (eq.includes('CNC')) {
+    // 5-Axis CNC (NLX-2500): Spindle Speed, Spindle Load, Axis Vibration
+    if (isValid(m.spindle_rpm)) {
+      const rpm = Number(m.spindle_rpm);
+      metrics.push({
+        label: 'Spindle RPM',
+        value: rpm === 0 ? '0 (Idle)' : rpm.toLocaleString(),
+        isWarning: rpm > 6000,
+      });
+    }
+    if (isValid(m.spindle_load_pct)) {
+      const load = Number(m.spindle_load_pct);
+      metrics.push({
+        label: 'Spindle Load',
+        value: load.toFixed(0),
+        unit: '%',
+        isWarning: load > 85,
+      });
+    }
+    if (isValid(m.vibration_mm_s)) {
+      const vib = Number(m.vibration_mm_s);
+      metrics.push({
+        label: 'Axis Vib',
+        value: vib.toFixed(2),
+        unit: 'mm/s',
+        isWarning: vib > 0.8,
+      });
+    }
+  } else if (eq.includes('CHILL')) {
+    // Chiller System: Return-Supply Delta T, Supply Temp, Chilled Water Flow
+    if (isValid(m.delta_t_c)) {
+      const dt = Number(m.delta_t_c);
+      metrics.push({
+        label: 'Cooling ΔT',
+        value: dt.toFixed(1),
+        unit: '°C',
+        isWarning: dt < 3.5 || dt > 8.0,
+      });
+    }
+    if (isValid(m.supply_temp_c)) {
+      const st = Number(m.supply_temp_c);
+      metrics.push({
+        label: 'Supply Temp',
+        value: st.toFixed(1),
+        unit: '°C',
+        isWarning: st > 12.0 || st < 4.0,
+      });
+    }
+    if (isValid(m.water_flow_m3h)) {
+      const flow = Number(m.water_flow_m3h);
+      metrics.push({
+        label: 'Water Flow',
+        value: flow.toFixed(1),
+        unit: 'm³/h',
+      });
+    }
+  }
+
+  return metrics;
+}
+
 export default function AIAnomalyIntelligence() {
   const [summary, setSummary] = useState<DashboardSummaryResponse | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(true);
@@ -596,7 +726,7 @@ export default function AIAnomalyIntelligence() {
         </div>
 
         {/* ─── 4 Monitored Equipment Live Telemetry Cards ─── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 12, marginTop: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 14, marginTop: 14 }}>
           {liveMachines.map((m) => {
             const isAnomaly = m.status === 'ANOMALY';
             const devPct = m.expected_power_kw ? Math.round(((m.power_kw - m.expected_power_kw) / m.expected_power_kw) * 100) : 0;
@@ -604,186 +734,232 @@ export default function AIAnomalyIntelligence() {
             const isComp = m.equipment_id.includes('COMP');
             const isCnc = m.equipment_id.includes('CNC');
 
+            const machineDisplayName = isFurnace
+              ? 'Industrial Heat Furnace'
+              : isComp
+              ? 'Air Compressor (ELGi)'
+              : isCnc
+              ? '5-Axis CNC Machining'
+              : 'Chilled Water Cooling';
+
             const accentColor = isAnomaly
               ? 'var(--red)'
               : isFurnace
-              ? '#f97316'
+              ? '#ea580c'
               : isComp
               ? 'var(--cyan)'
               : isCnc
               ? 'var(--violet)'
               : 'var(--emerald)';
 
+            const metrics = getMachineTelemetryBadges(m);
+            const loadRatio = m.expected_power_kw ? Math.min(100, Math.round((m.power_kw / m.expected_power_kw) * 100)) : 50;
+
             return (
               <div
                 key={m.equipment_id}
                 style={{
-                  background: isAnomaly ? 'rgba(239, 68, 68, 0.08)' : 'var(--bg-panel)',
+                  background: isAnomaly ? 'rgba(239, 68, 68, 0.06)' : 'var(--bg-panel)',
                   border: isAnomaly
                     ? '2px solid var(--red)'
                     : isTickPulse
                     ? `1px solid ${accentColor}`
                     : '1px solid var(--border)',
-                  borderRadius: 8,
-                  padding: '12px 14px',
+                  borderRadius: 10,
+                  padding: '14px 16px',
                   boxShadow: isAnomaly
-                    ? '0 0 16px rgba(239, 68, 68, 0.25)'
-                    : '0 2px 8px rgba(0,0,0,0.04)',
+                    ? '0 0 18px rgba(239, 68, 68, 0.22)'
+                    : '0 2px 10px rgba(60, 45, 25, 0.05)',
                   transition: 'all 0.25s ease',
                   position: 'relative',
-                  overflow: 'hidden',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
                 }}
               >
-                {/* Header: Icon, ID & Status Badge */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                    <div
+                <div>
+                  {/* Card Header: Icon, Machine Name & Clean Status Badge */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                      <div
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: 8,
+                          background: `rgba(${isAnomaly ? '239,68,68' : '2,132,199'}, 0.12)`,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: accentColor,
+                          flexShrink: 0,
+                        }}
+                      >
+                        {isFurnace ? (
+                          <Flame size={17} />
+                        ) : isComp ? (
+                          <Wind size={17} />
+                        ) : isCnc ? (
+                          <Activity size={17} />
+                        ) : (
+                          <Gauge size={17} />
+                        )}
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--white)', lineHeight: 1.2 }}>
+                          {m.equipment_id}
+                        </div>
+                        <div style={{ fontSize: 10, color: 'var(--slate-500)', fontWeight: 500 }}>
+                          {machineDisplayName}
+                        </div>
+                      </div>
+                    </div>
+
+                    <span
                       style={{
-                        width: 26,
-                        height: 26,
-                        borderRadius: 6,
-                        background: `rgba(${isAnomaly ? '239,68,68' : '2,132,199'}, 0.12)`,
-                        display: 'flex',
+                        fontSize: 10,
+                        fontWeight: 700,
+                        padding: '3px 8px',
+                        borderRadius: 9999,
+                        fontFamily: 'var(--font-mono)',
+                        background: isAnomaly ? 'rgba(220, 38, 38, 0.15)' : 'rgba(5, 150, 105, 0.12)',
+                        color: isAnomaly ? 'var(--red)' : 'var(--emerald)',
+                        border: isAnomaly ? '1px solid rgba(220, 38, 38, 0.35)' : '1px solid rgba(5, 150, 105, 0.25)',
+                        letterSpacing: 0.5,
+                        display: 'inline-flex',
                         alignItems: 'center',
-                        justifyContent: 'center',
-                        color: accentColor,
+                        gap: 4,
                       }}
                     >
-                      {isFurnace ? (
-                        <Flame size={15} />
-                      ) : isComp ? (
-                        <Wind size={15} />
-                      ) : isCnc ? (
-                        <Activity size={15} />
-                      ) : (
-                        <Gauge size={15} />
-                      )}
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 12, fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--white)' }}>
-                        {m.equipment_id}
-                      </div>
-                      <div style={{ fontSize: 9, color: 'var(--slate-400)', textTransform: 'capitalize' }}>
-                        {m.equipment_type?.replace(/_/g, ' ') || 'Industrial Unit'}
-                      </div>
-                    </div>
-                  </div>
-
-                  <span
-                    style={{
-                      fontSize: 9.5,
-                      fontWeight: 800,
-                      padding: '2px 8px',
-                      borderRadius: 12,
-                      fontFamily: 'var(--font-mono)',
-                      background: isAnomaly ? 'var(--red)' : 'rgba(16, 185, 129, 0.15)',
-                      color: isAnomaly ? '#fff' : 'var(--emerald)',
-                      border: isAnomaly ? '1px solid #ef4444' : '1px solid rgba(16, 185, 129, 0.3)',
-                      letterSpacing: 0.5,
-                      boxShadow: isAnomaly ? '0 0 8px rgba(239, 68, 68, 0.4)' : 'none',
-                    }}
-                  >
-                    {isAnomaly ? '🚨 FAULT DETECTED' : '● NOMINAL'}
-                  </span>
-                </div>
-
-                {/* Power & Baseline Comparator */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 10, background: 'rgba(0,0,0,0.03)', padding: '6px 10px', borderRadius: 6 }}>
-                  <div>
-                    <span style={{ fontSize: 20, fontWeight: 900, color: isAnomaly ? 'var(--red)' : 'var(--white)', letterSpacing: -0.5 }}>
-                      {m.power_kw.toFixed(1)}
+                      {isAnomaly ? <AlertTriangle size={11} /> : <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: 'var(--emerald)' }} />}
+                      {isAnomaly ? 'FAULT' : 'NORMAL'}
                     </span>
-                    <span style={{ fontSize: 11, color: 'var(--slate-400)', marginLeft: 4, fontWeight: 600 }}>kW</span>
                   </div>
+
+                  {/* Primary Power Readout & Delta */}
+                  <div style={{ marginBottom: 12 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
+                      <div>
+                        <span style={{ fontSize: 24, fontWeight: 800, fontFamily: 'var(--font-mono)', color: isAnomaly ? 'var(--red)' : 'var(--white)', letterSpacing: -0.5 }}>
+                          {m.power_kw.toFixed(1)}
+                        </span>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--slate-500)', marginLeft: 4 }}>kW</span>
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 10.5,
+                          fontFamily: 'var(--font-mono)',
+                          fontWeight: 700,
+                          padding: '2px 7px',
+                          borderRadius: 4,
+                          background: isAnomaly
+                            ? 'rgba(220, 38, 38, 0.15)'
+                            : Math.abs(devPct) > 15
+                            ? 'rgba(217, 119, 6, 0.15)'
+                            : 'rgba(5, 150, 105, 0.1)',
+                          color: isAnomaly
+                            ? 'var(--red)'
+                            : Math.abs(devPct) > 15
+                            ? 'var(--amber)'
+                            : 'var(--emerald)',
+                        }}
+                      >
+                        {devPct > 0 ? `+${devPct}%` : `${devPct}%`} vs base ({m.expected_power_kw?.toFixed(1) || '--'} kW)
+                      </div>
+                    </div>
+
+                    {/* Subtle Load Indicator */}
+                    <div style={{ height: 4, borderRadius: 2, background: 'rgba(90, 75, 55, 0.1)', overflow: 'hidden' }}>
+                      <div
+                        style={{
+                          height: '100%',
+                          width: `${Math.min(100, Math.max(10, loadRatio))}%`,
+                          background: isAnomaly
+                            ? 'var(--red)'
+                            : Math.abs(devPct) > 15
+                            ? 'var(--amber)'
+                            : 'var(--emerald)',
+                          borderRadius: 2,
+                          transition: 'width 0.4s ease',
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Only Important Machine-Specific Sensor Badges */}
                   <div
                     style={{
-                      fontSize: 10,
-                      fontFamily: 'var(--font-mono)',
-                      fontWeight: 700,
-                      padding: '2px 6px',
-                      borderRadius: 4,
-                      background: isAnomaly
-                        ? 'rgba(239, 68, 68, 0.15)'
-                        : devPct > 10
-                        ? 'rgba(245, 158, 11, 0.15)'
-                        : 'rgba(16, 185, 129, 0.12)',
-                      color: isAnomaly
-                        ? 'var(--red)'
-                        : devPct > 10
-                        ? 'var(--amber)'
-                        : 'var(--emerald)',
+                      display: 'grid',
+                      gridTemplateColumns: `repeat(${metrics.length || 1}, 1fr)`,
+                      gap: 6,
+                      marginBottom: 14,
                     }}
                   >
-                    {devPct > 0 ? `+${devPct}%` : `${devPct}%`} vs base ({m.expected_power_kw?.toFixed(1) || '--'} kW)
+                    {metrics.map((met, idx) => (
+                      <div
+                        key={idx}
+                        style={{
+                          background: met.isWarning ? 'rgba(220, 38, 38, 0.08)' : 'rgba(90, 75, 55, 0.04)',
+                          border: met.isWarning ? '1px solid rgba(220, 38, 38, 0.3)' : '1px solid var(--border-muted)',
+                          borderRadius: 6,
+                          padding: '5px 6px',
+                          textAlign: 'center',
+                        }}
+                      >
+                        <div style={{ fontSize: 8.5, color: 'var(--slate-500)', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600, marginBottom: 2 }}>
+                          {met.label}
+                        </div>
+                        <div style={{ fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-mono)', color: met.isWarning ? 'var(--red)' : 'var(--white)' }}>
+                          {met.value}
+                          {met.unit && <span style={{ fontSize: 9.5, fontWeight: 500, color: 'var(--slate-500)', marginLeft: 2 }}>{met.unit}</span>}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
-                {/* Sub-sensor telemetry metrics */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5, fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--slate-400)', marginBottom: 10 }}>
-                  {m.temperature_c !== undefined && (
-                    <div style={{ background: 'rgba(0,0,0,0.02)', padding: '3px 6px', borderRadius: 4 }}>
-                      Temp: <strong style={{ color: isAnomaly && m.temperature_c > 800 ? 'var(--red)' : 'var(--white)' }}>{m.temperature_c}°C</strong>
-                    </div>
-                  )}
-                  {m.temp_setpoint_c !== undefined && (
-                    <div style={{ background: 'rgba(0,0,0,0.02)', padding: '3px 6px', borderRadius: 4 }}>
-                      Setpoint: <strong style={{ color: 'var(--slate-300)' }}>{m.temp_setpoint_c}°C</strong>
-                    </div>
-                  )}
-                  {m.discharge_pressure_bar !== undefined && (
-                    <div style={{ background: 'rgba(0,0,0,0.02)', padding: '3px 6px', borderRadius: 4 }}>
-                      Press: <strong style={{ color: isAnomaly && m.discharge_pressure_bar < 5.5 ? 'var(--red)' : 'var(--white)' }}>{m.discharge_pressure_bar} bar</strong>
-                    </div>
-                  )}
-                  {m.airflow_cfm !== undefined && (
-                    <div style={{ background: 'rgba(0,0,0,0.02)', padding: '3px 6px', borderRadius: 4 }}>
-                      Flow: <strong style={{ color: 'var(--white)' }}>{m.airflow_cfm} CFM</strong>
-                    </div>
-                  )}
-                  {m.spindle_rpm !== undefined && (
-                    <div style={{ background: 'rgba(0,0,0,0.02)', padding: '3px 6px', borderRadius: 4 }}>
-                      RPM: <strong style={{ color: 'var(--white)' }}>{m.spindle_rpm}</strong>
-                    </div>
-                  )}
-                  {m.spindle_load_pct !== undefined && (
-                    <div style={{ background: 'rgba(0,0,0,0.02)', padding: '3px 6px', borderRadius: 4 }}>
-                      Load: <strong style={{ color: isAnomaly ? 'var(--red)' : 'var(--white)' }}>{m.spindle_load_pct}%</strong>
-                    </div>
-                  )}
-                  {m.delta_t_c !== undefined && (
-                    <div style={{ background: 'rgba(0,0,0,0.02)', padding: '3px 6px', borderRadius: 4 }}>
-                      ΔT: <strong style={{ color: isAnomaly && m.delta_t_c < 3.0 ? 'var(--red)' : 'var(--white)' }}>{m.delta_t_c}°C</strong>
-                    </div>
-                  )}
-                  {m.vibration_mm_s !== undefined && (
-                    <div style={{ background: 'rgba(0,0,0,0.02)', padding: '3px 6px', borderRadius: 4 }}>
-                      Vib: <strong style={{ color: isAnomaly && m.vibration_mm_s > 1.0 ? 'var(--red)' : 'var(--white)' }}>{m.vibration_mm_s} mm/s</strong>
-                    </div>
-                  )}
-                </div>
-
-                {/* Direct card action button */}
-                <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+                {/* Direct Card Action Button (Preserves exact working) */}
+                <div>
                   {isAnomaly ? (
                     <button
-                      className="btn btn-xs btn-cyan"
-                      style={{ width: '100%', fontSize: 10, fontWeight: 700, padding: '4px 0' }}
+                      className="btn btn-sm btn-cyan"
+                      style={{
+                        width: '100%',
+                        fontSize: 10,
+                        fontWeight: 700,
+                        height: 28,
+                        background: 'var(--red)',
+                        borderColor: 'var(--red)',
+                        color: '#fff',
+                        justifyContent: 'center',
+                        boxShadow: '0 2px 6px rgba(220, 38, 38, 0.25)',
+                      }}
                       onClick={() => {
                         const matching = anomalies.find((a) => a.equipment_id === m.equipment_id);
                         if (matching) setSelectedIncidentId(matching.incident_id);
                         else if (activeLiveAlert?.equipment_id === m.equipment_id) setSelectedIncidentId(activeLiveAlert.incident_id);
                       }}
                     >
-                      Inspect Live Fault Incident →
+                      <AlertTriangle size={12} /> Inspect Live Fault →
                     </button>
                   ) : (
                     <button
-                      className="btn btn-xs btn-ghost"
-                      style={{ width: '100%', fontSize: 9.5, padding: '3px 0', borderColor: 'var(--border)' }}
+                      className="btn btn-sm"
+                      style={{
+                        width: '100%',
+                        fontSize: 9.5,
+                        fontWeight: 600,
+                        height: 26,
+                        justifyContent: 'center',
+                        background: 'rgba(90, 75, 55, 0.04)',
+                        borderColor: 'var(--border)',
+                        color: 'var(--slate-500)',
+                      }}
                       onClick={() => handleInjectFault(m.equipment_id, isFurnace ? 'excessive_power' : isComp ? 'pressure_leak' : isCnc ? 'tool_wear' : 'low_delta_t')}
                       disabled={injectingFault !== null}
+                      title={`Simulate an operational anomaly on ${m.equipment_id}`}
                     >
-                      <Sparkles size={10} /> Test Anomaly on {m.equipment_id}
+                      <Sparkles size={11} style={{ color: 'var(--amber)' }} />
+                      {injectingFault === m.equipment_id ? 'Injecting...' : `Test Anomaly on ${m.equipment_id}`}
                     </button>
                   )}
                 </div>

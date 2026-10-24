@@ -2,15 +2,24 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   LayoutGrid, Cpu, Sliders, Leaf, FileText,
   AlertTriangle, CheckCircle2, Zap, TrendingDown,
-  Printer, Download, ChevronRight, Box,
+  Printer, Download, ChevronRight, Box, RefreshCw, RotateCcw,
 } from 'lucide-react';
 import ScadaFloorMap from './components/ScadaFloorMap';
 import Factory3DScene from './components/Factory3D/Factory3DScene';
 import { DemandAreaChart, ComparisonLineChart, ScopePie } from './components/Charts';
 import {
   PLANT, ASSETS, HOURLY_BASE, CARBON,
-  calcSimResult, type SimParams, type Asset,
+  calcSimResult, DEFAULT_SIM_PARAMS, type SimParams, type Asset,
 } from './data/mockData';
+import {
+  calculateCarbonFootprint,
+  checkBackendHealth,
+  fetchCarbonFactors,
+  getOfflineFallbackCalculation,
+  type CarbonCalculateResponse,
+  type FactorQueryResponse,
+  type CeaMethodology,
+} from './services/carbonApi';
 import './index.css';
 
 type View = 'overview' | 'scada' | 'simulator' | 'carbon' | 'reports';
@@ -60,7 +69,17 @@ function LoadBar({ label, pct, color }: { label: string; pct: number; color: str
 }
 
 // ─── Top Telemetry Bar ─────────────────────────────────────────────────────────
-function TeleBar({ simOn, simParams }: { simOn: boolean; simParams: SimParams }) {
+function TeleBar({
+  simOn,
+  simParams,
+  carbonData,
+  backendStatus,
+}: {
+  simOn: boolean;
+  simParams: SimParams;
+  carbonData: CarbonCalculateResponse | null;
+  backendStatus: 'CONNECTED' | 'OFFLINE (DEMO)';
+}) {
   const [time, setTime] = useState(new Date());
   useEffect(() => {
     const t = setInterval(() => setTime(new Date()), 1000);
@@ -76,9 +95,8 @@ function TeleBar({ simOn, simParams }: { simOn: boolean; simParams: SimParams })
   const pf = simParams.autoIdleCutoff ? '0.96' : '0.91';
   const energy = simOn ? result.optimizedEnergy : PLANT.baselineEnergy;
   const cost   = simOn ? result.optimizedCost   : PLANT.baselineCost;
-  const scope2 = CARBON.scope2Calc(energy);
-  const scope1 = CARBON.scope1Calc();
-  const totalCarbon = +(scope1.kgCO2e + scope2.kgCO2e).toFixed(2);
+  const totalCarbon = carbonData?.gross_footprint.total_gross_co2e_t.toFixed(2) ?? '14.47';
+  const avoidedCarbon = carbonData?.avoided_emissions?.avoided_co2e_t.toFixed(2) ?? (result.savingsCarbon).toFixed(2);
 
   return (
     <div className="telebar">
@@ -86,7 +104,14 @@ function TeleBar({ simOn, simParams }: { simOn: boolean; simParams: SimParams })
         <span className="tele-label">Plant</span>
         <span className={`live-badge ${simOn ? 'sim' : ''}`}>
           <span className="pulse-dot" />
-          {simOn ? 'SIMULATED' : 'LIVE TELEMETRY'}
+          {simOn ? 'SCENARIO SIMULATED' : 'DEMO TELEMETRY'}
+        </span>
+      </div>
+      <div className="tele-item">
+        <span className="tele-label">Engine</span>
+        <span className={`live-badge ${backendStatus === 'CONNECTED' ? '' : 'sim'}`} style={{ borderColor: backendStatus === 'CONNECTED' ? 'rgba(16, 185, 129, 0.4)' : 'rgba(245, 158, 11, 0.4)' }}>
+          <span className="pulse-dot" style={{ background: backendStatus === 'CONNECTED' ? 'var(--emerald)' : 'var(--amber)' }} />
+          {backendStatus === 'CONNECTED' ? 'API LIVE' : 'OFFLINE DEMO'}
         </span>
       </div>
       <div className="tele-item">
@@ -118,7 +143,7 @@ function TeleBar({ simOn, simParams }: { simOn: boolean; simParams: SimParams })
       <div className="tele-item">
         <span className="tele-label">Pot. Savings</span>
         <span className="tele-value emerald">
-          8% / 998.4 kWh / ₹7,987
+          8% / 998.4 kWh / ₹7,987 / -{avoidedCarbon} tCO₂e
         </span>
       </div>
       <div className="tele-item">
@@ -137,15 +162,25 @@ function TeleBar({ simOn, simParams }: { simOn: boolean; simParams: SimParams })
 }
 
 // ─── Overview ─────────────────────────────────────────────────────────────────
-function OverviewView({ setView }: { setView: (v: View) => void }) {
+function OverviewView({
+  setView,
+  carbonData,
+  gridEF,
+}: {
+  setView: (v: View) => void;
+  carbonData: CarbonCalculateResponse | null;
+  gridEF: number;
+}) {
+  const scope2Emissions = carbonData?.gross_footprint.scope2?.emissions_total_co2e_t.toFixed(2) ?? '9.10';
+  const factorUsed = (carbonData?.gross_footprint.scope2?.factor_metadata.selected_factor ?? gridEF).toFixed(2);
   const kpis = [
     { label: 'Baseline Energy', value: '12,480', unit: 'kWh/period', color: '#22d3ee', change: '' },
     { label: 'Baseline Cost',   value: '₹99,840', unit: '/period',   color: '#f59e0b', change: '' },
     { label: 'Potential Savings', value: '998.4', unit: 'kWh (8%)', color: '#10b981', change: '+8% reducible' },
-    { label: 'Scope 2 Carbon', value: '10.23', unit: 'tCO₂e',       color: '#8b5cf6', change: '' },
+    { label: 'Scope 2 Carbon', value: scope2Emissions, unit: 'tCO₂e', color: '#8b5cf6', change: '30d period' },
     { label: 'Active Assets',   value: '4',     unit: 'of 4',        color: '#22d3ee', change: '' },
     { label: 'Active Anomalies', value: '1',    unit: 'CRITICAL',    color: '#ef4444', change: 'AIR COMPRESSOR' },
-    { label: 'Grid Emission Factor', value: '0.82', unit: 'kg CO₂e/kWh', color: '#8b5cf6', change: 'CEA India' },
+    { label: 'Grid Emission Factor', value: factorUsed, unit: 'kg CO₂e/kWh', color: '#8b5cf6', change: 'CEA India' },
     { label: 'Plant Power Factor', value: '0.91', unit: '',          color: '#f59e0b', change: 'below 0.95 target' },
   ];
 
@@ -194,7 +229,7 @@ function OverviewView({ setView }: { setView: (v: View) => void }) {
         </div>
         <div className="alert-rec">
           AI Recommendation: Install Auto-Idle Cutoff relay (5-min timer) + reduce pressure setpoint to 6.8 bar.
-          Saves ₹7,987.20/period (8% of total cost) and 818.7 kg CO₂e.
+          Saves ₹7,987.20/period (8% of total cost) and 727.7 kg CO₂e avoided.
         </div>
       </div>
 
@@ -341,27 +376,101 @@ function ScadaView({
 
 // ─── Simulator View ───────────────────────────────────────────────────────────
 function SimulatorView({
-  params, setParams,
+  params,
+  setParams,
+  onResetBaseline,
+  carbonData,
+  gridEF,
+  reportingYear,
 }: {
   params: SimParams;
   setParams: (p: SimParams) => void;
+  onResetBaseline: () => void;
+  carbonData: CarbonCalculateResponse | null;
+  gridEF: number;
+  reportingYear: string;
 }) {
-  const result = useMemo(() => calcSimResult(params), [params]);
+  const result = useMemo(() => calcSimResult(params, gridEF), [params, gridEF]);
+  const anyFix = params.autoIdleCutoff || params.pressureSetpoint < 7.5 || params.staggerFurnace;
+
+  const baselineGross = carbonData?.gross_footprint.total_gross_co2e_t ?? 14.473;
+  const baselineScope2 = carbonData?.gross_footprint.scope2?.emissions_total_co2e_t ?? 9.096;
+  const baselineScope1 = carbonData?.gross_footprint.scope1?.emissions_total_co2e_t ?? 5.377;
+  const factorVal = carbonData?.gross_footprint.scope2?.factor_metadata.selected_factor ?? gridEF;
+
+  const avoidedRes = carbonData?.avoided_emissions;
+  const savingsKwh = anyFix ? (avoidedRes?.savings_kwh ?? result.savingsKwh) : 0;
+  const avoidedCO2e = anyFix ? (avoidedRes?.avoided_co2e_t ?? result.savingsCarbon) : 0;
+  const proposedScope2 = Math.max(0, +(baselineScope2 - avoidedCO2e).toFixed(3));
+  const proposedGross = Math.max(0, +(baselineGross - avoidedCO2e).toFixed(3));
+  const reductionPct = baselineGross > 0 ? +((avoidedCO2e / baselineGross) * 100).toFixed(2) : 0;
 
   const toggle = (k: keyof SimParams) =>
     setParams({ ...params, [k]: !params[k] });
 
   return (
     <div className="scroll-area">
-      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--slate-400)', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 14 }}>
-        Digital Twin &amp; What-If Simulator — PrecisionWorks Manufacturing
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
+        <div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--slate-400)', letterSpacing: 2, textTransform: 'uppercase' }}>
+            Digital Twin &amp; What-If Simulator — PrecisionWorks Manufacturing
+          </div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--slate-500)', marginTop: 2 }}>
+            Simulated Energy Interventions · ISO 14064-1 &amp; GHG Protocol Scenario Modeling · No Direct Actuation
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {anyFix ? (
+            <span className="badge badge-cyan" title="Simulation active with modified operating setpoints">
+              <Sliders size={9} />
+              SIMULATED SCENARIO ACTIVE
+            </span>
+          ) : (
+            <span className="badge badge-emerald" title="Operating at historical baseline conditions">
+              <CheckCircle2 size={9} />
+              BASELINE OPERATIONAL STATE
+            </span>
+          )}
+
+          <button
+            className="btn btn-sm btn-outline"
+            onClick={onResetBaseline}
+            disabled={!anyFix}
+            title="Reset all what-if controls to historical baseline"
+            style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+          >
+            <RotateCcw size={10} />
+            Reset to Baseline
+          </button>
+        </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: 12 }}>
         {/* Controls */}
         <div>
           <div className="panel">
-            <div className="panel-hdr"><Sliders size={12} /> Control Parameters</div>
+            <div className="panel-hdr" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Sliders size={12} /> Control Parameters
+              </div>
+              {anyFix && (
+                <button
+                  onClick={onResetBaseline}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--cyan)',
+                    fontSize: 10,
+                    fontFamily: 'var(--font-mono)',
+                    cursor: 'pointer',
+                    textDecoration: 'underline',
+                  }}
+                >
+                  Reset all
+                </button>
+              )}
+            </div>
             <div style={{ padding: '10px 14px' }}>
 
               {/* Toggle 1 */}
@@ -375,12 +484,12 @@ function SimulatorView({
                 </div>
                 {params.autoIdleCutoff && (
                   <div className="formula-box" style={{ marginTop: 8 }}>
-                    <span className="formula-comment">// Savings calculation</span>{'\n'}
+                    <span className="formula-comment">// Compressor idle optimization (Simulated)</span>{'\n'}
                     {'idle_kW = 18, idle_hrs = 3.2'}{'\n'}
                     {'savings = 18 × 3.2 = 57.6 kWh/day'}{'\n'}
                     {'period = 57.6 × 30 = 1,728 kWh'}{'\n'}
                     <span style={{ color: 'var(--emerald)' }}>
-                      {'saving ≈ 998.4 kWh → ₹7,987.20 → 818.7 kg CO₂e'}
+                      {`saving ≈ ${result.idleSavingsKwh} kWh → ₹${(result.idleSavingsKwh * PLANT.tariff).toFixed(2)} → ${((result.idleSavingsKwh * factorVal) / 1000).toFixed(3)} tCO₂e avoided`}
                     </span>
                   </div>
                 )}
@@ -402,7 +511,7 @@ function SimulatorView({
                   />
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--slate-500)', marginTop: 2 }}>
                     <span>6.5 (optimal)</span>
-                    <span>7.5 (current)</span>
+                    <span>7.5 (baseline)</span>
                   </div>
                 </div>
                 {params.pressureSetpoint < 7.5 && (
@@ -411,7 +520,7 @@ function SimulatorView({
                     {`reduction = ${(7.5 - params.pressureSetpoint).toFixed(1)} bar`}{'\n'}
                     {`pressure_savings = ${(7.5 - params.pressureSetpoint).toFixed(1)} × 10 × 3120/100`}{'\n'}
                     <span style={{ color: 'var(--emerald)' }}>
-                      {`= ${result.pressureSavingsKwh.toFixed(1)} kWh saved`}
+                      {`= ${result.pressureSavingsKwh.toFixed(1)} kWh saved → ${((result.pressureSavingsKwh * factorVal) / 1000).toFixed(3)} tCO₂e avoided`}
                     </span>
                   </div>
                 )}
@@ -428,7 +537,7 @@ function SimulatorView({
                 </div>
                 {params.staggerFurnace && (
                   <div className="formula-box" style={{ marginTop: 8 }}>
-                    <span className="formula-comment">// Demand management formula</span>{'\n'}
+                    <span className="formula-comment">// Demand management formula (Peak clipping)</span>{'\n'}
                     {'furnace_rated = 85 kW'}{'\n'}
                     {'peak_reduction = 85 × 0.18 = 15.3 kW'}{'\n'}
                     <span style={{ color: 'var(--emerald)' }}>
@@ -443,54 +552,159 @@ function SimulatorView({
 
         {/* Results */}
         <div>
-          {/* KPI comparison */}
+          {/* Carbon Accounting Impact Panel */}
           <div className="panel" style={{ marginBottom: 10 }}>
-            <div className="panel-hdr"><TrendingDown size={12} /> Scenario Comparison</div>
+            <div className="panel-hdr" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Leaf size={12} style={{ color: 'var(--emerald)' }} />
+                Digital Twin Carbon Accounting Impact
+              </div>
+              <span className={`badge ${anyFix ? 'badge-cyan' : 'badge-emerald'}`} style={{ fontSize: 9 }}>
+                {anyFix ? 'SIMULATED INTERVENTION' : 'HISTORICAL BASELINE'}
+              </span>
+            </div>
+
+            <div style={{ padding: '12px 14px' }}>
+              {/* 4 Cards Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 12 }}>
+                {/* 1. Baseline Gross */}
+                <div style={{ background: 'rgba(15, 23, 42, 0.6)', border: '1px solid var(--border-default)', borderRadius: 6, padding: '8px 10px' }}>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--slate-400)', textTransform: 'uppercase' }}>
+                    Baseline Gross
+                  </div>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--violet)', margin: '4px 0 2px' }}>
+                    {baselineGross.toFixed(2)} <span style={{ fontSize: 10, fontWeight: 400 }}>tCO₂e</span>
+                  </div>
+                  <div style={{ fontSize: 9, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)' }}>
+                    MEASURED · Scope 1+2
+                  </div>
+                </div>
+
+                {/* 2. Electricity Savings */}
+                <div style={{ background: 'rgba(15, 23, 42, 0.6)', border: '1px solid var(--border-default)', borderRadius: 6, padding: '8px 10px' }}>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--slate-400)', textTransform: 'uppercase' }}>
+                    Energy Savings
+                  </div>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--cyan)', margin: '4px 0 2px' }}>
+                    {savingsKwh.toFixed(1)} <span style={{ fontSize: 10, fontWeight: 400 }}>kWh</span>
+                  </div>
+                  <div style={{ fontSize: 9, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)' }}>
+                    {anyFix ? `${((savingsKwh / PLANT.baselineEnergy) * 100).toFixed(1)}% of baseline` : '0.0% savings'}
+                  </div>
+                </div>
+
+                {/* 3. Avoided Emissions */}
+                <div style={{ background: 'rgba(15, 23, 42, 0.6)', border: '1px solid var(--border-default)', borderRadius: 6, padding: '8px 10px' }}>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--slate-400)', textTransform: 'uppercase' }}>
+                    Avoided Scope 2
+                  </div>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--emerald)', margin: '4px 0 2px' }}>
+                    {avoidedCO2e.toFixed(3)} <span style={{ fontSize: 10, fontWeight: 400 }}>tCO₂e</span>
+                  </div>
+                  <div style={{ fontSize: 9, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)' }}>
+                    SIMULATED · Separate
+                  </div>
+                </div>
+
+                {/* 4. Proposed Gross */}
+                <div style={{ background: 'rgba(15, 23, 42, 0.6)', border: '1px solid var(--border-default)', borderRadius: 6, padding: '8px 10px' }}>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--slate-400)', textTransform: 'uppercase' }}>
+                    Proposed Gross
+                  </div>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: anyFix ? 'var(--cyan)' : 'var(--slate-300)', margin: '4px 0 2px' }}>
+                    {proposedGross.toFixed(2)} <span style={{ fontSize: 10, fontWeight: 400 }}>tCO₂e</span>
+                  </div>
+                  <div style={{ fontSize: 9, color: anyFix ? 'var(--emerald)' : 'var(--slate-500)', fontFamily: 'var(--font-mono)' }}>
+                    {anyFix ? `-${reductionPct.toFixed(1)}% reduction` : 'Identical to baseline'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Formula & Rule Box */}
+              <div className="formula-box">
+                <span className="formula-comment">// Avoided Emissions Formula (GHG Protocol Corporate Standard)</span>{'\n'}
+                {`avoided_tCO2e = ${savingsKwh.toFixed(1)} kWh × ${factorVal.toFixed(5)} kg CO₂/kWh ÷ 1000 = ${avoidedCO2e.toFixed(4)} tCO₂e avoided`}{'\n'}
+                <span style={{ color: 'var(--slate-400)' }}>
+                  {`Emission Factor: CEA India FY ${reportingYear} (${factorVal.toFixed(5)} kg CO₂/kWh) · Reporting Period: 30.0 Days`}{'\n'}
+                </span>
+                <span style={{ color: 'var(--emerald)' }}>
+                  ACCOUNTING CORRECTNESS: Avoided emissions are reported separately. Gross baseline emissions ({baselineGross.toFixed(3)} tCO₂e) remain unchanged. Scope 1 fuel emissions ({baselineScope1.toFixed(3)} tCO₂e) are not altered by electricity savings.
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Scenario Comparison Table */}
+          <div className="panel" style={{ marginBottom: 10 }}>
+            <div className="panel-hdr"><TrendingDown size={12} /> Scenario Comparison (Baseline vs Proposed)</div>
             <table className="compare-table">
               <thead>
                 <tr>
                   <th>Parameter</th>
                   <th>Baseline</th>
                   <th>Proposed</th>
-                  <th>Delta</th>
+                  <th>Delta / Avoided</th>
+                  <th>Status</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td className="td-label">Energy Consumption</td>
-                  <td className="td-baseline">{result.baseEnergy.toLocaleString()} kWh</td>
+                  <td className="td-label">Electricity Consumption</td>
+                  <td className="td-baseline">{PLANT.baselineEnergy.toLocaleString()} kWh</td>
                   <td className="td-proposed">{result.optimizedEnergy.toLocaleString()} kWh</td>
                   <td className="td-delta">-{result.savingsKwh} kWh</td>
+                  <td style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: anyFix ? 'var(--cyan)' : 'var(--slate-500)' }}>
+                    {anyFix ? 'SIMULATED' : 'BASELINE'}
+                  </td>
                 </tr>
                 <tr>
-                  <td className="td-label">Total Cost</td>
-                  <td className="td-baseline">₹{result.baselineCost.toLocaleString()}</td>
+                  <td className="td-label">Scope 2 Grid Carbon</td>
+                  <td className="td-baseline">{baselineScope2.toFixed(3)} tCO₂e</td>
+                  <td className="td-proposed">{proposedScope2.toFixed(3)} tCO₂e</td>
+                  <td className="td-delta">-{avoidedCO2e.toFixed(3)} tCO₂e</td>
+                  <td style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--emerald)' }}>AVOIDED</td>
+                </tr>
+                <tr>
+                  <td className="td-label">Scope 1 Fuel Carbon (LPG)</td>
+                  <td className="td-baseline">{baselineScope1.toFixed(3)} tCO₂e</td>
+                  <td className="td-proposed">{baselineScope1.toFixed(3)} tCO₂e</td>
+                  <td className="td-delta" style={{ color: 'var(--slate-400)' }}>0.000 tCO₂e</td>
+                  <td style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--slate-400)' }}>UNAFFECTED</td>
+                </tr>
+                <tr>
+                  <td className="td-label">Gross Operational Footprint</td>
+                  <td className="td-baseline">{baselineGross.toFixed(3)} tCO₂e</td>
+                  <td className="td-proposed">{proposedGross.toFixed(3)} tCO₂e</td>
+                  <td className="td-delta">-{avoidedCO2e.toFixed(3)} tCO₂e ({reductionPct.toFixed(1)}%)</td>
+                  <td style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--violet)' }}>ISOLATED</td>
+                </tr>
+                <tr>
+                  <td className="td-label">Electricity Cost (₹8/kWh)</td>
+                  <td className="td-baseline">₹{PLANT.baselineCost.toLocaleString()}</td>
                   <td className="td-proposed">₹{result.optimizedCost.toLocaleString()}</td>
                   <td className="td-delta">-₹{result.savingsCost.toLocaleString()}</td>
-                </tr>
-                <tr>
-                  <td className="td-label">Scope 2 Carbon</td>
-                  <td className="td-baseline">{result.baseCarbon} tCO₂e</td>
-                  <td className="td-proposed">{result.optCarbon} tCO₂e</td>
-                  <td className="td-delta">-{result.savingsCarbon} tCO₂e</td>
+                  <td style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--amber)' }}>ESTIMATED</td>
                 </tr>
                 <tr>
                   <td className="td-label">Peak Demand Reduction</td>
                   <td className="td-baseline">0 kW</td>
                   <td className="td-proposed">{result.furnacePeakReductionKw} kW</td>
                   <td className="td-delta">-{result.furnacePeakReductionKw} kW</td>
+                  <td style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--slate-500)' }}>SIMULATED</td>
                 </tr>
                 <tr>
                   <td className="td-label">Compressor Idle Savings</td>
                   <td className="td-baseline">0 kWh</td>
                   <td className="td-proposed">{result.idleSavingsKwh} kWh</td>
                   <td className="td-delta">-{result.idleSavingsKwh} kWh</td>
+                  <td style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--slate-500)' }}>SIMULATED</td>
                 </tr>
                 <tr>
-                  <td className="td-label">Pressure Savings</td>
+                  <td className="td-label">Pressure Optimization Savings</td>
                   <td className="td-baseline">0 kWh</td>
                   <td className="td-proposed">{result.pressureSavingsKwh.toFixed(1)} kWh</td>
                   <td className="td-delta">-{result.pressureSavingsKwh.toFixed(1)} kWh</td>
+                  <td style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--slate-500)' }}>SIMULATED</td>
                 </tr>
                 {result.roi && (
                   <tr>
@@ -498,6 +712,7 @@ function SimulatorView({
                     <td className="td-baseline">—</td>
                     <td className="td-proposed" style={{ color: 'var(--cyan)' }}>{result.roi} months</td>
                     <td className="td-delta">ROI</td>
+                    <td style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--cyan)' }}>FINANCIAL</td>
                   </tr>
                 )}
               </tbody>
@@ -519,92 +734,301 @@ function SimulatorView({
 
 // ─── Carbon View ──────────────────────────────────────────────────────────────
 function CarbonView({
-  params, gridEF, setGridEF,
+  params,
+  gridEF,
+  setGridEF,
+  carbonData,
+  carbonLoading,
+  carbonError,
+  backendStatus,
+  onRecalculate,
+  reportingYear,
+  setReportingYear,
+  ceaMethodology,
+  setCeaMethodology,
+  availableYears,
 }: {
   params: SimParams;
   gridEF: number;
   setGridEF: (v: number) => void;
+  carbonData: CarbonCalculateResponse | null;
+  carbonLoading: boolean;
+  carbonError: string | null;
+  backendStatus: 'CONNECTED' | 'OFFLINE (DEMO)';
+  onRecalculate: () => void;
+  reportingYear: string;
+  setReportingYear: (y: string) => void;
+  ceaMethodology: CeaMethodology;
+  setCeaMethodology: (m: CeaMethodology) => void;
+  availableYears: string[];
 }) {
-  const s1 = CARBON.scope1Calc();
-  const s2 = CARBON.scope2Calc(PLANT.baselineEnergy, gridEF);
-  const total = +(s1.kgCO2e + s2.kgCO2e).toFixed(3);
-  const reductionPotential = calcSimResult(params).savingsCarbon;
+  const s1 = carbonData?.gross_footprint.scope1;
+  const s2 = carbonData?.gross_footprint.scope2;
+  const s1Total = s1?.emissions_total_co2e_t ?? 5.377;
+  const s1Direct = s1?.emissions_direct_co2_t ?? 5.372;
+  const s2Total = s2?.emissions_total_co2e_t ?? 9.096;
+  const grossTotal = carbonData?.gross_footprint.total_gross_co2e_t ?? 14.473;
+  const avoidedCarbon = (carbonData?.avoided_emissions?.avoided_co2e_t ?? 0.0).toFixed(3);
+  const auditStatus = carbonData?.calculation_metadata.audit_status ?? 'CALCULATION_UNVERIFIED_DEMO';
+  const factorMeta = s2?.factor_metadata;
+  const periodDesc = carbonData?.period.description ?? 'Simulated Demo Window (30.0 days / 720h)';
+  const isConnected = backendStatus === 'CONNECTED';
 
   return (
     <div className="scroll-area">
-      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--slate-400)', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 14 }}>
-        Carbon Accounting — ISO 14064 / GHG Protocol
+      {/* Title & Engine Status Bar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+        <div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--slate-400)', letterSpacing: 2, textTransform: 'uppercase' }}>
+            Carbon Accounting — ISO 14064-1 / GHG Protocol Scope 2
+          </div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--slate-500)', marginTop: 2 }}>
+            Central Electricity Authority (India) Baseline Ver 22.0 · 2006 IPCC Guidelines
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {isConnected ? (
+            <span className="badge badge-emerald" title="FastAPI backend connected at http://127.0.0.1:8000">
+              <span className="pulse-dot" style={{ background: '#10b981' }} />
+              BACKEND: CONNECTED
+            </span>
+          ) : (
+            <span className="badge badge-amber" title="FastAPI server offline. Using verified fallback demo simulator.">
+              <AlertTriangle size={9} />
+              BACKEND: OFFLINE (DEMO)
+            </span>
+          )}
+
+          <span className="badge badge-cyan" title="Operational Data Provenance Classification">
+            {auditStatus}
+          </span>
+
+          <button
+            className="btn btn-sm btn-cyan"
+            onClick={onRecalculate}
+            disabled={carbonLoading}
+            title="Trigger recalculation via FastAPI backend"
+          >
+            <RefreshCw size={10} style={{ animation: carbonLoading ? 'spin 1s linear infinite' : 'none' }} />
+            {carbonLoading ? 'Calculating...' : 'Recalculate'}
+          </button>
+        </div>
       </div>
 
+      {/* Error state alert banner with retry */}
+      {carbonError && (
+        <div className="alert-banner crit" style={{ marginBottom: 12 }}>
+          <div className="alert-title">
+            <AlertTriangle size={11} style={{ display: 'inline', marginRight: 4 }} />
+            CALCULATION ENGINE VALIDATION ERROR
+          </div>
+          <div className="alert-body">
+            {carbonError}
+          </div>
+          <div style={{ marginTop: 8 }}>
+            <button className="btn btn-sm btn-red" onClick={onRecalculate}>
+              Retry Backend Calculation
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Clear Offline Demo Disclosure */}
+      {!isConnected && (
+        <div className="alert-banner warn" style={{ marginBottom: 12 }}>
+          <div className="alert-title">
+            <AlertTriangle size={10} style={{ display: 'inline', marginRight: 4 }} />
+            OFFLINE DEMO SIMULATION FALLBACK ACTIVE
+          </div>
+          <div className="alert-body">
+            The FastAPI backend is currently unavailable. Carbon calculations below are rendered using local verified IPCC Table 2.3 and CEA FY 2023-24 factor defaults.
+            Fallback results are marked as <strong>SIMULATED</strong> and do not constitute a live certified factory audit. To enable live database querying, run:
+            <code style={{ marginLeft: 6, background: '#090d16', padding: '2px 6px', borderRadius: 4, color: 'var(--cyan)' }}>
+              python -m uvicorn backend.app.main:app --port 8000
+            </code>
+          </div>
+        </div>
+      )}
+
+      {/* Top Summary Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
         <div className="kpi-card" style={{ ['--kpi-color' as any]: 'var(--violet)' }}>
-          <div className="kpi-label">Total Emissions</div>
-          <div className="kpi-value" style={{ color: 'var(--violet)' }}>{total}<span className="kpi-unit">tCO₂e/day</span></div>
-          <div className="kpi-change warn">Scope 1 + Scope 2</div>
+          <div className="kpi-label">Gross Operational Footprint</div>
+          <div className="kpi-value" style={{ color: 'var(--violet)' }}>
+            {grossTotal}
+            <span className="kpi-unit">tCO₂e / 30d</span>
+          </div>
+          <div className="kpi-change warn">
+            Scope 1 ({s1Total} t) + Scope 2 ({s2Total} t)
+          </div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--slate-500)', marginTop: 4 }}>
+            ISO 14064-1 Operational Control Boundary
+          </div>
         </div>
+
         <div className="kpi-card" style={{ ['--kpi-color' as any]: 'var(--emerald)' }}>
-          <div className="kpi-label">Reduction Potential</div>
-          <div className="kpi-value" style={{ color: 'var(--emerald)' }}>{reductionPotential}<span className="kpi-unit">tCO₂e</span></div>
-          <div className="kpi-change pos">via Digital Twin scenario</div>
+          <div className="kpi-label">Avoided Emissions Potential</div>
+          <div className="kpi-value" style={{ color: 'var(--emerald)' }}>
+            {avoidedCarbon}
+            <span className="kpi-unit">tCO₂e avoided</span>
+          </div>
+          <div className="kpi-change pos">
+            via Digital Twin Scenario (998.4 kWh saved)
+          </div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--slate-500)', marginTop: 4 }}>
+            Reported separately; never subtracted from operational gross footprint
+          </div>
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: 12 }}>
+      {/* Main 2-Column Split */}
+      <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: 12 }}>
+        {/* Left Column: Scope Pie & Period Specs */}
         <div>
-          <div className="panel">
-            <div className="panel-hdr">Scope Split</div>
-            <div style={{ padding: '0 4px 4px' }}>
-              <ScopePie scope1={s1.kgCO2e} scope2={s2.kgCO2e} />
+          <div className="panel" style={{ marginBottom: 10 }}>
+            <div className="panel-hdr">Gross Footprint Split</div>
+            <div style={{ padding: '4px 4px 8px' }}>
+              <ScopePie scope1={s1Total} scope2={s2Total} />
             </div>
-          </div>
-        </div>
-        <div>
-          {/* Scope 1 */}
-          <div className="scope-card">
-            <div className="scope-hdr">
-              <span className="badge badge-red">SCOPE 1</span>
-              Direct Combustion — LPG Furnace
-            </div>
-            <div className="scope-value" style={{ color: 'var(--red)' }}>
-              {s1.kgCO2e} tCO₂e/day
-            </div>
-            <StatRow label="Fuel type" value="LPG (Liquefied Petroleum Gas)" />
-            <StatRow label="Consumption rate" value="5 kg/hr × 12 hrs/day = 60 kg/day" />
-            <StatRow label="Emission factor" value="2.98 kg CO₂e/kg LPG (IPCC AR6)" />
-            <div className="scope-formula">
-              <span style={{ color: 'var(--slate-500)' }}>// Scope 1 — GHG Protocol Category: Stationary Combustion</span>{'\n'}
-              {s1.formula}{'\n'}
-              Note: Location-based method. Fuel EF from IPCC 2006 GL Vol. 2, Table 2.2.
+            <div style={{ padding: '0 12px 10px', display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: 10 }}>
+              <span style={{ color: 'var(--red)' }}>Scope 1: {s1Total} t ({((s1Total / grossTotal) * 100).toFixed(1)}%)</span>
+              <span style={{ color: 'var(--cyan)' }}>Scope 2: {s2Total} t ({((s2Total / grossTotal) * 100).toFixed(1)}%)</span>
             </div>
           </div>
 
-          {/* Scope 2 */}
-          <div className="scope-card">
-            <div className="scope-hdr">
-              <span className="badge badge-cyan">SCOPE 2</span>
-              Indirect — Purchased Electricity
+          <div className="panel">
+            <div className="panel-hdr">Calculation Parameters</div>
+            <div style={{ padding: '10px 12px', fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--slate-400)', lineHeight: 1.8 }}>
+              <div><strong style={{ color: 'var(--white)' }}>Period:</strong> {periodDesc}</div>
+              <div><strong style={{ color: 'var(--white)' }}>GWP Standard:</strong> IPCC AR6 (100-Year)</div>
+              <div><strong style={{ color: 'var(--white)' }}>CH₄ GWP:</strong> 27.9 kg CO₂e / kg</div>
+              <div><strong style={{ color: 'var(--white)' }}>N₂O GWP:</strong> 273.0 kg CO₂e / kg</div>
+              <div><strong style={{ color: 'var(--white)' }}>Scope 2 Guidance:</strong> Location-Based</div>
             </div>
-            <div className="scope-value" style={{ color: 'var(--cyan)' }}>
-              {s2.kgCO2e} tCO₂e/day
-            </div>
-            <StatRow label="Grid consumption" value={`${PLANT.baselineEnergy.toLocaleString()} kWh/period`} />
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 14px', borderBottom: '1px solid var(--border-muted)' }}>
-              <span className="stat-label">Emission factor (editable)</span>
-              <input
-                className="inline-input"
-                type="number" step={0.01} min={0.5} max={1.2}
-                value={gridEF}
-                onChange={e => setGridEF(parseFloat(e.target.value) || 0.82)}
-              />
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--slate-500)' }}>
-                kg CO₂e/kWh
+          </div>
+        </div>
+
+        {/* Right Column: Scope 1 & Scope 2 Detailed Cards */}
+        <div>
+          {/* Scope 1: Direct Combustion */}
+          <div className="scope-card" style={{ marginBottom: 12 }}>
+            <div className="scope-hdr" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span className="badge badge-red">SCOPE 1</span>
+                Direct Combustion — LPG Furnace
+              </div>
+              <span className="badge badge-amber" style={{ fontSize: 9 }}>
+                PROVENANCE: {s1?.activity.provenance ?? 'ESTIMATED'}
               </span>
             </div>
-            <StatRow label="Authority" value="CEA India Grid EF 2023-24" />
+
+            <div className="scope-value" style={{ color: 'var(--red)', display: 'flex', alignItems: 'baseline', gap: 8 }}>
+              {s1Total} tCO₂e
+              <span style={{ fontSize: 11, color: 'var(--slate-400)', fontWeight: 400 }}>
+                ({s1Direct} tCO₂ direct)
+              </span>
+            </div>
+
+            <StatRow label="Fuel type" value="Liquefied Petroleum Gases (LPG)" />
+            <StatRow label="30-Day Activity Data" value="1,800.0 kg LPG (5 kg/hr × 12h/day × 30 days)" />
+            <StatRow label="Direct CO₂ factor" value="2.9846 kg CO₂/kg LPG (IPCC 2006 Vol. 2 Table 2.3)" />
+            <StatRow
+              label="Non-CO₂ GHG breakdown"
+              value="CH₄ (0.0473 g/kg → GWP 27.9 = +0.00132) + N₂O (0.00473 g/kg → GWP 273 = +0.00129)"
+            />
+            <StatRow label="Total CO₂e emission factor" value="2.9872 kg CO₂e/kg LPG (AR6 100-Year GWP)" />
+            <StatRow label="Verification Status" value={s1?.verification_status ?? 'VERIFIED_IPCC'} color="emerald" />
+
             <div className="scope-formula">
-              <span style={{ color: 'var(--slate-500)' }}>// Scope 2 — Location-based Method (GHG Protocol)</span>{'\n'}
-              {s2.formula}{'\n'}
-              EF Source: Central Electricity Authority, India (CEA) Grid Emission Factor.
+              <span style={{ color: 'var(--slate-500)' }}>// Scope 1 — GHG Protocol Category: Stationary Combustion (Manufacturing)</span>{'\n'}
+              {s1?.formula ?? '1,800.0 kg LPG × 2.9872 kg CO₂e/kg ÷ 1000 = 5.377 tCO₂e'}{'\n'}
+              Source: 2006 IPCC Guidelines for National GHG Inventories, Vol. 2 (Energy), Ch. 2 Table 2.3 (NCV 47.3 MJ/kg).
+            </div>
+          </div>
+
+          {/* Scope 2: Indirect Electricity */}
+          <div className="scope-card">
+            <div className="scope-hdr" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span className="badge badge-cyan">SCOPE 2</span>
+                Indirect — Purchased Electricity
+              </div>
+              <span className="badge badge-emerald" style={{ fontSize: 9 }}>
+                PROVENANCE: {s2?.activity.provenance ?? 'SIMULATED'}
+              </span>
+            </div>
+
+            <div className="scope-value" style={{ color: 'var(--cyan)' }}>
+              {s2Total} tCO₂e
+            </div>
+
+            <StatRow label="Grid consumption" value={`${PLANT.baselineEnergy.toLocaleString()} kWh / 30d period (SCADA Sub-meter)`} />
+
+            {/* CEA Reporting Year Selector */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 14px', borderBottom: '1px solid var(--border-muted)' }}>
+              <span className="stat-label">CEA Reporting Year</span>
+              <select
+                className="inline-input"
+                value={reportingYear}
+                onChange={e => setReportingYear(e.target.value)}
+                style={{ width: 'auto', padding: '3px 8px' }}
+              >
+                {availableYears.map(yr => (
+                  <option key={yr} value={yr}>
+                    FY {yr}
+                  </option>
+                ))}
+              </select>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--slate-500)' }}>
+                CO₂ Baseline Database
+              </span>
+            </div>
+
+            {/* CEA Methodology Selector */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 14px', borderBottom: '1px solid var(--border-muted)' }}>
+              <span className="stat-label">Factor Methodology</span>
+              <select
+                className="inline-input"
+                value={ceaMethodology}
+                onChange={e => setCeaMethodology(e.target.value as CeaMethodology)}
+                style={{ width: 'auto', padding: '3px 8px' }}
+              >
+                <option value="weighted_avg_with_res">Weighted Avg with RES (Location-Based Standard)</option>
+                <option value="weighted_avg_thermal">Weighted Avg Thermal (Fossil Only)</option>
+                <option value="operating_margin">Simple Operating Margin (OM)</option>
+                <option value="build_margin">Build Margin (BM)</option>
+                <option value="combined_margin">Combined Margin (CM - 50% OM + 50% BM)</option>
+              </select>
+            </div>
+
+            {/* Editable factor override */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 14px', borderBottom: '1px solid var(--border-muted)' }}>
+              <span className="stat-label">Grid Factor (editable)</span>
+              <input
+                className="inline-input"
+                type="number" step={0.0001} min={0.3} max={1.5}
+                value={gridEF}
+                onChange={e => setGridEF(parseFloat(e.target.value) || 0.72886)}
+              />
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--slate-500)' }}>
+                kg CO₂/kWh {gridEF === 0.72886 ? '(CEA FY 2023-24 Baseline)' : '(Custom override)'}
+              </span>
+            </div>
+
+            <StatRow
+              label="Source Authority"
+              value={`${factorMeta?.authority ?? 'Central Electricity Authority, India'} (Ver ${factorMeta?.database_version ?? '22.0'})`}
+            />
+            <StatRow
+              label="Worksheet Location"
+              value={`Sheet '${factorMeta?.sheet ?? 'Results'}', Row ${factorMeta?.row ?? 14}, Col ${factorMeta?.column ?? 13}`}
+            />
+
+            <div className="scope-formula">
+              <span style={{ color: 'var(--slate-500)' }}>// Scope 2 — Location-based Method (GHG Protocol Scope 2 Guidance)</span>{'\n'}
+              {s2?.formula ?? '12,480 kWh × 0.72886 kg CO₂/kWh ÷ 1000 = 9.096 tCO₂e'}{'\n'}
+              Database: Central Electricity Authority (Ministry of Power, Govt. of India) CO₂ Baseline Database Ver 22.0.
             </div>
           </div>
         </div>
@@ -614,17 +1038,36 @@ function CarbonView({
 }
 
 // ─── Report View ──────────────────────────────────────────────────────────────
-function ReportView({ params }: { params: SimParams }) {
+function ReportView({
+  params,
+  carbonData,
+}: {
+  params: SimParams;
+  carbonData: CarbonCalculateResponse | null;
+}) {
   const result = calcSimResult(params);
-  const s1 = CARBON.scope1Calc();
-  const s2 = CARBON.scope2Calc(PLANT.baselineEnergy);
   const anyFix = params.autoIdleCutoff || params.pressureSetpoint < 7.5 || params.staggerFurnace;
+
+  const s1Total = carbonData?.gross_footprint.scope1?.emissions_total_co2e_t ?? 5.377;
+  const s1Direct = carbonData?.gross_footprint.scope1?.emissions_direct_co2_t ?? 5.372;
+  const s2Total = carbonData?.gross_footprint.scope2?.emissions_total_co2e_t ?? 9.096;
+  const grossTotal = carbonData?.gross_footprint.total_gross_co2e_t ?? 14.473;
+  const avoidedCarbon = carbonData?.avoided_emissions?.avoided_co2e_t ?? 0.728;
+  const s1Formula = carbonData?.gross_footprint.scope1?.formula ?? '1,800.0 kg LPG × 2.9872 kg CO₂e/kg ÷ 1000 = 5.377 tCO₂e';
+  const s2Formula = carbonData?.gross_footprint.scope2?.formula ?? '12,480 kWh × 0.72886 kg CO₂/kWh ÷ 1000 = 9.096 tCO₂e';
+  const factorMeta = carbonData?.gross_footprint.scope2?.factor_metadata;
+  const auditStatus = carbonData?.calculation_metadata.audit_status ?? 'CALCULATION_UNVERIFIED_DEMO';
+  const backendStatus = carbonData?.calculation_metadata.backend_status ?? 'OFFLINE (DEMO)';
+  const selectedYear = factorMeta?.reporting_year ?? '2023-24';
+  const factorVal = factorMeta?.selected_factor ?? 0.72886;
 
   const handlePrint = () => window.print();
   const handleExport = () => {
-    const content = `WattWise AI — ISO 50001 Sustainability & Cost Audit Report
+    const content = `WattWise AI — Energy and Emissions Assessment — Demo Calculation Report
 PrecisionWorks Manufacturing
 Date: ${new Date().toLocaleDateString('en-IN')}
+Engine Status: ${backendStatus}
+Data Provenance: ${auditStatus}
 --------------------------------------------------
 
 EXECUTIVE SUMMARY
@@ -634,7 +1077,7 @@ Proposed Energy:    ${result.optimizedEnergy.toLocaleString()} kWh
 Proposed Cost:      ₹${result.optimizedCost.toLocaleString()}
 Energy Savings:     ${result.savingsKwh} kWh (${((result.savingsKwh/result.baseEnergy)*100).toFixed(1)}%)
 Cost Savings:       ₹${result.savingsCost.toLocaleString()}
-Carbon Avoided:     ${result.savingsCarbon} tCO₂e
+Carbon Avoided:     ${avoidedCarbon} tCO₂e (Reported separately; not subtracted from operational gross footprint)
 
 ANOMALY DETECTED
 Asset:              Air Compressor (ELGi EN 45)
@@ -646,16 +1089,24 @@ RECOMMENDED ACTIONS
 2. Reduce airline pressure setpoint from 7.5 to ${params.pressureSetpoint} bar
 3. Stagger Furnace pre-heat by 45 min to reduce peak demand by ${result.furnacePeakReductionKw} kW
 
-CARBON ACCOUNTING (ISO 14064 / GHG Protocol)
-Scope 1 (LPG):      ${s1.kgCO2e} tCO₂e/day  [${s1.formula}]
-Scope 2 (Grid):     ${s2.kgCO2e} tCO₂e/day  [${s2.formula}]
-Carbon Intensity:   ${((s1.kgCO2e + s2.kgCO2e) / (result.baseEnergy/1000)).toFixed(2)} tCO₂e/MWh
+CARBON ACCOUNTING (ISO 14064-1 / GHG Protocol Scope 2)
+Scope 1 (LPG):      ${s1Total} tCO₂e/30d (${s1Direct} tCO₂ direct) [${s1Formula}]
+Scope 2 (Grid):     ${s2Total} tCO₂e/30d [${s2Formula}]
+Gross Total GHG:    ${grossTotal} tCO₂e/30d
+Carbon Intensity:   ${((grossTotal) / (result.baseEnergy/1000)).toFixed(2)} tCO₂e/MWh
+
+SOURCE REFERENCES
+Scope 1 Standard:   2006 IPCC Guidelines Vol. 2 Ch. 2 Table 2.3 (NCV: 47.3 MJ/kg, AR6 GWP)
+Scope 2 Database:   Central Electricity Authority (India) CO₂ Baseline Database Ver 22.0
+Methodology:        ${factorMeta?.methodology ?? 'Weighted Average Grid Emission Rate (Incl. RES, Captive)'}
+Reporting Year:     FY ${selectedYear} (Factor: ${factorVal} kg CO₂/kWh, Results!Row ${factorMeta?.row ?? 14})
 
 VERIFICATION PROTOCOL
-Standard:           ISO 50001:2018 EnMS
-Monitoring:         SCADA sub-metering at each asset breaker panel
-Verification:       Monthly data review by Energy Management Team
-Reporting:          Annual Energy Performance Indicator (EnPI) report
+Methodology:        Aligned with ISO 50001:2018 (EnMS) & ISO 14064-1:2018 calculation frameworks
+Monitoring:         Digital twin simulated telemetry and sub-metering
+Verification:       Internal engineering review (Not third-party audited)
+Audit Status:       ${auditStatus} (Note: Official emission factor reference does NOT constitute certified plant audit)
+Reporting:          Energy Performance Indicator (EnPI) assessment report
 `;
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
@@ -668,7 +1119,7 @@ Reporting:          Annual Energy Performance Indicator (EnPI) report
     <div className="scroll-area">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--slate-400)', letterSpacing: 2, textTransform: 'uppercase' }}>
-          ISO 50001 Sustainability &amp; Cost Audit Report
+          Energy &amp; Emissions Assessment — Demo Calculation Report
         </div>
         <div className="no-print" style={{ display: 'flex', gap: 8 }}>
           <button className="btn btn-sm" onClick={handlePrint}>
@@ -684,12 +1135,16 @@ Reporting:          Annual Energy Performance Indicator (EnPI) report
 
       {/* Cover */}
       <div className="report-page">
-        <div className="report-heading">Executive Sustainability &amp; Cost Audit Report</div>
+        <div className="report-heading">Energy &amp; Emissions Assessment — Demo Calculation Report</div>
         <div className="report-kv"><span className="report-k">Facility</span><span className="report-v">PrecisionWorks Manufacturing</span></div>
         <div className="report-kv"><span className="report-k">Report Date</span><span className="report-v">{new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}</span></div>
-        <div className="report-kv"><span className="report-k">Standard</span><span className="report-v">ISO 50001:2018 — Energy Management Systems</span></div>
+        <div className="report-kv"><span className="report-k">Methodology Context</span><span className="report-v">Aligned with ISO 50001:2018 &amp; ISO 14064-1:2018 calculation frameworks</span></div>
         <div className="report-kv"><span className="report-k">Grid Tariff</span><span className="report-v">₹{PLANT.tariff}/kWh (ToD — Peak/Off-Peak)</span></div>
-        <div className="report-kv"><span className="report-k">Grid Emission Factor</span><span className="report-v">{PLANT.gridEF} kg CO₂e/kWh (CEA India 2023-24)</span></div>
+        <div className="report-kv">
+          <span className="report-k">Grid Emission Factor</span>
+          <span className="report-v">{factorVal} kg CO₂/kWh (CEA India FY {selectedYear}, Results!Row {factorMeta?.row ?? 14})</span>
+        </div>
+        <div className="report-kv"><span className="report-k">Audit Classification</span><span className="report-v" style={{ color: 'var(--cyan)' }}>{auditStatus}</span></div>
         <div className="report-kv"><span className="report-k">Scenario Active</span><span className="report-v">{anyFix ? 'Optimized (Digital Twin Applied)' : 'Baseline Only'}</span></div>
       </div>
 
@@ -709,13 +1164,13 @@ Reporting:          Annual Energy Performance Indicator (EnPI) report
         </div>
         <div className="report-kv"><span className="report-k">Idle Waste Energy</span><span className="report-v" style={{ color: 'var(--amber)' }}>18 kW × 3.2 h/day × 30 days = 1,728 kWh (≈ 998.4 kWh adj. for run time)</span></div>
         <div className="report-kv"><span className="report-k">Idle Cost Impact</span><span className="report-v" style={{ color: 'var(--amber)' }}>₹7,987.20/period</span></div>
-        <div className="report-kv"><span className="report-k">Carbon Impact</span><span className="report-v" style={{ color: 'var(--amber)' }}>818.7 kg CO₂e/period</span></div>
+        <div className="report-kv"><span className="report-k">Carbon Impact</span><span className="report-v" style={{ color: 'var(--amber)' }}>{avoidedCarbon} tCO₂e avoided potential</span></div>
         <div className="formula-box" style={{ marginTop: 10 }}>
           <span className="formula-comment">// Root-cause engineering math</span>{'\n'}
           {'idle_energy   = 18 kW × 3.2 hr/day × 30 days = 1,728 kWh'}{'\n'}
           {'idle_cost     = 1,728 kWh × ₹8/kWh         = ₹13,824'}{'\n'}
           {'adj_savings   = 998.4 kWh × ₹8              = ₹7,987.20'}{'\n'}
-          {'carbon_saving = 998.4 kWh × 0.82 kg CO₂e   = 818.7 kg CO₂e'}
+          {`carbon_saving = 998.4 kWh × ${factorVal} kg CO₂e = ${avoidedCarbon} tCO₂e`}
         </div>
       </div>
 
@@ -755,30 +1210,36 @@ Reporting:          Annual Energy Performance Indicator (EnPI) report
       <div className="report-page">
         <div className="report-heading">
           <Leaf size={12} style={{ display: 'inline', marginRight: 6 }} />
-          Carbon Impact
+          Carbon Impact (30-Day Operational Control)
         </div>
-        <div className="report-kv"><span className="report-k">Scope 1 (LPG Combustion)</span><span className="report-v">{s1.kgCO2e} tCO₂e/day</span></div>
-        <div className="report-kv"><span className="report-k">Scope 2 (Grid Electricity)</span><span className="report-v">{s2.kgCO2e} tCO₂e/day</span></div>
-        <div className="report-kv"><span className="report-k">Total GHG Footprint</span><span className="report-v">{+(s1.kgCO2e + s2.kgCO2e).toFixed(3)} tCO₂e/day</span></div>
-        <div className="report-kv"><span className="report-k">Avoided Emissions (scenario)</span><span className="report-v" style={{ color: 'var(--emerald)' }}>{result.savingsCarbon} tCO₂e saved</span></div>
+        <div className="report-kv">
+          <span className="report-k">Scope 1 (LPG Combustion)</span>
+          <span className="report-v">{s1Total} tCO₂e/30d <span style={{ color: 'var(--slate-400)', fontSize: 11 }}>({s1Direct} tCO₂ direct)</span></span>
+        </div>
+        <div className="report-kv"><span className="report-k">Scope 2 (Grid Electricity)</span><span className="report-v">{s2Total} tCO₂e/30d</span></div>
+        <div className="report-kv"><span className="report-k">Total Gross Footprint</span><span className="report-v" style={{ color: 'var(--violet)' }}>{grossTotal} tCO₂e/30d</span></div>
+        <div className="report-kv">
+          <span className="report-k">Avoided Emissions (Digital Twin)</span>
+          <span className="report-v" style={{ color: 'var(--emerald)' }}>{avoidedCarbon} tCO₂e avoided (isolated)</span>
+        </div>
         <div className="formula-box" style={{ marginTop: 10 }}>
-          <span className="formula-comment">// Scope 1: LPG Combustion (IPCC AR6, GWP100)</span>{'\n'}
-          {s1.formula}{'\n\n'}
-          <span className="formula-comment">// Scope 2: Location-based (CEA India)</span>{'\n'}
-          {s2.formula}
+          <span className="formula-comment">// Scope 1: LPG Combustion (IPCC 2006 Vol 2 Table 2.3, AR6 GWP)</span>{'\n'}
+          {s1Formula}{'\n\n'}
+          <span className="formula-comment">// Scope 2: Location-Based (CEA India Baseline Ver 22.0)</span>{'\n'}
+          {s2Formula}
         </div>
       </div>
 
       {/* Verification */}
       <div className="report-page">
-        <div className="report-heading">Verification Protocol</div>
-        <div className="report-kv"><span className="report-k">EnMS Standard</span><span className="report-v">ISO 50001:2018</span></div>
-        <div className="report-kv"><span className="report-k">Monitoring Method</span><span className="report-v">SCADA sub-metering at each asset breaker panel (kWh meter class 0.5S)</span></div>
+        <div className="report-heading">Methodology &amp; Verification Protocol</div>
+        <div className="report-kv"><span className="report-k">Methodology Context</span><span className="report-v">ISO 50001:2018 &amp; ISO 14064-1:2018 guidance</span></div>
+        <div className="report-kv"><span className="report-k">Monitoring Method</span><span className="report-v">Simulated sub-metering at each asset breaker panel</span></div>
         <div className="report-kv"><span className="report-k">Baseline Period</span><span className="report-v">30-day rolling average (current period)</span></div>
-        <div className="report-kv"><span className="report-k">Verification Frequency</span><span className="report-v">Monthly data review by Energy Management Representative</span></div>
-        <div className="report-kv"><span className="report-k">Reporting</span><span className="report-v">Annual Energy Performance Indicator (EnPI) report to top management</span></div>
-        <div className="report-kv"><span className="report-k">Third-Party Audit</span><span className="report-v">Bureau Veritas / DNV GL recommended — biennial</span></div>
-        <div className="report-kv"><span className="report-k">Generated by</span><span className="report-v">WattWise AI — Industrial Energy Intelligence v1.0 (KPCL Hackathon 2026)</span></div>
+        <div className="report-kv"><span className="report-k">Verification Frequency</span><span className="report-v">Internal engineering review</span></div>
+        <div className="report-kv"><span className="report-k">Reporting</span><span className="report-v">Energy Performance Indicator (EnPI) assessment</span></div>
+        <div className="report-kv"><span className="report-k">Audit Classification</span><span className="report-v">Uncertified Demo Assessment (Third-party verification required for official compliance)</span></div>
+        <div className="report-kv"><span className="report-k">Generated by</span><span className="report-v">WattWise AI — Industrial Energy Intelligence v1.0 (FastAPI Engine)</span></div>
       </div>
     </div>
   );
@@ -786,11 +1247,19 @@ Reporting:          Annual Energy Performance Indicator (EnPI) report
 
 // ─── Inspector Panel ──────────────────────────────────────────────────────────
 function InspectorPanel({
-  selectedId, setView, params,
+  selectedId,
+  setView,
+  params,
+  carbonData,
+  gridEF,
+  onResetBaseline,
 }: {
   selectedId: string | null;
   setView: (v: View) => void;
   params: SimParams;
+  carbonData: CarbonCalculateResponse | null;
+  gridEF: number;
+  onResetBaseline?: () => void;
 }) {
   const [tab, setTab] = useState<'asset' | 'alerts' | 'kpis'>('alerts');
   const asset = ASSETS.find(a => a.id === selectedId);
@@ -798,6 +1267,12 @@ function InspectorPanel({
   useEffect(() => {
     if (selectedId) setTab('asset');
   }, [selectedId]);
+
+  const s2Total = (carbonData?.gross_footprint.scope2?.emissions_total_co2e_t ?? 9.096).toFixed(2);
+  const s1Total = (carbonData?.gross_footprint.scope1?.emissions_total_co2e_t ?? 5.377).toFixed(2);
+  const anyFix = params.autoIdleCutoff || params.pressureSetpoint < 7.5 || params.staggerFurnace;
+  const avoidedCarbon = (carbonData?.avoided_emissions?.avoided_co2e_t ?? (anyFix ? 0.728 : 0.0)).toFixed(3);
+  const factorVal = (carbonData?.gross_footprint.scope2?.factor_metadata.selected_factor ?? gridEF).toFixed(3);
 
   return (
     <aside className="inspector-panel">
@@ -828,7 +1303,7 @@ function InspectorPanel({
                 Power Factor 0.78.
               </div>
               <div className="alert-rec">
-                Auto-Idle Cutoff: saves 998.4 kWh / ₹7,987 / 818.7 kg CO₂e
+                Auto-Idle Cutoff: saves 998.4 kWh / ₹7,987 / 727.7 kg CO₂e avoided
               </div>
               <button className="btn btn-amber btn-sm btn-full" style={{ marginTop: 8 }}
                 onClick={() => setView('simulator')}
@@ -917,10 +1392,10 @@ function InspectorPanel({
             </div>
             <div className="panel">
               <div className="panel-hdr">Carbon</div>
-              <StatRow label="Grid EF (CEA)" value="0.82 kg CO₂e/kWh" color="violet" />
-              <StatRow label="Scope 2 (Elec)" value="10.23 tCO₂e/day" color="violet" />
-              <StatRow label="Scope 1 (LPG)" value={`${CARBON.scope1Calc().kgCO2e} tCO₂e/day`} color="red" />
-              <StatRow label="Carbon Reduction" value={`${calcSimResult(params).savingsCarbon} tCO₂e`} color="emerald" />
+              <StatRow label="Grid EF (CEA)" value={`${factorVal} kg CO₂/kWh`} color="violet" />
+              <StatRow label="Scope 2 (Elec)" value={`${s2Total} tCO₂e/30d`} color="violet" />
+              <StatRow label="Scope 1 (LPG)" value={`${s1Total} tCO₂e/30d`} color="red" />
+              <StatRow label="Avoided Carbon" value={anyFix ? `-${avoidedCarbon} tCO₂e (SIMULATED)` : '0.000 tCO₂e'} color="emerald" />
             </div>
             <div className="panel">
               <div className="panel-hdr">Power Quality</div>
@@ -929,6 +1404,16 @@ function InspectorPanel({
               <StatRow label="Compressor PF" value="0.78" color="red" />
               <StatRow label="CNC PF" value="0.94" color="emerald" />
             </div>
+            {anyFix && onResetBaseline && (
+              <button
+                className="btn btn-outline btn-sm btn-full"
+                style={{ marginTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                onClick={onResetBaseline}
+              >
+                <RotateCcw size={10} />
+                Reset Simulator to Baseline
+              </button>
+            )}
           </>
         )}
       </div>
@@ -942,12 +1427,101 @@ export default function App() {
   const [selectedAsset, setSelectedAsset] = useState<string | null>(null);
   const [mapMode, setMapMode] = useState<'3d' | '2d'>('3d');
   const [simMode, setSimMode] = useState(false);
-  const [gridEF, setGridEF] = useState(PLANT.gridEF);
-  const [params, setParams] = useState<SimParams>({
-    autoIdleCutoff: false,
-    pressureSetpoint: 7.5,
-    staggerFurnace: false,
-  });
+  const [gridEF, setGridEF] = useState(0.72886);
+  const [reportingYear, setReportingYear] = useState('2023-24');
+  const [ceaMethodology, setCeaMethodology] = useState<CeaMethodology>('weighted_avg_with_res');
+  const [availableYears, setAvailableYears] = useState<string[]>([
+    '2022-23', '2023-24', '2024-25', '2025-26',
+  ]);
+  const [backendStatus, setBackendStatus] = useState<'CONNECTED' | 'OFFLINE (DEMO)'>('OFFLINE (DEMO)');
+  const [carbonData, setCarbonData] = useState<CarbonCalculateResponse | null>(null);
+  const [carbonLoading, setCarbonLoading] = useState(false);
+  const [carbonError, setCarbonError] = useState<string | null>(null);
+
+  const [params, setParams] = useState<SimParams>(DEFAULT_SIM_PARAMS);
+
+  const handleResetBaseline = useCallback(() => {
+    setParams(DEFAULT_SIM_PARAMS);
+    setSimMode(false);
+  }, []);
+
+  // Discover backend factors & check initial connectivity
+  useEffect(() => {
+    async function initBackend() {
+      const isHealthy = await checkBackendHealth();
+      if (isHealthy) {
+        setBackendStatus('CONNECTED');
+        try {
+          const factors = await fetchCarbonFactors();
+          if (factors.available_years?.length) {
+            setAvailableYears(factors.available_years);
+          }
+        } catch (e) {
+          console.warn('Could not fetch CEA factor catalogue:', e);
+        }
+      } else {
+        setBackendStatus('OFFLINE (DEMO)');
+      }
+    }
+    initBackend();
+  }, []);
+
+  // Recalculate carbon footprint whenever inputs or scenario changes
+  const triggerCalculation = useCallback(async () => {
+    setCarbonLoading(true);
+    setCarbonError(null);
+
+    const simRes = calcSimResult(params, gridEF);
+    const savingsKwh = simRes.savingsKwh;
+    const proposedConsumption = Math.max(0, +(PLANT.baselineEnergy - savingsKwh).toFixed(2));
+
+    const req = {
+      period: {
+        period_type: 'SIMULATED_DEMO_30D' as const,
+        duration_days: 30.0,
+      },
+      scope1: {
+        fuel_id: 'lpg',
+        activity_value: 1800.0,
+        activity_unit: 'kg',
+        provenance: 'ESTIMATED' as const,
+        include_non_co2_ghg: true,
+      },
+      scope2: {
+        grid_consumption_kwh: PLANT.baselineEnergy,
+        provenance: 'SIMULATED' as const,
+        cea_reporting_year: reportingYear,
+        cea_methodology: ceaMethodology,
+        custom_grid_factor: gridEF !== 0.72886 ? gridEF : undefined,
+      },
+      scenario_comparison: {
+        enabled: true,
+        proposed_savings_kwh: savingsKwh,
+        proposed_consumption_kwh: proposedConsumption,
+        savings_provenance: 'SIMULATED' as const,
+      },
+    };
+
+    try {
+      const liveData = await calculateCarbonFootprint(req);
+      setCarbonData(liveData);
+      setBackendStatus('CONNECTED');
+    } catch (err: any) {
+      console.warn('FastAPI backend offline or calculation error, applying fallback demo model:', err);
+      const fallback = getOfflineFallbackCalculation(req);
+      setCarbonData(fallback);
+      setBackendStatus('OFFLINE (DEMO)');
+      if (err.message && !err.message.includes('fetch') && !err.message.includes('Failed to fetch') && !err.message.includes('abort')) {
+        setCarbonError(err.message);
+      }
+    } finally {
+      setCarbonLoading(false);
+    }
+  }, [params, gridEF, reportingYear, ceaMethodology]);
+
+  useEffect(() => {
+    triggerCalculation();
+  }, [triggerCalculation]);
 
   const simulatedAssets = useMemo(() => {
     return ASSETS.map(a => {
@@ -993,11 +1567,33 @@ export default function App() {
           <span className={`tod-badge ${(() => { const h = new Date().getHours(); return (h>=9&&h<=12)||(h>=18&&h<=21)?'peak':'offpeak'; })()}`}>
             {(() => { const h = new Date().getHours(); return (h>=9&&h<=12)||(h>=18&&h<=21)?'PEAK TARIFF':'OFF-PEAK'; })()}
           </span>
-          {anyFix && (
-            <span className="badge badge-emerald">
+          {backendStatus === 'CONNECTED' ? (
+            <span className="badge badge-emerald" title="FastAPI Carbon Engine Active at http://127.0.0.1:8000">
               <CheckCircle2 size={9} />
-              SCENARIO ACTIVE
+              BACKEND: CONNECTED
             </span>
+          ) : (
+            <span className="badge badge-amber" title="FastAPI server offline. Using verified fallback demo simulator.">
+              <AlertTriangle size={9} />
+              BACKEND: OFFLINE (DEMO)
+            </span>
+          )}
+          {anyFix && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span className="badge badge-cyan" title="Simulation setpoints active">
+                <Sliders size={9} />
+                SCENARIO ACTIVE
+              </span>
+              <button
+                className="btn btn-outline btn-sm"
+                onClick={handleResetBaseline}
+                style={{ padding: '2px 8px', fontSize: 10, display: 'flex', alignItems: 'center', gap: 4 }}
+                title="Reset simulation parameters to historical baseline"
+              >
+                <RotateCcw size={9} />
+                Reset
+              </button>
+            </div>
           )}
         </div>
         <div className="topbar-right">
@@ -1008,7 +1604,12 @@ export default function App() {
       </header>
 
       {/* Telemetry bar */}
-      <TeleBar simOn={simMode && anyFix} simParams={params} />
+      <TeleBar
+        simOn={simMode && anyFix}
+        simParams={params}
+        carbonData={carbonData}
+        backendStatus={backendStatus}
+      />
 
       {/* Sidebar */}
       <nav className="sidebar">
@@ -1047,7 +1648,9 @@ export default function App() {
 
       {/* Main */}
       <main className="main-content">
-        {view === 'overview' && <OverviewView setView={setView} />}
+        {view === 'overview' && (
+          <OverviewView setView={setView} carbonData={carbonData} gridEF={gridEF} />
+        )}
         {view === 'scada' && (
           <ScadaView
             assets={simulatedAssets}
@@ -1059,16 +1662,46 @@ export default function App() {
           />
         )}
         {view === 'simulator' && (
-          <SimulatorView params={params} setParams={(p) => { setParams(p); setSimMode(true); }} />
+          <SimulatorView
+            params={params}
+            setParams={(p) => { setParams(p); setSimMode(true); }}
+            onResetBaseline={handleResetBaseline}
+            carbonData={carbonData}
+            gridEF={gridEF}
+            reportingYear={reportingYear}
+          />
         )}
         {view === 'carbon' && (
-          <CarbonView params={params} gridEF={gridEF} setGridEF={setGridEF} />
+          <CarbonView
+            params={params}
+            gridEF={gridEF}
+            setGridEF={setGridEF}
+            carbonData={carbonData}
+            carbonLoading={carbonLoading}
+            carbonError={carbonError}
+            backendStatus={backendStatus}
+            onRecalculate={triggerCalculation}
+            reportingYear={reportingYear}
+            setReportingYear={setReportingYear}
+            ceaMethodology={ceaMethodology}
+            setCeaMethodology={setCeaMethodology}
+            availableYears={availableYears}
+          />
         )}
-        {view === 'reports' && <ReportView params={params} />}
+        {view === 'reports' && (
+          <ReportView params={params} carbonData={carbonData} />
+        )}
       </main>
 
       {/* Inspector */}
-      <InspectorPanel selectedId={selectedAsset} setView={setView} params={params} />
+      <InspectorPanel
+        selectedId={selectedAsset}
+        setView={setView}
+        params={params}
+        carbonData={carbonData}
+        gridEF={gridEF}
+        onResetBaseline={handleResetBaseline}
+      />
     </div>
   );
 }

@@ -3,7 +3,7 @@
 export const PLANT = {
   name: 'PrecisionWorks Manufacturing',
   tariff: 8,            // ₹/kWh
-  gridEF: 0.82,         // kg CO2e/kWh (CEA India)
+  gridEF: 0.72886,      // kg CO2/kWh (CEA Baseline Database V22.0, FY 2023-24 location-based)
   baselineEnergy: 12480, // kWh/period
   baselineCost: 99840,   // ₹
 };
@@ -26,6 +26,20 @@ export interface Asset {
   tempC?: number;
   cop?: number;
   secKwhPerPart?: number;
+}
+
+export interface Machine {
+  id: string;
+  name: string;
+  type?: string;
+  position: [number, number, number];
+  powerKw: number;
+  status: string;
+  model?: string;
+  ratedKw?: number;
+  currentKw?: number;
+  energyKwh?: number;
+  pf?: number;
 }
 
 export const ASSETS: Asset[] = [
@@ -112,7 +126,13 @@ export interface SimParams {
   staggerFurnace: boolean;
 }
 
-export function calcSimResult(params: SimParams) {
+export const DEFAULT_SIM_PARAMS: SimParams = {
+  autoIdleCutoff: false,
+  pressureSetpoint: 7.5,
+  staggerFurnace: false,
+};
+
+export function calcSimResult(params: SimParams, ef: number = 0.72886) {
   const optimized = buildOptimizedHourly(params);
   const baseEnergy = PLANT.baselineEnergy;
 
@@ -127,11 +147,11 @@ export function calcSimResult(params: SimParams) {
   const totalSavingsKwh = +(idleSavingsKwh + pressureSavingsKwh).toFixed(1);
   const optimizedEnergy = +(baseEnergy - totalSavingsKwh).toFixed(0);
   const savingsCost = +(totalSavingsKwh * PLANT.tariff).toFixed(2);
-  const savingsCarbon = +(totalSavingsKwh * PLANT.gridEF / 1000).toFixed(3);
+  const savingsCarbon = +(totalSavingsKwh * ef / 1000).toFixed(3);
   const baselineCost = PLANT.baselineCost;
   const optimizedCost = +(baselineCost - savingsCost).toFixed(2);
-  const baseCarbon = +(baseEnergy * PLANT.gridEF / 1000).toFixed(2);
-  const optCarbon = +(optimizedEnergy * PLANT.gridEF / 1000).toFixed(2);
+  const baseCarbon = +(baseEnergy * ef / 1000).toFixed(2);
+  const optCarbon = +(optimizedEnergy * ef / 1000).toFixed(2);
 
   return {
     baseEnergy, optimizedEnergy, savingsKwh: totalSavingsKwh,
@@ -146,19 +166,42 @@ export function calcSimResult(params: SimParams) {
   };
 }
 
-// Carbon
+// Carbon (Simulated Demo Fallback Model)
 export const CARBON = {
-  // Scope 1: LPG furnace – 2.98 kg CO2e/kg LPG, ~5 kg LPG/hr, 12 hrs/day
+  // Scope 1: LPG furnace – 2.9846 kg CO2/kg LPG, 2.9872 kg CO2e/kg LPG, ~5 kg LPG/hr, 12 hrs/day
   lpgKgPerHr: 5,
   lpgHrsPerDay: 12,
-  lpgEF: 2.98,  // kg CO2e / kg LPG
+  lpgDirectCO2EF: 2.9846,
+  lpgEF: 2.9872,  // kg CO2e / kg LPG (IPCC AR6)
+  // Daily calculation (1 day = 60 kg)
   scope1Calc: () => {
     const kgLPG = 5 * 12;
-    const kgCO2 = kgLPG * 2.98;
-    return { kgLPG, kgCO2e: +(kgCO2/1000).toFixed(3), formula: `${kgLPG} kg LPG/day × 2.98 kg CO₂e/kg = ${(kgLPG*2.98).toFixed(1)} kg = ${(kgLPG*2.98/1000).toFixed(3)} tCO₂e` };
+    const kgCO2 = kgLPG * 2.9872;
+    return {
+      kgLPG,
+      kgCO2e: +(kgCO2 / 1000).toFixed(3),
+      formula: `${kgLPG} kg LPG/day × 2.9872 kg CO₂e/kg = ${(kgLPG * 2.9872).toFixed(1)} kg = ${(kgLPG * 2.9872 / 1000).toFixed(3)} tCO₂e/day`
+    };
   },
-  scope2Calc: (kwh: number = 12480, ef: number = 0.82) => {
+  // Synchronized 30-day period calculation (30 days = 1,800 kg)
+  scope1PeriodCalc: (days: number = 30) => {
+    const kgLPG = 5 * 12 * days;
+    const directCO2 = +(kgLPG * 2.9846 / 1000).toFixed(4);
+    const totalCO2e = +(kgLPG * 2.9872 / 1000).toFixed(4);
+    return {
+      kgLPG,
+      days,
+      directCO2_t: directCO2,
+      totalCO2e_t: totalCO2e,
+      formula: `${kgLPG.toLocaleString()} kg LPG (${days}d) × 2.9872 kg CO₂e/kg ÷ 1000 = ${totalCO2e} tCO₂e`
+    };
+  },
+  // Scope 2: CEA Location-based grid emission factor (FY 2023-24 default = 0.72886 kg CO2/kWh)
+  scope2Calc: (kwh: number = 12480, ef: number = 0.72886) => {
     const kgCO2 = kwh * ef;
-    return { kgCO2e: +(kgCO2/1000).toFixed(2), formula: `${kwh.toLocaleString()} kWh × ${ef} kg CO₂e/kWh ÷ 1000 = ${(kgCO2/1000).toFixed(2)} tCO₂e` };
+    return {
+      kgCO2e: +(kgCO2 / 1000).toFixed(3),
+      formula: `${kwh.toLocaleString()} kWh × ${ef} kg CO₂/kWh ÷ 1000 = ${(kgCO2 / 1000).toFixed(3)} tCO₂e`
+    };
   },
 };

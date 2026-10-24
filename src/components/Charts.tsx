@@ -129,8 +129,8 @@ export function ScopePie({ scope1, scope2 }: { scope1: number; scope2: number })
       <PieChart>
         <Pie data={data} cx="50%" cy="50%" innerRadius={45} outerRadius={65}
           paddingAngle={3} dataKey="value"
-          label={({ name, percent }) =>
-            `${name.split(' ')[0]} ${(percent * 100).toFixed(0)}%`
+          label={({ name, percent }: { name?: string; percent?: number }) =>
+            `${(name ?? '').split(' ')[0]} ${((percent ?? 0) * 100).toFixed(0)}%`
           }
           labelLine={{ stroke: '#334155', strokeWidth: 0.7 }}
         >

@@ -1,0 +1,462 @@
+"""
+WattWise AI — Carbon Accounting Automated Test Suite
+Covers:
+1. LPG calculations and unit conversions (g -> kg -> GWP).
+2. Scope 2 CEA factor selection (Location-Based vs OM/BM/CM, Rows 13-17).
+3. Unsupported reporting years rejection.
+4. Period mismatch rejection (HTTP 422) and normalization.
+5. Calendar month durations (Feb 28d, Leap Feb 29d, Oct 31d, Apr 30d).
+6. Gross emissions vs. avoided emissions isolation.
+7. Missing/invalid reference data handling.
+8. FastAPI TestClient API integration.
+"""
+
+from pathlib import Path
+import pytest
+from fastapi.testclient import TestClient
+
+from backend.app.main import app
+from backend.app.models import (
+    CarbonCalculateRequest,
+    CeaMethodology,
+    ProvenanceType,
+    ReportingPeriodInput,
+    ReportingPeriodType,
+    ScenarioComparisonInput,
+    Scope1Input,
+    Scope2Input,
+)
+from backend.app.services.carbon_service import PeriodMismatchError, carbon_service
+from backend.app.services.reference_data import ReferenceDataError, ReferenceDataService, reference_data_service
+
+
+@pytest.fixture
+def client():
+    return TestClient(app)
+
+
+# ─── 1. LPG Calculations & Unit Conversions ───────────────────────────────────
+
+def test_lpg_unit_conversions_and_factors():
+    """Verify exact IPCC 2006 (Vol 2 Ch 2 Table 2.3) calculations and unit conversions."""
+    breakdown = reference_data_service.get_ipcc_lpg_parameters()
+
+    # Direct CO2: 63,100 kg/TJ * 0.0000473 TJ/kg = 2.98463 kg CO2/kg LPG
+    assert breakdown.direct_co2_kg_per_kg == pytest.approx(2.98463, rel=1e-4)
+
+    # CH4: 1.0 kg/TJ * 0.0000473 TJ/kg = 0.0473 g/kg -> 0.0000473 kg/kg
+    assert breakdown.ch4_emitted_g_per_kg == pytest.approx(0.0473, rel=1e-4)
+    assert breakdown.ch4_converted_kg_per_kg == pytest.approx(0.0000473, rel=1e-6)
+    assert breakdown.ch4_gwp_ar6 == 27.9
+    expected_ch4_co2e = 0.0000473 * 27.9  # ~0.001320 kg CO2e/kg
+    assert breakdown.ch4_co2e_kg_per_kg == pytest.approx(expected_ch4_co2e, abs=1e-5)
+
+    # N2O: 0.1 kg/TJ * 0.0000473 TJ/kg = 0.00473 g/kg -> 0.00000473 kg/kg
+    assert breakdown.n2o_emitted_g_per_kg == pytest.approx(0.00473, rel=1e-4)
+    assert breakdown.n2o_converted_kg_per_kg == pytest.approx(0.00000473, rel=1e-6)
+    assert breakdown.n2o_gwp_ar6 == 273.0
+    expected_n2o_co2e = 0.00000473 * 273.0  # ~0.001291 kg CO2e/kg
+    assert breakdown.n2o_co2e_kg_per_kg == pytest.approx(expected_n2o_co2e, abs=1e-5)
+
+    # Total CO2e = Direct CO2 + CH4 CO2e + N2O CO2e = ~2.98724
+    expected_total_co2e = 2.98463 + expected_ch4_co2e + expected_n2o_co2e
+    assert breakdown.total_co2e_kg_per_kg == pytest.approx(expected_total_co2e, rel=1e-4)
+
+
+def test_lpg_calculation_direct_vs_total_co2e():
+    """Verify Scope 1 outputs for 1,800 kg LPG (30-day run at 60 kg/day)."""
+    req_total = CarbonCalculateRequest(
+        period=ReportingPeriodInput(period_type=ReportingPeriodType.SIMULATED_DEMO_30D),
+        scope1=Scope1Input(
+            fuel_id="lpg",
+            activity_value=1800.0,
+            activity_unit="kg",
+            include_non_co2_ghg=True
+        )
+    )
+    res_total = carbon_service.calculate(req_total)
+    s1 = res_total.gross_footprint.scope1
+    assert s1 is not None
+    # 1800 * 2.98463 / 1000 = 5.3723 t CO2
+    assert s1.emissions_direct_co2_t == pytest.approx(5.3723, rel=1e-3)
+    # 1800 * 2.98724 / 1000 = 5.3770 t CO2e
+    assert s1.emissions_total_co2e_t == pytest.approx(5.3770, rel=1e-3)
+    assert s1.emissions_evaluated_t_co2e == pytest.approx(5.3770, rel=1e-3)
+    assert s1.verification_status == "VERIFIED_IPCC"
+
+    # Direct CO2 only
+    req_direct = CarbonCalculateRequest(
+        period=ReportingPeriodInput(period_type=ReportingPeriodType.SIMULATED_DEMO_30D),
+        scope1=Scope1Input(
+            fuel_id="lpg",
+            activity_value=1800.0,
+            activity_unit="kg",
+            include_non_co2_ghg=False
+        )
+    )
+    res_direct = carbon_service.calculate(req_direct)
+    assert res_direct.gross_footprint.scope1.emissions_evaluated_t_co2e == pytest.approx(5.3723, rel=1e-3)
+
+
+# ─── 2. Scope 2 Factor Selection ──────────────────────────────────────────────
+
+def test_scope2_cea_factor_selection():
+    """Verify CEA factor selection across methodologies and fiscal years."""
+    # 1. Location-based default (Row 14, FY 2023-24)
+    f_loc = reference_data_service.get_cea_factor(
+        reporting_year="2023-24",
+        methodology=CeaMethodology.WEIGHTED_AVG_WITH_RES
+    )
+    assert f_loc.row == 14
+    assert f_loc.column == 13
+    assert f_loc.selected_factor == pytest.approx(0.728862, rel=1e-4)
+    assert f_loc.is_recommended_location_based is True
+    assert f_loc.sheet == "Results"
+
+    # 2. Thermal fossil only (Row 13, FY 2023-24)
+    f_therm = reference_data_service.get_cea_factor(
+        reporting_year="2023-24",
+        methodology=CeaMethodology.WEIGHTED_AVG_THERMAL
+    )
+    assert f_therm.row == 13
+    assert f_therm.selected_factor == pytest.approx(0.843514, rel=1e-4)
+    assert f_therm.is_recommended_location_based is False
+
+    # 3. Simple Operating Margin (Row 15, FY 2023-24)
+    f_om = reference_data_service.get_cea_factor(
+        reporting_year="2023-24",
+        methodology=CeaMethodology.OPERATING_MARGIN
+    )
+    assert f_om.row == 15
+    assert f_om.selected_factor == pytest.approx(0.964109, rel=1e-4)
+
+    # 4. Build Margin (Row 16, FY 2023-24)
+    f_bm = reference_data_service.get_cea_factor(
+        reporting_year="2023-24",
+        methodology=CeaMethodology.BUILD_MARGIN
+    )
+    assert f_bm.row == 16
+    assert f_bm.selected_factor == pytest.approx(0.552152, rel=1e-4)
+
+    # 5. Combined Margin (Row 17, FY 2023-24)
+    f_cm = reference_data_service.get_cea_factor(
+        reporting_year="2023-24",
+        methodology=CeaMethodology.COMBINED_MARGIN
+    )
+    assert f_cm.row == 17
+    assert f_cm.selected_factor == pytest.approx(0.758131, rel=1e-4)
+
+
+def test_scope2_calculation():
+    """Verify Scope 2 calculation: 12,480 kWh * 0.728862 kg/kWh / 1000 = 9.0962 tCO2e."""
+    req = CarbonCalculateRequest(
+        period=ReportingPeriodInput(period_type=ReportingPeriodType.SIMULATED_DEMO_30D),
+        scope2=Scope2Input(
+            grid_consumption_kwh=12480.0,
+            cea_reporting_year="2023-24",
+            cea_methodology=CeaMethodology.WEIGHTED_AVG_WITH_RES
+        )
+    )
+    res = carbon_service.calculate(req)
+    s2 = res.gross_footprint.scope2
+    assert s2 is not None
+    assert s2.emissions_total_co2e_t == pytest.approx(9.0962, rel=1e-3)
+    assert s2.factor_metadata.row == 14
+    assert s2.factor_metadata.reporting_year == "2023-24"
+
+
+# ─── 3. Unsupported Reporting Years ───────────────────────────────────────────
+
+def test_unsupported_reporting_year_rejection():
+    """Verify that unavailable reporting years raise clear errors and are never silently substituted."""
+    with pytest.raises(ValueError) as excinfo:
+        reference_data_service.get_cea_factor(reporting_year="1999-00")
+    assert "Requested CEA reporting year '1999-00' is not available" in str(excinfo.value)
+    assert "Silently substituting another year is prohibited" in str(excinfo.value)
+
+    with pytest.raises(ValueError) as excinfo2:
+        reference_data_service.get_cea_factor(reporting_year="2035-36")
+    assert "2035-36" in str(excinfo2.value)
+
+
+# ─── 4. Period Mismatch Rejection & Normalization ──────────────────────────────
+
+def test_period_mismatch_rejection_without_normalization():
+    """Scope 1 daily (1d) and Scope 2 monthly (30d) must raise PeriodMismatchError (HTTP 422)."""
+    req = CarbonCalculateRequest(
+        period=ReportingPeriodInput(period_type=ReportingPeriodType.SIMULATED_DEMO_30D),
+        scope1=Scope1Input(
+            fuel_id="lpg",
+            activity_value=60.0,
+            activity_period=ReportingPeriodInput(period_type=ReportingPeriodType.DAILY)
+        ),
+        scope2=Scope2Input(
+            grid_consumption_kwh=12480.0
+            # defaults to master period SIMULATED_DEMO_30D
+        ),
+        target_normalization_period=None  # Do not allow automated scaling
+    )
+    with pytest.raises(PeriodMismatchError) as excinfo:
+        carbon_service.calculate(req)
+    assert "Reporting period mismatch for Scope 1" in excinfo.value.detail
+    assert "Silently combining disparate periods is prohibited" in excinfo.value.detail
+
+
+def test_period_mismatch_with_explicit_normalization():
+    """Supplying target_normalization_period allows automated scaling with audit note."""
+    req = CarbonCalculateRequest(
+        period=ReportingPeriodInput(period_type=ReportingPeriodType.SIMULATED_DEMO_30D),
+        scope1=Scope1Input(
+            fuel_id="lpg",
+            activity_value=60.0,
+            activity_period=ReportingPeriodInput(period_type=ReportingPeriodType.DAILY)
+        ),
+        scope2=Scope2Input(
+            grid_consumption_kwh=12480.0
+        ),
+        target_normalization_period=ReportingPeriodType.SIMULATED_DEMO_30D
+    )
+    res = carbon_service.calculate(req)
+    s1 = res.gross_footprint.scope1
+    # 60 kg/day normalized to 30 days = 1,800 kg
+    assert s1.activity["value"] == pytest.approx(1800.0, rel=1e-2)
+    assert "Normalized from 1.0d to 30.0d" in s1.activity["basis"]
+
+
+# ─── 5. Calendar Month Durations ──────────────────────────────────────────────
+
+def test_calendar_month_durations():
+    """Verify exact days: Feb non-leap (28d), Feb leap (29d), Oct (31d), Apr (30d)."""
+    # 1. February 2026 (non-leap: 28 days)
+    days_feb26, hours_feb26, _ = carbon_service.resolve_period_duration(
+        ReportingPeriodInput(period_type=ReportingPeriodType.CALENDAR_MONTH, calendar_year=2026, calendar_month=2)
+    )
+    assert days_feb26 == 28.0
+    assert hours_feb26 == 672.0
+
+    # 2. February 2024 (leap year: 29 days)
+    days_feb24, hours_feb24, _ = carbon_service.resolve_period_duration(
+        ReportingPeriodInput(period_type=ReportingPeriodType.CALENDAR_MONTH, calendar_year=2024, calendar_month=2)
+    )
+    assert days_feb24 == 29.0
+    assert hours_feb24 == 696.0
+
+    # 3. October 2026 (31 days)
+    days_oct26, hours_oct26, desc_oct = carbon_service.resolve_period_duration(
+        ReportingPeriodInput(period_type=ReportingPeriodType.CALENDAR_MONTH, calendar_year=2026, calendar_month=10)
+    )
+    assert days_oct26 == 31.0
+    assert hours_oct26 == 744.0
+    assert "31 calendar days" in desc_oct
+
+    # 4. April 2026 (30 days)
+    days_apr26, hours_apr26, _ = carbon_service.resolve_period_duration(
+        ReportingPeriodInput(period_type=ReportingPeriodType.CALENDAR_MONTH, calendar_year=2026, calendar_month=4)
+    )
+    assert days_apr26 == 30.0
+    assert hours_apr26 == 720.0
+
+
+# ─── 6. Gross Emissions vs. Avoided Emissions ─────────────────────────────────
+
+def test_gross_vs_avoided_emissions_isolation():
+    """Verify that avoided emissions from energy savings are NEVER subtracted from the gross footprint."""
+    req = CarbonCalculateRequest(
+        period=ReportingPeriodInput(period_type=ReportingPeriodType.SIMULATED_DEMO_30D),
+        scope1=Scope1Input(fuel_id="lpg", activity_value=1800.0),
+        scope2=Scope2Input(grid_consumption_kwh=12480.0, cea_reporting_year="2023-24"),
+        scenario_comparison=ScenarioComparisonInput(
+            enabled=True,
+            proposed_savings_kwh=998.4,
+            savings_provenance=ProvenanceType.SIMULATED
+        )
+    )
+    res = carbon_service.calculate(req)
+
+    gross_s1 = res.gross_footprint.scope1.emissions_total_co2e_t  # 5.3770
+    gross_s2 = res.gross_footprint.scope2.emissions_total_co2e_t  # 9.0962
+    expected_gross = round(gross_s1 + gross_s2, 4)  # 14.4732
+
+    # Gross footprint must remain unreduced
+    assert res.gross_footprint.total_gross_co2e_t == pytest.approx(expected_gross, rel=1e-4)
+
+    # Avoided emissions reported separately
+    assert res.avoided_emissions is not None
+    # 998.4 * 0.728862 / 1000 = 0.7277 tCO2e
+    expected_avoided = round((998.4 * 0.728862) / 1000.0, 4)
+    assert res.avoided_emissions.avoided_co2e_t == pytest.approx(expected_avoided, rel=1e-3)
+    assert "NOT netted against the actual operational gross footprint" in res.avoided_emissions.accounting_treatment
+
+    # Scenario comparison reflects baseline vs. proposed
+    assert res.scenario_comparison is not None
+    assert res.scenario_comparison.baseline_gross_t_co2e == pytest.approx(expected_gross, rel=1e-4)
+    assert res.scenario_comparison.net_reduction_t_co2e == pytest.approx(expected_avoided, rel=1e-3)
+    assert res.scenario_comparison.proposed_gross_t_co2e == pytest.approx(expected_gross - expected_avoided, rel=1e-3)
+
+
+# ─── 7. Missing or Invalid Reference Data ──────────────────────────────────────
+
+def test_missing_reference_file_handling():
+    """Verify ReferenceDataError is raised when workbook is missing."""
+    service_bad = ReferenceDataService(excel_path=Path("nonexistent/path/CEA_Baseline.xlsx"))
+    with pytest.raises(ReferenceDataError) as excinfo:
+        service_bad.get_cea_metadata()
+    assert "CEA reference file not found at expected path" in str(excinfo.value)
+
+
+def test_unverified_custom_fuel_handling():
+    """Unverified fuels must supply custom_emission_factor or be rejected with HTTP 422."""
+    # Missing factor -> 422
+    req_invalid = CarbonCalculateRequest(
+        period=ReportingPeriodInput(period_type=ReportingPeriodType.SIMULATED_DEMO_30D),
+        scope1=Scope1Input(fuel_id="diesel", activity_value=500.0, custom_emission_factor=None)
+    )
+    with pytest.raises(Exception):
+        carbon_service.calculate(req_invalid)
+
+    # With factor -> status PENDING_VERIFICATION
+    req_valid_custom = CarbonCalculateRequest(
+        period=ReportingPeriodInput(period_type=ReportingPeriodType.SIMULATED_DEMO_30D),
+        scope1=Scope1Input(fuel_id="diesel", activity_value=500.0, custom_emission_factor=2.68)
+    )
+    res_custom = carbon_service.calculate(req_valid_custom)
+    s1 = res_custom.gross_footprint.scope1
+    assert s1.verification_status == "PENDING_VERIFICATION"
+    assert s1.emissions_total_co2e_t == pytest.approx((500.0 * 2.68) / 1000.0, rel=1e-3)
+
+
+# ─── 8. API Integration Tests (FastAPI TestClient) ────────────────────────────
+
+def test_api_health_endpoint(client):
+    response = client.get("/health")
+    assert response.status_code == 200
+    assert response.json()["status"] == "healthy"
+
+
+def test_api_get_factors_endpoint(client):
+    response = client.get("/api/v1/carbon/factors")
+    assert response.status_code == 200
+    data = response.json()
+    assert "CENTRAL ELECTRICITY AUTHORITY" in data["database_metadata"]["title"]
+    assert "2023-24" in data["available_years"]
+    assert len(data["scope2_grid_factors"]) > 0
+    assert any(f["fuel_id"] == "lpg" and f["verification_status"] == "VERIFIED_IPCC" for f in data["scope1_fuel_factors"])
+
+
+def test_api_post_calculate_endpoint(client):
+    payload = {
+        "period": {
+            "period_type": "SIMULATED_DEMO_30D",
+            "duration_days": 30.0
+        },
+        "scope1": {
+            "fuel_id": "lpg",
+            "activity_value": 1800.0,
+            "activity_unit": "kg",
+            "provenance": "ESTIMATED",
+            "include_non_co2_ghg": True
+        },
+        "scope2": {
+            "grid_consumption_kwh": 12480.0,
+            "provenance": "MEASURED",
+            "cea_reporting_year": "2023-24",
+            "cea_methodology": "weighted_avg_with_res"
+        },
+        "scenario_comparison": {
+            "enabled": True,
+            "proposed_savings_kwh": 998.4,
+            "savings_provenance": "SIMULATED"
+        }
+    }
+    response = client.post("/api/v1/carbon/calculate", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["gross_footprint"]["total_gross_co2e_t"] == pytest.approx(14.473, rel=1e-3)
+    assert data["avoided_emissions"]["avoided_co2e_t"] == pytest.approx(0.728, rel=1e-2)
+    assert data["calculation_metadata"]["audit_status"] == "CALCULATION_UNVERIFIED_DEMO"
+
+
+# ─── 9. Digital Twin & Scenario Comparison Tests ──────────────────────────────
+
+def test_digital_twin_scenario_changes_affect_proposed_not_baseline():
+    """Verify that altering what-if scenario savings alters proposed results but strictly preserves baseline values."""
+    base_req = CarbonCalculateRequest(
+        period=ReportingPeriodInput(period_type=ReportingPeriodType.SIMULATED_DEMO_30D),
+        scope1=Scope1Input(fuel_id="lpg", activity_value=1800.0, provenance=ProvenanceType.ESTIMATED),
+        scope2=Scope2Input(grid_consumption_kwh=12480.0, provenance=ProvenanceType.MEASURED, cea_reporting_year="2023-24"),
+        scenario_comparison=ScenarioComparisonInput(
+            enabled=True,
+            proposed_savings_kwh=500.0,
+            savings_provenance=ProvenanceType.SIMULATED
+        )
+    )
+    res1 = carbon_service.calculate(base_req)
+
+    # Scenario 2: increase savings to 1200 kWh
+    scenario2_req = base_req.model_copy(deep=True)
+    scenario2_req.scenario_comparison.proposed_savings_kwh = 1200.0
+    res2 = carbon_service.calculate(scenario2_req)
+
+    # 1. Baseline emissions are IDENTICAL across both runs
+    assert res1.gross_footprint.total_gross_co2e_t == pytest.approx(res2.gross_footprint.total_gross_co2e_t, rel=1e-5)
+    assert res1.gross_footprint.scope2.emissions_total_co2e_t == pytest.approx(res2.gross_footprint.scope2.emissions_total_co2e_t, rel=1e-5)
+    assert res1.gross_footprint.scope1.emissions_total_co2e_t == pytest.approx(res2.gross_footprint.scope1.emissions_total_co2e_t, rel=1e-5)
+    assert res1.scenario_comparison.baseline_gross_t_co2e == pytest.approx(res2.scenario_comparison.baseline_gross_t_co2e, rel=1e-5)
+
+    # 2. Avoided emissions and proposed gross emissions change strictly reflecting the scenario
+    # Factor = 0.728862
+    expected_avoided_1 = round((500.0 * 0.728862) / 1000.0, 4)
+    expected_avoided_2 = round((1200.0 * 0.728862) / 1000.0, 4)
+
+    assert res1.avoided_emissions.avoided_co2e_t == pytest.approx(expected_avoided_1, rel=1e-3)
+    assert res2.avoided_emissions.avoided_co2e_t == pytest.approx(expected_avoided_2, rel=1e-3)
+    assert res1.scenario_comparison.proposed_gross_t_co2e > res2.scenario_comparison.proposed_gross_t_co2e
+    assert res2.scenario_comparison.net_reduction_t_co2e > res1.scenario_comparison.net_reduction_t_co2e
+
+
+def test_digital_twin_zero_savings_produce_zero_avoided_emissions():
+    """Verify that zero scenario savings produce exactly 0.0 avoided emissions and proposed equals baseline."""
+    req = CarbonCalculateRequest(
+        period=ReportingPeriodInput(period_type=ReportingPeriodType.SIMULATED_DEMO_30D),
+        scope1=Scope1Input(fuel_id="lpg", activity_value=1800.0),
+        scope2=Scope2Input(grid_consumption_kwh=12480.0, cea_reporting_year="2023-24"),
+        scenario_comparison=ScenarioComparisonInput(
+            enabled=True,
+            proposed_savings_kwh=0.0,
+            savings_provenance=ProvenanceType.SIMULATED
+        )
+    )
+    res = carbon_service.calculate(req)
+
+    # Zero savings -> Zero avoided emissions
+    assert res.avoided_emissions is not None
+    assert res.avoided_emissions.savings_kwh == 0.0
+    assert res.avoided_emissions.avoided_co2e_t == 0.0
+
+    # Proposed gross equals baseline gross
+    assert res.scenario_comparison is not None
+    assert res.scenario_comparison.baseline_gross_t_co2e == pytest.approx(14.4732, rel=1e-3)
+    assert res.scenario_comparison.proposed_gross_t_co2e == pytest.approx(14.4732, rel=1e-3)
+    assert res.scenario_comparison.net_reduction_t_co2e == 0.0
+    assert res.scenario_comparison.reduction_percentage == 0.0
+
+    # Baseline gross remains unchanged
+    assert res.gross_footprint.total_gross_co2e_t == pytest.approx(14.4732, rel=1e-3)
+
+
+def test_digital_twin_electricity_savings_never_affect_scope1():
+    """Verify that digital twin electricity optimizations never modify Scope 1 fuel emissions."""
+    req = CarbonCalculateRequest(
+        period=ReportingPeriodInput(period_type=ReportingPeriodType.SIMULATED_DEMO_30D),
+        scope1=Scope1Input(fuel_id="lpg", activity_value=1800.0),
+        scope2=Scope2Input(grid_consumption_kwh=12480.0, cea_reporting_year="2023-24"),
+        scenario_comparison=ScenarioComparisonInput(
+            enabled=True,
+            proposed_savings_kwh=10000.0,  # massive electricity savings
+            savings_provenance=ProvenanceType.SIMULATED
+        )
+    )
+    res = carbon_service.calculate(req)
+    # Scope 1 direct and total CO2e must remain untouched
+    assert res.gross_footprint.scope1.emissions_direct_co2_t == pytest.approx(5.3723, rel=1e-3)
+    assert res.gross_footprint.scope1.emissions_total_co2e_t == pytest.approx(5.3770, rel=1e-3)

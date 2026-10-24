@@ -441,6 +441,7 @@ function AmbientParticles() {
       <bufferGeometry>
         <bufferAttribute
           attach="attributes-position"
+          args={[positions.current, 3]}
           count={count}
           array={positions.current}
           itemSize={3}

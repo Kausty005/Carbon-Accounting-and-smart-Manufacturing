@@ -1,42 +1,42 @@
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap');
 
 :root {
-  /* Rich Architectural Warm Beige Theme Tokens */
-  --bg-root: #E4D9C8;
-  --bg-panel: rgba(235, 226, 212, 0.90);
-  --bg-surface: #EFE6D7;
-  --bg-elevated: #DDD0BC;
-  --bg-input: rgba(245, 238, 228, 0.95);
+  /* Exact Warm Architectural Beige Reference Palette */
+  --bg-root: #F4EEE5;
+  --bg-panel: #FFFFFF;
+  --bg-surface: #FAF7F2;
+  --bg-elevated: #EFE9E0;
+  --bg-input: #FFFFFF;
 
-  --border: rgba(90, 75, 55, 0.12);
-  --border-muted: rgba(90, 75, 55, 0.06);
-  --border-active: rgba(90, 75, 55, 0.24);
+  --border: #EAE3D7;
+  --border-muted: #F0EAE0;
+  --border-active: #D9D0C1;
 
   --cyan: #0284c7;
   --cyan-dim: rgba(2, 132, 199, 0.12);
-  --emerald: #059669;
-  --emerald-dim: rgba(5, 150, 105, 0.12);
-  --amber: #d97706;
-  --amber-dim: rgba(217, 119, 6, 0.12);
-  --red: #dc2626;
-  --red-dim: rgba(220, 38, 38, 0.12);
-  --violet: #7c3aed;
+  --emerald: #10b981;
+  --emerald-dim: rgba(16, 185, 129, 0.12);
+  --amber: #f59e0b;
+  --amber-dim: rgba(245, 158, 11, 0.12);
+  --red: #ef4444;
+  --red-dim: rgba(239, 68, 68, 0.12);
+  --violet: #9333ea;
 
   /* Typography Colors */
-  --white: #1C1917; /* Main text is deep warm charcoal/espresso */
-  --slate-300: #292524;
-  --slate-400: #57534E;
-  --slate-500: #78716C;
+  --white: #1E252D; /* Primary text is dark slate/charcoal */
+  --slate-300: #1E252D;
+  --slate-400: #475569;
+  --slate-500: #64748B;
 
   --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
-  --font-ui: 'Inter', system-ui, sans-serif;
-  --font-serif: 'Cinzel', 'Playfair Display', serif;
+  --font-ui: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-serif: 'Inter', system-ui, -apple-system, sans-serif;
 
   --topbar-h: 56px;
   --telebar-h: 38px;
   --sidebar-w: 224px;
   --inspector-w: 360px;
-  --r: 8px;
+  --r: 10px;
 }
 
 *, *::before, *::after {
@@ -84,6 +84,19 @@ html, body, #root {
   background: var(--bg-root);
 }
 
+.app-shell.overview-mode {
+  grid-template-rows: var(--topbar-h) 1fr;
+  grid-template-columns: var(--sidebar-w) 1fr;
+  grid-template-areas:
+    "topbar topbar"
+    "sidebar main";
+}
+
+.app-shell.overview-mode .inspector-panel,
+.app-shell.overview-mode .telebar {
+  display: none !important;
+}
+
 /* ─── Topbar ────────────────────────────────────────────────────────────────── */
 .topbar {
   grid-area: topbar;
@@ -91,8 +104,7 @@ html, body, #root {
   align-items: center;
   justify-content: space-between;
   padding: 0 20px;
-  background: rgba(235, 226, 212, 0.92);
-  backdrop-filter: blur(16px);
+  background: #F4EEE5;
   border-bottom: 1px solid var(--border);
   z-index: 200;
 }
@@ -100,21 +112,21 @@ html, body, #root {
 .topbar-brand {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-family: var(--font-serif);
+  gap: 8px;
+  font-family: var(--font-ui);
   font-size: 15px;
-  font-weight: 700;
-  letter-spacing: 2px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
   text-transform: uppercase;
-  color: #0f172a;
+  color: #1E252D;
 }
 
 .topbar-brand .sub {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 600;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 700;
   color: var(--cyan);
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
 }
 
 .topbar-center {
@@ -262,44 +274,44 @@ html, body, #root {
   grid-area: sidebar;
   display: flex;
   flex-direction: column;
-  background: rgba(235, 226, 212, 0.88);
-  backdrop-filter: blur(16px);
+  background: #F0EAE1;
   border-right: 1px solid var(--border);
   overflow-y: auto;
   z-index: 100;
 }
 
 .sidebar-section-label {
-  font-family: var(--font-mono);
-  font-size: 9px;
+  font-family: var(--font-ui);
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 2px;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--slate-400);
-  padding: 12px 16px 6px;
+  color: #8E887E;
+  padding: 14px 16px 6px;
 }
 
 .nav-item {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 9px 16px;
+  padding: 9px 12px;
+  margin: 2px 10px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--slate-500);
-  border-left: 3px solid transparent;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #334155;
   transition: all 0.15s ease;
   user-select: none;
 }
 .nav-item:hover {
-  background: rgba(0, 0, 0, 0.03);
-  color: #0f172a;
+  background: rgba(0, 0, 0, 0.04);
+  color: #1E252D;
 }
 .nav-item.active {
-  background: rgba(2, 132, 199, 0.08);
-  border-left-color: var(--cyan);
-  color: var(--cyan);
+  background: #E0F2FE;
+  color: #0284C7;
+  font-weight: 600;
 }
 
 .sidebar-divider {
@@ -1515,3 +1527,47 @@ input[type=range]::-webkit-slider-thumb {
   fill: #64748b;
   font-size: 10px;
 }
+
+/* ─── Local AI Contextual Explainer & Chatbot Animations ─────────────────── */
+@keyframes fadeInPop {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes blink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.explainable-element {
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+
+.explainable-element:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.explainable-element:focus-visible {
+  outline: 2px solid #0284C7 !important;
+  outline-offset: 2px !important;
+}
+

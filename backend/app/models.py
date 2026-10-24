@@ -207,3 +207,17 @@ class FactorQueryResponse(BaseModel):
     available_years: List[str]
     scope2_grid_factors: List[CeaFactorMetadata]
     scope1_fuel_factors: List[Dict[str, Any]]
+
+
+# Re-export AI schemas for unified access
+from backend.app.schemas.ai import (
+    ExplainContext,
+    ExplainRequest,
+    ExplainResponse,
+    ChatMessage,
+    ChatRequest,
+    ChatResponse,
+    AIStatusResponse,
+    ChartSeriesInfo,
+)
+

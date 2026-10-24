@@ -1,12 +1,20 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   LayoutGrid, Cpu, Sliders, Leaf, FileText,
-  AlertTriangle, CheckCircle2, Zap, TrendingDown,
-  Printer, Download, ChevronRight, Box, Compass,
-  Home, LogOut, User, Gauge, Shield, Activity, ArrowRight, Globe,
-  RefreshCw, RotateCcw, ShieldAlert, Check, PanelRightClose, PanelRightOpen
+  AlertTriangle, CheckCircle2, Zap, TrendingDown, TrendingUp,
+  BarChart2, Calendar, ChevronDown, ChevronRight, Bell,
+  Building2, Sun, CloudRain, Coins, Info, Wrench,
+  Flame, Fan, Server, Box, Compass, LogOut, User, RotateCcw,
+  PanelRightClose, PanelRightOpen, Activity, ArrowRight,
+  Shield, Gauge, Printer, Download, ShieldAlert
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid,
+  Tooltip as RechartsTooltip, ResponsiveContainer,
+  PieChart, Pie, Cell
+} from 'recharts';
+import factoryHeroImg from './assets/hero.png';
 import ScadaFloorMap from './components/ScadaFloorMap';
 import Factory3DScene from './components/Factory3D/Factory3DScene';
 import HomePage from './components/HomePage/HomePage';
@@ -14,6 +22,10 @@ import LoginModal from './components/Auth/LoginModal';
 import DigitalTwinView from './components/DigitalTwin/DigitalTwinView';
 import CarbonAccountingView from './components/Carbon/CarbonAccountingView';
 import AIAnomalyIntelligence from './components/AIAnomaly/AIAnomalyIntelligence';
+import { AIExplainProvider } from './components/AIExplain/AIExplainContext';
+import { AIExplainPopover } from './components/AIExplain/AIExplainPopover';
+import { Explainable } from './components/AIExplain/Explainable';
+import { FloatingChatbot } from './components/AIChat/FloatingChatbot';
 import { DemandAreaChart, ComparisonLineChart, ScopePie, MachineEnergyDonut, ProductiveVsWasteBar } from './components/Charts';
 import {
   PLANT, ASSETS, HOURLY_BASE, CARBON,
@@ -202,6 +214,23 @@ function TeleBar({
   );
 }
 
+// ─── 24h Demand Data & Distribution Constants matching reference ─────────────
+const OVERVIEW_24H_DEMAND = [
+  { time: '00:00', compressor: 18, cnc: 0, furnace: 0, cooling: 14 },
+  { time: '02:00', compressor: 38, cnc: 0, furnace: 0, cooling: 16 },
+  { time: '04:00', compressor: 42, cnc: 4, furnace: 18, cooling: 20 },
+  { time: '06:00', compressor: 32, cnc: 52, furnace: 70, cooling: 30 },
+  { time: '08:00', compressor: 44, cnc: 84, furnace: 145, cooling: 36 },
+  { time: '10:00', compressor: 48, cnc: 92, furnace: 160, cooling: 39 },
+  { time: '12:00', compressor: 38, cnc: 86, furnace: 162, cooling: 38 },
+  { time: '14:00', compressor: 42, cnc: 88, furnace: 148, cooling: 37 },
+  { time: '16:00', compressor: 46, cnc: 94, furnace: 158, cooling: 39 },
+  { time: '18:00', compressor: 40, cnc: 85, furnace: 140, cooling: 36 },
+  { time: '20:00', compressor: 22, cnc: 12, furnace: 42, cooling: 22 },
+  { time: '22:00', compressor: 18, cnc: 0, furnace: 0, cooling: 16 },
+  { time: '24:00', compressor: 18, cnc: 0, furnace: 0, cooling: 14 },
+];
+
 function OverviewView({
   setView,
   carbonData,
@@ -211,297 +240,822 @@ function OverviewView({
   carbonData: CarbonCalculateResponse | null;
   gridEF: number;
 }) {
-  const scope2Emissions = carbonData?.gross_footprint.scope2?.emissions_total_co2e_t.toFixed(2) ?? '9.10';
-  const factorUsed = (carbonData?.gross_footprint.scope2?.factor_metadata.selected_factor ?? gridEF).toFixed(2);
-
-  // Asset color map for visual consistency
-  const assetVisuals = ASSETS.map(a => ({
-    id: a.id,
-    name: a.name,
-    energyKwh: a.energyKwh,
-    currentKw: a.currentKw,
-    color: ASSET_COLORS[a.id] || '#0284c7',
-  }));
-
   return (
-    <div className="scroll-area" style={{ paddingBottom: 24 }}>
-      {/* ─── Top Control & Status Bar ────────────────────────────────────────── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+    <div className="scroll-area" style={{ background: '#F4EEE5', minHeight: '100%', padding: '16px 22px 32px' }}>
+      {/* ─── Top Header: Title & Time Controls ────────────────────────────── */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+        <div>
+          <h1 style={{ fontSize: 25, fontWeight: 700, color: '#1E252D', margin: 0, letterSpacing: '-0.015em' }}>
+            Plant overview
+          </h1>
+          <div style={{ fontSize: 13, color: '#6B7280', marginTop: 3 }}>
+            Energy, cost and machine health at a glance
+          </div>
+        </div>
+
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--slate-400)', letterSpacing: 2, textTransform: 'uppercase', fontWeight: 600 }}>
-            PrecisionWorks Manufacturing — Plant Dashboard
+          {/* Calendar & Timestamp Pill */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            background: '#FFFFFF', border: '1px solid #EAE3D7',
+            borderRadius: 8, padding: '5px 12px',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
+          }}>
+            <Calendar size={14} color="#64748B" />
+            <div style={{ display: 'flex', flexDirection: 'column', fontSize: 11, fontWeight: 600, color: '#1E252D', lineHeight: 1.25 }}>
+              <span>Tue, 30 Jan 2024</span>
+              <span style={{ fontSize: 9.5, color: '#64748B', fontWeight: 500 }}>19:32:58 IST</span>
+            </div>
           </div>
-          <span style={{ fontSize: 9, padding: '2px 8px', borderRadius: 9999, backgroundColor: 'rgba(16, 185, 129, 0.12)', color: '#059669', border: '1px solid rgba(16, 185, 129, 0.25)', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
-            4 ASSETS ONLINE
-          </span>
-        </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn btn-amber btn-sm" onClick={() => setView('anomalies')}>
-            <AlertTriangle size={11} />
-            <span>Active AI Anomalies</span>
-          </button>
-          <button className="btn btn-cyan btn-sm" onClick={() => setView('simulator')}>
-            <Sliders size={11} />
-            <span>Open Simulator</span>
-          </button>
-        </div>
-      </div>
 
-      {/* ─── 4 Executive Visual KPI Cards ───────────────────────────────────── */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))',
-          gap: 12,
-          marginBottom: 14,
-        }}
-      >
-        {/* Card 1: Baseline Energy & Spend */}
-        <div className="kpi-card" style={{ ['--kpi-color' as any]: '#0284c7' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div className="kpi-label">Baseline Energy &amp; Spend</div>
-            <Zap size={13} color="#0284c7" />
-          </div>
-          <div className="kpi-value" style={{ color: '#0284c7', margin: '4px 0 2px' }}>
-            12,480 <span className="kpi-unit">kWh</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11, color: '#64748b' }}>
-            <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--white)' }}>₹99,840</span>
-            <span style={{ fontSize: 9.5, color: '#94a3b8' }}>₹8.00/kWh avg</span>
-          </div>
-        </div>
-
-        {/* Card 2: Recoverable Waste & Savings */}
-        <div className="kpi-card" style={{ ['--kpi-color' as any]: '#10b981' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div className="kpi-label">Potential Cost Savings</div>
-            <TrendingDown size={13} color="#10b981" />
-          </div>
-          <div className="kpi-value" style={{ color: '#10b981', margin: '4px 0 2px' }}>
-            ₹7,987 <span className="kpi-unit">/period</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11 }}>
-            <span className="kpi-change" style={{ color: '#10b981', fontWeight: 700 }}>998.4 kWh (8% Cut)</span>
-            <span style={{ fontSize: 9.5, color: '#059669', fontWeight: 600 }}>Payback &lt; 14d</span>
-          </div>
-        </div>
-
-        {/* Card 3: Scope 2 Carbon */}
-        <div className="kpi-card" style={{ ['--kpi-color' as any]: '#8b5cf6' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div className="kpi-label">Scope 2 Carbon Footprint</div>
-            <Leaf size={13} color="#8b5cf6" />
-          </div>
-          <div className="kpi-value" style={{ color: '#8b5cf6', margin: '4px 0 2px' }}>
-            {scope2Emissions} <span className="kpi-unit">tCO₂e</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11 }}>
-            <span style={{ color: '#10b981', fontWeight: 600, fontSize: 10 }}>-727.7 kg reducible</span>
-            <span style={{ fontSize: 9.5, color: '#94a3b8', fontFamily: 'var(--font-mono)' }}>CEA {factorUsed}</span>
-          </div>
-        </div>
-
-        {/* Card 4: Power Factor & Health */}
-        <div className="kpi-card" style={{ ['--kpi-color' as any]: '#f59e0b' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div className="kpi-label">Plant Power Factor</div>
-            <Gauge size={13} color="#f59e0b" />
-          </div>
-          <div className="kpi-value" style={{ color: '#f59e0b', margin: '4px 0 2px' }}>
-            0.91 <span className="kpi-unit">/ 0.95 Target</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11 }}>
-            <span className="kpi-change warn" style={{ fontSize: 9.5 }}>1 Dragging Unit (0.78)</span>
-            <span style={{ fontSize: 9.5, color: '#f59e0b', fontWeight: 600 }}>Avoid ₹3.2k Penalty</span>
+          {/* Timeframe Dropdown */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            background: '#FFFFFF', border: '1px solid #EAE3D7',
+            borderRadius: 8, padding: '8px 14px',
+            fontSize: 12, fontWeight: 500, color: '#334155',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.03)', cursor: 'pointer'
+          }}>
+            <span>Last 24 Hours</span>
+            <ChevronDown size={12} color="#64748B" />
           </div>
         </div>
       </div>
 
-      {/* ─── Visual Productive vs Idle Waste Progress ───────────────────────── */}
-      <div className="panel" style={{ padding: '12px 16px', marginBottom: 14 }}>
-        <ProductiveVsWasteBar productiveKwh={11481.6} wasteKwh={998.4} />
+      {/* ─── Row 1: Top 4 KPI Metric Cards ─────────────────────────────────── */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(4, 1fr)',
+        gap: 12,
+        marginBottom: 14
+      }}>
+        {/* Card 1: Energy today */}
+        <Explainable
+          context={{
+            component_type: 'kpi',
+            title: 'Energy today',
+            identifier: 'kpi_energy_today',
+            value: '12,480',
+            unit: 'kWh',
+            trend: '+8.4% vs yesterday',
+            time_range: 'Last 24 Hours',
+            timestamp: '19:32:58 IST',
+            site: 'PrecisionWorks Mfg',
+            evidence: { energy_kwh: 12480, delta_pct: 8.4 },
+          }}
+        >
+          <div style={{ background: '#FFFFFF', border: '1px solid #EAE3D7', borderRadius: 12, padding: '14px 16px', boxShadow: '0 1px 3px rgba(0,0,0,0.03)', height: '100%' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: '#E0F2FE', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Zap size={16} color="#0284C7" />
+              </div>
+              <span style={{ fontSize: 12, fontWeight: 500, color: '#64748B' }}>Energy today</span>
+            </div>
+            <div style={{ fontSize: 24, fontWeight: 700, color: '#1E252D', marginBottom: 8 }}>
+              12,480 <span style={{ fontSize: 13, fontWeight: 500, color: '#1E252D' }}>kWh</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: '#10B981', display: 'flex', alignItems: 'center', gap: 2 }}>
+                ↑ +8.4% vs yesterday
+              </span>
+              <BarChart2 size={14} color="#0284C7" />
+            </div>
+          </div>
+        </Explainable>
+
+        {/* Card 2: Energy cost */}
+        <Explainable
+          context={{
+            component_type: 'kpi',
+            title: 'Energy cost',
+            identifier: 'kpi_energy_cost',
+            value: '₹23,044',
+            unit: 'INR',
+            trend: '+6.1% vs yesterday',
+            time_range: 'Last 24 Hours',
+            timestamp: '19:32:58 IST',
+            site: 'PrecisionWorks Mfg',
+            evidence: { cost_inr: 23044, avg_tariff_inr: 9.0 },
+          }}
+        >
+          <div style={{ background: '#FFFFFF', border: '1px solid #EAE3D7', borderRadius: 12, padding: '14px 16px', boxShadow: '0 1px 3px rgba(0,0,0,0.03)', height: '100%' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: '#F3E8FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Coins size={16} color="#9333EA" />
+              </div>
+              <span style={{ fontSize: 12, fontWeight: 500, color: '#64748B' }}>Energy cost</span>
+            </div>
+            <div style={{ fontSize: 24, fontWeight: 700, color: '#1E252D', marginBottom: 8 }}>
+              ₹23,044
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: '#EF4444', display: 'flex', alignItems: 'center', gap: 2 }}>
+                ↑ +6.1% vs yesterday
+              </span>
+              <BarChart2 size={14} color="#0284C7" />
+            </div>
+          </div>
+        </Explainable>
+
+        {/* Card 3: Potential savings */}
+        <Explainable
+          context={{
+            component_type: 'kpi',
+            title: 'Potential savings',
+            identifier: 'kpi_potential_savings',
+            value: '₹7,987',
+            unit: 'INR / period',
+            trend: '998 kWh (8% reduction)',
+            time_range: 'Last 24 Hours',
+            site: 'PrecisionWorks Mfg',
+            evidence: { savings_inr: 7987, savings_kwh: 998, reduction_pct: 8.0 },
+          }}
+        >
+          <div style={{ background: '#FFFFFF', border: '1px solid #EAE3D7', borderRadius: 12, padding: '14px 16px', boxShadow: '0 1px 3px rgba(0,0,0,0.03)', height: '100%' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: '#DCFCE7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Leaf size={16} color="#16A34A" />
+              </div>
+              <span style={{ fontSize: 12, fontWeight: 500, color: '#64748B' }}>Potential savings</span>
+            </div>
+            <div style={{ fontSize: 24, fontWeight: 700, color: '#1E252D', marginBottom: 8 }}>
+              ₹7,987 <span style={{ fontSize: 11, fontWeight: 400, color: '#64748B' }}>/ period</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: '#16A34A' }}>
+                998 kWh (8% reduction)
+              </span>
+              <BarChart2 size={14} color="#16A34A" />
+            </div>
+          </div>
+        </Explainable>
+
+        {/* Card 4: Carbon footprint */}
+        <Explainable
+          context={{
+            component_type: 'kpi',
+            title: 'Carbon footprint',
+            identifier: 'kpi_carbon_footprint',
+            value: '14.47',
+            unit: 'tCO₂e',
+            trend: '-12.6% vs baseline',
+            time_range: 'Last 24 Hours',
+            site: 'PrecisionWorks Mfg',
+            evidence: { footprint_tco2e: 14.47, cea_grid_factor: 0.716 },
+          }}
+        >
+          <div style={{ background: '#FFFFFF', border: '1px solid #EAE3D7', borderRadius: 12, padding: '14px 16px', boxShadow: '0 1px 3px rgba(0,0,0,0.03)', height: '100%' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: '#FFEDD5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <CloudRain size={16} color="#EA580C" />
+              </div>
+              <span style={{ fontSize: 12, fontWeight: 500, color: '#64748B' }}>Carbon footprint</span>
+            </div>
+            <div style={{ fontSize: 24, fontWeight: 700, color: '#1E252D', marginBottom: 8 }}>
+              14.47 <span style={{ fontSize: 13, fontWeight: 500, color: '#1E252D' }}>tCO₂e</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: 11, fontWeight: 500, color: '#475569' }}>
+                -12.6% vs baseline
+              </span>
+              <BarChart2 size={14} color="#475569" />
+            </div>
+          </div>
+        </Explainable>
       </div>
 
-      {/* ─── Dual Charts Row: 24h Demand + Machine Breakdown ────────────────── */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
-          gap: 14,
-          marginBottom: 14,
-        }}
-      >
-        {/* Chart 1: 24h Stacked Demand Profile with ToD Tariff Zones */}
-        <div className="panel">
-          <div className="panel-hdr" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      {/* ─── Row 2: Dual Charts + Priority Alerts (3 Columns) ──────────────── */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '40% 35% 25%',
+        gap: 12,
+        marginBottom: 14,
+        alignItems: 'stretch'
+      }}>
+        {/* Chart 1: Energy demand today */}
+        <Explainable
+          context={{
+            component_type: 'chart',
+            title: 'Energy demand today',
+            identifier: 'chart_energy_demand_24h',
+            time_range: 'Last 24 Hours (00:00 - 24:00 IST)',
+            site: 'PrecisionWorks Mfg',
+            series: [
+              { name: 'Furnace', peak_value: 162, unit: 'kW', color: '#EF4444', summary_note: 'Daytime heating peak (08:00 - 18:00)' },
+              { name: 'CNC', peak_value: 94, unit: 'kW', color: '#0EA5E9', summary_note: 'Shift machining cycle' },
+              { name: 'Compressor', peak_value: 48, unit: 'kW', color: '#F59E0B', summary_note: 'Idle draw plateau during breaks' },
+              { name: 'Cooling', peak_value: 39, unit: 'kW', color: '#10B981', summary_note: 'Continuous thermal loop' },
+            ],
+          }}
+          style={{ height: '100%' }}
+        >
+          <div style={{
+            background: '#FFFFFF', border: '1px solid #EAE3D7',
+            borderRadius: 12, padding: '14px 16px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+            display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+            height: '100%'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <TrendingUp size={15} color="#0284C7" />
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#1E252D' }}>Energy demand today</div>
+                  <div style={{ fontSize: 11, color: '#64748B' }}>Total plant load by major assets</div>
+                </div>
+              </div>
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                background: '#FFFFFF', border: '1px solid #EAE3D7',
+                borderRadius: 6, padding: '3px 9px',
+                fontSize: 11, fontWeight: 500, color: '#334155', cursor: 'pointer'
+              }}>
+                <span>All Assets</span>
+                <ChevronDown size={11} color="#64748B" />
+              </div>
+            </div>
+
+            {/* Area Chart with Monotone Smooth Splines */}
+            <div style={{ width: '100%', height: 165 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={OVERVIEW_24H_DEMAND} margin={{ top: 8, right: 10, left: -22, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="gFurn" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#EF4444" stopOpacity={0.22} />
+                      <stop offset="95%" stopColor="#EF4444" stopOpacity={0.01} />
+                    </linearGradient>
+                    <linearGradient id="gCnc" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#0EA5E9" stopOpacity={0.22} />
+                      <stop offset="95%" stopColor="#0EA5E9" stopOpacity={0.01} />
+                    </linearGradient>
+                    <linearGradient id="gComp" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.22} />
+                      <stop offset="95%" stopColor="#F59E0B" stopOpacity={0.01} />
+                    </linearGradient>
+                    <linearGradient id="gCool" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.22} />
+                      <stop offset="95%" stopColor="#10B981" stopOpacity={0.01} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid stroke="#F1F5F9" vertical={false} strokeDasharray="3 3" />
+                  <XAxis dataKey="time" tick={{ fill: '#64748B', fontSize: 9.5 }} />
+                  <YAxis domain={[0, 180]} ticks={[0, 45, 90, 135, 180]} tick={{ fill: '#64748B', fontSize: 9.5 }} label={{ value: 'Power (kW)', angle: -90, position: 'insideLeft', offset: 30, fill: '#64748B', fontSize: 9.5 }} />
+                  <RechartsTooltip />
+                  <Area type="monotone" dataKey="furnace" name="Furnace" stroke="#EF4444" strokeWidth={1.8} fill="url(#gFurn)" dot={false} />
+                  <Area type="monotone" dataKey="cnc" name="CNC" stroke="#0EA5E9" strokeWidth={1.8} fill="url(#gCnc)" dot={false} />
+                  <Area type="monotone" dataKey="compressor" name="Compressor" stroke="#F59E0B" strokeWidth={1.8} fill="url(#gComp)" dot={false} />
+                  <Area type="monotone" dataKey="cooling" name="Cooling" stroke="#10B981" strokeWidth={1.8} fill="url(#gCool)" dot={false} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Legend Matching Image */}
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 14, marginTop: 6, fontSize: 11, color: '#334155' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#F59E0B' }} /> Compressor
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#0EA5E9' }} /> CNC
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#EF4444' }} /> Furnace
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#10B981' }} /> Cooling
+              </span>
+            </div>
+          </div>
+        </Explainable>
+
+        {/* Chart 2: Asset energy distribution */}
+        <Explainable
+          context={{
+            component_type: 'chart',
+            title: 'Asset energy distribution',
+            identifier: 'chart_asset_distribution',
+            value: '12,480 kWh Total',
+            site: 'PrecisionWorks Mfg',
+            series: [
+              { name: 'Air Compressor', current_value: 3120, unit: 'kWh', summary_note: '25%' },
+              { name: 'CNC Machining Center', current_value: 4200, unit: 'kWh', summary_note: '34%' },
+              { name: 'Industrial Heat Furnace', current_value: 3600, unit: 'kWh', summary_note: '29%' },
+              { name: 'Chilled Water Cooling', current_value: 1560, unit: 'kWh', summary_note: '13%' },
+            ],
+          }}
+          style={{ height: '100%' }}
+        >
+          <div style={{
+            background: '#FFFFFF', border: '1px solid #EAE3D7',
+            borderRadius: 12, padding: '14px 16px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+            display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+            height: '100%'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <BarChart2 size={15} color="#0284C7" />
+                <span style={{ fontSize: 14, fontWeight: 700, color: '#1E252D' }}>Asset energy distribution</span>
+              </div>
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                background: '#FFFFFF', border: '1px solid #EAE3D7',
+                borderRadius: 6, padding: '3px 9px',
+                fontSize: 11, fontWeight: 500, color: '#334155', cursor: 'pointer'
+              }}>
+                <span>Today</span>
+                <ChevronDown size={11} color="#64748B" />
+              </div>
+            </div>
+
+            {/* Donut Chart & Side Breakdown */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1 }}>
+              <div style={{ width: 140, height: 140, position: 'relative', flexShrink: 0 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={[
+                        { name: 'CNC Machining Center', value: 4200, color: '#0EA5E9' },
+                        { name: 'Industrial Heat Furnace', value: 3600, color: '#EF4444' },
+                        { name: 'Air Compressor', value: 3120, color: '#F59E0B' },
+                        { name: 'Chilled Water Cooling', value: 1560, color: '#10B981' },
+                      ]}
+                      cx="50%" cy="50%"
+                      innerRadius={46} outerRadius={68}
+                      paddingAngle={2}
+                      dataKey="value"
+                      stroke="#FFFFFF"
+                      strokeWidth={2}
+                    >
+                      <Cell fill="#0EA5E9" />
+                      <Cell fill="#EF4444" />
+                      <Cell fill="#F59E0B" />
+                      <Cell fill="#10B981" />
+                    </Pie>
+                    <RechartsTooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div style={{
+                  position: 'absolute', top: '50%', left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  textAlign: 'center', pointerEvents: 'none', lineHeight: 1.15
+                }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#1E252D' }}>12,480</div>
+                  <div style={{ fontSize: 9.5, color: '#64748B' }}>kWh</div>
+                  <div style={{ fontSize: 9.5, color: '#94A3B8' }}>Total</div>
+                </div>
+              </div>
+
+              {/* Table Breakdown matching screenshot */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 7, flex: 1 }}>
+                {[
+                  { label: 'Air Compressor', kwh: '3,120 kWh', pct: '25%', color: '#F59E0B', pctColor: '#D97706' },
+                  { label: 'CNC Machining Center', kwh: '4,200 kWh', pct: '34%', color: '#0EA5E9', pctColor: '#0EA5E9' },
+                  { label: 'Industrial Heat Furnace', kwh: '3,600 kWh', pct: '29%', color: '#EF4444', pctColor: '#EF4444' },
+                  { label: 'Chilled Water Cooling', kwh: '1,560 kWh', pct: '13%', color: '#10B981', pctColor: '#10B981' },
+                ].map((item, idx) => (
+                  <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 10.5 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                      <span style={{ width: 8, height: 8, borderRadius: 2, background: item.color, flexShrink: 0 }} />
+                      <span style={{ color: '#334155', fontWeight: 500, whiteSpace: 'nowrap' }}>{item.label}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                      <span style={{ color: '#64748B', fontSize: 10 }}>{item.kwh}</span>
+                      <span style={{ color: item.pctColor, fontWeight: 700, width: 26, textAlign: 'right' }}>{item.pct}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </Explainable>
+
+        {/* Priority Alerts Card */}
+        <div style={{
+          background: '#FFFFFF', border: '1px solid #EAE3D7',
+          borderRadius: 12, padding: '14px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+          display: 'flex', flexDirection: 'column'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Zap size={12} color="#0284c7" />
-              <span>24-Hour Demand Profile (All 4 Assets)</span>
+              <Bell size={14} color="#EF4444" fill="#EF4444" />
+              <span style={{ fontSize: 13.5, fontWeight: 700, color: '#1E252D' }}>Priority alerts</span>
             </div>
-            {/* Visual ToD Tariff Zone Pills */}
-            <div style={{ display: 'flex', gap: 4 }}>
-              <span style={{ fontSize: 8.5, padding: '2px 6px', borderRadius: 4, backgroundColor: 'rgba(16,185,129,0.12)', color: '#059669', border: '1px solid rgba(16,185,129,0.25)', fontWeight: 700 }}>
-                🌙 Off-Peak (₹4.5)
-              </span>
-              <span style={{ fontSize: 8.5, padding: '2px 6px', borderRadius: 4, backgroundColor: 'rgba(2,132,199,0.12)', color: '#0284c7', border: '1px solid rgba(2,132,199,0.25)', fontWeight: 700 }}>
-                ☀️ Normal (₹8)
-              </span>
-              <span style={{ fontSize: 8.5, padding: '2px 6px', borderRadius: 4, backgroundColor: 'rgba(239,68,68,0.12)', color: '#dc2626', border: '1px solid rgba(239,68,68,0.25)', fontWeight: 700 }}>
-                ⚡ Peak (₹10.5)
-              </span>
-            </div>
-          </div>
-          <div style={{ padding: '10px 4px 4px' }}>
-            <DemandAreaChart data={HOURLY_BASE} />
-          </div>
-        </div>
-
-        {/* Chart 2: Machine Energy Share Donut Chart */}
-        <div className="panel">
-          <div className="panel-hdr" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Activity size={12} color="#f59e0b" />
-              <span>Asset Energy Distribution (% of Factory)</span>
-            </div>
-            <span style={{ fontSize: 9.5, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)' }}>
-              12,480 kWh Total
+            <span onClick={() => setView('anomalies')} style={{ fontSize: 11, fontWeight: 600, color: '#0284C7', cursor: 'pointer' }}>
+              View all →
             </span>
           </div>
-          <div style={{ padding: '12px 14px' }}>
-            <MachineEnergyDonut assets={assetVisuals} />
-          </div>
-        </div>
-      </div>
 
-      {/* ─── Visual Anomaly & Recommended Fix Card ───────────────────────────── */}
-      <div
-        className="panel"
-        style={{
-          borderLeft: '4px solid #f59e0b',
-          padding: '14px 18px',
-          marginBottom: 14,
-          backgroundColor: 'rgba(245, 158, 11, 0.04)',
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 10 }}>
-          <div style={{ flex: 1, minWidth: 260 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 4, backgroundColor: '#fef3c7', color: '#92400e', fontSize: 10, fontWeight: 700 }}>
-                <AlertTriangle size={11} />
-                CRITICAL LEAK IDENTIFIED
-              </span>
-              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--white)' }}>
-                Air Compressor (ELGi EN 45) Unloaded Waste
-              </span>
-            </div>
-            <div style={{ fontSize: 11.5, color: '#475569', lineHeight: 1.5, marginBottom: 8 }}>
-              Running unloaded at <strong>18 kW</strong> during shift handover and lunch breaks (3.2 hrs/day = <strong>998.4 kWh/period</strong>). Discharge pressure locked at <strong>7.2 bar</strong> (0.4 bar excess) and Power Factor dragged down to <strong>0.78</strong>.
-            </div>
-            {/* Visual Fix Comparison */}
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <div style={{ padding: '4px 10px', borderRadius: 6, backgroundColor: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.25)', fontSize: 10.5, color: '#065f46', fontWeight: 600 }}>
-                ✓ Cutoff Relay (5-min idle cutoff)
-              </div>
-              <div style={{ padding: '4px 10px', borderRadius: 6, backgroundColor: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.25)', fontSize: 10.5, color: '#065f46', fontWeight: 600 }}>
-                ✓ Lower setpoint to 6.8 bar
-              </div>
-              <div style={{ padding: '4px 10px', borderRadius: 6, backgroundColor: 'rgba(2, 132, 199, 0.1)', border: '1px solid rgba(2, 132, 199, 0.25)', fontSize: 10.5, color: '#0284c7', fontWeight: 600 }}>
-                ✓ Avoids ₹7,987 / mo &amp; 728 kg CO₂e
-              </div>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignSelf: 'center' }}>
-            <button
-              className="btn btn-cyan btn-sm"
-              onClick={() => setView('simulator')}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', fontWeight: 700 }}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {/* Alert 1 */}
+            <Explainable
+              context={{
+                component_type: 'alert',
+                title: 'Air compressor running unloaded',
+                identifier: 'alert_compressor_unloaded',
+                asset_id: 'AIR-COMP-01',
+                asset_name: 'Air Compressor (ELGi)',
+                severity: 'critical',
+                value: '18 kW idle draw',
+                evidence: { idle_draw_kw: 18, idle_hrs_per_day: 3.2, waste_kwh: 998, cost_inr: 7987 },
+              }}
             >
-              <Sliders size={12} />
-              <span>Simulate Fix in Digital Twin</span>
-              <ArrowRight size={12} />
-            </button>
-            <button
-              className="btn btn-outline btn-sm"
-              onClick={() => setView('scada')}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px', fontSize: 10.5 }}
-            >
-              <Box size={11} />
-              <span>Inspect in 3D Factory</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* ─── Visual Machine Operational Status Matrix ────────────────────────── */}
-      <div className="panel">
-        <div className="panel-hdr" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span>Asset Operational Status &amp; Real-Time Load</span>
-          <span style={{ fontSize: 9.5, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)' }}>
-            4 MONITORED UNITS
-          </span>
-        </div>
-        <div style={{ padding: '8px 12px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 10 }}>
-            {ASSETS.map(a => {
-              const loadPct = Math.min(100, Math.round((a.currentKw / a.ratedKw) * 100));
-              const color = ASSET_COLORS[a.id] || '#0284c7';
-              return (
-                <div
-                  key={a.id}
-                  style={{
-                    padding: '10px 14px',
-                    borderRadius: 10,
-                    backgroundColor: 'rgba(0,0,0,0.02)',
-                    border: '1px solid rgba(0,0,0,0.06)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 8,
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--white)' }}>{a.name}</div>
-                      <div style={{ fontSize: 9.5, color: '#64748b', fontFamily: 'var(--font-mono)' }}>{a.model}</div>
-                    </div>
-                    <span className={`badge badge-${a.status === 'OPTIMAL' ? 'emerald' : a.status === 'WARNING' ? 'amber' : 'red'}`}>
-                      {a.status}
+              <div
+                style={{
+                  background: '#FEF2F2', border: '1px solid #FECACA',
+                  borderRadius: 8, padding: '9px 10px', cursor: 'pointer'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <AlertTriangle size={13} color="#EF4444" />
+                    <span style={{ fontSize: 11, fontWeight: 700, color: '#991B1B' }}>Air compressor running unloaded</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ fontSize: 8.5, fontWeight: 700, background: '#EF4444', color: '#FFFFFF', padding: '1px 5px', borderRadius: 3 }}>
+                      CRITICAL
                     </span>
-                  </div>
-
-                  {/* Load progress bar */}
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10.5, marginBottom: 3 }}>
-                      <span style={{ color: '#64748b' }}>Active Load</span>
-                      <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color }}>
-                        {a.currentKw} kW / {a.ratedKw} kW ({loadPct}%)
-                      </span>
-                    </div>
-                    <div style={{ height: 6, borderRadius: 3, backgroundColor: 'rgba(0,0,0,0.08)', overflow: 'hidden' }}>
-                      <div
-                        style={{
-                          height: '100%',
-                          width: `${loadPct}%`,
-                          backgroundColor: color,
-                          borderRadius: 3,
-                          transition: 'width 0.3s ease',
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 10.5, paddingTop: 4, borderTop: '1px solid rgba(0,0,0,0.04)' }}>
-                    <div style={{ color: '#64748b' }}>
-                      Energy: <strong style={{ color: 'var(--white)', fontFamily: 'var(--font-mono)' }}>{a.energyKwh.toLocaleString()} kWh</strong>
-                    </div>
-                    <div style={{ color: a.pf < 0.85 ? '#d97706' : '#059669', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
-                      P.F. {a.pf}
-                    </div>
+                    <ChevronRight size={12} color="#991B1B" />
                   </div>
                 </div>
-              );
-            })}
+                <div style={{ fontSize: 10, color: '#7F1D1D', lineHeight: 1.35 }}>
+                  18 kW idle draw during 3.2 hrs/day break periods. Estimated waste: 998 kWh/period (₹7,987).
+                </div>
+              </div>
+            </Explainable>
+
+            {/* Alert 2 */}
+            <Explainable
+              context={{
+                component_type: 'alert',
+                title: 'Furnace high peak demand',
+                identifier: 'alert_furnace_peak',
+                asset_id: 'FURNACE-01',
+                asset_name: 'Industrial Heat Furnace',
+                severity: 'high',
+                value: '85 kW concurrent peak',
+                evidence: { peak_kw: 85, peak_window: '09:00-12:00 IST', reduction_potential_pct: 18 },
+              }}
+            >
+              <div
+                style={{
+                  background: '#FFFBEB', border: '1px solid #FDE68A',
+                  borderRadius: 8, padding: '9px 10px', cursor: 'pointer'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <AlertTriangle size={13} color="#F59E0B" />
+                    <span style={{ fontSize: 11, fontWeight: 700, color: '#92400E' }}>Furnace high peak demand</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ fontSize: 8.5, fontWeight: 700, background: '#F59E0B', color: '#FFFFFF', padding: '1px 5px', borderRadius: 3 }}>
+                      HIGH
+                    </span>
+                    <ChevronRight size={12} color="#92400E" />
+                  </div>
+                </div>
+                <div style={{ fontSize: 10, color: '#92400E', lineHeight: 1.35 }}>
+                  85 kW concurrent with compressor peak (09:00-12:00). Staggering preheat by 45 min can reduce peak demand by 18%.
+                </div>
+              </div>
+            </Explainable>
+
+            {/* Alert 3 */}
+            <Explainable
+              context={{
+                component_type: 'alert',
+                title: 'CNC machining center optimal',
+                identifier: 'alert_cnc_optimal',
+                asset_id: 'CNC-01',
+                asset_name: 'CNC Machining Center',
+                severity: 'optimal',
+                value: '85% load',
+                evidence: { power_factor: 0.94, anomalies: 0 },
+              }}
+            >
+              <div
+                style={{
+                  background: '#EFF6FF', border: '1px solid #BFDBFE',
+                  borderRadius: 8, padding: '9px 10px', cursor: 'pointer'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <Info size={13} color="#3B82F6" />
+                    <span style={{ fontSize: 11, fontWeight: 700, color: '#1E40AF' }}>CNC machining center optimal</span>
+                  </div>
+                  <span style={{ fontSize: 8.5, fontWeight: 700, background: '#3B82F6', color: '#FFFFFF', padding: '1px 5px', borderRadius: 3 }}>
+                    INFO
+                  </span>
+                </div>
+                <div style={{ fontSize: 10, color: '#1E40AF', lineHeight: 1.35 }}>
+                  Stable operation. Power factor 0.94. No anomalies detected.
+                </div>
+              </div>
+            </Explainable>
           </div>
+        </div>
+      </div>
+
+      {/* ─── Row 3: Action Needed Golden Banner ────────────────────────────── */}
+      <Explainable
+        context={{
+          component_type: 'banner',
+          title: 'Action Needed: Air compressor running unloaded',
+          identifier: 'banner_action_compressor',
+          asset_id: 'AIR-COMP-01',
+          asset_name: 'Air Compressor (ELGi)',
+          severity: 'critical',
+          value: '18 kW idle draw, 3.2 hrs/day',
+          evidence: {
+            idle_kw: 18,
+            idle_hours: 3.2,
+            waste_kwh: 998,
+            cost_inr: 7987,
+            avoided_co2_kg: 727.7,
+          },
+        }}
+      >
+        <div style={{
+          background: '#FFFBEB',
+          border: '1.5px solid #FCD34D',
+          borderRadius: 12,
+          padding: '12px 18px',
+          marginBottom: 14,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 16
+        }}>
+          {/* Left: icon & text */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1 }}>
+            <div style={{
+              width: 32, height: 32, borderRadius: 8,
+              background: '#FEF3C7', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0
+            }}>
+              <AlertTriangle size={18} color="#D97706" />
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                <span style={{
+                  background: '#EA580C', color: '#FFFFFF',
+                  fontSize: 9, fontWeight: 800, padding: '2px 6px', borderRadius: 4, letterSpacing: '0.04em'
+                }}>
+                  ACTION NEEDED
+                </span>
+                <span style={{ fontSize: 13.5, fontWeight: 700, color: '#1E252D' }}>
+                  Air compressor running unloaded
+                </span>
+              </div>
+              <div style={{ fontSize: 11.5, color: '#475569' }}>
+                18 kW idle draw during shift handover and lunch breaks (3.2 hrs/day). Estimated waste: <strong>998 kWh/period (₹7,987 / 727.7 kg CO₂e)</strong>.
+              </div>
+            </div>
+          </div>
+
+          {/* Middle: 3 Metric Chips */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Zap size={14} color="#D97706" />
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#1E252D', lineHeight: 1.1 }}>18 kW</div>
+                <div style={{ fontSize: 9.5, color: '#64748B' }}>Idle draw</div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontSize: 13 }}>⏱</span>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#1E252D', lineHeight: 1.1 }}>3.2 hrs/day</div>
+                <div style={{ fontSize: 9.5, color: '#64748B' }}>Idle time</div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Coins size={14} color="#9333EA" />
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#1E252D', lineHeight: 1.1 }}>998 kWh</div>
+                <div style={{ fontSize: 9.5, color: '#64748B' }}>Estimated waste</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right: action buttons */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+            <button
+              onClick={() => setView('scada')}
+              style={{
+                background: '#0284C7', color: '#FFFFFF', border: 'none',
+                borderRadius: 8, padding: '8px 14px', fontSize: 11.5, fontWeight: 600,
+                display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer',
+                boxShadow: '0 1px 2px rgba(2, 132, 199, 0.2)'
+              }}
+            >
+              <Wrench size={13} />
+              <span>Inspect issue</span>
+            </button>
+            <button
+              onClick={() => setView('simulator')}
+              style={{
+                background: '#FFFFFF', color: '#0284C7', border: '1.5px solid #0284C7',
+                borderRadius: 8, padding: '7px 14px', fontSize: 11.5, fontWeight: 600,
+                display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer'
+              }}
+            >
+              <BarChart2 size={13} />
+              <span>Simulate fix</span>
+            </button>
+          </div>
+        </div>
+      </Explainable>
+
+      {/* ─── Row 4: Asset Operational Status Cards ─────────────────────────── */}
+      <div style={{ background: '#FFFFFF', border: '1px solid #EAE3D7', borderRadius: 12, padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <TrendingUp size={15} color="#0284C7" />
+            <div>
+              <span style={{ fontSize: 14, fontWeight: 700, color: '#1E252D' }}>Asset operational status</span>
+              <span style={{ fontSize: 11, color: '#64748B', marginLeft: 8 }}>Real-time load, energy and power factor</span>
+            </div>
+          </div>
+          <span onClick={() => setView('scada')} style={{ fontSize: 11, fontWeight: 600, color: '#0284C7', cursor: 'pointer' }}>
+            View all assets →
+          </span>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+          {/* Machine 1: Air Compressor */}
+          <Explainable
+            context={{
+              component_type: 'machine_card',
+              title: 'Air Compressor (ELGi)',
+              identifier: 'machine_air_compressor',
+              asset_id: 'AIR-COMP-01',
+              asset_name: 'Air Compressor (ELGi)',
+              severity: 'warning',
+              value: '40% Load',
+              evidence: { energy_today_kwh: 3120, power_factor: 0.78, status: 'WARNING' },
+            }}
+          >
+            <div style={{ border: '1px solid #EAE3D7', borderRadius: 8, padding: '12px 14px', background: '#FAFAF9', height: '100%' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Server size={14} color="#64748B" />
+                  <span style={{ fontSize: 11.5, fontWeight: 700, color: '#1E252D' }}>Air Compressor (ELGi)</span>
+                </div>
+                <span style={{ fontSize: 8.5, fontWeight: 700, background: '#FEF3C7', color: '#D97706', padding: '1px 6px', borderRadius: 3, border: '1px solid #FDE68A' }}>
+                  WARNING
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 4 }}>
+                <span style={{ fontSize: 16, fontWeight: 700, color: '#1E252D' }}>40%</span>
+                <span style={{ fontSize: 10, color: '#64748B' }}>Load</span>
+              </div>
+              <div style={{ width: '100%', height: 5, background: '#E2E8F0', borderRadius: 9999, overflow: 'hidden', marginBottom: 8 }}>
+                <div style={{ width: '40%', height: '100%', background: '#F59E0B' }} />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#64748B' }}>
+                <div>
+                  <div style={{ fontWeight: 700, color: '#1E252D' }}>3,120 kWh</div>
+                  <div style={{ fontSize: 9 }}>Energy (today)</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontWeight: 700, color: '#D97706' }}>0.78</div>
+                  <div style={{ fontSize: 9 }}>Power factor</div>
+                </div>
+              </div>
+            </div>
+          </Explainable>
+
+          {/* Machine 2: CNC Machining Center */}
+          <Explainable
+            context={{
+              component_type: 'machine_card',
+              title: 'CNC Machining Center',
+              identifier: 'machine_cnc',
+              asset_id: 'CNC-01',
+              asset_name: 'CNC Machining Center',
+              severity: 'optimal',
+              value: '85% Load',
+              evidence: { energy_today_kwh: 4200, power_factor: 0.94, status: 'OPTIMAL' },
+            }}
+          >
+            <div style={{ border: '1px solid #EAE3D7', borderRadius: 8, padding: '12px 14px', background: '#FAFAF9', height: '100%' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Cpu size={14} color="#64748B" />
+                  <span style={{ fontSize: 11.5, fontWeight: 700, color: '#1E252D' }}>CNC Machining Center</span>
+                </div>
+                <span style={{ fontSize: 8.5, fontWeight: 700, background: '#DCFCE7', color: '#15803D', padding: '1px 6px', borderRadius: 3, border: '1px solid #BBF7D0' }}>
+                  OPTIMAL
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 4 }}>
+                <span style={{ fontSize: 16, fontWeight: 700, color: '#1E252D' }}>85%</span>
+                <span style={{ fontSize: 10, color: '#64748B' }}>Load</span>
+              </div>
+              <div style={{ width: '100%', height: 5, background: '#E2E8F0', borderRadius: 9999, overflow: 'hidden', marginBottom: 8 }}>
+                <div style={{ width: '85%', height: '100%', background: '#0EA5E9' }} />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#64748B' }}>
+                <div>
+                  <div style={{ fontWeight: 700, color: '#1E252D' }}>4,200 kWh</div>
+                  <div style={{ fontSize: 9 }}>Energy (today)</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontWeight: 700, color: '#1E252D' }}>0.94</div>
+                  <div style={{ fontSize: 9 }}>Power factor</div>
+                </div>
+              </div>
+            </div>
+          </Explainable>
+
+          {/* Machine 3: Industrial Heat Furnace */}
+          <Explainable
+            context={{
+              component_type: 'machine_card',
+              title: 'Industrial Heat Furnace',
+              identifier: 'machine_furnace',
+              asset_id: 'FURNACE-01',
+              asset_name: 'Industrial Heat Furnace',
+              severity: 'high',
+              value: '100% Load',
+              evidence: { energy_today_kwh: 3600, power_factor: 0.88, status: 'HIGH DEMAND' },
+            }}
+          >
+            <div style={{ border: '1px solid #EAE3D7', borderRadius: 8, padding: '12px 14px', background: '#FAFAF9', height: '100%' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Flame size={14} color="#DC2626" />
+                  <span style={{ fontSize: 11.5, fontWeight: 700, color: '#1E252D' }}>Industrial Heat Furnace</span>
+                </div>
+                <span style={{ fontSize: 8.5, fontWeight: 700, background: '#FEE2E2', color: '#DC2626', padding: '1px 6px', borderRadius: 3, border: '1px solid #FECACA' }}>
+                  HIGH DEMAND
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 4 }}>
+                <span style={{ fontSize: 16, fontWeight: 700, color: '#1E252D' }}>100%</span>
+                <span style={{ fontSize: 10, color: '#64748B' }}>Load</span>
+              </div>
+              <div style={{ width: '100%', height: 5, background: '#E2E8F0', borderRadius: 9999, overflow: 'hidden', marginBottom: 8 }}>
+                <div style={{ width: '100%', height: '100%', background: '#EF4444' }} />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#64748B' }}>
+                <div>
+                  <div style={{ fontWeight: 700, color: '#1E252D' }}>3,600 kWh</div>
+                  <div style={{ fontSize: 9 }}>Energy (today)</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontWeight: 700, color: '#1E252D' }}>0.88</div>
+                  <div style={{ fontSize: 9 }}>Power factor</div>
+                </div>
+              </div>
+            </div>
+          </Explainable>
+
+          {/* Machine 4: Chilled Water Cooling */}
+          <Explainable
+            context={{
+              component_type: 'machine_card',
+              title: 'Chilled Water Cooling',
+              identifier: 'machine_chiller',
+              asset_id: 'CHILLER-01',
+              asset_name: 'Chilled Water Cooling System',
+              severity: 'optimal',
+              value: '79% Load',
+              evidence: { energy_today_kwh: 1560, power_factor: 0.92, status: 'OPTIMAL' },
+            }}
+          >
+            <div style={{ border: '1px solid #EAE3D7', borderRadius: 8, padding: '12px 14px', background: '#FAFAF9', height: '100%' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Fan size={14} color="#059669" />
+                  <span style={{ fontSize: 11.5, fontWeight: 700, color: '#1E252D' }}>Chilled Water Cooling</span>
+                </div>
+                <span style={{ fontSize: 8.5, fontWeight: 700, background: '#DCFCE7', color: '#15803D', padding: '1px 6px', borderRadius: 3, border: '1px solid #BBF7D0' }}>
+                  OPTIMAL
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 4 }}>
+                <span style={{ fontSize: 16, fontWeight: 700, color: '#1E252D' }}>79%</span>
+                <span style={{ fontSize: 10, color: '#64748B' }}>Load</span>
+              </div>
+              <div style={{ width: '100%', height: 5, background: '#E2E8F0', borderRadius: 9999, overflow: 'hidden', marginBottom: 8 }}>
+                <div style={{ width: '79%', height: '100%', background: '#10B981' }} />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#64748B' }}>
+                <div>
+                  <div style={{ fontWeight: 700, color: '#1E252D' }}>1,560 kWh</div>
+                  <div style={{ fontSize: 9 }}>Energy (today)</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontWeight: 700, color: '#1E252D' }}>0.92</div>
+                  <div style={{ fontSize: 9 }}>Power factor</div>
+                </div>
+              </div>
+            </div>
+          </Explainable>
         </div>
       </div>
     </div>
@@ -1467,7 +2021,7 @@ export default function App() {
     role: 'Plant SCADA Operator',
     name: 'Vikram Malhotra',
   });
-  const [view, setView] = useState<View>('scada');
+  const [view, setView] = useState<View>('overview');
   const [selectedAsset, setSelectedAsset] = useState<string | null>(null);
   const [mapMode, setMapMode] = useState<'3d' | '2d'>('3d');
   const [simMode, setSimMode] = useState(false);
@@ -1653,197 +2207,225 @@ export default function App() {
   }
 
   return (
-    <div className={`app-shell ${showInspector ? '' : 'no-inspector'}`}>
+    <AIExplainProvider>
+      <div className={`app-shell ${view === 'overview' ? 'overview-mode' : (showInspector ? '' : 'no-inspector')}`}>
 
-      {/* Top bar */}
+      {/* Top bar matching reference screenshot */}
       <header className="topbar">
         <div
           className="topbar-brand"
-          style={{ cursor: 'pointer' }}
+          style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}
           onClick={() => setCurrentPage('home')}
           title="Return to 3D Glide Home"
         >
-          <Zap size={16} />
-          WattWise AI
-          <span className="sub">// INDUSTRIAL EMS</span>
+          <Zap size={18} color="#1E252D" fill="#1E252D" />
+          <span style={{ fontWeight: 800, fontSize: 16, color: '#1E252D', letterSpacing: '0.04em' }}>WATTWISE AI</span>
+          <span style={{ color: '#0284C7', fontSize: 11, fontWeight: 700, letterSpacing: '0.05em' }}>// INDUSTRIAL EMS</span>
         </div>
-        <div className="topbar-center">
-          <button
-            onClick={() => setCurrentPage('home')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              background: '#ffffff',
-              border: '1px solid var(--border)',
-              borderRadius: 6,
-              padding: '4px 10px',
-              fontFamily: 'var(--font-ui)',
-              fontSize: 11,
-              fontWeight: 600,
-              color: '#334155',
-              cursor: 'pointer',
-            }}
-            title="Return to Presentation Landing Page"
-          >
-            <Compass size={12} color="var(--cyan)" /> Overview Showcase
-          </button>
-          <div className="topbar-divider" />
-          <span className="shift-badge">PrecisionWorks Mfg</span>
-          <div className="topbar-divider" />
-          <span className={`tod-badge ${(() => { const h = new Date().getHours(); return (h>=9&&h<=12)||(h>=18&&h<=21)?'peak':'offpeak'; })()}`}>
-            {(() => { const h = new Date().getHours(); return (h>=9&&h<=12)||(h>=18&&h<=21)?'PEAK TARIFF':'OFF-PEAK'; })()}
-          </span>
-          {backendStatus === 'CONNECTED' ? (
-            <span className="badge badge-emerald" title="FastAPI Carbon Engine Active at http://127.0.0.1:8000">
-              <CheckCircle2 size={9} />
-              BACKEND: CONNECTED
-            </span>
-          ) : (
-            <span className="badge badge-amber" title="FastAPI server offline. Using verified fallback demo simulator.">
-              <AlertTriangle size={9} />
-              BACKEND: OFFLINE (DEMO)
-            </span>
-          )}
-          {anyFix && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span className="badge badge-cyan" title="Simulation setpoints active">
-                <Sliders size={9} />
-                SCENARIO ACTIVE
-              </span>
-              <button
-                className="btn btn-outline btn-sm"
-                onClick={handleResetBaseline}
-                style={{ padding: '2px 8px', fontSize: 10, display: 'flex', alignItems: 'center', gap: 4 }}
-                title="Reset simulation parameters to historical baseline"
-              >
-                <RotateCcw size={9} />
-                Reset
-              </button>
-            </div>
-          )}
-        </div>
-        <div className="topbar-right">
-          <button
-            onClick={() => setShowInspector(!showInspector)}
-            style={{
-              background: '#ffffff',
-              border: '1px solid var(--border)',
-              borderRadius: 6,
-              padding: '4px 10px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              fontSize: 11,
-              fontWeight: 500,
-              color: '#334155',
-              fontFamily: 'var(--font-ui)',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
-            }}
-            title={showInspector ? "Collapse side inspector to expand workbench" : "Show side inspector"}
-          >
-            {showInspector ? <PanelRightClose size={13} color="var(--cyan)" /> : <PanelRightOpen size={13} color="var(--cyan)" />}
-            <span>{showInspector ? 'Hide Side Panel' : 'Show Side Panel'}</span>
-          </button>
-          <div className="topbar-divider" />
-          <span className="topbar-clock" style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--slate-500)' }}>
-            {new Date().toTimeString().slice(0,8)}
-          </span>
-          <div className="topbar-divider" />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#334155' }}>
-            <User size={13} color="var(--cyan)" />
-            <span style={{ fontWeight: 600 }}>{currentUser?.name || 'Operator'}</span>
+
+        <div className="topbar-center" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {/* Factory Pill */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            background: '#FFFFFF', border: '1px solid #EAE3D7',
+            borderRadius: 9999, padding: '5px 12px',
+            fontSize: 11.5, fontWeight: 600, color: '#1E252D',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.03)', cursor: 'pointer'
+          }}>
+            <Building2 size={13} color="#475569" />
+            <span>PrecisionWorks Mfg</span>
+            <ChevronDown size={11} color="#64748B" />
           </div>
-          <button
-            onClick={() => setCurrentPage('login')}
-            title="Switch User / Sign Out"
-            style={{
-              background: 'transparent',
-              border: '1px solid var(--border)',
-              borderRadius: 6,
-              padding: '4px 8px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-              fontSize: 10,
-              color: 'var(--slate-500)',
-              fontFamily: 'var(--font-mono)',
-            }}
+
+          {/* Backend Status Pill */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            background: '#DCFCE7', border: '1px solid #86EFAC',
+            borderRadius: 9999, padding: '4px 10px',
+            fontSize: 11, fontWeight: 600, color: '#15803D'
+          }}>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#22C55E' }} />
+            <span>Backend: {backendStatus === 'CONNECTED' ? 'Connected' : 'Offline'}</span>
+          </div>
+
+          {/* Shift Pill */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            background: '#FEF3C7', border: '1px solid #FDE68A',
+            borderRadius: 9999, padding: '4px 10px',
+            fontSize: 11, fontWeight: 600, color: '#B45309'
+          }}>
+            <Sun size={13} color="#D97706" />
+            <span>Shift: DAY-B</span>
+          </div>
+        </div>
+
+        <div className="topbar-right" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          {view !== 'overview' && (
+            <button
+              onClick={() => setShowInspector(!showInspector)}
+              style={{
+                background: '#ffffff',
+                border: '1px solid var(--border)',
+                borderRadius: 6,
+                padding: '4px 10px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                fontSize: 11,
+                fontWeight: 500,
+                color: '#334155',
+                fontFamily: 'var(--font-ui)',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+              }}
+              title={showInspector ? "Collapse side inspector" : "Show side inspector"}
+            >
+              {showInspector ? <PanelRightClose size={13} color="var(--cyan)" /> : <PanelRightOpen size={13} color="var(--cyan)" />}
+              <span>{showInspector ? 'Hide Side Panel' : 'Show Side Panel'}</span>
+            </button>
+          )}
+
+          {/* Priority Alert Bell with Red Notification Dot */}
+          <div
+            onClick={() => setView('anomalies')}
+            style={{ position: 'relative', cursor: 'pointer', padding: 4 }}
+            title="Priority Alerts"
           >
-            <LogOut size={11} /> Exit
-          </button>
+            <Bell size={16} color="#334155" />
+            <span style={{
+              position: 'absolute', top: 2, right: 2,
+              width: 6, height: 6, borderRadius: '50%',
+              background: '#EF4444'
+            }} />
+          </div>
+
+          {/* User Profile */}
+          <div
+            onClick={() => setCurrentPage('login')}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
+            title="Switch User / Sign Out"
+          >
+            <div style={{
+              width: 30, height: 30, borderRadius: '50%',
+              background: '#E2D9CC', color: '#44403C',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 11, fontWeight: 700
+            }}>
+              VM
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#1E252D', lineHeight: 1.2 }}>Vikram Malhotra</span>
+              <span style={{ fontSize: 10, color: '#6B7280', lineHeight: 1.2 }}>Plant Manager</span>
+            </div>
+          </div>
         </div>
       </header>
 
-      {/* Telemetry bar */}
-      <TeleBar
-        simOn={simMode}
-        simParams={params}
-        carbonData={carbonData}
-        backendStatus={backendStatus}
-        activeSimulation={activeSimulation}
-      />
+      {/* Telemetry bar (Shown on simulation / scada views) */}
+      {view !== 'overview' && (
+        <TeleBar
+          simOn={simMode}
+          simParams={params}
+          carbonData={carbonData}
+          backendStatus={backendStatus}
+          activeSimulation={activeSimulation}
+        />
+      )}
 
-      {/* Sidebar */}
-      <nav className="sidebar">
-        <div style={{ padding: '10px 14px 6px' }}>
-          <button
-            onClick={() => setCurrentPage('home')}
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 6,
-              background: 'rgba(2, 132, 199, 0.08)',
-              color: 'var(--cyan)',
-              border: '1px solid rgba(2, 132, 199, 0.25)',
-              borderRadius: 6,
-              padding: '7px 10px',
-              fontFamily: 'var(--font-ui)',
-              fontSize: 11,
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-            }}
-            title="Return to Presentation & Executive Landing Page"
-          >
-            <Compass size={13} /> Landing Showcase
-          </button>
+      {/* Sidebar matching reference screenshot */}
+      <nav className="sidebar" style={{ background: '#F0EAE1', borderRight: '1px solid #EAE3D7' }}>
+        <div style={{ padding: '16px 16px 8px' }}>
+          <div style={{ fontSize: 9.5, fontWeight: 700, color: '#8E887E', letterSpacing: '0.08em', marginBottom: 6 }}>
+            PLANT MODE
+          </div>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            background: '#D1FAE5', border: '1px solid rgba(16, 185, 129, 0.3)',
+            borderRadius: 9999, padding: '4px 10px',
+            fontSize: 10.5, fontWeight: 700, color: '#059669',
+            letterSpacing: '0.04em'
+          }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10B981' }} />
+            <span>LIVE TELEMETRY</span>
+          </div>
         </div>
 
-        <div className="sidebar-section-label">Views</div>
-        {NAV.map(n => (
-          <div
-            key={n.id}
-            className={`nav-item ${view === n.id ? 'active' : ''}`}
-            onClick={() => setView(n.id)}
-          >
-            {n.icon}
-            {n.label}
-          </div>
-        ))}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, padding: '4px 6px' }}>
+          {NAV.map(n => {
+            const isActive = view === n.id;
+            return (
+              <div
+                key={n.id}
+                className={`nav-item ${isActive ? 'active' : ''}`}
+                onClick={() => setView(n.id)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '9px 12px', margin: '2px 8px', borderRadius: 8,
+                  cursor: 'pointer',
+                  fontSize: 12.5, fontWeight: isActive ? 600 : 500,
+                  background: isActive ? '#E0F2FE' : 'transparent',
+                  color: isActive ? '#0284C7' : (n.id === 'anomalies' ? '#0284C7' : '#334155'),
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                {n.icon}
+                <span>{n.label}</span>
+              </div>
+            );
+          })}
+        </div>
 
-        <div className="sidebar-divider" />
-        <div className="sidebar-section-label">Assets</div>
-        {ASSETS.map(a => (
-          <div
-            key={a.id}
-            className={`nav-item ${selectedAsset === a.id ? 'active' : ''}`}
-            onClick={() => { setSelectedAsset(a.id); setView('scada'); }}
-          >
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: ASSET_COLORS[a.id], flexShrink: 0, display: 'inline-block' }} />
-            <span style={{ fontSize: 11 }}>{a.name}</span>
-            {a.status === 'WARNING' && <AlertTriangle size={9} color="#f59e0b" style={{ marginLeft: 'auto' }} />}
+        <div style={{ padding: '14px 16px 6px' }}>
+          <div style={{ fontSize: 9.5, fontWeight: 700, color: '#8E887E', letterSpacing: '0.08em' }}>
+            ASSETS
           </div>
-        ))}
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3, padding: '0 8px' }}>
+          {[
+            { id: 'compressor', name: 'Air Compressor (ELGi)', color: '#F59E0B' },
+            { id: 'cnc', name: 'CNC Machining Center', color: '#0EA5E9' },
+            { id: 'furnace', name: 'Industrial Heat Furnace', color: '#EF4444' },
+            { id: 'cooling', name: 'Chilled Water Cooling', color: '#10B981' },
+          ].map(a => (
+            <div
+              key={a.id}
+              className={`nav-item ${selectedAsset === a.id ? 'active' : ''}`}
+              onClick={() => { setSelectedAsset(a.id); setView('scada'); }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 9,
+                padding: '6px 12px', margin: '1px 8px', borderRadius: 6,
+                cursor: 'pointer', fontSize: 11.5, color: '#334155', fontWeight: 500
+              }}
+            >
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: a.color, flexShrink: 0 }} />
+              <span>{a.name}</span>
+            </div>
+          ))}
+        </div>
 
-        <div className="sidebar-footer">
-          PRECISIONWORKS MFG{'\n'}
-          KPCL HACKATHON 2026{'\n'}
-          WATTWIS AI v1.0
+        <div style={{ marginTop: 'auto', padding: '12px 14px 16px' }}>
+          <img
+            src={factoryHeroImg}
+            alt="PrecisionWorks Facility"
+            style={{
+              width: '100%',
+              height: 72,
+              objectFit: 'cover',
+              borderRadius: 6,
+              marginBottom: 8,
+              border: '1px solid rgba(0,0,0,0.08)',
+              filter: 'sepia(12%) contrast(96%)'
+            }}
+          />
+          <div style={{
+            fontFamily: 'var(--font-mono)', fontSize: 9,
+            color: '#8E887E', lineHeight: 1.6, fontWeight: 500
+          }}>
+            PRECISIONWORKS MFG<br />
+            KPCL HACKATHON 2026<br />
+            WATTWISE AI v1.0
+          </div>
         </div>
       </nav>
 
@@ -1914,15 +2496,24 @@ export default function App() {
         </AnimatePresence>
       </main>
 
-      {/* Inspector */}
-      <InspectorPanel
-        selectedId={selectedAsset}
-        setView={setView}
-        params={params}
-        carbonData={carbonData}
-        gridEF={gridEF}
-        onResetBaseline={handleResetBaseline}
-      />
+      {/* Inspector (Shown on SCADA / Digital Twin workbench views) */}
+      {view !== 'overview' && showInspector && (
+        <InspectorPanel
+          selectedId={selectedAsset}
+          setView={setView}
+          params={params}
+          carbonData={carbonData}
+          gridEF={gridEF}
+          onResetBaseline={handleResetBaseline}
+        />
+      )}
+
+      {/* Contextual AI Explanation Popover */}
+      <AIExplainPopover />
+
+      {/* Persistent Floating AI Assistant Chatbot */}
+      <FloatingChatbot />
     </div>
+  </AIExplainProvider>
   );
-}
+}

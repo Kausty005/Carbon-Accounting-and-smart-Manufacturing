@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.app.routers.carbon import router as carbon_router
 from backend.app.routers.anomalies import router as anomalies_router, get_incident_store, get_pipeline
+from backend.app.routers.ai import router as ai_router, legacy_router as ai_legacy_router
 
 app = FastAPI(
     title="WattWise AI — Industrial Energy Intelligence & Carbon Accounting API",
@@ -67,9 +68,11 @@ def health_check():
         "version": "1.2.0"
     }
 
-# Register Carbon Accounting & AI Anomaly Intelligence routes
+# Register Carbon Accounting, AI Anomaly Intelligence & Local LLM AI routes
 app.include_router(carbon_router)
 app.include_router(anomalies_router)
+app.include_router(ai_router)
+app.include_router(ai_legacy_router)
 
 # Mount Digital Twin Simulation Engine
 try:

@@ -11,7 +11,8 @@ import ScadaFloorMap from './components/ScadaFloorMap';
 import Factory3DScene from './components/Factory3D/Factory3DScene';
 import HomePage from './components/HomePage/HomePage';
 import LoginModal from './components/Auth/LoginModal';
-import { DemandAreaChart, ComparisonLineChart, ScopePie } from './components/Charts';
+import CarbonAccountingView from './components/Carbon/CarbonAccountingView';
+import { DemandAreaChart, ComparisonLineChart, ScopePie, MachineEnergyDonut, ProductiveVsWasteBar } from './components/Charts';
 import {
   PLANT, ASSETS, HOURLY_BASE, CARBON,
   calcSimResult, DEFAULT_SIM_PARAMS, type SimParams, type Asset,
@@ -185,108 +186,296 @@ function OverviewView({
 }) {
   const scope2Emissions = carbonData?.gross_footprint.scope2?.emissions_total_co2e_t.toFixed(2) ?? '9.10';
   const factorUsed = (carbonData?.gross_footprint.scope2?.factor_metadata.selected_factor ?? gridEF).toFixed(2);
-  const kpis = [
-    { label: 'Baseline Energy', value: '12,480', unit: 'kWh/period', color: '#22d3ee', change: '' },
-    { label: 'Baseline Cost',   value: '₹99,840', unit: '/period',   color: '#f59e0b', change: '' },
-    { label: 'Potential Savings', value: '998.4', unit: 'kWh (8%)', color: '#10b981', change: '+8% reducible' },
-    { label: 'Scope 2 Carbon', value: scope2Emissions, unit: 'tCO₂e', color: '#8b5cf6', change: '30d period' },
-    { label: 'Active Assets',   value: '4',     unit: 'of 4',        color: '#22d3ee', change: '' },
-    { label: 'Active Anomalies', value: '1',    unit: 'CRITICAL',    color: '#ef4444', change: 'AIR COMPRESSOR' },
-    { label: 'Grid Emission Factor', value: factorUsed, unit: 'kg CO₂e/kWh', color: '#8b5cf6', change: 'CEA India' },
-    { label: 'Plant Power Factor', value: '0.91', unit: '',          color: '#f59e0b', change: 'below 0.95 target' },
-  ];
+
+  // Asset color map for visual consistency
+  const assetVisuals = ASSETS.map(a => ({
+    id: a.id,
+    name: a.name,
+    energyKwh: a.energyKwh,
+    currentKw: a.currentKw,
+    color: ASSET_COLORS[a.id] || '#0284c7',
+  }));
 
   return (
-    <div className="scroll-area">
+    <div className="scroll-area" style={{ paddingBottom: 24 }}>
+      {/* ─── Top Control & Status Bar ────────────────────────────────────────── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--slate-400)', letterSpacing: 2, textTransform: 'uppercase' }}>
-          PrecisionWorks Manufacturing — Plant Dashboard
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--slate-400)', letterSpacing: 2, textTransform: 'uppercase', fontWeight: 600 }}>
+            PrecisionWorks Manufacturing — Plant Dashboard
+          </div>
+          <span style={{ fontSize: 9, padding: '2px 8px', borderRadius: 9999, backgroundColor: 'rgba(16, 185, 129, 0.12)', color: '#059669', border: '1px solid rgba(16, 185, 129, 0.25)', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
+            4 ASSETS ONLINE
+          </span>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="btn btn-amber btn-sm" onClick={() => setView('scada')}>
-            <AlertTriangle size={10} />
-            1 Anomaly Active
+            <AlertTriangle size={11} />
+            <span>1 Critical Anomaly</span>
           </button>
           <button className="btn btn-cyan btn-sm" onClick={() => setView('simulator')}>
-            <Sliders size={10} />
-            Open Simulator
+            <Sliders size={11} />
+            <span>Open Simulator</span>
           </button>
         </div>
       </div>
 
-      <div className="kpi-grid">
-        {kpis.map((k, i) => (
-          <div key={i} className="kpi-card" style={{ ['--kpi-color' as any]: k.color }}>
-            <div className="kpi-label">{k.label}</div>
-            <div className="kpi-value" style={{ color: k.color }}>
-              {k.value}
-              {k.unit && <span className="kpi-unit">{k.unit}</span>}
-            </div>
-            {k.change && (
-              <div className="kpi-change warn">{k.change}</div>
-            )}
+      {/* ─── 4 Executive Visual KPI Cards ───────────────────────────────────── */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))',
+          gap: 12,
+          marginBottom: 14,
+        }}
+      >
+        {/* Card 1: Baseline Energy & Spend */}
+        <div className="kpi-card" style={{ ['--kpi-color' as any]: '#0284c7' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div className="kpi-label">Baseline Energy &amp; Spend</div>
+            <Zap size={13} color="#0284c7" />
           </div>
-        ))}
+          <div className="kpi-value" style={{ color: '#0284c7', margin: '4px 0 2px' }}>
+            12,480 <span className="kpi-unit">kWh</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11, color: '#64748b' }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--white)' }}>₹99,840</span>
+            <span style={{ fontSize: 9.5, color: '#94a3b8' }}>₹8.00/kWh avg</span>
+          </div>
+        </div>
+
+        {/* Card 2: Recoverable Waste & Savings */}
+        <div className="kpi-card" style={{ ['--kpi-color' as any]: '#10b981' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div className="kpi-label">Potential Cost Savings</div>
+            <TrendingDown size={13} color="#10b981" />
+          </div>
+          <div className="kpi-value" style={{ color: '#10b981', margin: '4px 0 2px' }}>
+            ₹7,987 <span className="kpi-unit">/period</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11 }}>
+            <span className="kpi-change" style={{ color: '#10b981', fontWeight: 700 }}>998.4 kWh (8% Cut)</span>
+            <span style={{ fontSize: 9.5, color: '#059669', fontWeight: 600 }}>Payback &lt; 14d</span>
+          </div>
+        </div>
+
+        {/* Card 3: Scope 2 Carbon */}
+        <div className="kpi-card" style={{ ['--kpi-color' as any]: '#8b5cf6' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div className="kpi-label">Scope 2 Carbon Footprint</div>
+            <Leaf size={13} color="#8b5cf6" />
+          </div>
+          <div className="kpi-value" style={{ color: '#8b5cf6', margin: '4px 0 2px' }}>
+            {scope2Emissions} <span className="kpi-unit">tCO₂e</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11 }}>
+            <span style={{ color: '#10b981', fontWeight: 600, fontSize: 10 }}>-727.7 kg reducible</span>
+            <span style={{ fontSize: 9.5, color: '#94a3b8', fontFamily: 'var(--font-mono)' }}>CEA {factorUsed}</span>
+          </div>
+        </div>
+
+        {/* Card 4: Power Factor & Health */}
+        <div className="kpi-card" style={{ ['--kpi-color' as any]: '#f59e0b' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div className="kpi-label">Plant Power Factor</div>
+            <Gauge size={13} color="#f59e0b" />
+          </div>
+          <div className="kpi-value" style={{ color: '#f59e0b', margin: '4px 0 2px' }}>
+            0.91 <span className="kpi-unit">/ 0.95 Target</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11 }}>
+            <span className="kpi-change warn" style={{ fontSize: 9.5 }}>1 Dragging Unit (0.78)</span>
+            <span style={{ fontSize: 9.5, color: '#f59e0b', fontWeight: 600 }}>Avoid ₹3.2k Penalty</span>
+          </div>
+        </div>
       </div>
 
-      {/* Anomaly alert */}
-      <div className="alert-banner warn" style={{ marginBottom: 14 }}>
-        <div className="alert-title">
-          <AlertTriangle size={10} style={{ display: 'inline', marginRight: 4 }} />
-          ANOMALY DETECTED — AIR COMPRESSOR (ELGi EN 45)
+      {/* ─── Visual Productive vs Idle Waste Progress ───────────────────────── */}
+      <div className="panel" style={{ padding: '12px 16px', marginBottom: 14 }}>
+        <ProductiveVsWasteBar productiveKwh={11481.6} wasteKwh={998.4} />
+      </div>
+
+      {/* ─── Dual Charts Row: 24h Demand + Machine Breakdown ────────────────── */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
+          gap: 14,
+          marginBottom: 14,
+        }}
+      >
+        {/* Chart 1: 24h Stacked Demand Profile with ToD Tariff Zones */}
+        <div className="panel">
+          <div className="panel-hdr" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Zap size={12} color="#0284c7" />
+              <span>24-Hour Demand Profile (All 4 Assets)</span>
+            </div>
+            {/* Visual ToD Tariff Zone Pills */}
+            <div style={{ display: 'flex', gap: 4 }}>
+              <span style={{ fontSize: 8.5, padding: '2px 6px', borderRadius: 4, backgroundColor: 'rgba(16,185,129,0.12)', color: '#059669', border: '1px solid rgba(16,185,129,0.25)', fontWeight: 700 }}>
+                🌙 Off-Peak (₹4.5)
+              </span>
+              <span style={{ fontSize: 8.5, padding: '2px 6px', borderRadius: 4, backgroundColor: 'rgba(2,132,199,0.12)', color: '#0284c7', border: '1px solid rgba(2,132,199,0.25)', fontWeight: 700 }}>
+                ☀️ Normal (₹8)
+              </span>
+              <span style={{ fontSize: 8.5, padding: '2px 6px', borderRadius: 4, backgroundColor: 'rgba(239,68,68,0.12)', color: '#dc2626', border: '1px solid rgba(239,68,68,0.25)', fontWeight: 700 }}>
+                ⚡ Peak (₹10.5)
+              </span>
+            </div>
+          </div>
+          <div style={{ padding: '10px 4px 4px' }}>
+            <DemandAreaChart data={HOURLY_BASE} />
+          </div>
         </div>
-        <div className="alert-body">
-          Running unloaded at 18 kW during shift-change &amp; lunch breaks (3.2 hrs/day idle waste = <strong>998.4 kWh/period</strong>).
-          Discharge pressure locked at 7.2 bar vs recommended 6.8 bar. Power Factor: 0.78 (below 0.85 threshold).
-        </div>
-        <div className="alert-rec">
-          AI Recommendation: Install Auto-Idle Cutoff relay (5-min timer) + reduce pressure setpoint to 6.8 bar.
-          Saves ₹7,987.20/period (8% of total cost) and 727.7 kg CO₂e avoided.
+
+        {/* Chart 2: Machine Energy Share Donut Chart */}
+        <div className="panel">
+          <div className="panel-hdr" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Activity size={12} color="#f59e0b" />
+              <span>Asset Energy Distribution (% of Factory)</span>
+            </div>
+            <span style={{ fontSize: 9.5, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)' }}>
+              12,480 kWh Total
+            </span>
+          </div>
+          <div style={{ padding: '12px 14px' }}>
+            <MachineEnergyDonut assets={assetVisuals} />
+          </div>
         </div>
       </div>
 
-      {/* 24h demand */}
+      {/* ─── Visual Anomaly & Recommended Fix Card ───────────────────────────── */}
+      <div
+        className="panel"
+        style={{
+          borderLeft: '4px solid #f59e0b',
+          padding: '14px 18px',
+          marginBottom: 14,
+          backgroundColor: 'rgba(245, 158, 11, 0.04)',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 10 }}>
+          <div style={{ flex: 1, minWidth: 260 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 4, backgroundColor: '#fef3c7', color: '#92400e', fontSize: 10, fontWeight: 700 }}>
+                <AlertTriangle size={11} />
+                CRITICAL LEAK IDENTIFIED
+              </span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--white)' }}>
+                Air Compressor (ELGi EN 45) Unloaded Waste
+              </span>
+            </div>
+            <div style={{ fontSize: 11.5, color: '#475569', lineHeight: 1.5, marginBottom: 8 }}>
+              Running unloaded at <strong>18 kW</strong> during shift handover and lunch breaks (3.2 hrs/day = <strong>998.4 kWh/period</strong>). Discharge pressure locked at <strong>7.2 bar</strong> (0.4 bar excess) and Power Factor dragged down to <strong>0.78</strong>.
+            </div>
+            {/* Visual Fix Comparison */}
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <div style={{ padding: '4px 10px', borderRadius: 6, backgroundColor: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.25)', fontSize: 10.5, color: '#065f46', fontWeight: 600 }}>
+                ✓ Cutoff Relay (5-min idle cutoff)
+              </div>
+              <div style={{ padding: '4px 10px', borderRadius: 6, backgroundColor: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.25)', fontSize: 10.5, color: '#065f46', fontWeight: 600 }}>
+                ✓ Lower setpoint to 6.8 bar
+              </div>
+              <div style={{ padding: '4px 10px', borderRadius: 6, backgroundColor: 'rgba(2, 132, 199, 0.1)', border: '1px solid rgba(2, 132, 199, 0.25)', fontSize: 10.5, color: '#0284c7', fontWeight: 600 }}>
+                ✓ Avoids ₹7,987 / mo &amp; 728 kg CO₂e
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignSelf: 'center' }}>
+            <button
+              className="btn btn-cyan btn-sm"
+              onClick={() => setView('simulator')}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', fontWeight: 700 }}
+            >
+              <Sliders size={12} />
+              <span>Simulate Fix in Digital Twin</span>
+              <ArrowRight size={12} />
+            </button>
+            <button
+              className="btn btn-outline btn-sm"
+              onClick={() => setView('scada')}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px', fontSize: 10.5 }}
+            >
+              <Box size={11} />
+              <span>Inspect in 3D Factory</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── Visual Machine Operational Status Matrix ────────────────────────── */}
       <div className="panel">
-        <div className="panel-hdr">
-          <Zap size={12} />
-          24-Hour Demand Profile — All Assets (Baseline)
+        <div className="panel-hdr" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span>Asset Operational Status &amp; Real-Time Load</span>
+          <span style={{ fontSize: 9.5, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)' }}>
+            4 MONITORED UNITS
+          </span>
         </div>
-        <div style={{ padding: '10px 4px' }}>
-          <DemandAreaChart data={HOURLY_BASE} />
-        </div>
-      </div>
+        <div style={{ padding: '8px 12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 10 }}>
+            {ASSETS.map(a => {
+              const loadPct = Math.min(100, Math.round((a.currentKw / a.ratedKw) * 100));
+              const color = ASSET_COLORS[a.id] || '#0284c7';
+              return (
+                <div
+                  key={a.id}
+                  style={{
+                    padding: '10px 14px',
+                    borderRadius: 10,
+                    backgroundColor: 'rgba(0,0,0,0.02)',
+                    border: '1px solid rgba(0,0,0,0.06)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 8,
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--white)' }}>{a.name}</div>
+                      <div style={{ fontSize: 9.5, color: '#64748b', fontFamily: 'var(--font-mono)' }}>{a.model}</div>
+                    </div>
+                    <span className={`badge badge-${a.status === 'OPTIMAL' ? 'emerald' : a.status === 'WARNING' ? 'amber' : 'red'}`}>
+                      {a.status}
+                    </span>
+                  </div>
 
-      {/* Asset summary table */}
-      <div className="panel" style={{ marginTop: 10 }}>
-        <div className="panel-hdr">Asset Energy Summary</div>
-        <table className="compare-table">
-          <thead>
-            <tr>
-              <th>Asset</th>
-              <th>Model</th>
-              <th>Current kW</th>
-              <th>Energy kWh</th>
-              <th>P.F.</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ASSETS.map(a => (
-              <tr key={a.id}>
-                <td className="td-label">{a.name}</td>
-                <td style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--slate-500)' }}>{a.model}</td>
-                <td className="td-proposed">{a.currentKw} kW</td>
-                <td style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--white)' }}>{a.energyKwh.toLocaleString()}</td>
-                <td style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: a.pf < 0.85 ? 'var(--amber)' : 'var(--emerald)' }}>{a.pf}</td>
-                <td>
-                  <span className={`badge badge-${a.status === 'OPTIMAL' ? 'emerald' : a.status === 'WARNING' ? 'amber' : 'red'}`}>
-                    {a.status}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  {/* Load progress bar */}
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10.5, marginBottom: 3 }}>
+                      <span style={{ color: '#64748b' }}>Active Load</span>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color }}>
+                        {a.currentKw} kW / {a.ratedKw} kW ({loadPct}%)
+                      </span>
+                    </div>
+                    <div style={{ height: 6, borderRadius: 3, backgroundColor: 'rgba(0,0,0,0.08)', overflow: 'hidden' }}>
+                      <div
+                        style={{
+                          height: '100%',
+                          width: `${loadPct}%`,
+                          backgroundColor: color,
+                          borderRadius: 3,
+                          transition: 'width 0.3s ease',
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 10.5, paddingTop: 4, borderTop: '1px solid rgba(0,0,0,0.04)' }}>
+                    <div style={{ color: '#64748b' }}>
+                      Energy: <strong style={{ color: 'var(--white)', fontFamily: 'var(--font-mono)' }}>{a.energyKwh.toLocaleString()} kWh</strong>
+                    </div>
+                    <div style={{ color: a.pf < 0.85 ? '#d97706' : '#059669', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
+                      P.F. {a.pf}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -318,20 +507,21 @@ function ScadaView({
           right: 20,
           zIndex: 40,
           display: 'flex',
-          background: 'rgba(17, 24, 39, 0.92)',
-          border: '1px solid var(--border-default)',
-          borderRadius: 6,
+          background: 'rgba(235, 226, 212, 0.94)',
+          border: '1px solid rgba(255, 255, 255, 0.85)',
+          borderRadius: 8,
           padding: 3,
-          backdropFilter: 'blur(8px)',
+          backdropFilter: 'blur(12px)',
+          boxShadow: '4px 4px 14px rgba(188, 176, 158, 0.35)',
         }}
       >
         <button
           onClick={() => setMapMode('3d')}
           style={{
-            background: mapMode === '3d' ? 'var(--cyan)' : 'transparent',
-            color: mapMode === '3d' ? '#090d16' : 'var(--slate-400)',
+            background: mapMode === '3d' ? '#1C1917' : 'transparent',
+            color: mapMode === '3d' ? '#F5EFE6' : 'var(--slate-400)',
             border: 'none',
-            borderRadius: 4,
+            borderRadius: 6,
             padding: '5px 12px',
             fontSize: 11,
             fontWeight: 700,
@@ -341,17 +531,18 @@ function ScadaView({
             alignItems: 'center',
             gap: 6,
             transition: 'all 0.15s ease',
+            boxShadow: mapMode === '3d' ? '0 2px 6px rgba(0,0,0,0.12)' : 'none',
           }}
         >
-          <Box size={13} /> 3D Digital Twin
+          <Box size={13} style={{ color: mapMode === '3d' ? '#F59E0B' : 'inherit' }} /> 3D Digital Twin
         </button>
         <button
           onClick={() => setMapMode('2d')}
           style={{
-            background: mapMode === '2d' ? 'var(--cyan)' : 'transparent',
-            color: mapMode === '2d' ? '#090d16' : 'var(--slate-400)',
+            background: mapMode === '2d' ? '#1C1917' : 'transparent',
+            color: mapMode === '2d' ? '#F5EFE6' : 'var(--slate-400)',
             border: 'none',
-            borderRadius: 4,
+            borderRadius: 6,
             padding: '5px 12px',
             fontSize: 11,
             fontWeight: 700,
@@ -361,9 +552,10 @@ function ScadaView({
             alignItems: 'center',
             gap: 6,
             transition: 'all 0.15s ease',
+            boxShadow: mapMode === '2d' ? '0 2px 6px rgba(0,0,0,0.12)' : 'none',
           }}
         >
-          <Cpu size={13} /> 2.5D SCADA Mimic
+          <Cpu size={13} style={{ color: mapMode === '2d' ? '#06B6D4' : 'inherit' }} /> 2.5D SCADA Mimic
         </button>
       </div>
 
@@ -822,21 +1014,8 @@ function ConstraintBadge({
 }
 
 // ─── Carbon View ──────────────────────────────────────────────────────────────
-function CarbonView({
-  params,
-  gridEF,
-  setGridEF,
-  carbonData,
-  carbonLoading,
-  carbonError,
-  backendStatus,
-  onRecalculate,
-  reportingYear,
-  setReportingYear,
-  ceaMethodology,
-  setCeaMethodology,
-  availableYears,
-}: {
+// ─── Carbon View ──────────────────────────────────────────────────────────────
+function CarbonView(props: {
   params: SimParams;
   gridEF: number;
   setGridEF: (v: number) => void;
@@ -851,257 +1030,7 @@ function CarbonView({
   setCeaMethodology: (m: CeaMethodology) => void;
   availableYears: string[];
 }) {
-  const s1 = CARBON.scope1Calc();
-  const s2 = CARBON.scope2Calc(PLANT.baselineEnergy, gridEF);
-  const total = +(s1.kgCO2e + s2.kgCO2e).toFixed(3);
-  const sim = calcSimResult(params);
-  const reductionPotential = sim.savingsCarbon;
-  const scope1Percent = ((s1.kgCO2e / total) * 100).toFixed(1);
-  const scope2Percent = ((s2.kgCO2e / total) * 100).toFixed(1);
-
-  return (
-    <div className="scroll-area" style={{ padding: '20px 24px', maxWidth: 1200, margin: '0 auto' }}>
-      {/* Header with Standards Badges */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-            <Globe size={18} style={{ color: 'var(--cyan)' }} />
-            <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--slate-100)', letterSpacing: 0.5, margin: 0 }}>
-              CARBON ACCOUNTING & ESG INVENTORY
-            </h2>
-          </div>
-          <p style={{ fontSize: 12, color: 'var(--slate-400)', margin: 0 }}>
-            PrecisionWorks Manufacturing • Location-based Scope 1 & Scope 2 Emissions Inventory
-          </p>
-        </div>
-
-        <div style={{ display: 'flex', gap: 8 }}>
-          <span style={{ fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 6, background: 'rgba(2, 132, 199, 0.15)', color: '#38bdf8', border: '1px solid rgba(2, 132, 199, 0.3)' }}>
-            ISO 14064-1:2018
-          </span>
-          <span style={{ fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 6, background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
-            GHG PROTOCOL
-          </span>
-          <span style={{ fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 6, background: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
-            CEA INDIA v2024
-          </span>
-        </div>
-      </div>
-
-      {/* Top 4 Big Stat KPI Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 20 }}>
-        <div style={{ background: '#111827', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 10, padding: '16px 18px', borderLeft: '4px solid #8b5cf6' }}>
-          <div style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600, marginBottom: 6 }}>
-            Total Carbon Footprint
-          </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
-            <span style={{ fontSize: 24, fontWeight: 800, color: '#ffffff', fontFamily: 'var(--font-mono)' }}>{total}</span>
-            <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>tCO₂e/day</span>
-          </div>
-          <div style={{ fontSize: 11, color: '#a78bfa' }}>
-            Scope 1 (1.7%) + Scope 2 (98.3%)
-          </div>
-        </div>
-
-        <div style={{ background: '#111827', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 10, padding: '16px 18px', borderLeft: '4px solid #ef4444' }}>
-          <div style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600, marginBottom: 6 }}>
-            Scope 1 (Direct Fuel)
-          </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
-            <span style={{ fontSize: 24, fontWeight: 800, color: '#f87171', fontFamily: 'var(--font-mono)' }}>{s1.kgCO2e}</span>
-            <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>tCO₂e/day</span>
-          </div>
-          <div style={{ fontSize: 11, color: '#94a3b8' }}>
-            LPG Heat Treatment Furnace
-          </div>
-        </div>
-
-        <div style={{ background: '#111827', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 10, padding: '16px 18px', borderLeft: '4px solid #0284c7' }}>
-          <div style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600, marginBottom: 6 }}>
-            Scope 2 (Indirect Grid)
-          </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
-            <span style={{ fontSize: 24, fontWeight: 800, color: '#38bdf8', fontFamily: 'var(--font-mono)' }}>{s2.kgCO2e}</span>
-            <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>tCO₂e/day</span>
-          </div>
-          <div style={{ fontSize: 11, color: '#94a3b8' }}>
-            Purchased MSEDCL Electricity
-          </div>
-        </div>
-
-        <div style={{ background: '#111827', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 10, padding: '16px 18px', borderLeft: '4px solid #10b981' }}>
-          <div style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600, marginBottom: 6 }}>
-            Abatement Potential
-          </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
-            <span style={{ fontSize: 24, fontWeight: 800, color: '#34d399', fontFamily: 'var(--font-mono)' }}>{reductionPotential}</span>
-            <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>tCO₂e/day</span>
-          </div>
-          <div style={{ fontSize: 11, color: '#34d399' }}>
-            -7.9% via Idle Cutoff & ToD Shift
-          </div>
-        </div>
-      </div>
-
-      {/* Main Grid: Calculation Details & Scope Breakdown */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 16 }}>
-        {/* Left Column: Scope 1 & Scope 2 Calculation Cards */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {/* Scope 1 Detailed Card */}
-          <div style={{ background: '#111827', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 12, padding: '20px 22px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ padding: '4px 10px', borderRadius: 6, background: 'rgba(239, 68, 68, 0.15)', color: '#f87171', fontWeight: 700, fontSize: 11, border: '1px solid rgba(239, 68, 68, 0.3)' }}>
-                  SCOPE 1
-                </span>
-                <span style={{ fontSize: 14, fontWeight: 700, color: '#f1f5f9' }}>
-                  Direct Fuel Combustion (Stationary)
-                </span>
-              </div>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 16, fontWeight: 800, color: '#f87171' }}>
-                {s1.kgCO2e} tCO₂e/day
-              </span>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.2fr', gap: 12, background: 'rgba(255, 255, 255, 0.03)', borderRadius: 8, padding: '12px 16px', marginBottom: 14 }}>
-              <div>
-                <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 3 }}>Source Asset</div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: '#e2e8f0' }}>Thermic Intl 85 kW Furnace</div>
-              </div>
-              <div>
-                <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 3 }}>Activity Rate</div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: '#e2e8f0', fontFamily: 'var(--font-mono)' }}>60 kg LPG / day</div>
-              </div>
-              <div>
-                <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 3 }}>Emission Factor</div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: '#e2e8f0', fontFamily: 'var(--font-mono)' }}>2.98 kg CO₂e / kg LPG</div>
-              </div>
-            </div>
-
-            {/* Formula Banner */}
-            <div style={{ background: '#0b0f17', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: 8, padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ fontSize: 12, color: '#cbd5e1', fontFamily: 'var(--font-mono)' }}>
-                <span style={{ color: '#94a3b8' }}>Formula: </span>
-                60 kg LPG/day × 2.98 kg CO₂e/kg ÷ 1,000 = <strong style={{ color: '#f87171' }}>0.179 tCO₂e/day</strong>
-              </div>
-              <span style={{ fontSize: 10, color: '#64748b' }}>IPCC 2006 GL Vol. 2 Table 2.2</span>
-            </div>
-          </div>
-
-          {/* Scope 2 Detailed Card */}
-          <div style={{ background: '#111827', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 12, padding: '20px 22px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ padding: '4px 10px', borderRadius: 6, background: 'rgba(2, 132, 199, 0.15)', color: '#38bdf8', fontWeight: 700, fontSize: 11, border: '1px solid rgba(2, 132, 199, 0.3)' }}>
-                  SCOPE 2
-                </span>
-                <span style={{ fontSize: 14, fontWeight: 700, color: '#f1f5f9' }}>
-                  Indirect Emissions (Purchased Electricity)
-                </span>
-              </div>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 16, fontWeight: 800, color: '#38bdf8' }}>
-                {s2.kgCO2e} tCO₂e/day
-              </span>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: 12, background: 'rgba(255, 255, 255, 0.03)', borderRadius: 8, padding: '12px 16px', marginBottom: 14 }}>
-              <div>
-                <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 3 }}>Sub-metered Baseline</div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: '#e2e8f0', fontFamily: 'var(--font-mono)' }}>
-                  {PLANT.baselineEnergy.toLocaleString()} kWh/period
-                </div>
-              </div>
-              <div>
-                <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 3 }}>Grid Utility</div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: '#e2e8f0' }}>MSEDCL HT-I (Maharashtra)</div>
-              </div>
-              <div>
-                <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 3 }}>Grid Emission Factor</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <input
-                    type="number"
-                    step={0.01}
-                    min={0.5}
-                    max={1.2}
-                    value={gridEF}
-                    onChange={(e) => setGridEF(parseFloat(e.target.value) || 0.82)}
-                    style={{
-                      background: '#0b0f17',
-                      color: '#38bdf8',
-                      border: '1px solid rgba(2, 132, 199, 0.4)',
-                      borderRadius: 4,
-                      padding: '2px 8px',
-                      fontSize: 12,
-                      fontWeight: 700,
-                      fontFamily: 'var(--font-mono)',
-                      width: 65,
-                    }}
-                  />
-                  <span style={{ fontSize: 10, color: '#94a3b8' }}>kg/kWh</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Formula Banner */}
-            <div style={{ background: '#0b0f17', border: '1px solid rgba(2, 132, 199, 0.2)', borderRadius: 8, padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ fontSize: 12, color: '#cbd5e1', fontFamily: 'var(--font-mono)' }}>
-                <span style={{ color: '#94a3b8' }}>Formula: </span>
-                {PLANT.baselineEnergy.toLocaleString()} kWh × {gridEF} kg/kWh ÷ 1,000 = <strong style={{ color: '#38bdf8' }}>{s2.kgCO2e} tCO₂e/day</strong>
-              </div>
-              <span style={{ fontSize: 10, color: '#64748b' }}>CEA Baseline DB v20.0 (2024)</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column: Scope Split Donut Chart & Verification Dossier */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {/* Scope Split Donut Panel */}
-          <div style={{ background: '#111827', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 12, padding: '20px 22px' }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#e2e8f0', marginBottom: 12 }}>
-              Emissions By Scope
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
-              <ScopePie scope1={s1.kgCO2e} scope2={s2.kgCO2e} />
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: 12 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#38bdf8' }} />
-                  <span style={{ color: '#94a3b8' }}>Scope 2 (Electricity)</span>
-                </div>
-                <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#38bdf8' }}>
-                  {scope2Percent}% ({s2.kgCO2e} t)
-                </span>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#f87171' }} />
-                  <span style={{ color: '#94a3b8' }}>Scope 1 (LPG Gas)</span>
-                </div>
-                <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#f87171' }}>
-                  {scope1Percent}% ({s1.kgCO2e} t)
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Audit Verification Protocol Box */}
-          <div style={{ background: '#111827', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 12, padding: '18px 20px' }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#e2e8f0', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <CheckCircle2 size={14} style={{ color: '#10b981' }} />
-              <span>Third-Party Verification Ready</span>
-            </div>
-            <p style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.5, margin: 0 }}>
-              Every calculation is anchored to sub-meter interval telemetry and published CEA/IPCC emission factors, fulfilling ISO 14064-3 and ISO 50001:2018 certification audit standards.
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  return <CarbonAccountingView {...props} />;
 }
 
 // ─── Report View ──────────────────────────────────────────────────────────────

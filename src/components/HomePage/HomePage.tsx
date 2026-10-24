@@ -1455,38 +1455,50 @@ export default function HomePage({ onLaunchPlatform, onOpenLogin }: HomePageProp
         </AnimatePresence>
       </div>
 
-      {/* Bottom Left Authoritative Annotation */}
+      {/* Bottom Left Minimal Active Machine Indicator */}
       <div
         style={{
           position: 'fixed',
           left: '44px',
-          bottom: '32px',
+          bottom: '28px',
           zIndex: 20,
           pointerEvents: 'none',
         }}
       >
-        <p
+        <div
           style={{
-            fontSize: '10.5px',
-            color: '#6E695E',
-            lineHeight: 1.5,
-            marginBottom: '4px',
-            maxWidth: '300px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '6px 14px',
+            borderRadius: '9999px',
+            backgroundColor: 'rgba(235, 226, 212, 0.88)',
+            border: BORDER_WHITE,
+            backdropFilter: 'blur(8px)',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
           }}
         >
-          Sub-second IoT telemetry across industrial busway. Physics-informed idle cutoff &amp; CEA carbon verification.
-        </p>
-        <p
-          style={{
-            fontSize: '9px',
-            fontFamily: "'IBM Plex Mono', monospace",
-            letterSpacing: '0.12em',
-            color: '#8A857A',
-            fontWeight: 700,
-          }}
-        >
-          ACTIVE FOCUS // {currentStation.activeLabel}
-        </p>
+          <span
+            style={{
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              backgroundColor: currentStation.glowColor,
+              boxShadow: `0 0 6px ${currentStation.glowColor}`,
+            }}
+          />
+          <span
+            style={{
+              fontSize: '10px',
+              fontFamily: "'IBM Plex Mono', monospace",
+              letterSpacing: '0.1em',
+              color: '#3B3730',
+              fontWeight: 700,
+            }}
+          >
+            {currentStation.activeLabel}
+          </span>
+        </div>
       </div>
 
       {/* ─── RIGHT FLOATING DIAGNOSTIC TELEMETRY CARD ──────────────────────── */}

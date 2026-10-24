@@ -4,7 +4,7 @@ import {
   Cpu, Zap, TrendingDown, Layers, FileText, ArrowRight, Gauge,
   Info, Activity, Clock, DollarSign, Leaf, Sparkles, AlertCircle,
   Award, BarChart3, BookmarkCheck, ChevronDown, ChevronUp, Check,
-  Target, Compass, CheckSquare, XCircle, ArrowUpRight
+  Target, Compass, CheckSquare, XCircle, ArrowUpRight, HelpCircle
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -142,7 +142,7 @@ const DEMO_PIPELINE: DemoStep[] = [
     ideaTag: 'Idea A: Sensor VOI',
     caseId: 'case-1-idle',
     tab: 'investment',
-    pitchScript: 'Explain Idea A: A submeter alone cannot tell if the 18 kW is an air leak or timer blow-off. Toggle "Simulate Adding Flowmeter" to resolve the ambiguity and justify the ₹37k Capex with a 6.9-month payback.',
+    pitchScript: 'Explain Idea A: A submeter alone cannot tell if the 18 kW is an air leak or timer blow-off. Toggle "Simulate Adding Flowmeter" to resolve ambiguity and justify ₹37k Capex with a 6.9-month payback.',
   },
   {
     stepNum: 3,
@@ -195,14 +195,15 @@ export default function DigitalTwinView({
   // Active simulation in the view
   const [currentResult, setCurrentResult] = useState<SimulationResult>(activeSimulation);
   const [isOptimizing, setIsOptimizing] = useState<boolean>(false);
-  const [showFormulaDrawer, setShowFormulaDrawer] = useState<boolean>(false);
+  const [showMethodologyDrawer, setShowMethodologyDrawer] = useState<boolean>(false);
 
   // Right column tab: 'simulator' | 'tradeoff' | 'investment' | 'ledger'
   const [analyticsTab, setAnalyticsTab] = useState<AnalyticsTab>('simulator');
 
   // Guided Demo Pipeline State
   const [activeDemoStep, setActiveDemoStep] = useState<number | null>(null);
-  const [showDemoPipeline, setShowDemoPipeline] = useState<boolean>(true);
+  const [showDemoPipeline, setShowDemoPipeline] = useState<boolean>(false);
+  const [showCaseSelector, setShowCaseSelector] = useState<boolean>(true);
 
   // Verified Savings Ledger State
   const [mvLedger, setMvLedger] = useState<MVLedgerEntry[]>(INITIAL_MV_LEDGER);
@@ -431,13 +432,6 @@ export default function DigitalTwinView({
     });
   }, [currentResult, actionType, selectedMachineId, targetPowerKw, offsetHours]);
 
-  const feasibilityClass =
-    currentResult.feasibility === 'feasible'
-      ? 'status-feasible'
-      : currentResult.feasibility === 'review_required'
-      ? 'status-review'
-      : 'status-blocked';
-
   // Dynamic Investment Case based on Sensor Sufficiency toggle (Idea A)
   const inv = useMemo(() => {
     return calculateInvestmentCase(
@@ -448,1136 +442,1833 @@ export default function DigitalTwinView({
   }, [currentResult, hasFlowMeter, sensorQuality]);
 
   const activeCase = INDUSTRIAL_CASES.find(c => c.id === activeCaseId);
+  const isBaselineState = selectedPresetId === 'baseline' || (currentResult.deltas.energy_kwh === 0 && currentResult.deltas.cost_inr === 0);
 
   return (
-    <div className="digital-twin-view scroll-area">
-      {/* ─── 1. Header Banner ────────────────────────────────────────────── */}
-      <div className="dt-top-banner">
-        <div>
-          <div className="dt-title">
-            <Sliders size={18} className="text-cyan" />
-            <span>Operational Decision &amp; Counterfactual Twin</span>
-            <span className="dt-badge-sub">KPCL Problem Statement 1 · PrecisionWorks</span>
-          </div>
-          <div className="dt-subtitle">
-            <span>Deterministic Scenario Simulation</span>
-            <span className="dt-pill-tag">Idea A: Sensor Sufficiency</span>
-            <span className="dt-pill-tag">Idea C: Production-Safe Interlocks</span>
-            <span className="dt-pill-tag">Idea B: Counterfactual M&amp;V</span>
-          </div>
-        </div>
+    <div style={{ height: '100%', overflowY: 'auto', padding: '20px 28px', boxSizing: 'border-box' }}>
+      <div style={{ maxWidth: 1320, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 18 }}>
 
-        <div className="dt-banner-actions">
-          <button
-            className="btn btn-outline btn-sm"
-            onClick={() => setShowDemoPipeline(!showDemoPipeline)}
-            title="Toggle step-by-step hackathon demo presentation guide"
-          >
-            <Compass size={12} />
-            {showDemoPipeline ? 'Hide Demo Guide' : 'Show Demo Guide'}
-          </button>
+        {/* ─── 1. Calm, Premium Digital Twin Header ───────────────────────── */}
+        <div style={{
+          background: '#FFFFFF',
+          border: '1px solid #EAE3D7',
+          borderRadius: 12,
+          padding: '16px 20px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 16
+        }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+              <div style={{
+                width: 32,
+                height: 32,
+                borderRadius: 8,
+                background: 'rgba(2, 132, 199, 0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <Sliders size={18} color="#0284C7" />
+              </div>
+              <h1 style={{
+                fontSize: 20,
+                fontWeight: 700,
+                color: '#1C1917',
+                letterSpacing: '-0.02em',
+                margin: 0
+              }}>
+                Digital Twin
+              </h1>
 
-          <button
-            className="btn btn-outline btn-sm"
-            onClick={handleResetToBaseline}
-            title="Reset scenario to un-modified factory baseline"
-          >
-            <RotateCcw size={12} />
-            Reset Baseline
-          </button>
+              {/* Status Badge */}
+              <span style={{
+                fontSize: 11,
+                fontWeight: 600,
+                padding: '2px 9px',
+                borderRadius: 9999,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                background: isBaselineState
+                  ? '#F5F5F4'
+                  : currentResult.feasibility === 'feasible'
+                  ? 'rgba(16, 185, 129, 0.12)'
+                  : currentResult.feasibility === 'review_required'
+                  ? 'rgba(245, 158, 11, 0.12)'
+                  : 'rgba(239, 68, 68, 0.12)',
+                color: isBaselineState
+                  ? '#57534E'
+                  : currentResult.feasibility === 'feasible'
+                  ? '#059669'
+                  : currentResult.feasibility === 'review_required'
+                  ? '#D97706'
+                  : '#DC2626',
+                border: isBaselineState
+                  ? '1px solid #EAE3D7'
+                  : currentResult.feasibility === 'feasible'
+                  ? '1px solid rgba(16, 185, 129, 0.3)'
+                  : currentResult.feasibility === 'review_required'
+                  ? '1px solid rgba(245, 158, 11, 0.3)'
+                  : '1px solid rgba(239, 68, 68, 0.3)',
+              }}>
+                <span style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
+                  background: isBaselineState
+                    ? '#A8A29E'
+                    : currentResult.feasibility === 'feasible'
+                    ? '#10B981'
+                    : currentResult.feasibility === 'review_required'
+                    ? '#F59E0B'
+                    : '#EF4444'
+                }} />
+                {isBaselineState
+                  ? 'BASELINE ACTIVE'
+                  : currentResult.feasibility === 'feasible'
+                  ? 'FEASIBLE SCENARIO'
+                  : currentResult.feasibility === 'review_required'
+                  ? 'APPROVAL REQUIRED'
+                  : 'BLOCKED BY INTERLOCK'}
+              </span>
 
-          <button
-            className={`btn btn-emerald btn-sm ${isOptimizing ? 'loading' : ''}`}
-            onClick={handleRunOptimizer}
-            title="Run algorithmic search across start-time offsets to minimize plant peak load"
-          >
-            <Sparkles size={12} />
-            {isOptimizing ? 'Optimizing...' : 'Auto-Stagger Peak'}
-          </button>
-
-          <button
-            className="btn btn-cyan btn-sm"
-            onClick={() => onApplySimulation(currentResult)}
-            disabled={currentResult.feasibility === 'blocked'}
-            title={
-              currentResult.feasibility === 'blocked'
-                ? 'Cannot apply blocked scenario'
-                : 'Commit scenario metrics to Dashboard, 3D Twin & Audit Report'
-            }
-          >
-            <CheckCircle2 size={12} />
-            Apply to Platform
-          </button>
-        </div>
-      </div>
-
-      {/* ─── 2. Guided Demo Pipeline Bar (Hackathon Walkthrough) ─────────────── */}
-      {showDemoPipeline && (
-        <div className="dt-pipeline-bar">
-          <div className="dt-case-header-row">
-            <div className="dt-case-section-title">
-              <Compass size={14} className="text-cyan" />
-              <span>3-Minute Judging Demo Pipeline</span>
+              <span style={{
+                fontSize: 11,
+                fontFamily: 'var(--font-mono)',
+                color: '#78716C',
+                padding: '2px 8px',
+                borderRadius: 4,
+                background: '#FAF7F2',
+                border: '1px solid #EAE3D7'
+              }}>
+                PrecisionWorks Mfg · 24h Baseline
+              </span>
             </div>
-            <span className="dt-case-badge-guide">
-              Click steps 1 → 4 sequentially for an airtight presentation pitch
+            <p style={{ fontSize: 12.5, color: '#78716C', margin: 0 }}>
+              Simulate operational changes, evaluate energy savings, and verify production constraints before implementation.
+            </p>
+          </div>
+
+          {/* Action Controls Row */}
+          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+            {/* Methodology Drawer Toggle */}
+            <button
+              onClick={() => setShowMethodologyDrawer(!showMethodologyDrawer)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                background: showMethodologyDrawer ? '#FAF7F2' : '#FFFFFF',
+                color: '#475569',
+                border: '1px solid #D9D0C1',
+                borderRadius: 8,
+                padding: '6px 11px',
+                fontSize: 12,
+                fontWeight: 500,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+              title="View deterministic calculation methodology and safety contracts"
+            >
+              <Info size={13} color="#64748B" />
+              <span>Methodology</span>
+            </button>
+
+            {/* Demo Pipeline Stepper Toggle */}
+            <button
+              onClick={() => setShowDemoPipeline(!showDemoPipeline)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                background: showDemoPipeline ? 'rgba(2, 132, 199, 0.08)' : '#FFFFFF',
+                color: showDemoPipeline ? '#0284C7' : '#475569',
+                border: showDemoPipeline ? '1px solid rgba(2, 132, 199, 0.3)' : '1px solid #D9D0C1',
+                borderRadius: 8,
+                padding: '6px 11px',
+                fontSize: 12,
+                fontWeight: 500,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+              title="Toggle hackathon 4-step judging presentation walkthrough"
+            >
+              <Compass size={13} />
+              <span>{showDemoPipeline ? 'Hide Demo Guide' : 'Demo Guide'}</span>
+            </button>
+
+            {/* Reset to Baseline */}
+            <button
+              onClick={handleResetToBaseline}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                background: '#FFFFFF',
+                color: '#475569',
+                border: '1px solid #D9D0C1',
+                borderRadius: 8,
+                padding: '6px 11px',
+                fontSize: 12,
+                fontWeight: 500,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+              title="Reset scenario to un-modified factory baseline"
+            >
+              <RotateCcw size={13} />
+              <span>Reset Baseline</span>
+            </button>
+
+            {/* Auto-Stagger Optimizer */}
+            <button
+              onClick={handleRunOptimizer}
+              disabled={isOptimizing}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                background: '#FAF7F2',
+                color: '#059669',
+                border: '1px solid rgba(16, 185, 129, 0.3)',
+                borderRadius: 8,
+                padding: '6px 12px',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: isOptimizing ? 'not-allowed' : 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+              title="Run algorithmic search across start-time offsets to minimize plant peak load"
+            >
+              <Sparkles size={13} color="#059669" />
+              <span>{isOptimizing ? 'Optimizing...' : 'Auto-Stagger Peak'}</span>
+            </button>
+
+            {/* Apply to Platform */}
+            <button
+              onClick={() => onApplySimulation(currentResult)}
+              disabled={currentResult.feasibility === 'blocked'}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                background: currentResult.feasibility === 'blocked' ? '#F5F5F4' : '#FFFFFF',
+                color: currentResult.feasibility === 'blocked' ? '#A8A29E' : '#1C1917',
+                border: '1px solid #D9D0C1',
+                borderRadius: 8,
+                padding: '6px 12px',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: currentResult.feasibility === 'blocked' ? 'not-allowed' : 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+              title={currentResult.feasibility === 'blocked' ? 'Cannot apply blocked scenario' : 'Sync scenario to 3D Twin & Audit reports'}
+            >
+              <CheckCircle2 size={13} color={currentResult.feasibility === 'blocked' ? '#A8A29E' : '#059669'} />
+              <span>Apply to Platform</span>
+            </button>
+
+            {/* Primary Run Simulation */}
+            <button
+              onClick={handleRunSimulation}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                background: '#0284C7',
+                color: '#FFFFFF',
+                border: 'none',
+                borderRadius: 8,
+                padding: '7px 14px',
+                fontSize: 12.5,
+                fontWeight: 600,
+                cursor: 'pointer',
+                boxShadow: '0 1px 2px rgba(2, 132, 199, 0.25)',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <Play size={13} />
+              <span>Recalculate</span>
+            </button>
+          </div>
+        </div>
+
+        {/* ─── Collapsible Simulation Methodology Drawer ──────────────────── */}
+        {showMethodologyDrawer && (
+          <div style={{
+            background: '#FAF7F2',
+            border: '1px solid #EAE3D7',
+            borderRadius: 10,
+            padding: '16px 20px',
+            fontSize: 12,
+            color: '#475569',
+            lineHeight: 1.6
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <strong style={{ color: '#1C1917', fontSize: 13 }}>Digital Twin Architecture & Scientific Methodology</strong>
+              <span style={{ fontSize: 11, color: '#78716C' }}>ISO 50001:2018 Clause 6.3 & IPMVP Option B Compliant</span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14 }}>
+              <div style={{ background: '#FFFFFF', padding: '10px 14px', borderRadius: 8, border: '1px solid #EAE3D7' }}>
+                <span style={{ fontWeight: 600, color: '#0284C7' }}>Idea A: Sensor Sufficiency Gate</span>
+                <p style={{ margin: '4px 0 0', fontSize: 11.5, color: '#64748B' }}>
+                  Quantifies diagnostic ambiguity before capital expenditure. Evaluates Value of Information (VOI) of adding inline ultrasonic flowmeters to separate pneumatic leaks from timer blow-offs.
+                </p>
+              </div>
+              <div style={{ background: '#FFFFFF', padding: '10px 14px', borderRadius: 8, border: '1px solid #EAE3D7' }}>
+                <span style={{ fontWeight: 600, color: '#DC2626' }}>Idea C: Production-Safe Interlocks</span>
+                <p style={{ margin: '4px 0 0', fontSize: 11.5, color: '#64748B' }}>
+                  Enforces non-negotiable physical constraints. Clamps pneumatic pressure to ≥6.5 bar ring main floor and prevents furnace power cuts that would violate metallurgical quench minimums.
+                </p>
+              </div>
+              <div style={{ background: '#FFFFFF', padding: '10px 14px', borderRadius: 8, border: '1px solid #EAE3D7' }}>
+                <span style={{ fontWeight: 600, color: '#059669' }}>Idea B: Counterfactual M&V Ledger</span>
+                <p style={{ margin: '4px 0 0', fontSize: 11.5, color: '#64748B' }}>
+                  Reconciles post-mod telemetry to separate genuine energy efficiency from production volume drops (e.g. 122 vs 140 parts) using routine baseline adjustments.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ─── 2. Compact 4-Step Judging Presentation Stepper (Collapsible) ── */}
+        {showDemoPipeline && (
+          <div style={{
+            background: '#FFFFFF',
+            border: '1px solid #EAE3D7',
+            borderRadius: 10,
+            padding: '14px 18px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Compass size={14} color="#0284C7" />
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#1C1917' }}>3-Minute Judging Presentation Pipeline</span>
+              </div>
+              <span style={{ fontSize: 11, color: '#78716C' }}>
+                Click steps sequentially for an airtight presentation pitch
+              </span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 8 }}>
+              {DEMO_PIPELINE.map(step => {
+                const isStepActive = activeDemoStep === step.stepNum;
+                const isPassed = activeDemoStep !== null && step.stepNum < activeDemoStep;
+                return (
+                  <button
+                    key={step.stepNum}
+                    onClick={() => handleDemoStepClick(step)}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'flex-start',
+                      padding: '8px 12px',
+                      background: isStepActive ? '#F0F9FF' : '#FFFFFF',
+                      border: isStepActive ? '1.5px solid #0284C7' : '1px solid #EAE3D7',
+                      borderRadius: 8,
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%' }}>
+                      <span style={{
+                        width: 18,
+                        height: 18,
+                        borderRadius: '50%',
+                        background: isStepActive ? '#0284C7' : isPassed ? '#10B981' : '#F5F5F4',
+                        color: isStepActive || isPassed ? '#FFFFFF' : '#78716C',
+                        fontSize: 10,
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        {isPassed ? '✓' : step.stepNum}
+                      </span>
+                      <span style={{
+                        fontSize: 12,
+                        fontWeight: isStepActive ? 700 : 600,
+                        color: isStepActive ? '#0284C7' : '#1C1917'
+                      }}>
+                        {step.label.slice(3)}
+                      </span>
+                    </div>
+                    <span style={{ fontSize: 10.5, color: '#78716C', marginTop: 3, paddingLeft: 24 }}>
+                      {step.ideaTag}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Presenter Talking Point */}
+            {activeDemoStep !== null && (
+              <div style={{
+                marginTop: 10,
+                background: '#FAF7F2',
+                border: '1px solid #EAE3D7',
+                borderLeft: '4px solid #0284C7',
+                borderRadius: 6,
+                padding: '9px 14px',
+                fontSize: 11.5,
+                color: '#1E252D',
+                lineHeight: 1.5,
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 8
+              }}>
+                <Sparkles size={14} color="#D97706" style={{ flexShrink: 0, marginTop: 2 }} />
+                <div>
+                  <strong style={{ color: '#0284C7' }}>Presenter Talking Point: </strong>
+                  <span>{DEMO_PIPELINE.find(s => s.stepNum === activeDemoStep)?.pitchScript}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ─── 3. Industrial Case-Study Selection Grid ────────────────────── */}
+        <div style={{
+          background: '#FFFFFF',
+          border: '1px solid #EAE3D7',
+          borderRadius: 12,
+          padding: '16px 20px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Target size={15} color="#0284C7" />
+              <span style={{ fontSize: 13.5, fontWeight: 700, color: '#1C1917' }}>Industrial Case Studies</span>
+              <span style={{ fontSize: 11.5, color: '#78716C' }}>
+                Pre-configured physical scenarios with verified plant constraints
+              </span>
+            </div>
+            <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: '#78716C' }}>
+              Select to load verified inputs
             </span>
           </div>
 
-          <div className="dt-pipeline-nav">
-            {DEMO_PIPELINE.map(step => {
-              const isStepActive = activeDemoStep === step.stepNum;
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 10 }}>
+            {INDUSTRIAL_CASES.map(c => {
+              const isSelected = activeCaseId === c.id;
               return (
-                <button
-                  key={step.stepNum}
-                  onClick={() => handleDemoStepClick(step)}
-                  className={`dt-pipeline-btn ${isStepActive ? 'active' : ''}`}
+                <div
+                  key={c.id}
+                  onClick={() => handleSelectCase(c)}
+                  style={{
+                    background: isSelected ? '#F0F9FF' : '#FAF7F2',
+                    border: isSelected ? '1.5px solid #0284C7' : '1px solid #EAE3D7',
+                    borderRadius: 8,
+                    padding: '10px 12px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between'
+                  }}
                 >
-                  <div className="dt-pipeline-step-hdr">
-                    <span>{step.label}</span>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                      <span style={{
+                        fontSize: 9.5,
+                        fontWeight: 700,
+                        padding: '1px 6px',
+                        borderRadius: 4,
+                        background: c.tagClass === 'emerald' ? 'rgba(16,185,129,0.12)' : c.tagClass === 'cyan' ? 'rgba(2,132,199,0.12)' : 'rgba(239,68,68,0.12)',
+                        color: c.tagClass === 'emerald' ? '#059669' : c.tagClass === 'cyan' ? '#0284C7' : '#DC2626',
+                        fontFamily: 'var(--font-mono)'
+                      }}>
+                        {c.caseNum}
+                      </span>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 600, color: '#78716C' }}>
+                        {c.machineId}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: isSelected ? '#0284C7' : '#1C1917', marginBottom: 3 }}>
+                      {c.title}
+                    </div>
+                    <div style={{ fontSize: 10.5, color: '#78716C', lineHeight: 1.35, marginBottom: 8 }}>
+                      {c.summary}
+                    </div>
                   </div>
-                  <div className="dt-pipeline-tag">{step.ideaTag}</div>
-                </button>
+                  <div style={{
+                    fontSize: 10.5,
+                    fontFamily: 'var(--font-mono)',
+                    fontWeight: 600,
+                    paddingTop: 6,
+                    borderTop: '1px dashed #EAE3D7',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    color: c.tagClass === 'emerald' ? '#059669' : c.tagClass === 'cyan' ? '#0284C7' : '#DC2626'
+                  }}>
+                    <span style={{ color: '#78716C', fontWeight: 400 }}>Impact:</span>
+                    <span>{c.targetBenefit}</span>
+                  </div>
+                </div>
               );
             })}
-          </div>
 
-          {activeDemoStep !== null && (
-            <div className="dt-pipeline-script-banner">
-              <Sparkles size={14} className="text-amber" style={{ flexShrink: 0, marginTop: 2 }} />
-              <div>
-                <strong>Presenter Talking Point: </strong>
-                <span>{DEMO_PIPELINE.find(s => s.stepNum === activeDemoStep)?.pitchScript}</span>
+            {/* Custom Sandbox Tile */}
+            <div
+              onClick={() => setActiveCaseId('custom')}
+              style={{
+                background: activeCaseId === 'custom' ? '#F0F9FF' : '#FAF7F2',
+                border: activeCaseId === 'custom' ? '1.5px solid #0284C7' : '1px solid #EAE3D7',
+                borderRadius: 8,
+                padding: '10px 12px',
+                cursor: 'pointer',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
+                textAlign: 'center'
+              }}
+            >
+              <Sliders size={16} color="#0284C7" style={{ marginBottom: 4 }} />
+              <div style={{ fontSize: 12, fontWeight: 700, color: activeCaseId === 'custom' ? '#0284C7' : '#1C1917' }}>
+                Custom Sandbox
+              </div>
+              <div style={{ fontSize: 10.5, color: '#78716C', marginTop: 2 }}>
+                Free manual setpoints
               </div>
             </div>
-          )}
-        </div>
-      )}
-
-      {/* ─── 3. Case-Specific Selector Grid ─────────────────────────────────── */}
-      <div className="dt-case-selector-box">
-        <div className="dt-case-header-row">
-          <div className="dt-case-section-title">
-            <Target size={14} className="text-cyan" />
-            <span>Select Industrial Case Study:</span>
           </div>
-          <span style={{ fontSize: 11, color: '#64748b' }}>
-            Pre-configured physical scenarios with verified plant constraints
-          </span>
         </div>
 
-        <div className="dt-case-cards-grid">
-          {INDUSTRIAL_CASES.map(c => {
-            const isSelected = activeCaseId === c.id;
-            return (
-              <div
-                key={c.id}
-                onClick={() => handleSelectCase(c)}
-                className={`dt-case-card ${isSelected ? 'active' : ''}`}
-              >
-                <div className="dt-case-card-top">
-                  <span className={`dt-case-tag ${c.tagClass}`}>{c.caseNum}</span>
-                  <span className="dt-case-asset-lbl">{c.machineId}</span>
-                </div>
-                <div className="dt-case-title">{c.title}</div>
-                <div className="dt-case-desc">{c.summary}</div>
-                <div className="dt-case-target-metric">
-                  <span style={{ color: '#64748b' }}>Impact:</span>
-                  <span className={`text-${c.tagClass}`}>{c.targetBenefit}</span>
+        {/* ─── 4. Stage B: Simulation Results (5 Clean KPI Cards) ─────────── */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+          gap: 12
+        }}>
+          {/* KPI 1: 24h Plant Energy */}
+          <div style={{
+            background: '#FFFFFF',
+            border: '1px solid #EAE3D7',
+            borderRadius: 10,
+            padding: '14px 16px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#78716C', letterSpacing: '0.04em' }}>
+                24H PLANT ENERGY
+              </span>
+              <Zap size={14} color="#0284C7" />
+            </div>
+            <div style={{ margin: '6px 0 2px', display: 'flex', alignItems: 'baseline', gap: 5 }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 22, fontWeight: 700, color: '#1C1917' }}>
+                {currentResult.scenario.total_energy_kwh.toLocaleString()}
+              </span>
+              <span style={{ fontSize: 11.5, color: '#78716C' }}>kWh</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #F5F5F4', paddingTop: 6, fontSize: 11 }}>
+              <span style={{ color: '#78716C', fontFamily: 'var(--font-mono)' }}>
+                Base: {currentResult.baseline.total_energy_kwh.toLocaleString()}
+              </span>
+              <span style={{
+                fontFamily: 'var(--font-mono)',
+                fontWeight: 600,
+                color: currentResult.deltas.energy_kwh <= 0 ? '#059669' : '#DC2626'
+              }}>
+                {currentResult.deltas.energy_kwh <= 0 ? '▼ -' : '▲ +'}
+                {Math.abs(currentResult.deltas.energy_kwh).toFixed(1)} kWh
+              </span>
+            </div>
+          </div>
+
+          {/* KPI 2: Energy Saved */}
+          <div style={{
+            background: '#FFFFFF',
+            border: '1px solid #EAE3D7',
+            borderRadius: 10,
+            padding: '14px 16px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#78716C', letterSpacing: '0.04em' }}>
+                ENERGY SAVED
+              </span>
+              <TrendingDown size={14} color="#059669" />
+            </div>
+            <div style={{ margin: '6px 0 2px', display: 'flex', alignItems: 'baseline', gap: 5 }}>
+              <span style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 22,
+                fontWeight: 700,
+                color: currentResult.deltas.energy_kwh <= 0 ? '#059669' : '#57534E'
+              }}>
+                {Math.abs(currentResult.deltas.energy_kwh).toFixed(1)}
+              </span>
+              <span style={{ fontSize: 11.5, color: '#78716C' }}>kWh/day</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #F5F5F4', paddingTop: 6, fontSize: 11 }}>
+              <span style={{ color: '#78716C' }}>
+                {((Math.abs(currentResult.deltas.energy_kwh) / (currentResult.baseline.total_energy_kwh || 1)) * 100).toFixed(1)}% reduction
+              </span>
+              <span style={{
+                fontSize: 10,
+                padding: '1px 5px',
+                borderRadius: 3,
+                background: currentResult.deltas.energy_kwh <= 0 ? 'rgba(16,185,129,0.1)' : '#F5F5F4',
+                color: currentResult.deltas.energy_kwh <= 0 ? '#059669' : '#78716C',
+                fontWeight: 600
+              }}>
+                Simulated
+              </span>
+            </div>
+          </div>
+
+          {/* KPI 3: Operating Cost Savings */}
+          <div style={{
+            background: '#FFFFFF',
+            border: '1px solid #EAE3D7',
+            borderRadius: 10,
+            padding: '14px 16px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#78716C', letterSpacing: '0.04em' }}>
+                OPERATING COST
+              </span>
+              <DollarSign size={14} color="#059669" />
+            </div>
+            <div style={{ margin: '6px 0 2px', display: 'flex', alignItems: 'baseline', gap: 5 }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 22, fontWeight: 700, color: '#1C1917' }}>
+                ₹{currentResult.scenario.total_cost_inr.toLocaleString()}
+              </span>
+              <span style={{ fontSize: 11.5, color: '#78716C' }}>/day</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #F5F5F4', paddingTop: 6, fontSize: 11 }}>
+              <span style={{ color: '#78716C', fontFamily: 'var(--font-mono)' }}>
+                Base: ₹{currentResult.baseline.total_cost_inr.toLocaleString()}
+              </span>
+              <span style={{
+                fontFamily: 'var(--font-mono)',
+                fontWeight: 600,
+                color: currentResult.deltas.cost_inr <= 0 ? '#059669' : '#DC2626'
+              }}>
+                {currentResult.deltas.cost_inr <= 0 ? '▼ -₹' : '▲ +₹'}
+                {Math.abs(currentResult.deltas.cost_inr).toLocaleString()}
+              </span>
+            </div>
+          </div>
+
+          {/* KPI 4: Peak Demand Impact */}
+          <div style={{
+            background: '#FFFFFF',
+            border: '1px solid #EAE3D7',
+            borderRadius: 10,
+            padding: '14px 16px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#78716C', letterSpacing: '0.04em' }}>
+                PEAK DEMAND
+              </span>
+              <Gauge size={14} color={currentResult.scenario.peak_demand_kw > tariffConfig.contract_demand_limit_kw ? '#DC2626' : '#D97706'} />
+            </div>
+            <div style={{ margin: '6px 0 2px', display: 'flex', alignItems: 'baseline', gap: 5 }}>
+              <span style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 22,
+                fontWeight: 700,
+                color: currentResult.scenario.peak_demand_kw > tariffConfig.contract_demand_limit_kw ? '#DC2626' : '#1C1917'
+              }}>
+                {currentResult.scenario.peak_demand_kw}
+              </span>
+              <span style={{ fontSize: 11.5, color: '#78716C' }}>kW</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #F5F5F4', paddingTop: 6, fontSize: 11 }}>
+              <span style={{ color: '#78716C', fontFamily: 'var(--font-mono)' }}>
+                Limit: {tariffConfig.contract_demand_limit_kw} kW
+              </span>
+              <span style={{
+                fontFamily: 'var(--font-mono)',
+                fontWeight: 600,
+                color: currentResult.scenario.peak_demand_kw <= tariffConfig.contract_demand_limit_kw ? '#059669' : '#DC2626'
+              }}>
+                {currentResult.scenario.peak_demand_kw <= tariffConfig.contract_demand_limit_kw ? 'Within Limit' : 'Exceeds Limit'}
+              </span>
+            </div>
+          </div>
+
+          {/* KPI 5: Scope 2 Carbon Impact */}
+          <div style={{
+            background: '#FFFFFF',
+            border: '1px solid #EAE3D7',
+            borderRadius: 10,
+            padding: '14px 16px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#78716C', letterSpacing: '0.04em' }}>
+                SCOPE 2 CARBON
+              </span>
+              <Leaf size={14} color="#059669" />
+            </div>
+            <div style={{ margin: '6px 0 2px', display: 'flex', alignItems: 'baseline', gap: 5 }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 22, fontWeight: 700, color: '#1C1917' }}>
+                {(currentResult.scenario.scope2_kg_co2e ?? 0).toFixed(1)}
+              </span>
+              <span style={{ fontSize: 11.5, color: '#78716C' }}>kg CO₂e</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #F5F5F4', paddingTop: 6, fontSize: 11 }}>
+              <span style={{ color: '#78716C', fontFamily: 'var(--font-mono)' }}>
+                Base: {(currentResult.baseline.scope2_kg_co2e ?? 0).toFixed(1)} kg
+              </span>
+              <span style={{
+                fontFamily: 'var(--font-mono)',
+                fontWeight: 600,
+                color: (currentResult.deltas.scope2_kg_co2e ?? 0) <= 0 ? '#059669' : '#DC2626'
+              }}>
+                {(currentResult.deltas.scope2_kg_co2e ?? 0) <= 0 ? '▼ -' : '▲ +'}
+                {Math.abs(currentResult.deltas.scope2_kg_co2e ?? 0).toFixed(1)} kg
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* ─── 5. Main Workbench: Setup (Stage A) & Constraints (Stage C) vs Analytics ─── */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '340px minmax(0, 1fr)',
+          gap: 16,
+          alignItems: 'start'
+        }}>
+          {/* LEFT COLUMN: Stage A (Setup) + Stage C (Constraints) */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+            {/* Stage A — Setup & Intervention Card */}
+            <div style={{
+              background: '#FFFFFF',
+              border: '1px solid #EAE3D7',
+              borderRadius: 10,
+              padding: '16px',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                <Cpu size={14} color="#0284C7" />
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#1C1917' }}>Stage A: Simulation Setup</span>
+              </div>
+
+              {/* Target Asset Selector */}
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#78716C', marginBottom: 6 }}>
+                  Target Machine Asset
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 6 }}>
+                  {Object.values(MACHINE_PROFILES).map(profile => {
+                    const isSelected = selectedMachineId === profile.machine_id;
+                    return (
+                      <button
+                        key={profile.machine_id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedMachineId(profile.machine_id);
+                          if (onSelectMachineIn3D && profile.model3DId) {
+                            onSelectMachineIn3D(profile.model3DId);
+                          }
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '7px 9px',
+                          borderRadius: 6,
+                          background: isSelected ? '#F0F9FF' : '#FAF7F2',
+                          border: isSelected ? '1.5px solid #0284C7' : '1px solid #EAE3D7',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                          textAlign: 'left'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                          <span style={{ width: 7, height: 7, borderRadius: '50%', background: profile.color }} />
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, color: isSelected ? '#0284C7' : '#1C1917' }}>
+                            {profile.machine_id}
+                          </span>
+                        </div>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#78716C' }}>
+                          {profile.rated_power_kw}kW
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
-            );
-          })}
 
-          {/* Custom Sandbox Tile */}
-          <div
-            onClick={() => setActiveCaseId('custom')}
-            className={`dt-case-card ${activeCaseId === 'custom' ? 'active' : ''}`}
-            style={{ justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}
-          >
-            <Sliders size={16} className="text-cyan" style={{ marginBottom: 4 }} />
-            <div className="dt-case-title" style={{ fontSize: 11 }}>Custom Sandbox</div>
-            <div style={{ fontSize: 9.5, color: '#64748b' }}>Free engineering setpoints</div>
-          </div>
-        </div>
-      </div>
+              {/* Intervention Action Form */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#78716C', marginBottom: 5 }}>
+                    Intervention Action
+                  </label>
+                  <select
+                    value={actionType}
+                    onChange={e => setActionType(e.target.value as ScenarioAction['type'])}
+                    style={{
+                      width: '100%',
+                      background: '#FFFFFF',
+                      border: '1px solid #D9D0C1',
+                      borderRadius: 6,
+                      padding: '6px 10px',
+                      fontSize: 12,
+                      color: '#1C1917',
+                      outline: 'none',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value="reduce_idle_power">Reduce Avoidable Idle Power (Auto-Cutoff)</option>
+                    <option value="shift_schedule">Load Shifting / Schedule Offset (Peak Shaving)</option>
+                    <option value="pressure_optimization">Pneumatic Pressure Setpoint Tuning (bar)</option>
+                    <option value="reduce_runtime">Reduce Operating Window (Runtime Reduction)</option>
+                  </select>
+                </div>
 
-      {/* ─── 4. Sleek 5-Column KPI Metrics Overview ─────────────────────────── */}
-      <div className="dt-kpi-grid-5">
-        {/* Total Energy */}
-        <div className="dt-kpi-card">
-          <div className="dt-kpi-top">
-            <span className="dt-kpi-lbl">24h Plant Energy</span>
-            <Zap size={13} className="text-cyan" />
-          </div>
-          <div className="dt-kpi-main-val">
-            <span className="dt-kpi-primary">{currentResult.scenario.total_energy_kwh.toLocaleString()}</span>
-            <span className="dt-kpi-unit">kWh</span>
-          </div>
-          <div className="dt-kpi-sub-row">
-            <span className="dt-kpi-baseline">Base: {currentResult.baseline.total_energy_kwh.toLocaleString()}</span>
-            <span className={`dt-kpi-delta-pill ${currentResult.deltas.energy_kwh <= 0 ? 'positive' : 'negative'}`}>
-              {currentResult.deltas.energy_kwh <= 0 ? '▼ ' : '▲ '}
-              {Math.abs(currentResult.deltas.energy_kwh).toFixed(1)} kWh
-            </span>
-          </div>
-        </div>
-
-        {/* SEC Intensity */}
-        <div className="dt-kpi-card">
-          <div className="dt-kpi-top">
-            <span className="dt-kpi-lbl">Specific Energy (SEC)</span>
-            <BarChart3 size={13} className="text-emerald" />
-          </div>
-          <div className="dt-kpi-main-val">
-            <span className="dt-kpi-primary">{currentResult.scenario.sec_kwh_per_unit || '5.16'}</span>
-            <span className="dt-kpi-unit">kWh/part</span>
-          </div>
-          <div className="dt-kpi-sub-row">
-            <span className="dt-kpi-baseline">Base: {currentResult.baseline.sec_kwh_per_unit || '5.24'}</span>
-            <span className={`dt-kpi-delta-pill ${((currentResult.scenario.sec_kwh_per_unit || 5.16) <= (currentResult.baseline.sec_kwh_per_unit || 5.24)) ? 'positive' : 'negative'}`}>
-              {((currentResult.scenario.sec_kwh_per_unit || 5.16) <= (currentResult.baseline.sec_kwh_per_unit || 5.24)) ? '▼ Optimized' : '▲ High'}
-            </span>
-          </div>
-        </div>
-
-        {/* Peak Demand */}
-        <div className="dt-kpi-card">
-          <div className="dt-kpi-top">
-            <span className="dt-kpi-lbl">Peak Demand</span>
-            <Gauge size={13} className="text-amber" />
-          </div>
-          <div className="dt-kpi-main-val">
-            <span className={`dt-kpi-primary ${currentResult.scenario.peak_demand_kw > tariffConfig.contract_demand_limit_kw ? 'text-red' : ''}`}>
-              {currentResult.scenario.peak_demand_kw}
-            </span>
-            <span className="dt-kpi-unit">kW</span>
-          </div>
-          <div className="dt-kpi-sub-row">
-            <span className="dt-kpi-baseline">Limit: {tariffConfig.contract_demand_limit_kw} kW</span>
-            <span className={`dt-kpi-delta-pill ${currentResult.deltas.peak_kw <= 0 ? 'positive' : 'negative'}`}>
-              {currentResult.deltas.peak_kw <= 0 ? 'Normal' : '▲ Exceeds'}
-            </span>
-          </div>
-        </div>
-
-        {/* Daily Energy Cost */}
-        <div className="dt-kpi-card">
-          <div className="dt-kpi-top">
-            <span className="dt-kpi-lbl">Daily Energy Cost</span>
-            <DollarSign size={13} className="text-emerald" />
-          </div>
-          <div className="dt-kpi-main-val">
-            <span className="dt-kpi-primary">₹{currentResult.scenario.total_cost_inr.toLocaleString()}</span>
-            <span className="dt-kpi-unit">/day</span>
-          </div>
-          <div className="dt-kpi-sub-row">
-            <span className="dt-kpi-baseline">Base: ₹{currentResult.baseline.total_cost_inr.toLocaleString()}</span>
-            <span className={`dt-kpi-delta-pill ${currentResult.deltas.cost_inr <= 0 ? 'positive' : 'negative'}`}>
-              {currentResult.deltas.cost_inr <= 0 ? '▼ -₹' : '▲ +₹'}
-              {Math.abs(currentResult.deltas.cost_inr).toLocaleString()}
-            </span>
-          </div>
-        </div>
-
-        {/* Scope 2 Grid Carbon */}
-        <div className="dt-kpi-card">
-          <div className="dt-kpi-top">
-            <span className="dt-kpi-lbl">Scope 2 Grid Carbon</span>
-            <Leaf size={13} className="text-violet" />
-          </div>
-          <div className="dt-kpi-main-val">
-            <span className="dt-kpi-primary">{(currentResult.scenario.scope2_kg_co2e ?? 0).toFixed(1)}</span>
-            <span className="dt-kpi-unit">kg CO₂e</span>
-          </div>
-          <div className="dt-kpi-sub-row">
-            <span className="dt-kpi-baseline">Base: {(currentResult.baseline.scope2_kg_co2e ?? 0).toFixed(1)} kg</span>
-            <span className={`dt-kpi-delta-pill ${(currentResult.deltas.scope2_kg_co2e ?? 0) <= 0 ? 'positive' : 'negative'}`}>
-              {(currentResult.deltas.scope2_kg_co2e ?? 0) <= 0 ? '▼ -' : '▲ +'}
-              {Math.abs(currentResult.deltas.scope2_kg_co2e ?? 0).toFixed(1)} kg
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* ─── 5. Main 2-Column Responsive Workbench ──────────────────────────── */}
-      <div className="dt-main-grid">
-        {/* Left Column: Focused Controls & Immediate Feasibility (<500px total height) */}
-        <div className="dt-left-col">
-          {/* Target Asset Selector (Compact Pill Group) */}
-          <div className="panel dt-panel">
-            <div className="panel-hdr" style={{ padding: '8px 12px' }}>
-              <Cpu size={12} className="text-cyan" />
-              <span>1. Target Physical Asset</span>
-            </div>
-            <div style={{ padding: '8px 10px' }}>
-              <div className="dt-asset-pill-row">
-                {Object.values(MACHINE_PROFILES).map(profile => {
-                  const isSelected = selectedMachineId === profile.machine_id;
-                  return (
-                    <button
-                      key={profile.machine_id}
-                      type="button"
-                      onClick={() => {
-                        setSelectedMachineId(profile.machine_id);
-                        if (onSelectMachineIn3D && profile.model3DId) {
-                          onSelectMachineIn3D(profile.model3DId);
-                        }
-                      }}
-                      className={`dt-asset-pill ${isSelected ? 'active' : ''}`}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: profile.color }} />
-                        <span className="pill-id">{profile.machine_id}</span>
+                {/* Dynamic Parameter Sliders */}
+                {actionType === 'reduce_idle_power' && (
+                  <>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 4 }}>
+                        <span style={{ color: '#475569', fontWeight: 500 }}>Target Idle Power</span>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#0284C7' }}>
+                          {targetPowerKw.toFixed(1)} kW
+                        </span>
                       </div>
-                      <span className="pill-kw">{profile.rated_power_kw}kW</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
+                      <input
+                        type="range"
+                        min={0}
+                        max={selectedProfile.rated_power_kw * 1.5}
+                        step={0.5}
+                        value={targetPowerKw}
+                        onChange={e => setTargetPowerKw(parseFloat(e.target.value))}
+                        style={{ width: '100%', accentColor: '#0284C7', cursor: 'pointer' }}
+                      />
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9.5, color: '#78716C', marginTop: 2 }}>
+                        <span>0 kW (Off)</span>
+                        <span>Idle: {selectedProfile.expected_idle_power_kw} kW</span>
+                        <span>Rated: {selectedProfile.rated_power_kw} kW</span>
+                      </div>
+                    </div>
 
-          {/* Action Parameters Form (Compact & Clean) */}
-          <div className="panel dt-panel">
-            <div className="panel-hdr" style={{ padding: '8px 12px' }}>
-              <Sliders size={12} />
-              <span>2. Intervention Parameters</span>
-            </div>
-            <div className="dt-action-form" style={{ padding: '10px 12px', gap: 10 }}>
-              {/* Action Type Dropdown */}
-              <div className="form-group">
-                <label className="form-label">Intervention Action</label>
-                <select
-                  className="dt-select"
-                  value={actionType}
-                  onChange={e => setActionType(e.target.value as ScenarioAction['type'])}
-                >
-                  <option value="reduce_idle_power">Reduce Avoidable Idle Power (Auto-Cutoff)</option>
-                  <option value="shift_schedule">Load Shifting / Schedule Offset (Peak Shaving)</option>
-                  <option value="pressure_optimization">Pneumatic Pressure Setpoint Tuning (bar)</option>
-                  <option value="reduce_runtime">Reduce Operating Window (Runtime Reduction)</option>
-                </select>
-              </div>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 4 }}>
+                        <span style={{ color: '#475569', fontWeight: 500 }}>Intervention Duration</span>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#0284C7' }}>
+                          {durationHours} hrs
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min={1}
+                        max={6}
+                        step={0.5}
+                        value={durationHours}
+                        onChange={e => setDurationHours(parseFloat(e.target.value))}
+                        style={{ width: '100%', accentColor: '#0284C7', cursor: 'pointer' }}
+                      />
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9.5, color: '#78716C', marginTop: 2 }}>
+                        <span>1 hr</span>
+                        <span>Break: 3 hrs</span>
+                        <span>6 hrs</span>
+                      </div>
+                    </div>
+                  </>
+                )}
 
-              {/* Dynamic Action Fields */}
-              {actionType === 'reduce_idle_power' && (
-                <>
-                  <div className="form-group">
-                    <div className="form-label-row">
-                      <span className="form-label">Target Idle Power</span>
-                      <span className="form-val">{targetPowerKw.toFixed(1)} kW</span>
+                {actionType === 'shift_schedule' && (
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 4 }}>
+                      <span style={{ color: '#475569', fontWeight: 500 }}>Schedule Offset</span>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#0284C7' }}>
+                        {offsetHours >= 0 ? `+${offsetHours} hrs` : `${offsetHours} hrs`}
+                      </span>
                     </div>
                     <input
                       type="range"
-                      min={0}
-                      max={selectedProfile.rated_power_kw * 1.5}
-                      step={0.5}
-                      value={targetPowerKw}
-                      onChange={e => setTargetPowerKw(parseFloat(e.target.value))}
-                      className="dt-range"
+                      min={-3}
+                      max={4}
+                      step={1}
+                      value={offsetHours}
+                      onChange={e => setOffsetHours(parseInt(e.target.value))}
+                      style={{ width: '100%', accentColor: '#0284C7', cursor: 'pointer' }}
                     />
-                    <div className="range-hints">
-                      <span>0 kW (Off)</span>
-                      <span>Idle: {selectedProfile.expected_idle_power_kw} kW</span>
-                      <span className={targetPowerKw > selectedProfile.rated_power_kw ? 'text-red font-bold' : ''}>
-                        Rated: {selectedProfile.rated_power_kw} kW
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9.5, color: '#78716C', marginTop: 2 }}>
+                      <span>-3 hrs</span>
+                      <span>0 (Base)</span>
+                      <span>+2 hrs (Optimal)</span>
+                      <span>+4 hrs</span>
+                    </div>
+                  </div>
+                )}
+
+                {actionType === 'pressure_optimization' && (
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 4 }}>
+                      <span style={{ color: '#475569', fontWeight: 500 }}>Discharge Pressure</span>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: targetPressureBar < 6.5 ? '#DC2626' : '#0284C7' }}>
+                        {targetPressureBar.toFixed(1)} bar
                       </span>
                     </div>
-                    {targetPowerKw > selectedProfile.rated_power_kw && (
-                      <div className="form-warning text-red" style={{ fontSize: 10, marginTop: 3 }}>
-                        <AlertTriangle size={11} /> Exceeds rated {selectedProfile.rated_power_kw} kW! Will trigger interlock block.
-                      </div>
-                    )}
+                    <input
+                      type="range"
+                      min={6.0}
+                      max={7.5}
+                      step={0.1}
+                      value={targetPressureBar}
+                      onChange={e => setTargetPressureBar(parseFloat(e.target.value))}
+                      style={{ width: '100%', accentColor: targetPressureBar < 6.5 ? '#DC2626' : '#0284C7', cursor: 'pointer' }}
+                    />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9.5, color: '#78716C', marginTop: 2 }}>
+                      <span style={{ color: targetPressureBar < 6.5 ? '#DC2626' : undefined }}>Floor: 6.5 bar</span>
+                      <span>Optimal: 6.8 bar</span>
+                      <span>Set: 7.5 bar</span>
+                    </div>
                   </div>
+                )}
 
-                  <div className="form-group">
-                    <div className="form-label-row">
-                      <span className="form-label">Duration Applied</span>
-                      <span className="form-val">{durationHours} hours</span>
+                {actionType === 'reduce_runtime' && (
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 4 }}>
+                      <span style={{ color: '#475569', fontWeight: 500 }}>Runtime Trimmed</span>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#0284C7' }}>
+                        {durationHours} hrs
+                      </span>
                     </div>
                     <input
                       type="range"
                       min={1}
-                      max={6}
-                      step={0.5}
+                      max={4}
+                      step={1}
                       value={durationHours}
                       onChange={e => setDurationHours(parseFloat(e.target.value))}
-                      className="dt-range"
+                      style={{ width: '100%', accentColor: '#0284C7', cursor: 'pointer' }}
                     />
-                    <div className="range-hints">
-                      <span>1 hr</span>
-                      <span>Break: 3 hrs</span>
-                      <span>6 hrs</span>
-                    </div>
                   </div>
-                </>
-              )}
+                )}
 
-              {actionType === 'shift_schedule' && (
-                <div className="form-group">
-                  <div className="form-label-row">
-                    <span className="form-label">Schedule Offset</span>
-                    <span className="form-val">
-                      {offsetHours >= 0 ? `+${offsetHours} hrs` : `${offsetHours} hrs`}
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min={-3}
-                    max={4}
-                    step={1}
-                    value={offsetHours}
-                    onChange={e => setOffsetHours(parseInt(e.target.value))}
-                    className="dt-range"
-                  />
-                  <div className="range-hints">
-                    <span>-3 hrs</span>
-                    <span>0 (No Shift)</span>
-                    <span>+2 hrs (Optimal)</span>
-                    <span>+4 hrs</span>
-                  </div>
+                {/* Operating State Readout */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '6px 10px',
+                  background: '#FAF7F2',
+                  border: '1px solid #EAE3D7',
+                  borderRadius: 6,
+                  fontSize: 11
+                }}>
+                  <span style={{ color: '#78716C' }}>Target State:</span>
+                  <span style={{ fontWeight: 600, color: '#1C1917', fontFamily: 'var(--font-mono)' }}>
+                    {targetPowerKw === 0 ? 'State 0 (Off · 0.0 LF)' : targetPowerKw <= selectedProfile.expected_idle_power_kw ? `State 1 (Idle · ${(targetPowerKw / selectedProfile.rated_power_kw).toFixed(2)} LF)` : `State 2 (Run · ${(targetPowerKw / selectedProfile.rated_power_kw).toFixed(2)} LF)`}
+                  </span>
                 </div>
-              )}
 
-              {actionType === 'pressure_optimization' && (
-                <div className="form-group">
-                  <div className="form-label-row">
-                    <span className="form-label">Discharge Pressure</span>
-                    <span className="form-val">{targetPressureBar.toFixed(1)} bar</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={6.0}
-                    max={7.5}
-                    step={0.1}
-                    value={targetPressureBar}
-                    onChange={e => setTargetPressureBar(parseFloat(e.target.value))}
-                    className="dt-range"
-                  />
-                  <div className="range-hints">
-                    <span className={targetPressureBar < 6.5 ? 'text-red font-bold' : ''}>
-                      Min: 6.0 (Floor: 6.5)
-                    </span>
-                    <span>Optimal: 6.8 bar</span>
-                    <span>Set: 7.5 bar</span>
-                  </div>
-                  {targetPressureBar < 6.5 && (
-                    <div className="form-warning text-red" style={{ fontSize: 10, marginTop: 3 }}>
-                      <AlertCircle size={11} /> Below 6.5 bar ring main floor! Clamps may fail.
+                {/* Collapsible Advanced Parameters */}
+                <div style={{ border: '1px solid #EAE3D7', borderRadius: 6, overflow: 'hidden' }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowAdvancedClimate(!showAdvancedClimate)}
+                    style={{
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '7px 10px',
+                      background: '#FAF7F2',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: '#475569'
+                    }}
+                  >
+                    <span>Advanced Telemetry & Climate</span>
+                    {showAdvancedClimate ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                  </button>
+
+                  {showAdvancedClimate && (
+                    <div style={{ padding: '10px', background: '#FFFFFF', borderTop: '1px solid #EAE3D7', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10.5, marginBottom: 3 }}>
+                          <span style={{ color: '#78716C' }}>Sensor Quality (Idea A)</span>
+                          <span style={{ fontWeight: 600, color: sensorQuality === 'good' ? '#059669' : '#D97706' }}>
+                            {sensorQuality.toUpperCase()}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', gap: 4 }}>
+                          {(['good', 'suspect', 'missing'] as const).map(q => (
+                            <button
+                              key={q}
+                              type="button"
+                              onClick={() => setSensorQuality(q)}
+                              style={{
+                                flex: 1,
+                                padding: '4px',
+                                borderRadius: 4,
+                                fontSize: 10,
+                                border: '1px solid',
+                                borderColor: sensorQuality === q ? '#0284C7' : '#D9D0C1',
+                                background: sensorQuality === q ? '#F0F9FF' : '#FFFFFF',
+                                color: sensorQuality === q ? '#0284C7' : '#57534E',
+                                cursor: 'pointer',
+                                textTransform: 'capitalize'
+                              }}
+                            >
+                              {q}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10.5, marginBottom: 2 }}>
+                          <span style={{ color: '#78716C' }}>Ambient Temperature (ISO 1217)</span>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, color: '#1C1917' }}>
+                            {ambientTempC.toFixed(1)}°C
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min={15}
+                          max={45}
+                          step={0.5}
+                          value={ambientTempC}
+                          onChange={e => setAmbientTempC(parseFloat(e.target.value))}
+                          style={{ width: '100%', accentColor: '#0284C7' }}
+                        />
+                      </div>
                     </div>
                   )}
-                </div>
-              )}
-
-              {actionType === 'reduce_runtime' && (
-                <div className="form-group">
-                  <div className="form-label-row">
-                    <span className="form-label">Hours Trimmed</span>
-                    <span className="form-val">{durationHours} hrs</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={1}
-                    max={4}
-                    step={1}
-                    value={durationHours}
-                    onChange={e => setDurationHours(parseFloat(e.target.value))}
-                    className="dt-range"
-                  />
-                </div>
-              )}
-
-              {/* Operating State Readout */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5px 8px', background: 'var(--bg-elevated)', borderRadius: 5, fontSize: 10.5 }}>
-                <span style={{ color: '#64748b' }}>State &amp; Load Factor:</span>
-                <span style={{ fontWeight: 600, color: '#0f172a' }}>
-                  {targetPowerKw === 0 ? 'State 0 (Off · 0.00 LF)' : targetPowerKw <= selectedProfile.expected_idle_power_kw ? `State 1 (Idle · ${(targetPowerKw / selectedProfile.rated_power_kw).toFixed(2)} LF)` : `State 2 (Run · ${(targetPowerKw / selectedProfile.rated_power_kw).toFixed(2)} LF)`}
-                </span>
-              </div>
-
-              {/* Collapsible Advanced Climate & Telemetry (ISO 1217) */}
-              <div className="dt-advanced-details">
-                <div
-                  className="dt-advanced-summary"
-                  onClick={() => setShowAdvancedClimate(!showAdvancedClimate)}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <Sliders size={11} className="text-cyan" />
-                    <span>Advanced Telemetry &amp; Climate</span>
-                  </div>
-                  {showAdvancedClimate ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-                </div>
-
-                {showAdvancedClimate && (
-                  <div className="dt-advanced-content">
-                    {/* Sensor Quality */}
-                    <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, marginBottom: 3 }}>
-                        <span style={{ color: '#475569' }}>Sensor Quality (Idea A)</span>
-                        <span style={{ fontWeight: 600, color: sensorQuality === 'good' ? '#059669' : sensorQuality === 'suspect' ? '#ea580c' : '#dc2626' }}>
-                          {sensorQuality.toUpperCase()} {sensorQuality === 'good' ? '(±5%)' : sensorQuality === 'suspect' ? '(±20%)' : '(±35%)'}
-                        </span>
-                      </div>
-                      <div style={{ display: 'flex', gap: 4 }}>
-                        {(['good', 'suspect', 'missing'] as const).map(q => (
-                          <button
-                            key={q}
-                            type="button"
-                            onClick={() => setSensorQuality(q)}
-                            style={{
-                              flex: 1,
-                              padding: '3px 4px',
-                              borderRadius: 4,
-                              fontSize: 9.5,
-                              fontWeight: 500,
-                              border: '1px solid',
-                              borderColor: sensorQuality === q ? 'var(--cyan)' : 'var(--border)',
-                              background: sensorQuality === q ? 'rgba(2, 132, 199, 0.1)' : '#ffffff',
-                              color: sensorQuality === q ? 'var(--cyan)' : '#64748b',
-                              cursor: 'pointer',
-                              textTransform: 'capitalize',
-                            }}
-                          >
-                            {q}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Ambient Temp */}
-                    <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, marginBottom: 2 }}>
-                        <span style={{ color: '#475569' }}>Ambient Temp (ISO 1217)</span>
-                        <span style={{ fontWeight: 600, color: '#0f172a' }}>{ambientTempC.toFixed(1)}°C</span>
-                      </div>
-                      <input
-                        type="range"
-                        min={15}
-                        max={45}
-                        step={0.5}
-                        value={ambientTempC}
-                        onChange={e => setAmbientTempC(parseFloat(e.target.value))}
-                        className="dt-range"
-                      />
-                    </div>
-
-                    {/* Shift Pattern */}
-                    <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, marginBottom: 3 }}>
-                        <span style={{ color: '#475569' }}>Shift Pattern</span>
-                        <span style={{ fontWeight: 600, color: '#0f172a' }}>{shiftPattern}</span>
-                      </div>
-                      <div style={{ display: 'flex', gap: 4 }}>
-                        {(['3_shift', '2_shift', 'day_shift'] as const).map(p => (
-                          <button
-                            key={p}
-                            type="button"
-                            onClick={() => setShiftPattern(p)}
-                            style={{
-                              flex: 1,
-                              padding: '3px 4px',
-                              borderRadius: 4,
-                              fontSize: 9,
-                              fontWeight: 500,
-                              border: '1px solid',
-                              borderColor: shiftPattern === p ? 'var(--cyan)' : 'var(--border)',
-                              background: shiftPattern === p ? 'rgba(2, 132, 199, 0.1)' : '#ffffff',
-                              color: shiftPattern === p ? 'var(--cyan)' : '#64748b',
-                              cursor: 'pointer',
-                            }}
-                          >
-                            {p === '3_shift' ? '3-Shift' : p === '2_shift' ? '2-Shift' : 'Day'}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <button className="btn btn-cyan btn-full" onClick={handleRunSimulation} style={{ padding: '7px 12px' }}>
-                <Play size={12} />
-                Recalculate Dynamic Simulation
-              </button>
-            </div>
-          </div>
-
-          {/* Physical Constraint Interlocks Panel (Sits directly above fold!) */}
-          <div className="panel dt-panel">
-            <div className="panel-hdr" style={{ padding: '8px 12px' }}>
-              <ShieldAlert size={12} />
-              <span>3. Constraint Interlocks &amp; Feasibility</span>
-            </div>
-            <div className="dt-constraint-content" style={{ padding: '10px 12px', gap: 8 }}>
-              {/* Feasibility Banner */}
-              <div className={`dt-feasibility-badge ${feasibilityClass}`} style={{ padding: '8px 10px' }}>
-                {currentResult.feasibility === 'feasible' && (
-                  <>
-                    <CheckCircle2 size={15} style={{ flexShrink: 0 }} />
-                    <div>
-                      <div className="status-title" style={{ fontSize: 11 }}>FEASIBLE SIMULATION</div>
-                      <div className="status-desc" style={{ fontSize: 9.5 }}>All safety, pressure &amp; process constraints passed</div>
-                    </div>
-                  </>
-                )}
-                {currentResult.feasibility === 'review_required' && (
-                  <>
-                    <AlertTriangle size={15} style={{ flexShrink: 0 }} />
-                    <div>
-                      <div className="status-title" style={{ fontSize: 11 }}>REVIEW REQUIRED</div>
-                      <div className="status-desc" style={{ fontSize: 9.5 }}>Passed with advisory conditions for operator sign-off</div>
-                    </div>
-                  </>
-                )}
-                {currentResult.feasibility === 'blocked' && (
-                  <>
-                    <AlertCircle size={15} style={{ flexShrink: 0 }} />
-                    <div>
-                      <div className="status-title" style={{ fontSize: 11 }}>BLOCKED BY SAFETY INTERLOCK</div>
-                      <div className="status-desc" style={{ fontSize: 9.5 }}>Scenario violates equipment or process limits</div>
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {/* Violations / Diagnostic details */}
-              {currentResult.constraint_violations.length > 0 && (
-                <div className="dt-violations-list">
-                  {currentResult.constraint_violations.map((v, i) => (
-                    <div key={i} className={`dt-violation-item severity-${v.severity}`}>
-                      <div className="viol-hdr">
-                        <span className="viol-code">{v.code}</span>
-                        <span className="viol-machine">{v.machine_id}</span>
-                      </div>
-                      <div className="viol-msg">{v.message}</div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column: Clean Analytics Tabs & Uncrowded Visualizations */}
-        <div className="dt-right-col">
-          {/* Active Case Context Briefing Strip */}
-          {activeCase && (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 14px', background: '#ffffff', border: '1px solid var(--border)', borderRadius: 8, fontSize: 11, color: '#1e293b' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span className={`dt-case-tag ${activeCase.tagClass}`}>{activeCase.caseNum}</span>
-                <span><strong>{activeCase.title}: </strong>{activeCase.summary}</span>
-              </div>
-              <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--cyan)' }}>
-                {activeCase.machineId}
-              </span>
-            </div>
-          )}
-
-          {/* Crisp, Unclipped Tab Header */}
-          <div className="dt-tabs-header">
-            <button
-              className={`dt-tab-btn ${analyticsTab === 'simulator' ? 'active' : ''}`}
-              onClick={() => setAnalyticsTab('simulator')}
-            >
-              <Activity size={13} /> 24h Load Curve
-            </button>
-            <button
-              className={`dt-tab-btn ${analyticsTab === 'tradeoff' ? 'active' : ''}`}
-              onClick={() => setAnalyticsTab('tradeoff')}
-            >
-              <CheckSquare size={13} /> Trade-Offs (Idea C)
-            </button>
-            <button
-              className={`dt-tab-btn ${analyticsTab === 'investment' ? 'active' : ''}`}
-              onClick={() => setAnalyticsTab('investment')}
-            >
-              <Award size={13} /> Sensor VOI (Idea A)
-            </button>
-            <button
-              className={`dt-tab-btn ${analyticsTab === 'ledger' ? 'active' : ''}`}
-              onClick={() => setAnalyticsTab('ledger')}
-            >
-              <BookmarkCheck size={13} /> M&amp;V Ledger (Idea B)
-              <span className="badge badge-emerald" style={{ fontSize: 8, padding: '1px 5px', marginLeft: 4 }}>
-                {mvLedger.length} VERIFIED
-              </span>
-            </button>
-          </div>
-
-          {/* TAB 1: 24h Factory Demand Curves */}
-          {analyticsTab === 'simulator' && (
-            <>
-              {/* Primary Dual Overlay Load Curve */}
-              <div className="panel dt-panel dt-chart-panel">
-                <div className="panel-hdr" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div className="hdr-left" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <Activity size={13} className="text-cyan" />
-                    <span style={{ fontWeight: 600 }}>24-Hour Factory Demand Curve: Baseline vs. Simulated Scenario</span>
-                  </div>
-                  <div className="hdr-badges" style={{ display: 'flex', gap: 6 }}>
-                    <span className="badge badge-amber" style={{ textTransform: 'none', fontSize: 10 }}>Baseline (Dashed)</span>
-                    <span className="badge badge-cyan" style={{ textTransform: 'none', fontSize: 10 }}>Simulated (Solid)</span>
-                    <span className="badge badge-red" style={{ textTransform: 'none', fontSize: 10 }}>85 kW Limit</span>
-                  </div>
-                </div>
-
-                <div style={{ height: 260, padding: '12px 6px 0 0' }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={chartData} margin={{ top: 10, right: 15, left: -10, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="scenGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#22d3ee" stopOpacity={0.25} />
-                          <stop offset="95%" stopColor="#22d3ee" stopOpacity={0.0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid stroke="rgba(0, 0, 0, 0.06)" strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="label" stroke="#64748b" fontSize={10} fontFamily="var(--font-mono)" tickLine={false} />
-                      <YAxis stroke="#64748b" fontSize={10} fontFamily="var(--font-mono)" unit=" kW" tickLine={false} domain={[0, 110]} />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: '#ffffff',
-                          border: '1px solid rgba(0, 0, 0, 0.1)',
-                          borderRadius: 8,
-                          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
-                          fontFamily: 'var(--font-ui)',
-                          fontSize: 11,
-                          color: '#0f172a',
-                        }}
-                      />
-                      <ReferenceLine
-                        y={tariffConfig.contract_demand_limit_kw}
-                        stroke="#ef4444"
-                        strokeWidth={1.5}
-                        strokeDasharray="4 4"
-                        label={{
-                          value: `Contract Limit ${tariffConfig.contract_demand_limit_kw} kW`,
-                          fill: '#ef4444',
-                          fontSize: 9.5,
-                          position: 'top',
-                          fontFamily: 'var(--font-mono)',
-                        }}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="baselineKw"
-                        name="Baseline Load"
-                        stroke="#f59e0b"
-                        strokeWidth={2}
-                        strokeDasharray="4 4"
-                        dot={false}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="scenarioKw"
-                        name="Simulated Scenario"
-                        stroke="#22d3ee"
-                        strokeWidth={2.5}
-                        fill="url(#scenGrad)"
-                        dot={false}
-                      />
-                    </ComposedChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              {/* Machine-Level Composition Bar Chart */}
-              <div className="panel dt-panel dt-chart-panel" style={{ marginTop: 12 }}>
-                <div className="panel-hdr" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <Layers size={12} className="text-emerald" />
-                  <span>Machine-Wise Load Composition across 24h (Simulated Outcome)</span>
-                </div>
-                <div style={{ height: 140, padding: '8px 6px 0 0' }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartData} margin={{ top: 10, right: 15, left: -10, bottom: 0 }}>
-                      <CartesianGrid stroke="rgba(0, 0, 0, 0.06)" strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="label" stroke="#64748b" fontSize={9} fontFamily="var(--font-mono)" tickLine={false} />
-                      <YAxis stroke="#64748b" fontSize={9} fontFamily="var(--font-mono)" unit=" kW" tickLine={false} />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: '#ffffff',
-                          border: '1px solid rgba(0, 0, 0, 0.1)',
-                          borderRadius: 8,
-                          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
-                          fontFamily: 'var(--font-ui)',
-                          fontSize: 11,
-                          color: '#0f172a',
-                        }}
-                      />
-                      <Bar dataKey="compressor" name="COMP-01 (Air)" fill="#f59e0b" stackId="a" />
-                      <Bar dataKey="cnc" name="CNC-01 (Machining)" fill="#22d3ee" stackId="a" />
-                      <Bar dataKey="furnace" name="FURN-01 (Furnace)" fill="#ef4444" stackId="a" />
-                      <Bar dataKey="paint" name="PAINT-01 (Paint)" fill="#10b981" stackId="a" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* TAB 2: Multi-Option Trade-Off Matrix (Idea C) */}
-          {analyticsTab === 'tradeoff' && (
-            <div className="panel dt-panel" style={{ padding: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color: '#0f172a', textTransform: 'uppercase' }}>
-                    Production-Safe Optimization: 3-Candidate Trade-Off Matrix
-                  </div>
-                  <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
-                    Evaluates aggressive energy reduction vs. production schedules and physical equipment interlocks
-                  </div>
-                </div>
-                <span className="badge badge-cyan" style={{ fontFamily: 'var(--font-mono)' }}>
-                  GOAL: ELIMINATE 96 kW PEAK
-                </span>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {TRADE_OFF_CANDIDATES.map(cand => {
-                  const isBlocked = cand.status === 'BLOCKED';
-                  const isInfeasible = cand.status === 'INFEASIBLE';
-                  const isRecommended = cand.status === 'RECOMMENDED';
-
-                  return (
-                    <div
-                      key={cand.id}
-                      style={{
-                        background: isRecommended ? 'rgba(16,185,129,0.06)' : '#ffffff',
-                        border: `1px solid ${isRecommended ? '#10b981' : isBlocked ? '#ef4444' : '#f59e0b'}`,
-                        borderRadius: 8,
-                        padding: '12px 14px',
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span
-                            className={`badge ${isRecommended ? 'badge-emerald' : isBlocked ? 'badge-red' : 'badge-amber'}`}
-                            style={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}
-                          >
-                            {cand.statusLabel}
-                          </span>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: '#0f172a' }}>
-                            {cand.name}
-                          </span>
-                        </div>
-                        <button
-                          className={`btn btn-sm ${isRecommended ? 'btn-emerald' : 'btn-outline'}`}
-                          onClick={() => handleApplyCandidate(cand.id)}
-                        >
-                          {isRecommended ? 'Load Recommended Plan' : 'Test This Scenario'}
-                          <ArrowRight size={10} style={{ marginLeft: 4 }} />
-                        </button>
-                      </div>
-
-                      <div style={{ fontSize: 11, color: '#475569', marginBottom: 8 }}>
-                        {cand.strategy}
-                      </div>
-
-                      {/* Metrics bar */}
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, background: '#f8fafc', padding: '8px 10px', borderRadius: 4, fontFamily: 'var(--font-mono)', fontSize: 10 }}>
-                        <div>
-                          <span style={{ color: '#64748b' }}>Peak Demand: </span>
-                          <strong style={{ color: cand.peakKw > 85 ? '#dc2626' : '#059669' }}>{cand.peakKw} kW</strong>
-                        </div>
-                        <div>
-                          <span style={{ color: '#64748b' }}>Energy Saved: </span>
-                          <strong style={{ color: '#0284c7' }}>{cand.energyKwhSaved} kWh/d</strong>
-                        </div>
-                        <div>
-                          <span style={{ color: '#64748b' }}>Production: </span>
-                          <strong style={{ color: cand.productionUnits < 140 ? '#dc2626' : '#059669' }}>{cand.productionUnits} pcs</strong>
-                        </div>
-                        <div>
-                          <span style={{ color: '#64748b' }}>Pressure: </span>
-                          <strong style={{ color: cand.pressureBar < 6.5 ? '#dc2626' : '#0f172a' }}>{cand.pressureBar} bar</strong>
-                        </div>
-                      </div>
-
-                      {/* Diagnostics */}
-                      <div style={{ fontSize: 10, color: isBlocked ? '#dc2626' : isInfeasible ? '#d97706' : '#64748b', marginTop: 8, lineHeight: 1.4 }}>
-                        <strong>Diagnostic Assessment:</strong> {cand.diagnostics}
-                      </div>
-                      {cand.provenance && (
-                        <div style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: '#94a3b8', marginTop: 4 }}>
-                          [{cand.provenance}]
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* TAB 3: Sensor-ROI & Confidence (Idea A: Epistemic Humility) */}
-          {analyticsTab === 'investment' && inv && (
-            <div className="panel dt-panel" style={{ padding: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color: '#0f172a', textTransform: 'uppercase' }}>
-                    Sensor Sufficiency &amp; Value of Information (Idea A)
-                  </div>
-                  <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
-                    Diagnostic Humility: Resolves physical ambiguity · Evaluates sensor Value of Information (VOI)
-                  </div>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 4, background: inv.evidence_grade === 'A' ? 'rgba(16,185,129,0.12)' : 'rgba(245,158,11,0.12)', border: `1px solid ${inv.evidence_grade === 'A' ? 'rgba(16,185,129,0.4)' : 'rgba(245,158,11,0.4)'}`, color: inv.evidence_grade === 'A' ? '#059669' : '#d97706', fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700 }}>
-                  <Award size={13} />
-                  TELEMETRY READINESS {inv.evidence_grade}
-                </div>
-              </div>
-
-              {/* Physical Diagnostic Ambiguity Banner */}
-              {inv.diagnostic_ambiguity && (
-                <div style={{ background: hasFlowMeter ? 'rgba(16,185,129,0.06)' : 'rgba(245,158,11,0.06)', border: `1px solid ${hasFlowMeter ? 'rgba(16,185,129,0.3)' : 'rgba(245,158,11,0.3)'}`, borderRadius: 6, padding: '10px 14px', marginBottom: 12, fontSize: 11, lineHeight: 1.5, color: '#334155' }}>
-                  <strong style={{ color: hasFlowMeter ? '#059669' : '#d97706' }}>Physical Hypothesis Resolution: </strong>
-                  {inv.diagnostic_ambiguity}
-                </div>
-              )}
-
-              {/* Interactive Value of Information (VOI) Toggle */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', border: '1px solid var(--border)', borderRadius: 6, padding: '10px 14px', marginBottom: 14 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: hasFlowMeter ? '#10b981' : '#f59e0b' }} />
-                  <div>
-                    <div style={{ fontSize: 11, fontWeight: 600, color: '#0f172a' }}>
-                      {hasFlowMeter ? 'Simulating with Inline Ultrasonic Flowmeter Installed' : 'Current Plant Telemetry (Electrical Submeter Only)'}
-                    </div>
-                    <div style={{ fontSize: 10, color: '#64748b' }}>
-                      {hasFlowMeter
-                        ? 'Confirmed zero break airflow. 100% of 18 kW draw is recoverable timer blow-off.'
-                        : 'Uncertainty present: 40%–65% of idle draw could be unmetered pipe leaks. VOI Ratio: 4.5x.'}
-                    </div>
-                  </div>
                 </div>
 
                 <button
-                  className={`btn btn-sm ${hasFlowMeter ? 'btn-emerald' : 'btn-outline'}`}
-                  onClick={() => setHasFlowMeter(!hasFlowMeter)}
+                  type="button"
+                  onClick={handleRunSimulation}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 6,
+                    background: '#1C1917',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    borderRadius: 6,
+                    padding: '8px 12px',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
                 >
-                  {hasFlowMeter ? <Check size={11} style={{ marginRight: 4 }} /> : null}
-                  {hasFlowMeter ? 'Flowmeter Active (+₹12k)' : 'Simulate Adding Flowmeter'}
+                  <Play size={12} />
+                  <span>Recalculate Dynamic Simulation</span>
                 </button>
               </div>
+            </div>
 
-              {/* 3-Tier Payback Cards */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 14 }}>
-                {/* Conservative */}
-                <div style={{ background: '#fafaf9', border: '1px solid var(--border)', borderRadius: 6, padding: '12px' }}>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#64748b', textTransform: 'uppercase' }}>
-                    Conservative Case
-                  </div>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: '#d97706', margin: '6px 0 2px' }}>
-                    ₹{inv.conservative_annual_saving_inr.toLocaleString()} <span style={{ fontSize: 10, fontWeight: 500 }}>/ yr</span>
-                  </div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#334155' }}>
-                    Payback: <strong style={{ color: '#0f172a' }}>{inv.payback_months_conservative} months</strong>
-                  </div>
-                  <div style={{ fontSize: 10, color: '#64748b', marginTop: 6, lineHeight: 1.4 }}>
-                    {hasFlowMeter ? 'Flowmeter locks certainty at 92% minimum savings.' : 'Accounts for unmetered pipe leaks & -20% factory volume.'}
-                  </div>
-                </div>
+            {/* Stage C — Safety & Operational Constraints Card */}
+            <div style={{
+              background: '#FFFFFF',
+              border: '1px solid #EAE3D7',
+              borderRadius: 10,
+              padding: '16px',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                <ShieldAlert size={14} color={currentResult.feasibility === 'blocked' ? '#DC2626' : currentResult.feasibility === 'review_required' ? '#D97706' : '#059669'} />
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#1C1917' }}>Stage C: Operational Feasibility</span>
+              </div>
 
-                {/* Expected */}
-                <div style={{ background: 'rgba(2, 132, 199, 0.05)', border: '1px solid var(--cyan)', borderRadius: 6, padding: '12px' }}>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--cyan)', textTransform: 'uppercase', fontWeight: 600 }}>
-                    Expected Nominal Case
+              {/* Feasibility Status Banner */}
+              <div style={{
+                borderRadius: 8,
+                padding: '10px 12px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                background: currentResult.feasibility === 'feasible'
+                  ? 'rgba(16, 185, 129, 0.08)'
+                  : currentResult.feasibility === 'review_required'
+                  ? 'rgba(245, 158, 11, 0.08)'
+                  : 'rgba(239, 68, 68, 0.08)',
+                border: currentResult.feasibility === 'feasible'
+                  ? '1px solid rgba(16, 185, 129, 0.3)'
+                  : currentResult.feasibility === 'review_required'
+                  ? '1px solid rgba(245, 158, 11, 0.3)'
+                  : '1px solid rgba(239, 68, 68, 0.3)',
+                marginBottom: 10
+              }}>
+                {currentResult.feasibility === 'feasible' && <CheckCircle2 size={16} color="#059669" style={{ flexShrink: 0 }} />}
+                {currentResult.feasibility === 'review_required' && <AlertTriangle size={16} color="#D97706" style={{ flexShrink: 0 }} />}
+                {currentResult.feasibility === 'blocked' && <XCircle size={16} color="#DC2626" style={{ flexShrink: 0 }} />}
+                <div>
+                  <div style={{
+                    fontSize: 11.5,
+                    fontWeight: 700,
+                    color: currentResult.feasibility === 'feasible' ? '#059669' : currentResult.feasibility === 'review_required' ? '#D97706' : '#DC2626'
+                  }}>
+                    {currentResult.feasibility === 'feasible' ? 'FEASIBLE SCENARIO' : currentResult.feasibility === 'review_required' ? 'OPERATOR APPROVAL REQUIRED' : 'BLOCKED BY SAFETY INTERLOCK'}
                   </div>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--cyan)', margin: '6px 0 2px' }}>
-                    ₹{inv.expected_annual_saving_inr.toLocaleString()} <span style={{ fontSize: 10, fontWeight: 500 }}>/ yr</span>
-                  </div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#334155' }}>
-                    Payback: <strong style={{ color: '#0f172a' }}>{inv.payback_months_expected} months</strong>
-                  </div>
-                  <div style={{ fontSize: 10, color: '#64748b', marginTop: 6, lineHeight: 1.4 }}>
-                    Capex ₹{inv.capex_inr.toLocaleString()} (Relay{hasFlowMeter ? ' + Flowmeter' : ''}), nominal 140 parts.
-                  </div>
-                </div>
-
-                {/* Best Case */}
-                <div style={{ background: '#fafaf9', border: '1px solid var(--border)', borderRadius: 6, padding: '12px' }}>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#059669', textTransform: 'uppercase' }}>
-                    Best-Case (+35%)
-                  </div>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: '#059669', margin: '6px 0 2px' }}>
-                    ₹{inv.best_case_annual_saving_inr.toLocaleString()} <span style={{ fontSize: 10, fontWeight: 500 }}>/ yr</span>
-                  </div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#334155' }}>
-                    Payback: <strong style={{ color: '#0f172a' }}>{inv.payback_months_best} months</strong>
-                  </div>
-                  <div style={{ fontSize: 10, color: '#64748b', marginTop: 6, lineHeight: 1.4 }}>
-                    Dual-shift capacity + elimination of coincident 85 kW peak penalty.
+                  <div style={{ fontSize: 10.5, color: '#64748B', marginTop: 2 }}>
+                    {currentResult.feasibility === 'feasible' ? 'All safety, pressure & process constraints passed' : currentResult.feasibility === 'review_required' ? 'Advisory conditions need plant operator sign-off' : 'Scenario violates equipment or process limits'}
                   </div>
                 </div>
               </div>
 
-              {/* Sensitivity to Missing Instrumentation */}
-              <div style={{ background: '#fafaf9', border: '1px solid var(--border)', borderRadius: 6, padding: '12px' }}>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#64748b', textTransform: 'uppercase', marginBottom: 6 }}>
-                  NIST Gap Analysis &amp; Value of Information
-                </div>
+              {/* Constraint Diagnostic Violations */}
+              {currentResult.constraint_violations.length > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {inv.missing_measurements_sensitivity.map((note, idx) => (
-                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#334155' }}>
-                      <span style={{ color: 'var(--cyan)', fontSize: 14 }}>•</span>
-                      {note}
+                  {currentResult.constraint_violations.map((v, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        padding: '8px 10px',
+                        borderRadius: 6,
+                        background: '#FAF7F2',
+                        borderLeft: `3px solid ${v.severity === 'error' ? '#DC2626' : '#D97706'}`,
+                        fontSize: 11
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: 9.5, color: '#78716C', marginBottom: 2 }}>
+                        <span>{v.code}</span>
+                        <span>{v.machine_id}</span>
+                      </div>
+                      <div style={{ color: '#1C1917', lineHeight: 1.35 }}>{v.message}</div>
                     </div>
                   ))}
                 </div>
-              </div>
+              )}
             </div>
-          )}
+          </div>
 
-          {/* TAB 4: Counterfactual M&V Factory (Idea B: IPMVP Option B/C) */}
-          {analyticsTab === 'ledger' && (
-            <div className="panel dt-panel" style={{ padding: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color: '#0f172a', textTransform: 'uppercase' }}>
-                    The Counterfactual Factory: Post-Implementation M&amp;V Ledger
-                  </div>
-                  <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
-                    Solves the post-implementation blame game · Separates production drops from real energy efficiency
-                  </div>
-                </div>
-
+          {/* RIGHT COLUMN: Analytics Tabs & Visualizations */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minWidth: 0 }}>
+            {/* Active Case Context Briefing Strip */}
+            {activeCase && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '9px 14px',
+                background: '#FFFFFF',
+                border: '1px solid #EAE3D7',
+                borderRadius: 8,
+                fontSize: 11.5,
+                color: '#1E252D'
+              }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  {committedFeedback && (
-                    <span style={{ fontSize: 11, color: '#059669', fontFamily: 'var(--font-mono)' }}>
-                      {committedFeedback}
-                    </span>
-                  )}
-                  <button
-                    className="btn btn-emerald btn-sm"
-                    onClick={handleCommitToLedger}
-                    disabled={currentResult.feasibility === 'blocked'}
-                  >
-                    <BookmarkCheck size={12} />
-                    Commit Active Scenario to Ledger
-                  </button>
+                  <span style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 10,
+                    fontWeight: 700,
+                    padding: '2px 6px',
+                    borderRadius: 4,
+                    background: activeCase.tagClass === 'emerald' ? 'rgba(16,185,129,0.12)' : activeCase.tagClass === 'cyan' ? 'rgba(2,132,199,0.12)' : 'rgba(239,68,68,0.12)',
+                    color: activeCase.tagClass === 'emerald' ? '#059669' : activeCase.tagClass === 'cyan' ? '#0284C7' : '#DC2626'
+                  }}>
+                    {activeCase.caseNum}
+                  </span>
+                  <span><strong>{activeCase.title}: </strong>{activeCase.summary}</span>
                 </div>
+                <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, color: '#0284C7' }}>
+                  {activeCase.machineId}
+                </span>
               </div>
+            )}
 
-              {/* Idea B Counterfactual Waterfall Comparison Card */}
-              <div style={{ background: '#f8fafc', border: '1px solid var(--border)', borderRadius: 6, padding: '12px 14px', marginBottom: 14 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--cyan)', textTransform: 'uppercase', fontWeight: 600 }}>
-                    Case Study A: Shift Contraction Audit (IPMVP Option B/C Reconciled)
-                  </div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#059669', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', padding: '2px 8px', borderRadius: 3 }}>
-                    Reconciliation: 170.57 + 14.43 = 185.00 kWh (100% Match)
-                  </div>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, fontFamily: 'var(--font-mono)', fontSize: 11 }}>
-                  <div style={{ background: '#ffffff', padding: '8px 10px', borderRadius: 4, border: '1px solid var(--border)' }}>
-                    <div style={{ fontSize: 9, color: '#64748b' }}>1. Raw Submeter Drop</div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a', margin: '4px 0 2px' }}>-185.00 kWh (-14.01%)</div>
-                    <div style={{ fontSize: 9, color: '#94a3b8' }}>1,320.0 → 1,135.0 kWh</div>
-                  </div>
-                  <div style={{ background: '#ffffff', padding: '8px 10px', borderRadius: 4, border: '1px solid var(--border)' }}>
-                    <div style={{ fontSize: 9, color: '#64748b' }}>2. Shift Output Deficit</div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#d97706', margin: '4px 0 2px' }}>122 vs 140 parts (-12.86%)</div>
-                    <div style={{ fontSize: 9, color: '#94a3b8' }}>Material delay on CNC</div>
-                  </div>
-                  <div style={{ background: '#ffffff', padding: '8px 10px', borderRadius: 4, border: '1px solid var(--border)' }}>
-                    <div style={{ fontSize: 9, color: '#64748b' }}>3. Production Drop Effect</div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#475569', margin: '4px 0 2px' }}>-170.57 kWh (-12.92%)</div>
-                    <div style={{ fontSize: 9, color: '#94a3b8' }}>Output loss, not efficiency!</div>
-                  </div>
-                  <div style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid #10b981', padding: '8px 10px', borderRadius: 4 }}>
-                    <div style={{ fontSize: 9, color: '#059669', fontWeight: 600 }}>4. True Verified Efficiency</div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#059669', margin: '4px 0 2px' }}>-14.43 kWh/day (-1.09%)</div>
-                    <div style={{ fontSize: 9, color: '#64748b' }}>11.83 kg CO₂e (72.15 kWh/wk)</div>
-                  </div>
-                </div>
-              </div>
+            {/* Clean Segmented Tab Navigation Header */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              background: '#EFE9E0',
+              padding: 4,
+              borderRadius: 8
+            }}>
+              <button
+                type="button"
+                onClick={() => setAnalyticsTab('simulator')}
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                  padding: '7px 12px',
+                  borderRadius: 6,
+                  fontSize: 12,
+                  fontWeight: analyticsTab === 'simulator' ? 700 : 500,
+                  border: 'none',
+                  background: analyticsTab === 'simulator' ? '#FFFFFF' : 'transparent',
+                  color: analyticsTab === 'simulator' ? '#1C1917' : '#64748B',
+                  boxShadow: analyticsTab === 'simulator' ? '0 1px 2px rgba(0,0,0,0.06)' : 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <Activity size={13} color={analyticsTab === 'simulator' ? '#0284C7' : '#64748B'} />
+                <span>24h Load Curve</span>
+              </button>
 
-              {/* M&V Historical Table */}
-              <div style={{ overflowX: 'auto' }}>
-                <table className="compare-table" style={{ fontSize: 10 }}>
-                  <thead>
-                    <tr>
-                      <th>Intervention</th>
-                      <th>Target Asset</th>
-                      <th>Baseline (kWh / Parts)</th>
-                      <th>Actual Post-Mod</th>
-                      <th>Adjusted Baseline</th>
-                      <th>Realized Saving</th>
-                      <th>Realization %</th>
-                      <th>Audit Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {mvLedger.map((row, idx) => (
-                      <tr key={idx}>
-                        <td className="td-label" style={{ fontWeight: 600 }}>{row.title}</td>
-                        <td style={{ fontFamily: 'var(--font-mono)', color: 'var(--cyan)' }}>{row.target_asset}</td>
-                        <td style={{ fontFamily: 'var(--font-mono)' }}>
-                          {row.baseline_kwh.toFixed(0)} kWh ({row.baseline_units} pcs)
-                        </td>
-                        <td style={{ fontFamily: 'var(--font-mono)', color: '#0f172a' }}>
-                          {row.actual_measured_kwh.toFixed(0)} kWh ({row.actual_units} pcs)
-                        </td>
-                        <td style={{ fontFamily: 'var(--font-mono)', color: '#d97706' }}>
-                          {row.adjusted_baseline_kwh.toFixed(0)} kWh
-                        </td>
-                        <td style={{ fontFamily: 'var(--font-mono)', color: '#059669', fontWeight: 700 }}>
-                          {row.realized_savings_kwh.toFixed(1)} kWh
-                        </td>
-                        <td>
-                          <span className={`badge ${row.realization_rate_pct >= 90 ? 'badge-emerald' : 'badge-amber'}`}>
-                            {row.realization_rate_pct.toFixed(1)}%
-                          </span>
-                        </td>
-                        <td>
-                          <span className="badge badge-cyan">
-                            VERIFIED
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <button
+                type="button"
+                onClick={() => setAnalyticsTab('tradeoff')}
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                  padding: '7px 12px',
+                  borderRadius: 6,
+                  fontSize: 12,
+                  fontWeight: analyticsTab === 'tradeoff' ? 700 : 500,
+                  border: 'none',
+                  background: analyticsTab === 'tradeoff' ? '#FFFFFF' : 'transparent',
+                  color: analyticsTab === 'tradeoff' ? '#1C1917' : '#64748B',
+                  boxShadow: analyticsTab === 'tradeoff' ? '0 1px 2px rgba(0,0,0,0.06)' : 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <CheckSquare size={13} color={analyticsTab === 'tradeoff' ? '#0284C7' : '#64748B'} />
+                <span>Trade-Offs (Idea C)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setAnalyticsTab('investment')}
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                  padding: '7px 12px',
+                  borderRadius: 6,
+                  fontSize: 12,
+                  fontWeight: analyticsTab === 'investment' ? 700 : 500,
+                  border: 'none',
+                  background: analyticsTab === 'investment' ? '#FFFFFF' : 'transparent',
+                  color: analyticsTab === 'investment' ? '#1C1917' : '#64748B',
+                  boxShadow: analyticsTab === 'investment' ? '0 1px 2px rgba(0,0,0,0.06)' : 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <Award size={13} color={analyticsTab === 'investment' ? '#0284C7' : '#64748B'} />
+                <span>Sensor VOI (Idea A)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setAnalyticsTab('ledger')}
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                  padding: '7px 12px',
+                  borderRadius: 6,
+                  fontSize: 12,
+                  fontWeight: analyticsTab === 'ledger' ? 700 : 500,
+                  border: 'none',
+                  background: analyticsTab === 'ledger' ? '#FFFFFF' : 'transparent',
+                  color: analyticsTab === 'ledger' ? '#1C1917' : '#64748B',
+                  boxShadow: analyticsTab === 'ledger' ? '0 1px 2px rgba(0,0,0,0.06)' : 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <BookmarkCheck size={13} color={analyticsTab === 'ledger' ? '#059669' : '#64748B'} />
+                <span>M&V Ledger (Idea B)</span>
+                <span style={{
+                  fontSize: 9.5,
+                  fontWeight: 700,
+                  padding: '1px 6px',
+                  borderRadius: 9999,
+                  background: '#DCFCE7',
+                  color: '#15803D'
+                }}>
+                  {mvLedger.length}
+                </span>
+              </button>
             </div>
-          )}
 
-          {/* Traceability & Formula Accordion */}
-          <div className="panel dt-panel" style={{ marginTop: 12 }}>
-            <div
-              className="panel-hdr clickable"
-              onClick={() => setShowFormulaDrawer(!showFormulaDrawer)}
-              style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', padding: '8px 12px' }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <FileText size={12} className="text-cyan" />
-                <span>Single Source of Truth &amp; Mathematical Contracts</span>
-              </div>
-              <span className="text-cyan" style={{ fontSize: 11, fontFamily: 'var(--font-mono)' }}>
-                {showFormulaDrawer ? 'Hide Details ▲' : 'Show Details ▼'}
-              </span>
-            </div>
+            {/* TAB 1: 24h Factory Demand Curves */}
+            {analyticsTab === 'simulator' && (
+              <>
+                {/* 24-Hour Demand Curve */}
+                <div style={{
+                  background: '#FFFFFF',
+                  border: '1px solid #EAE3D7',
+                  borderRadius: 10,
+                  padding: '16px 18px',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                    <div>
+                      <h3 style={{ fontSize: 14, fontWeight: 700, color: '#1C1917', margin: 0 }}>
+                        24-Hour Plant Demand: Baseline vs. Simulated Scenario
+                      </h3>
+                      <p style={{ fontSize: 11.5, color: '#78716C', margin: '2px 0 0' }}>
+                        Simulated power curve overlay with contract demand limits
+                      </p>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 11 }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: '#57534E' }}>
+                        <span style={{ width: 10, height: 2, background: '#F59E0B' }} />
+                        Baseline (Dashed)
+                      </span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: '#57534E' }}>
+                        <span style={{ width: 10, height: 2, background: '#0284C7' }} />
+                        Simulated (Solid)
+                      </span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: '#DC2626' }}>
+                        <span style={{ width: 10, height: 2, borderBottom: '2px dashed #DC2626' }} />
+                        {tariffConfig.contract_demand_limit_kw} kW Limit
+                      </span>
+                    </div>
+                  </div>
 
-            {showFormulaDrawer && (
-              <div style={{ padding: '12px 14px' }}>
-                <div className="formula-box">
-                  <span className="formula-comment">// Operational Decision Twin Engineering Math (Section 6)</span>{'\n'}
-                  {'interval_energy_kwh = average_power_kw × interval_duration_hours'}{'\n'}
-                  {'plant_power_kw[t]   = sum(machine_power_kw[t] for all machines)'}{'\n'}
-                  {`peak_demand_kw      = max(plant_power_kw[t]) → ${currentResult.scenario.peak_demand_kw} kW`}{'\n'}
-                  {`sec_intensity       = total_energy_kwh / total_good_units → ${currentResult.scenario.sec_kwh_per_unit} kWh/part`}{'\n'}
-                  {`scope2_kg_co2e      = total_energy_kwh × 0.82 kg CO₂e/kWh (CEA India Baseline v19)`}{'\n'}
-                  <span style={{ color: '#059669' }}>
-                    {`Verified Delta: Saved ${Math.abs(currentResult.deltas.energy_kwh)} kWh | ₹${Math.abs(currentResult.deltas.cost_inr)} | ${Math.abs(currentResult.deltas.scope2_kg_co2e || 0)} kg CO₂e`}
+                  <div style={{ height: 240, width: '100%' }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ComposedChart data={chartData} margin={{ top: 10, right: 15, left: -10, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="scenGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#0284C7" stopOpacity={0.2} />
+                            <stop offset="95%" stopColor="#0284C7" stopOpacity={0.0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid stroke="#F1F5F9" strokeDasharray="3 3" vertical={false} />
+                        <XAxis dataKey="label" stroke="#A8A29E" fontSize={10.5} fontFamily="var(--font-mono)" tickLine={false} />
+                        <YAxis stroke="#A8A29E" fontSize={10.5} fontFamily="var(--font-mono)" unit=" kW" tickLine={false} domain={[0, 110]} />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: '#1C1917',
+                            border: 'none',
+                            borderRadius: 6,
+                            fontSize: 11,
+                            color: '#FFFFFF',
+                          }}
+                        />
+                        <ReferenceLine
+                          y={tariffConfig.contract_demand_limit_kw}
+                          stroke="#EF4444"
+                          strokeWidth={1.5}
+                          strokeDasharray="4 4"
+                          label={{
+                            value: `Contract Limit ${tariffConfig.contract_demand_limit_kw} kW`,
+                            fill: '#EF4444',
+                            fontSize: 9.5,
+                            position: 'top',
+                            fontFamily: 'var(--font-mono)',
+                          }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="baselineKw"
+                          name="Baseline Load"
+                          stroke="#F59E0B"
+                          strokeWidth={1.8}
+                          strokeDasharray="4 4"
+                          dot={false}
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="scenarioKw"
+                          name="Simulated Scenario"
+                          stroke="#0284C7"
+                          strokeWidth={2.2}
+                          fill="url(#scenGrad)"
+                          dot={false}
+                        />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Machine-Wise Load Composition */}
+                <div style={{
+                  background: '#FFFFFF',
+                  border: '1px solid #EAE3D7',
+                  borderRadius: 10,
+                  padding: '16px 18px',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Layers size={13} color="#059669" />
+                      <span style={{ fontSize: 13, fontWeight: 700, color: '#1C1917' }}>Machine-Wise Load Profile (24-Hour Outcome)</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 10.5, color: '#78716C' }}>
+                      <span><strong style={{ color: '#F59E0B' }}>■</strong> COMP-01</span>
+                      <span><strong style={{ color: '#0284C7' }}>■</strong> CNC-01</span>
+                      <span><strong style={{ color: '#EF4444' }}>■</strong> FURN-01</span>
+                      <span><strong style={{ color: '#10B981' }}>■</strong> PAINT-01</span>
+                    </div>
+                  </div>
+
+                  <div style={{ height: 130, width: '100%' }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={chartData} margin={{ top: 8, right: 15, left: -10, bottom: 0 }}>
+                        <CartesianGrid stroke="#F1F5F9" strokeDasharray="3 3" vertical={false} />
+                        <XAxis dataKey="label" stroke="#A8A29E" fontSize={9.5} fontFamily="var(--font-mono)" tickLine={false} />
+                        <YAxis stroke="#A8A29E" fontSize={9.5} fontFamily="var(--font-mono)" unit=" kW" tickLine={false} />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: '#1C1917',
+                            border: 'none',
+                            borderRadius: 6,
+                            fontSize: 11,
+                            color: '#FFFFFF',
+                          }}
+                        />
+                        <Bar dataKey="compressor" name="COMP-01 (Air)" fill="#F59E0B" stackId="a" />
+                        <Bar dataKey="cnc" name="CNC-01 (Machining)" fill="#0284C7" stackId="a" />
+                        <Bar dataKey="furnace" name="FURN-01 (Furnace)" fill="#EF4444" stackId="a" />
+                        <Bar dataKey="paint" name="PAINT-01 (Paint)" fill="#10B981" stackId="a" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* TAB 2: Multi-Option Trade-Off Matrix (Idea C) */}
+            {analyticsTab === 'tradeoff' && (
+              <div style={{
+                background: '#FFFFFF',
+                border: '1px solid #EAE3D7',
+                borderRadius: 10,
+                padding: '18px 20px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                  <div>
+                    <h3 style={{ fontSize: 14, fontWeight: 700, color: '#1C1917', margin: 0 }}>
+                      Production-Safe Optimization: 3-Candidate Trade-Off Matrix
+                    </h3>
+                    <p style={{ fontSize: 11.5, color: '#78716C', margin: '2px 0 0' }}>
+                      Balances aggressive energy reduction against physical safety, pressure floors, and production output
+                    </p>
+                  </div>
+                  <span style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    fontFamily: 'var(--font-mono)',
+                    padding: '3px 8px',
+                    borderRadius: 6,
+                    background: '#F0F9FF',
+                    color: '#0284C7',
+                    border: '1px solid rgba(2,132,199,0.2)'
+                  }}>
+                    TARGET: &lt;85 kW PEAK
                   </span>
                 </div>
-                <div style={{ fontSize: 10, color: '#64748b', marginTop: 8, lineHeight: 1.6 }}>
-                  <strong>Governance Protocol:</strong> ISO 50001:2018 EnMS Clause 6.3 &amp; IPMVP Option B. Advisory simulation only. Plant Energy Manager sign-off required prior to DCS execution.
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {TRADE_OFF_CANDIDATES.map(cand => {
+                    const isBlocked = cand.status === 'BLOCKED';
+                    const isInfeasible = cand.status === 'INFEASIBLE';
+                    const isRecommended = cand.status === 'RECOMMENDED';
+
+                    return (
+                      <div
+                        key={cand.id}
+                        style={{
+                          background: isRecommended ? '#F0FDF4' : '#FFFFFF',
+                          border: `1px solid ${isRecommended ? '#86EFAC' : isBlocked ? '#FECACA' : '#FDE68A'}`,
+                          borderRadius: 8,
+                          padding: '12px 14px'
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{
+                              fontSize: 10,
+                              fontWeight: 700,
+                              fontFamily: 'var(--font-mono)',
+                              padding: '2px 7px',
+                              borderRadius: 4,
+                              background: isRecommended ? 'rgba(16,185,129,0.15)' : isBlocked ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)',
+                              color: isRecommended ? '#059669' : isBlocked ? '#DC2626' : '#D97706'
+                            }}>
+                              {cand.statusLabel}
+                            </span>
+                            <span style={{ fontSize: 12.5, fontWeight: 700, color: '#1C1917' }}>
+                              {cand.name}
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => handleApplyCandidate(cand.id)}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 4,
+                              background: isRecommended ? '#059669' : '#FFFFFF',
+                              color: isRecommended ? '#FFFFFF' : '#1C1917',
+                              border: isRecommended ? 'none' : '1px solid #D9D0C1',
+                              borderRadius: 6,
+                              padding: '5px 10px',
+                              fontSize: 11,
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              transition: 'all 0.15s ease'
+                            }}
+                          >
+                            <span>{isRecommended ? 'Load Recommended Plan' : 'Test This Scenario'}</span>
+                            <ArrowRight size={10} />
+                          </button>
+                        </div>
+
+                        <div style={{ fontSize: 11.5, color: '#475569', marginBottom: 8 }}>
+                          {cand.strategy}
+                        </div>
+
+                        {/* Metrics Bar */}
+                        <div style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(4, 1fr)',
+                          gap: 8,
+                          background: isRecommended ? '#FFFFFF' : '#FAF7F2',
+                          padding: '8px 10px',
+                          borderRadius: 6,
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: 10.5,
+                          border: '1px solid #EAE3D7'
+                        }}>
+                          <div>
+                            <span style={{ color: '#78716C' }}>Peak Demand: </span>
+                            <strong style={{ color: cand.peakKw > 85 ? '#DC2626' : '#059669' }}>{cand.peakKw} kW</strong>
+                          </div>
+                          <div>
+                            <span style={{ color: '#78716C' }}>Energy Saved: </span>
+                            <strong style={{ color: '#0284C7' }}>{cand.energyKwhSaved} kWh/d</strong>
+                          </div>
+                          <div>
+                            <span style={{ color: '#78716C' }}>Production: </span>
+                            <strong style={{ color: cand.productionUnits < 140 ? '#DC2626' : '#059669' }}>{cand.productionUnits} pcs</strong>
+                          </div>
+                          <div>
+                            <span style={{ color: '#78716C' }}>Pressure: </span>
+                            <strong style={{ color: cand.pressureBar < 6.5 ? '#DC2626' : '#1C1917' }}>{cand.pressureBar} bar</strong>
+                          </div>
+                        </div>
+
+                        <div style={{ fontSize: 11, color: isBlocked ? '#DC2626' : isInfeasible ? '#D97706' : '#64748B', marginTop: 8, lineHeight: 1.4 }}>
+                          <strong>Diagnostic Assessment: </strong>{cand.diagnostics}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* TAB 3: Sensor-ROI & Epistemic Humility (Idea A) */}
+            {analyticsTab === 'investment' && inv && (
+              <div style={{
+                background: '#FFFFFF',
+                border: '1px solid #EAE3D7',
+                borderRadius: 10,
+                padding: '18px 20px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                  <div>
+                    <h3 style={{ fontSize: 14, fontWeight: 700, color: '#1C1917', margin: 0 }}>
+                      Sensor Sufficiency & Value of Information (Idea A)
+                    </h3>
+                    <p style={{ fontSize: 11.5, color: '#78716C', margin: '2px 0 0' }}>
+                      Diagnostic Humility: Resolves physical telemetry ambiguity before recommending capital expenditure
+                    </p>
+                  </div>
+                  <span style={{
+                    fontSize: 11,
+                    fontFamily: 'var(--font-mono)',
+                    fontWeight: 700,
+                    padding: '3px 8px',
+                    borderRadius: 6,
+                    background: inv.evidence_grade === 'A' ? 'rgba(16,185,129,0.12)' : 'rgba(245,158,11,0.12)',
+                    color: inv.evidence_grade === 'A' ? '#059669' : '#D97706',
+                    border: `1px solid ${inv.evidence_grade === 'A' ? 'rgba(16,185,129,0.3)' : 'rgba(245,158,11,0.3)'}`
+                  }}>
+                    TELEMETRY READINESS {inv.evidence_grade}
+                  </span>
+                </div>
+
+                {/* Ambiguity Resolution Banner */}
+                {inv.diagnostic_ambiguity && (
+                  <div style={{
+                    background: hasFlowMeter ? 'rgba(16,185,129,0.06)' : 'rgba(245,158,11,0.06)',
+                    border: `1px solid ${hasFlowMeter ? 'rgba(16,185,129,0.3)' : 'rgba(245,158,11,0.3)'}`,
+                    borderRadius: 6,
+                    padding: '10px 14px',
+                    marginBottom: 12,
+                    fontSize: 11.5,
+                    lineHeight: 1.5,
+                    color: '#334155'
+                  }}>
+                    <strong style={{ color: hasFlowMeter ? '#059669' : '#D97706' }}>Physical Hypothesis Resolution: </strong>
+                    {inv.diagnostic_ambiguity}
+                  </div>
+                )}
+
+                {/* Flowmeter Simulation Toggle */}
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  background: '#FAF7F2',
+                  border: '1px solid #EAE3D7',
+                  borderRadius: 6,
+                  padding: '10px 14px',
+                  marginBottom: 14
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: hasFlowMeter ? '#10B981' : '#F59E0B' }} />
+                    <div>
+                      <div style={{ fontSize: 11.5, fontWeight: 600, color: '#1C1917' }}>
+                        {hasFlowMeter ? 'Simulating with Inline Ultrasonic Flowmeter Installed' : 'Current Plant Telemetry (Electrical Submeter Only)'}
+                      </div>
+                      <div style={{ fontSize: 10.5, color: '#78716C' }}>
+                        {hasFlowMeter
+                          ? 'Zero break airflow confirmed. 100% of 18 kW draw is recoverable timer blow-off.'
+                          : 'Uncertainty present: 40%–65% of idle draw could be unmetered pipe leaks. VOI Ratio: 4.5x.'}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setHasFlowMeter(!hasFlowMeter)}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      background: hasFlowMeter ? '#059669' : '#FFFFFF',
+                      color: hasFlowMeter ? '#FFFFFF' : '#1C1917',
+                      border: hasFlowMeter ? 'none' : '1px solid #D9D0C1',
+                      borderRadius: 6,
+                      padding: '5px 12px',
+                      fontSize: 11,
+                      fontWeight: 600,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {hasFlowMeter ? '✓ Flowmeter Active (+₹12k)' : 'Simulate Adding Flowmeter'}
+                  </button>
+                </div>
+
+                {/* 3-Tier Payback Cards */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 14 }}>
+                  <div style={{ background: '#FAF7F2', border: '1px solid #EAE3D7', borderRadius: 6, padding: '12px' }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#78716C', fontFamily: 'var(--font-mono)' }}>
+                      CONSERVATIVE CASE
+                    </div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: '#D97706', margin: '4px 0 2px' }}>
+                      ₹{inv.conservative_annual_saving_inr.toLocaleString()} <span style={{ fontSize: 10, fontWeight: 400 }}>/yr</span>
+                    </div>
+                    <div style={{ fontSize: 11, color: '#1C1917' }}>
+                      Payback: <strong>{inv.payback_months_conservative} months</strong>
+                    </div>
+                  </div>
+
+                  <div style={{ background: '#F0F9FF', border: '1px solid rgba(2,132,199,0.3)', borderRadius: 6, padding: '12px' }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#0284C7', fontFamily: 'var(--font-mono)' }}>
+                      EXPECTED NOMINAL CASE
+                    </div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: '#0284C7', margin: '4px 0 2px' }}>
+                      ₹{inv.expected_annual_saving_inr.toLocaleString()} <span style={{ fontSize: 10, fontWeight: 400 }}>/yr</span>
+                    </div>
+                    <div style={{ fontSize: 11, color: '#1C1917' }}>
+                      Payback: <strong>{inv.payback_months_expected} months</strong>
+                    </div>
+                  </div>
+
+                  <div style={{ background: '#FAF7F2', border: '1px solid #EAE3D7', borderRadius: 6, padding: '12px' }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#059669', fontFamily: 'var(--font-mono)' }}>
+                      BEST-CASE (+35%)
+                    </div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: '#059669', margin: '4px 0 2px' }}>
+                      ₹{inv.best_case_annual_saving_inr.toLocaleString()} <span style={{ fontSize: 10, fontWeight: 400 }}>/yr</span>
+                    </div>
+                    <div style={{ fontSize: 11, color: '#1C1917' }}>
+                      Payback: <strong>{inv.payback_months_best} months</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 4: Counterfactual M&V Ledger (Idea B: IPMVP Option B/C) */}
+            {analyticsTab === 'ledger' && (
+              <div style={{
+                background: '#FFFFFF',
+                border: '1px solid #EAE3D7',
+                borderRadius: 10,
+                padding: '18px 20px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                  <div>
+                    <h3 style={{ fontSize: 14, fontWeight: 700, color: '#1C1917', margin: 0 }}>
+                      The Counterfactual Factory: Post-Implementation M&V Ledger
+                    </h3>
+                    <p style={{ fontSize: 11.5, color: '#78716C', margin: '2px 0 0' }}>
+                      Separates production volume drops from true verified energy efficiency (IPMVP Option B/C)
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {committedFeedback && (
+                      <span style={{ fontSize: 11, color: '#059669', fontFamily: 'var(--font-mono)' }}>
+                        {committedFeedback}
+                      </span>
+                    )}
+                    <button
+                      onClick={handleCommitToLedger}
+                      disabled={currentResult.feasibility === 'blocked'}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        background: currentResult.feasibility === 'blocked' ? '#F5F5F4' : '#059669',
+                        color: currentResult.feasibility === 'blocked' ? '#A8A29E' : '#FFFFFF',
+                        border: 'none',
+                        borderRadius: 6,
+                        padding: '6px 12px',
+                        fontSize: 11.5,
+                        fontWeight: 600,
+                        cursor: currentResult.feasibility === 'blocked' ? 'not-allowed' : 'pointer'
+                      }}
+                    >
+                      <BookmarkCheck size={12} />
+                      <span>Commit Active Scenario to Ledger</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Waterfall Card */}
+                <div style={{
+                  background: '#FAF7F2',
+                  border: '1px solid #EAE3D7',
+                  borderRadius: 6,
+                  padding: '12px 14px',
+                  marginBottom: 14
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: '#0284C7', fontFamily: 'var(--font-mono)' }}>
+                      CASE STUDY A: SHIFT CONTRACTION AUDIT
+                    </span>
+                    <span style={{
+                      fontSize: 10,
+                      fontFamily: 'var(--font-mono)',
+                      color: '#059669',
+                      background: 'rgba(16,185,129,0.1)',
+                      border: '1px solid rgba(16,185,129,0.3)',
+                      padding: '2px 8px',
+                      borderRadius: 4
+                    }}>
+                      Reconciliation: 170.57 + 14.43 = 185.00 kWh (100% Match)
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, fontFamily: 'var(--font-mono)', fontSize: 11 }}>
+                    <div style={{ background: '#FFFFFF', padding: '8px 10px', borderRadius: 6, border: '1px solid #EAE3D7' }}>
+                      <div style={{ fontSize: 9.5, color: '#78716C' }}>1. Raw Submeter Drop</div>
+                      <div style={{ fontSize: 12.5, fontWeight: 700, color: '#1C1917', margin: '4px 0 2px' }}>-185.00 kWh (-14.0%)</div>
+                      <div style={{ fontSize: 9.5, color: '#A8A29E' }}>1,320 → 1,135 kWh</div>
+                    </div>
+                    <div style={{ background: '#FFFFFF', padding: '8px 10px', borderRadius: 6, border: '1px solid #EAE3D7' }}>
+                      <div style={{ fontSize: 9.5, color: '#78716C' }}>2. Output Deficit</div>
+                      <div style={{ fontSize: 12.5, fontWeight: 700, color: '#D97706', margin: '4px 0 2px' }}>122 vs 140 parts (-12.9%)</div>
+                      <div style={{ fontSize: 9.5, color: '#A8A29E' }}>Material delay on CNC</div>
+                    </div>
+                    <div style={{ background: '#FFFFFF', padding: '8px 10px', borderRadius: 6, border: '1px solid #EAE3D7' }}>
+                      <div style={{ fontSize: 9.5, color: '#78716C' }}>3. Production Drop Effect</div>
+                      <div style={{ fontSize: 12.5, fontWeight: 700, color: '#57534E', margin: '4px 0 2px' }}>-170.57 kWh (-12.9%)</div>
+                      <div style={{ fontSize: 9.5, color: '#A8A29E' }}>Volume loss, not efficiency</div>
+                    </div>
+                    <div style={{ background: '#F0FDF4', padding: '8px 10px', borderRadius: 6, border: '1px solid #86EFAC' }}>
+                      <div style={{ fontSize: 9.5, color: '#059669', fontWeight: 600 }}>4. True Verified Efficiency</div>
+                      <div style={{ fontSize: 12.5, fontWeight: 700, color: '#059669', margin: '4px 0 2px' }}>-14.43 kWh/d (-1.09%)</div>
+                      <div style={{ fontSize: 9.5, color: '#64748B' }}>11.83 kg CO₂e verified</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Ledger Table */}
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11, textAlign: 'left' }}>
+                    <thead>
+                      <tr style={{ background: '#FAF7F2', borderBottom: '1px solid #EAE3D7' }}>
+                        <th style={{ padding: '8px 10px', fontWeight: 600, color: '#57534E' }}>Intervention</th>
+                        <th style={{ padding: '8px 10px', fontWeight: 600, color: '#57534E' }}>Target Asset</th>
+                        <th style={{ padding: '8px 10px', fontWeight: 600, color: '#57534E' }}>Baseline</th>
+                        <th style={{ padding: '8px 10px', fontWeight: 600, color: '#57534E' }}>Actual Measured</th>
+                        <th style={{ padding: '8px 10px', fontWeight: 600, color: '#57534E' }}>Adjusted Base</th>
+                        <th style={{ padding: '8px 10px', fontWeight: 600, color: '#57534E' }}>Realized Saving</th>
+                        <th style={{ padding: '8px 10px', fontWeight: 600, color: '#57534E' }}>Realization %</th>
+                        <th style={{ padding: '8px 10px', fontWeight: 600, color: '#57534E' }}>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {mvLedger.map((row, idx) => (
+                        <tr key={idx} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                          <td style={{ padding: '8px 10px', fontWeight: 600, color: '#1C1917' }}>{row.title}</td>
+                          <td style={{ padding: '8px 10px', fontFamily: 'var(--font-mono)', color: '#0284C7' }}>{row.target_asset}</td>
+                          <td style={{ padding: '8px 10px', fontFamily: 'var(--font-mono)' }}>{row.baseline_kwh.toFixed(0)} kWh</td>
+                          <td style={{ padding: '8px 10px', fontFamily: 'var(--font-mono)' }}>{row.actual_measured_kwh.toFixed(0)} kWh</td>
+                          <td style={{ padding: '8px 10px', fontFamily: 'var(--font-mono)', color: '#D97706' }}>{row.adjusted_baseline_kwh.toFixed(0)} kWh</td>
+                          <td style={{ padding: '8px 10px', fontFamily: 'var(--font-mono)', color: '#059669', fontWeight: 700 }}>{row.realized_savings_kwh.toFixed(1)} kWh</td>
+                          <td style={{ padding: '8px 10px' }}>
+                            <span style={{
+                              fontSize: 10,
+                              fontWeight: 600,
+                              padding: '2px 6px',
+                              borderRadius: 4,
+                              background: row.realization_rate_pct >= 90 ? 'rgba(16,185,129,0.1)' : 'rgba(245,158,11,0.1)',
+                              color: row.realization_rate_pct >= 90 ? '#059669' : '#D97706'
+                            }}>
+                              {row.realization_rate_pct.toFixed(1)}%
+                            </span>
+                          </td>
+                          <td style={{ padding: '8px 10px' }}>
+                            <span style={{ fontSize: 10, fontWeight: 700, color: '#0284C7', background: '#F0F9FF', padding: '2px 6px', borderRadius: 4 }}>
+                              VERIFIED
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             )}
           </div>
         </div>
+
       </div>
     </div>
   );

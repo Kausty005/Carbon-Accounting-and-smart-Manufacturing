@@ -7,7 +7,7 @@ import {
   Flame, Fan, Server, Box, Compass, LogOut, User, RotateCcw,
   PanelRightClose, PanelRightOpen, Activity, ArrowRight,
   Shield, Gauge, Printer, Download, ShieldAlert,
-  Award, Terminal, Database, ShieldCheck
+  Award, Terminal, Database, ShieldCheck, AlertCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -2237,6 +2237,16 @@ function InspectorPanel({
   const avoidedCarbon = (carbonData?.avoided_emissions?.avoided_co2e_t ?? (anyFix ? 0.728 : 0.0)).toFixed(3);
   const factorVal = (carbonData?.gross_footprint.scope2?.factor_metadata.selected_factor ?? gridEF).toFixed(3);
 
+  const [expandedAlerts, setExpandedAlerts] = useState<Record<string, boolean>>({
+    compressor: false,
+    furnace: false,
+    cnc: false,
+  });
+
+  const toggleAlertExpand = (id: string) => {
+    setExpandedAlerts(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
   return (
     <aside className="inspector-panel">
       <div className="inspector-tabs">
@@ -2254,39 +2264,176 @@ function InspectorPanel({
       <div className="inspector-body">
         {/* Alerts tab */}
         {tab === 'alerts' && (
-          <>
-            <div className="section-title">Active Alerts</div>
-            <div className="alert-banner warn">
-              <div className="alert-title">
-                <AlertTriangle size={10} style={{ display: 'inline', marginRight: 4 }} />
-                ANOMALY â€” AIR COMPRESSOR
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div className="section-title">Active Plant Alerts</div>
+
+            {/* Alert 1: Compressor Warning */}
+            <div style={{
+              background: '#FFFFFF',
+              border: '1px solid #EAE3D7',
+              borderLeft: '3px solid #F59E0B',
+              borderRadius: 8,
+              padding: '11px 13px',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <AlertTriangle size={13} color="#D97706" />
+                  <span style={{ fontSize: 11.5, fontWeight: 700, color: '#1C1917' }}>Air Compressor (ELGi)</span>
+                </div>
+                <span style={{
+                  fontSize: 9.5, fontWeight: 700, padding: '1px 6px', borderRadius: 4,
+                  background: 'rgba(245,158,11,0.12)', color: '#D97706', fontFamily: 'var(--font-mono)'
+                }}>
+                  WARNING
+                </span>
               </div>
-              <div className="alert-body">
-                18 kW idle draw during 3.2 hrs/day break periods. Discharge pressure 7.2 bar (set: 7.5, optimal: 6.8).
-                Power Factor 0.78.
+              <div style={{ fontSize: 11, color: '#475569', lineHeight: 1.4, wordBreak: 'break-word' }}>
+                18 kW idle draw during 3.2 hrs/day shift and lunch breaks.
               </div>
-              <div className="alert-rec">
-                Auto-Idle Cutoff: saves 998.4 kWh / ₹7,987 / 727.7 kg CO₂e avoided
+
+              {expandedAlerts.compressor && (
+                <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px dashed #EAE3D7', fontSize: 10.5, color: '#64748B', lineHeight: 1.45 }}>
+                  <div><strong>Diagnostics:</strong> Discharge pressure 7.2 bar (setpoint: 7.5 bar, optimal floor: 6.8 bar). Power Factor: 0.78 unloader drop.</div>
+                  <div style={{ color: '#059669', marginTop: 4, fontWeight: 600 }}>
+                    Auto-Idle Cutoff: saves 998.4 kWh/mo · ₹7,987/mo · 728 kg CO₂e avoided.
+                  </div>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, gap: 6 }}>
+                <button
+                  type="button"
+                  onClick={() => toggleAlertExpand('compressor')}
+                  style={{
+                    background: 'transparent', border: 'none', padding: 0,
+                    fontSize: 10.5, color: '#0284C7', cursor: 'pointer', fontWeight: 500
+                  }}
+                >
+                  {expandedAlerts.compressor ? 'Hide details ▲' : 'Show details ▼'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setView('simulator')}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 4,
+                    background: '#0284C7', color: '#FFFFFF', border: 'none',
+                    borderRadius: 5, padding: '4px 9px', fontSize: 10.5, fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  <span>Simulate in Twin</span>
+                  <ChevronRight size={10} />
+                </button>
               </div>
-              <button className="btn btn-amber btn-sm btn-full" style={{ marginTop: 8 }}
-                onClick={() => setView('simulator')}
-              >
-                <ChevronRight size={10} />
-                Simulate Fix in Digital Twin
-              </button>
             </div>
-            <div className="alert-banner ok">
-              <div className="alert-title">CNC MACHINING CENTER â€” OPTIMAL</div>
-              <div className="alert-body">SEC: 1.8 kWh/part. P.F. 0.94. No anomalies detected.</div>
-            </div>
-            <div className="alert-banner crit">
-              <div className="alert-title">FURNACE â€” HIGH PEAK DEMAND</div>
-              <div className="alert-body">
-                85 kW concurrent with compressor peak 09:00â€“12:00.
-                Staggering preheat by 45 min reduces peak demand 18%.
+
+            {/* Alert 2: Furnace Critical */}
+            <div style={{
+              background: '#FFFFFF',
+              border: '1px solid #EAE3D7',
+              borderLeft: '3px solid #DC2626',
+              borderRadius: 8,
+              padding: '11px 13px',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <AlertCircle size={13} color="#DC2626" />
+                  <span style={{ fontSize: 11.5, fontWeight: 700, color: '#1C1917' }}>Heat Furnace (IF-85)</span>
+                </div>
+                <span style={{
+                  fontSize: 9.5, fontWeight: 700, padding: '1px 6px', borderRadius: 4,
+                  background: 'rgba(239,68,68,0.12)', color: '#DC2626', fontFamily: 'var(--font-mono)'
+                }}>
+                  CRITICAL
+                </span>
+              </div>
+              <div style={{ fontSize: 11, color: '#475569', lineHeight: 1.4, wordBreak: 'break-word' }}>
+                85 kW concurrent draw with compressor peak (09:00–12:00) risks demand penalty.
+              </div>
+
+              {expandedAlerts.furnace && (
+                <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px dashed #EAE3D7', fontSize: 10.5, color: '#64748B', lineHeight: 1.45 }}>
+                  <div><strong>Diagnostics:</strong> Concurrent draw reaches 147.2 kVA near the 160 kVA contract limit.</div>
+                  <div style={{ color: '#059669', marginTop: 4, fontWeight: 600 }}>
+                    Staggering pre-heat by 45 min into solar window reduces concurrent peak demand by 18%.
+                  </div>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, gap: 6 }}>
+                <button
+                  type="button"
+                  onClick={() => toggleAlertExpand('furnace')}
+                  style={{
+                    background: 'transparent', border: 'none', padding: 0,
+                    fontSize: 10.5, color: '#0284C7', cursor: 'pointer', fontWeight: 500
+                  }}
+                >
+                  {expandedAlerts.furnace ? 'Hide details ▲' : 'Show details ▼'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setView('simulator')}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 4,
+                    background: '#DC2626', color: '#FFFFFF', border: 'none',
+                    borderRadius: 5, padding: '4px 9px', fontSize: 10.5, fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  <span>Simulate in Twin</span>
+                  <ChevronRight size={10} />
+                </button>
               </div>
             </div>
-          </>
+
+            {/* Alert 3: CNC Machining Optimal */}
+            <div style={{
+              background: '#FFFFFF',
+              border: '1px solid #EAE3D7',
+              borderLeft: '3px solid #10B981',
+              borderRadius: 8,
+              padding: '11px 13px',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <CheckCircle2 size={13} color="#059669" />
+                  <span style={{ fontSize: 11.5, fontWeight: 700, color: '#1C1917' }}>CNC Machining Center</span>
+                </div>
+                <span style={{
+                  fontSize: 9.5, fontWeight: 700, padding: '1px 6px', borderRadius: 4,
+                  background: 'rgba(16,185,129,0.12)', color: '#059669', fontFamily: 'var(--font-mono)'
+                }}>
+                  OPTIMAL
+                </span>
+              </div>
+              <div style={{ fontSize: 11, color: '#475569', lineHeight: 1.4, wordBreak: 'break-word' }}>
+                Specific Energy: 1.8 kWh/part. Power Factor: 0.94. Nominal operation.
+              </div>
+
+              {expandedAlerts.cnc && (
+                <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px dashed #EAE3D7', fontSize: 10.5, color: '#64748B', lineHeight: 1.45 }}>
+                  <div><strong>Diagnostics:</strong> Active cycle monitoring shows zero vibration or thermal variance across 5 axes.</div>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, gap: 6 }}>
+                <button
+                  type="button"
+                  onClick={() => toggleAlertExpand('cnc')}
+                  style={{
+                    background: 'transparent', border: 'none', padding: 0,
+                    fontSize: 10.5, color: '#0284C7', cursor: 'pointer', fontWeight: 500
+                  }}
+                >
+                  {expandedAlerts.cnc ? 'Hide details ▲' : 'Show details ▼'}
+                </button>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Asset tab */}

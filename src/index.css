@@ -97,6 +97,18 @@ html, body, #root {
   display: none !important;
 }
 
+.app-shell.no-inspector {
+  grid-template-columns: var(--sidebar-w) 1fr;
+  grid-template-areas:
+    "topbar topbar"
+    "telebar telebar"
+    "sidebar main";
+}
+
+.app-shell.no-inspector .inspector-panel {
+  display: none !important;
+}
+
 /* ─── Topbar ────────────────────────────────────────────────────────────────── */
 .topbar {
   grid-area: topbar;

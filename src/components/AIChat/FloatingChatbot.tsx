@@ -12,6 +12,7 @@ import {
   Info,
 } from 'lucide-react';
 import { useAIExplain } from '../AIExplain/AIExplainContext';
+import { AIOrb } from '../common/AIOrb';
 
 const STARTER_QUESTIONS = [
   'Why is our energy cost high today?',
@@ -101,14 +102,12 @@ export function FloatingChatbot() {
             style={{
               width: 22,
               height: 22,
-              borderRadius: '50%',
-              background: 'rgba(255, 255, 255, 0.2)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <Sparkles size={14} color="#FFFFFF" />
+            <AIOrb size={22} state="idle" showAura={true} showRings={false} />
           </div>
           <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: '-0.01em' }}>
             Ask AI Assistant
@@ -164,15 +163,17 @@ export function FloatingChatbot() {
                 style={{
                   width: 32,
                   height: 32,
-                  borderRadius: 8,
-                  background: '#E0F2FE',
-                  border: '1px solid #BAE6FD',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
               >
-                <Sparkles size={16} color="#0284C7" />
+                <AIOrb
+                  size={28}
+                  state={isStreaming ? 'streaming' : 'idle'}
+                  showAura={true}
+                  showRings={false}
+                />
               </div>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -284,6 +285,34 @@ export function FloatingChatbot() {
               background: '#FDFBF7',
             }}
           >
+            {/* Warm Architectural Welcome Card with Central AI Orb */}
+            {chatMessages.length <= 1 && (
+              <div
+                style={{
+                  background: 'linear-gradient(180deg, #FFFFFF 0%, #FAF7F2 100%)',
+                  border: '1px solid #EAE3D7',
+                  borderRadius: 12,
+                  padding: '16px 14px',
+                  textAlign: 'center',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+                  marginBottom: 4,
+                }}
+              >
+                <div style={{ marginBottom: 12 }}>
+                  <AIOrb size={46} state="idle" showAura={true} showRings={true} />
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#1E252D' }}>
+                  Factory Intelligence Copilot
+                </div>
+                <div style={{ fontSize: 11, color: '#64748B', marginTop: 3, maxWidth: 280, lineHeight: 1.45 }}>
+                  Ask questions about equipment anomalies, peak demand shaving, Scope 1 & 2 carbon accounting, or machine efficiency.
+                </div>
+              </div>
+            )}
+
             {/* Messages */}
             {chatMessages.map((msg, idx) => (
               <div
@@ -319,9 +348,12 @@ export function FloatingChatbot() {
                 >
                   {/* Assistant response content */}
                   {msg.content || (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#94A3B8' }}>
-                      <span className="dot-pulse" /> Generating analysis...
-                    </span>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '2px 0' }}>
+                      <AIOrb size={18} state="thinking" showAura={true} showRings={false} />
+                      <span style={{ color: '#0369A1', fontWeight: 600, fontSize: 11.5 }}>
+                        Reasoning with plant telemetry...
+                      </span>
+                    </div>
                   )}
                   {/* Cursor if active streaming message */}
                   {isStreaming && idx === chatMessages.length - 1 && msg.role === 'assistant' && (

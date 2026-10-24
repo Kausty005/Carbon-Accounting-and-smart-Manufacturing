@@ -1909,3 +1909,165 @@ input[type=range]::-webkit-slider-thumb {
   outline-offset: 2px !important;
 }
 
+/* ─── AI Orb: Fluid Living Agent & Chatbot Core Component ─────────────────── */
+@keyframes orbMorph {
+  0% {
+    border-radius: 42% 58% 70% 30% / 45% 45% 55% 55%;
+    transform: rotate(0deg) scale(1);
+  }
+  33% {
+    border-radius: 70% 30% 46% 54% / 30% 29% 71% 70%;
+    transform: rotate(120deg) scale(1.04);
+  }
+  66% {
+    border-radius: 55% 45% 62% 38% / 58% 68% 32% 42%;
+    transform: rotate(240deg) scale(0.96);
+  }
+  100% {
+    border-radius: 42% 58% 70% 30% / 45% 45% 55% 55%;
+    transform: rotate(360deg) scale(1);
+  }
+}
+
+@keyframes orbSwirl {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.15);
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+  }
+}
+
+@keyframes orbNucleus {
+  0% {
+    transform: scale(0.85);
+    opacity: 0.75;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.85);
+    opacity: 0.75;
+  }
+}
+
+@keyframes orbAura {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.55;
+  }
+  50% {
+    transform: scale(1.22);
+    opacity: 0.95;
+  }
+  100% {
+    transform: scale(0.95);
+    opacity: 0.55;
+  }
+}
+
+@keyframes orbRing {
+  0% {
+    transform: rotateX(68deg) rotateZ(0deg);
+  }
+  100% {
+    transform: rotateX(68deg) rotateZ(360deg);
+  }
+}
+
+.ai-orb-core {
+  background: radial-gradient(
+    circle at 35% 35%,
+    #BAE6FD 0%,
+    #0284C7 32%,
+    #0369A1 55%,
+    #D97706 78%,
+    #10B981 100%
+  );
+  animation: orbMorph 4.5s ease-in-out infinite;
+  box-shadow: 0 4px 20px rgba(2, 132, 199, 0.4), inset 0 0 14px rgba(255, 255, 255, 0.7);
+}
+
+.ai-orb-core.thinking {
+  background: radial-gradient(
+    circle at 30% 30%,
+    #E0F2FE 0%,
+    #38BDF8 25%,
+    #0284C7 48%,
+    #F59E0B 72%,
+    #10B981 92%,
+    #0369A1 100%
+  );
+  animation: orbMorph 2.8s ease-in-out infinite;
+}
+
+.ai-orb-core.streaming {
+  background: radial-gradient(
+    circle at 40% 40%,
+    #FFFFFF 0%,
+    #38BDF8 28%,
+    #0284C7 50%,
+    #10B981 75%,
+    #F59E0B 100%
+  );
+  animation: orbMorph 1.8s ease-in-out infinite;
+}
+
+.ai-orb-swirl {
+  position: absolute;
+  inset: -15%;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    rgba(2, 132, 199, 0.8) 0deg,
+    rgba(245, 158, 11, 0.75) 110deg,
+    rgba(16, 185, 129, 0.7) 210deg,
+    rgba(56, 189, 248, 0.85) 300deg,
+    rgba(2, 132, 199, 0.8) 360deg
+  );
+  filter: blur(6px);
+  mix-blend-mode: screen;
+  animation: orbSwirl 5s linear infinite;
+}
+
+.ai-orb-swirl.thinking {
+  animation: orbSwirl 3.2s linear infinite;
+}
+
+.ai-orb-nucleus {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 44%;
+  height: 44%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.98) 0%,
+    rgba(224, 242, 254, 0.85) 45%,
+    rgba(2, 132, 199, 0.3) 75%,
+    transparent 100%
+  );
+  filter: blur(1.5px);
+  animation: orbNucleus 2.2s ease-in-out infinite;
+}
+
+.ai-orb-aura.thinking {
+  animation: orbAura 2s ease-in-out infinite;
+}
+
+.ai-orb-ring {
+  animation: orbRing 7s linear infinite;
+}
+
+.ai-orb-ring.thinking {
+  animation: orbRing 4.2s linear infinite;
+}
+
+

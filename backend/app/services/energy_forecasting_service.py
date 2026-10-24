@@ -79,6 +79,13 @@ class EnergyForecastingService:
 
     def load_model(self) -> None:
         """Loads and verifies the 15-minute, hourly, and daily forecasting artifacts into memory."""
+        try:
+            import sklearn.compose._column_transformer as _ct
+            if not hasattr(_ct, "_RemainderColsList"):
+                _ct._RemainderColsList = type("_RemainderColsList", (list,), {})
+        except Exception:
+            pass
+
         errors = []
 
         # 1. 15-Minute Model

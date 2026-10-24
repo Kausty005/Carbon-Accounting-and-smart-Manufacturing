@@ -13,6 +13,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { useAIExplain } from './AIExplainContext';
+import { AIOrb } from '../common/AIOrb';
 
 export function AIExplainPopover() {
   const {
@@ -182,20 +183,17 @@ export function AIExplainPopover() {
             justifyContent: 'space-between',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div
               style={{
                 width: 28,
                 height: 28,
-                borderRadius: 6,
-                background: '#FEF3C7',
-                border: '1px solid #FDE68A',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              <Sparkles size={15} color="#D97706" />
+              <AIOrb size={24} state="idle" showAura={false} showRings={false} />
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -253,24 +251,16 @@ export function AIExplainPopover() {
             lineHeight: 1.5,
           }}
         >
-          {/* Loading State */}
+          {/* Loading State with Theme-Matched AI Orb */}
           {popoverStatus === 'loading' && (
-            <div style={{ padding: '24px 0', textAlign: 'center' }}>
-              <div
-                style={{
-                  width: 32,
-                  height: 32,
-                  border: '3px solid #E2E8F0',
-                  borderTopColor: '#0284C7',
-                  borderRadius: '50%',
-                  margin: '0 auto 12px',
-                  animation: 'spin 0.8s linear infinite',
-                }}
-              />
-              <div style={{ fontSize: 12.5, fontWeight: 600, color: '#1E252D' }}>
+            <div style={{ padding: '34px 0 24px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div style={{ marginBottom: 18 }}>
+                <AIOrb size={68} state="thinking" showAura={true} showRings={true} />
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#1E252D', letterSpacing: '-0.01em' }}>
                 Grounding telemetry with Local LLM...
               </div>
-              <div style={{ fontSize: 11, color: '#64748B', marginTop: 3 }}>
+              <div style={{ fontSize: 11, color: '#64748B', marginTop: 4, maxWidth: 280, lineHeight: 1.45 }}>
                 Evaluating physical load, baseline deviation, and equipment causes
               </div>
             </div>

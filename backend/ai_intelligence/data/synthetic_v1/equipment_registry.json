@@ -1,0 +1,262 @@
+{
+  "FURNACE-01": {
+    "equipment_id": "FURNACE-01",
+    "equipment_type": "furnace",
+    "equipment_name": "High-Temperature Reheat Electric Furnace",
+    "rated_power_kw": 250.0,
+    "operating_modes": [
+      "heating",
+      "holding",
+      "cooling",
+      "idle",
+      "off"
+    ],
+    "primary_sensors": {
+      "temperature_c": {
+        "unit": "\u00b0C",
+        "nominal_range": [
+          25.0,
+          950.0
+        ],
+        "critical_threshold": 920.0
+      },
+      "temp_setpoint_c": {
+        "unit": "\u00b0C",
+        "nominal_range": [
+          20.0,
+          850.0
+        ]
+      },
+      "power_consumption_kw": {
+        "unit": "kW",
+        "nominal_range": [
+          0.0,
+          250.0
+        ]
+      },
+      "door_open": {
+        "unit": "binary",
+        "nominal_range": [
+          0,
+          1
+        ]
+      },
+      "heating_element_active": {
+        "unit": "binary",
+        "nominal_range": [
+          0,
+          1
+        ]
+      },
+      "ambient_temp_c": {
+        "unit": "\u00b0C",
+        "nominal_range": [
+          15.0,
+          42.0
+        ]
+      }
+    },
+    "description": "Industrial electric batch heat-treatment furnace with programmable PID heating cycle."
+  },
+  "AIR-COMP-01": {
+    "equipment_id": "AIR-COMP-01",
+    "equipment_type": "air_compressor",
+    "equipment_name": "Variable Speed Rotary Screw Air Compressor",
+    "rated_power_kw": 75.0,
+    "operating_modes": [
+      "load",
+      "unload",
+      "standby",
+      "off"
+    ],
+    "primary_sensors": {
+      "discharge_pressure_bar": {
+        "unit": "bar",
+        "nominal_range": [
+          6.5,
+          8.5
+        ],
+        "critical_threshold": 5.5
+      },
+      "airflow_cfm": {
+        "unit": "CFM",
+        "nominal_range": [
+          0.0,
+          420.0
+        ]
+      },
+      "power_consumption_kw": {
+        "unit": "kW",
+        "nominal_range": [
+          0.0,
+          78.0
+        ]
+      },
+      "discharge_temp_c": {
+        "unit": "\u00b0C",
+        "nominal_range": [
+          65.0,
+          95.0
+        ],
+        "critical_threshold": 105.0
+      },
+      "vibration_mm_s": {
+        "unit": "mm/s",
+        "nominal_range": [
+          0.8,
+          3.2
+        ],
+        "critical_threshold": 6.5
+      },
+      "ambient_temp_c": {
+        "unit": "\u00b0C",
+        "nominal_range": [
+          15.0,
+          42.0
+        ]
+      }
+    },
+    "description": "Plant pneumatic utility rotary screw compressor supplying 7.5 bar compressed air header."
+  },
+  "CNC-01": {
+    "equipment_id": "CNC-01",
+    "equipment_type": "cnc_machine",
+    "equipment_name": "5-Axis High-Precision CNC Machining Center",
+    "rated_power_kw": 35.0,
+    "operating_modes": [
+      "cutting",
+      "setup",
+      "idle",
+      "off"
+    ],
+    "primary_sensors": {
+      "spindle_rpm": {
+        "unit": "RPM",
+        "nominal_range": [
+          0.0,
+          12000.0
+        ]
+      },
+      "spindle_load_pct": {
+        "unit": "%",
+        "nominal_range": [
+          0.0,
+          100.0
+        ],
+        "critical_threshold": 90.0
+      },
+      "power_consumption_kw": {
+        "unit": "kW",
+        "nominal_range": [
+          0.0,
+          38.0
+        ]
+      },
+      "vibration_mm_s": {
+        "unit": "mm/s",
+        "nominal_range": [
+          0.5,
+          2.2
+        ],
+        "critical_threshold": 5.0
+      },
+      "spindle_temp_c": {
+        "unit": "\u00b0C",
+        "nominal_range": [
+          25.0,
+          60.0
+        ],
+        "critical_threshold": 75.0
+      },
+      "ambient_temp_c": {
+        "unit": "\u00b0C",
+        "nominal_range": [
+          15.0,
+          42.0
+        ]
+      }
+    },
+    "description": "Production milling machine for aerospace turbine brackets and precision tooling."
+  },
+  "CHILLER-01": {
+    "equipment_id": "CHILLER-01",
+    "equipment_type": "chilled_water_system",
+    "equipment_name": "Water-Cooled Centrifugal Chilled Water System",
+    "rated_power_kw": 160.0,
+    "operating_modes": [
+      "running",
+      "low_load",
+      "standby",
+      "off"
+    ],
+    "primary_sensors": {
+      "supply_temp_c": {
+        "unit": "\u00b0C",
+        "nominal_range": [
+          6.0,
+          8.5
+        ],
+        "critical_threshold": 11.0
+      },
+      "return_temp_c": {
+        "unit": "\u00b0C",
+        "nominal_range": [
+          11.0,
+          14.5
+        ]
+      },
+      "delta_t_c": {
+        "unit": "\u00b0C",
+        "nominal_range": [
+          4.5,
+          6.5
+        ],
+        "critical_threshold": 2.5
+      },
+      "water_flow_m3h": {
+        "unit": "m\u00b3/h",
+        "nominal_range": [
+          100.0,
+          180.0
+        ],
+        "critical_threshold": 60.0
+      },
+      "power_consumption_kw": {
+        "unit": "kW",
+        "nominal_range": [
+          0.0,
+          165.0
+        ]
+      },
+      "cooling_demand_pct": {
+        "unit": "%",
+        "nominal_range": [
+          10.0,
+          100.0
+        ]
+      },
+      "cooling_output_kw_th": {
+        "unit": "kW_th",
+        "nominal_range": [
+          0.0,
+          750.0
+        ]
+      },
+      "cop_proxy": {
+        "unit": "COP",
+        "nominal_range": [
+          3.2,
+          5.2
+        ]
+      },
+      "ambient_temp_c": {
+        "unit": "\u00b0C",
+        "nominal_range": [
+          15.0,
+          42.0
+        ]
+      }
+    },
+    "description": "Central plant chiller circulating chilled water across facility heat exchangers and machine cooling jackets."
+  }
+}

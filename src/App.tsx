@@ -13,6 +13,7 @@ import HomePage from './components/HomePage/HomePage';
 import LoginModal from './components/Auth/LoginModal';
 import DigitalTwinView from './components/DigitalTwin/DigitalTwinView';
 import CarbonAccountingView from './components/Carbon/CarbonAccountingView';
+import AIAnomalyIntelligence from './components/AIAnomaly/AIAnomalyIntelligence';
 import { DemandAreaChart, ComparisonLineChart, ScopePie, MachineEnergyDonut, ProductiveVsWasteBar } from './components/Charts';
 import {
   PLANT, ASSETS, HOURLY_BASE, CARBON,
@@ -49,13 +50,14 @@ const PAGE_VARIANTS = {
   exit:    { opacity: 0, y: -8, transition: { duration: 0.2, ease: 'easeIn' as const } },
 };
 
-type View = 'overview' | 'scada' | 'simulator' | 'carbon' | 'reports';
+type View = 'overview' | 'scada' | 'simulator' | 'carbon' | 'anomalies' | 'reports';
 
 const NAV: { id: View; icon: React.ReactNode; label: string }[] = [
   { id: 'overview',  icon: <LayoutGrid size={14} />,   label: 'Overview' },
   { id: 'scada',     icon: <Box size={14} />,          label: '3D Factory Twin' },
   { id: 'simulator', icon: <Sliders size={14} />,       label: 'Digital Twin' },
   { id: 'carbon',    icon: <Leaf size={14} />,          label: 'Carbon Accounting' },
+  { id: 'anomalies', icon: <Activity size={14} />,      label: 'AI Anomaly Intelligence' },
   { id: 'reports',   icon: <FileText size={14} />,      label: 'Audit Report' },
 ];
 
@@ -234,7 +236,7 @@ function OverviewView({
           </span>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn btn-amber btn-sm" onClick={() => setView('scada')}>
+          <button className="btn btn-amber btn-sm" onClick={() => setView('anomalies')}>
             <AlertTriangle size={11} />
             <span>1 Critical Anomaly</span>
           </button>
@@ -418,6 +420,14 @@ function OverviewView({
               <Sliders size={12} />
               <span>Simulate Fix in Digital Twin</span>
               <ArrowRight size={12} />
+            </button>
+            <button
+              className="btn btn-amber btn-sm"
+              onClick={() => setView('anomalies')}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', fontSize: 11, fontWeight: 600 }}
+            >
+              <Activity size={12} />
+              <span>AI Anomaly Root Cause</span>
             </button>
             <button
               className="btn btn-outline btn-sm"
@@ -1897,6 +1907,11 @@ export default function App() {
                 setCeaMethodology={setCeaMethodology}
                 availableYears={availableYears}
               />
+            </motion.div>
+          )}
+          {view === 'anomalies' && (
+            <motion.div key="anomalies" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%' }}>
+              <AIAnomalyIntelligence />
             </motion.div>
           )}
           {view === 'reports' && (

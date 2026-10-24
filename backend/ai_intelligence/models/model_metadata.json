@@ -1,0 +1,151 @@
+{
+  "version": "1.1.0",
+  "training_timestamp": "2026-10-24T09:59:21.213495Z",
+  "selected_model": "Supervised Random Forest Classifier",
+  "random_seed": 42,
+  "feature_names": [
+    "equipment_id",
+    "equipment_type",
+    "operating_mode",
+    "production_demand",
+    "temperature_c",
+    "temp_setpoint_c",
+    "power_consumption_kw",
+    "door_open",
+    "heating_element_active",
+    "ambient_temp_c",
+    "discharge_pressure_bar",
+    "airflow_cfm",
+    "discharge_temp_c",
+    "vibration_mm_s",
+    "spindle_rpm",
+    "spindle_load_pct",
+    "spindle_temp_c",
+    "supply_temp_c",
+    "return_temp_c",
+    "delta_t_c",
+    "water_flow_m3h",
+    "cooling_demand_pct",
+    "cooling_output_kw_th",
+    "cop_proxy",
+    "hour_of_day",
+    "day_of_week",
+    "temp_gradient",
+    "coolant_efficiency",
+    "power_rpm_ratio",
+    "vib_acoustic_interaction",
+    "flow_pressure_ratio",
+    "temp_dev_30m",
+    "press_dev_30m",
+    "vib_dev_30m",
+    "power_dev_30m",
+    "press_diff_5m",
+    "exp_press_mean",
+    "exp_press_std",
+    "press_cond_dev",
+    "press_cond_z"
+  ],
+  "decision_threshold": 0.16,
+  "tuning_results": {
+    "optimal_threshold": 0.16,
+    "val_f1": 0.325,
+    "val_precision": 0.9286,
+    "val_recall": 0.197
+  },
+  "leakage_columns_excluded": [
+    "is_anomaly",
+    "anomaly_type",
+    "is_energy_waste",
+    "severity",
+    "rolling_anomaly_rate",
+    "maintenance_priority_score",
+    "alert_code",
+    "reading_id",
+    "event_id",
+    "data_provenance"
+  ],
+  "configuration": {
+    "grid_emission_factor": {
+      "value": 0.82,
+      "unit": "kg CO2e / kWh",
+      "source": "CEA India CO2 Baseline Database v18 (2023), User Guide Table 1"
+    },
+    "electricity_tariff": {
+      "value": 8.0,
+      "unit": "INR / kWh",
+      "source": "PrecisionWorks Manufacturing SCADA Baseline Contract (mockData.ts)"
+    },
+    "integration_rules": {
+      "default_sampling_interval_hours": 0.016666666666666666,
+      "max_integration_gap_hours": 0.25
+    },
+    "energy_thresholds": {
+      "z_score_threshold": 2.5,
+      "pct_deviation_threshold": 20.0,
+      "persistent_steps_threshold": 3
+    },
+    "disclaimer": "Note: Avoidable excess energy, cost savings, and Scope 2 carbon footprint reductions are model estimates based on operating-condition power baselines and configured CEA India grid emission factors. Scope 1 direct fossil fuel emissions are excluded as this telemetry stream meters electrical power only."
+  },
+  "test_metrics": {
+    "dummy_baseline": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1_score": 0.0,
+      "accuracy": 0.9907,
+      "false_positive_rate": 0.0,
+      "roc_auc": null,
+      "pr_auc": null,
+      "confusion_matrix": {
+        "true_negatives": 5136,
+        "false_positives": 0,
+        "false_negatives": 48,
+        "true_positives": 0
+      }
+    },
+    "supervised_random_forest": {
+      "precision": 0.6087,
+      "recall": 0.2917,
+      "f1_score": 0.3944,
+      "accuracy": 0.9917,
+      "false_positive_rate": 0.0018,
+      "roc_auc": 0.998,
+      "pr_auc": 0.6278,
+      "confusion_matrix": {
+        "true_negatives": 5127,
+        "false_positives": 9,
+        "false_negatives": 34,
+        "true_positives": 14
+      }
+    },
+    "unsupervised_isolation_forest": {
+      "precision": 0.1765,
+      "recall": 1.0,
+      "f1_score": 0.3,
+      "accuracy": 0.9568,
+      "false_positive_rate": 0.0436,
+      "roc_auc": 0.9681,
+      "pr_auc": 0.1213,
+      "confusion_matrix": {
+        "true_negatives": 4912,
+        "false_positives": 224,
+        "false_negatives": 0,
+        "true_positives": 48
+      }
+    },
+    "energy_baseline_detector": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1_score": 0.0,
+      "accuracy": 0.8843,
+      "false_positive_rate": 0.1075,
+      "roc_auc": null,
+      "pr_auc": null,
+      "confusion_matrix": {
+        "true_negatives": 4584,
+        "false_positives": 552,
+        "false_negatives": 48,
+        "true_positives": 0
+      }
+    }
+  }
+}

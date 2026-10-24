@@ -37,6 +37,7 @@ import {
   downloadIncidentReport,
   uploadTelemetry,
   type AnomalyIncident,
+  type ActionRecommendation,
   type DashboardSummaryResponse,
   type IncidentDetailsResponse,
 } from '../../services/anomalyApi';
@@ -824,6 +825,47 @@ export default function AIAnomalyIntelligence() {
                     </div>
                   </div>
 
+                  {/* 15-Minute Forecast vs Actual Residual Metric Card */}
+                  <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: 'var(--r)', padding: 12 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                      <h4 style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: 'var(--cyan)', margin: 0 }}>
+                        ⚡ 15-Minute Energy Forecast vs Measured Actual
+                      </h4>
+                      <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--slate-400)' }}>
+                        Model: HistGradientBoostingRegressor
+                      </span>
+                    </div>
+                    {selectedInc?.actual_energy_kwh !== undefined && selectedInc?.predicted_energy_kwh !== undefined ? (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, textAlign: 'center' }}>
+                        <div style={{ background: 'rgba(255,255,255,0.03)', padding: 8, borderRadius: 4 }}>
+                          <div style={{ fontSize: 9, color: 'var(--slate-400)', fontFamily: 'var(--font-mono)' }}>Measured Actual</div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--white)' }}>{selectedInc.actual_energy_kwh} kWh</div>
+                        </div>
+                        <div style={{ background: 'rgba(255,255,255,0.03)', padding: 8, borderRadius: 4 }}>
+                          <div style={{ fontSize: 9, color: 'var(--slate-400)', fontFamily: 'var(--font-mono)' }}>Predicted Forecast</div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--white)' }}>{selectedInc.predicted_energy_kwh} kWh</div>
+                        </div>
+                        <div style={{ background: 'rgba(255,255,255,0.03)', padding: 8, borderRadius: 4 }}>
+                          <div style={{ fontSize: 9, color: 'var(--slate-400)', fontFamily: 'var(--font-mono)' }}>Signed Residual</div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: (selectedInc.residual_kwh || 0) > 0 ? 'var(--red)' : 'var(--cyan)' }}>
+                            {(selectedInc.residual_kwh || 0) > 0 ? `+${selectedInc.residual_kwh}` : selectedInc.residual_kwh} kWh
+                          </div>
+                        </div>
+                        <div style={{ background: 'rgba(255,255,255,0.03)', padding: 8, borderRadius: 4 }}>
+                          <div style={{ fontSize: 9, color: 'var(--slate-400)', fontFamily: 'var(--font-mono)' }}>Relative Deviation</div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: (selectedInc.relative_deviation_pct || 0) > 0 ? 'var(--amber)' : 'var(--emerald)' }}>
+                            {selectedInc.relative_deviation_pct !== undefined ? `${selectedInc.relative_deviation_pct > 0 ? '+' : ''}${selectedInc.relative_deviation_pct}%` : 'N/A'}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: 11, color: 'var(--slate-400)', fontStyle: 'italic', padding: '4px 0' }}>
+                        Forecast comparison standing by (operating in condition-aware sensor anomaly mode).
+                      </div>
+                    )}
+                  </div>
+
+
                   {/* Sensor Measurements Grid */}
                   <div>
                     <h4 style={{ fontSize: 12, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 8, color: 'var(--white)' }}>
@@ -939,6 +981,44 @@ export default function AIAnomalyIntelligence() {
                       </div>
                     </div>
                   </div>
+
+                  {/* Actionable Energy Optimization Checklist */}
+                  {selectedInc?.action_recommendations && selectedInc.action_recommendations.length > 0 && (
+                    <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: 'var(--r)', padding: 14 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                        <h4 style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: 'var(--cyan)', margin: 0 }}>
+                          Actionable Energy Optimization Checklist
+                        </h4>
+                        <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--slate-400)' }}>
+                          Evidence-Linked Mitigation
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        {selectedInc.action_recommendations.map((rec: ActionRecommendation, rIdx: number) => {
+                          const prioColor = rec.suggested_priority === 'immediate' ? 'var(--red)' : rec.suggested_priority === 'next_shift' ? 'var(--amber)' : 'var(--cyan)';
+                          return (
+                            <div key={rIdx} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: 6, padding: 10 }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--white)' }}>
+                                  {rec.recommended_action}
+                                </span>
+                                <span style={{ fontSize: 9, fontWeight: 700, color: prioColor, border: `1px solid ${prioColor}`, padding: '1px 6px', borderRadius: 4, textTransform: 'uppercase' }}>
+                                  {rec.suggested_priority.replace('_', ' ')}
+                                </span>
+                              </div>
+                              <div style={{ fontSize: 11, color: 'var(--slate-400)', marginBottom: 4 }}>
+                                <strong>Rationale:</strong> {rec.why_relevant}
+                              </div>
+                              <div style={{ fontSize: 10, color: 'var(--slate-500)', fontFamily: 'var(--font-mono)' }}>
+                                🔍 Verification: {rec.suggested_verification}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
 
                   {/* Status & Technician Investigation Form */}
                   <form onSubmit={handleStatusUpdate} style={{ background: 'var(--bg-panel)', padding: 16, borderRadius: 6, border: '1px solid var(--border)' }}>

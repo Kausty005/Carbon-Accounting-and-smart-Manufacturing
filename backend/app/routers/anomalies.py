@@ -33,6 +33,19 @@ from backend.ai_intelligence.src.incident_report_generator import (
 )
 from backend.ai_intelligence.src.incident_store import IncidentStore
 from backend.ai_intelligence.src.inference import EnergyIntelligencePipeline
+from backend.ai_intelligence.src.forecast_adapter import (
+    ForecastServiceAdapter,
+    ForecastRecord,
+    ALL_UPSTREAM_FEATURES,
+    FORECASTING_FEATURE_GROUPS,
+)
+from backend.ai_intelligence.src.residual_anomaly_detector import (
+    DualPathAnomalyDetector,
+    CalibratedThresholdRegistry,
+    SensorQualityValidator,
+)
+from backend.ai_intelligence.src.recommendations import RecommendationEngine
+from backend.ai_intelligence.src.optimization_summary import OptimizationSummaryEngine
 
 router = APIRouter(tags=["AI Anomaly Intelligence"])
 
@@ -41,6 +54,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent / "ai_intelligence"
 # Lazy singletons
 _pipeline: Optional[EnergyIntelligencePipeline] = None
 _incident_store: Optional[IncidentStore] = None
+_forecast_adapter: Optional[ForecastServiceAdapter] = None
+_threshold_registry: Optional[CalibratedThresholdRegistry] = None
 
 
 def get_pipeline() -> EnergyIntelligencePipeline:
@@ -56,6 +71,20 @@ def get_incident_store() -> IncidentStore:
     if _incident_store is None:
         _incident_store = IncidentStore()
     return _incident_store
+
+
+def get_forecast_adapter() -> ForecastServiceAdapter:
+    global _forecast_adapter
+    if _forecast_adapter is None:
+        _forecast_adapter = ForecastServiceAdapter()
+    return _forecast_adapter
+
+
+def get_threshold_registry() -> CalibratedThresholdRegistry:
+    global _threshold_registry
+    if _threshold_registry is None:
+        _threshold_registry = CalibratedThresholdRegistry()
+    return _threshold_registry
 
 
 # ------------------------------------------------------------------------------
@@ -173,8 +202,12 @@ def get_incident_details(incident_id: str):
 def update_incident_status(incident_id: str, payload: StatusUpdateRequest):
     """
     Update investigation status and technician resolution notes with file persistence.
+    Supports both modern ISO incident statuses and legacy SCADA tags.
     """
-    valid_statuses = ["New", "Investigating", "Resolved", "False Positive"]
+    valid_statuses = [
+        "New", "Investigating", "Resolved", "False Positive",
+        "open", "acknowledged", "investigating", "resolved", "dismissed",
+    ]
     if payload.status not in valid_statuses:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -195,6 +228,112 @@ def update_incident_status(incident_id: str, payload: StatusUpdateRequest):
         )
 
     return {"message": "Incident status updated successfully", "incident": updated}
+
+
+# ------------------------------------------------------------------------------
+# Forecasting & Energy Optimization Endpoints
+# ------------------------------------------------------------------------------
+
+@router.get("/api/forecast/status")
+def get_forecast_service_status():
+    """
+    Check connectivity status, schema alignment, and cache size of the upstream
+    HistGradientBoostingRegressor forecasting adapter.
+    """
+    adapter = get_forecast_adapter()
+    return adapter.get_service_status()
+
+
+class ForecastBatchPayload(BaseModel):
+    forecasts: List[Dict[str, Any]]
+
+
+@router.post("/api/forecast/ingest")
+def ingest_forecast_records(payload: ForecastBatchPayload):
+    """
+    Ingest batch 15-minute forecast predictions into the adapter cache.
+    """
+    adapter = get_forecast_adapter()
+    count = adapter.ingest_batch(payload.forecasts)
+    return {
+        "status": "success",
+        "ingested_count": count,
+        "total_cached": len(adapter._forecast_store),
+        "message": f"Successfully ingested {count} forecast records into adapter cache.",
+    }
+
+
+@router.get("/api/forecast/comparison")
+def get_forecast_comparison(
+    machine_id: str = Query(..., description="Machine ID e.g. AIR-COMP-01 or COMP-01"),
+    target_timestamp: str = Query(..., description="Target 15-minute interval timestamp (ISO 8601)"),
+    actual_energy_kwh: Optional[float] = Query(None, description="Actual measured 15-min energy in kWh"),
+    site_id: str = Query("SITE-01", description="Site identifier"),
+):
+    """
+    Match 15-minute forecast against actual measured energy reading and compute signed/relative residuals.
+    """
+    adapter = get_forecast_adapter()
+    match_result = adapter.match_forecast_with_actual(
+        machine_id=machine_id,
+        target_timestamp=target_timestamp,
+        actual_energy_kwh=actual_energy_kwh,
+        site_id=site_id,
+    )
+    return match_result.dict() if hasattr(match_result, "dict") else match_result.model_dump()
+
+
+@router.get("/api/optimization/summary")
+def get_machine_site_optimization_summary(
+    site_id: Optional[str] = Query(None, description="Filter by site ID"),
+    machine_id: Optional[str] = Query(None, description="Filter by machine ID"),
+):
+    """
+    Aggregate machine and site energy optimization summary:
+    unique incident episodes, repeat offenders, total avoidable excess kWh, and prioritized checklist.
+    """
+    store = get_incident_store()
+    return store.get_optimization_summary(site_id=site_id, machine_id=machine_id)
+
+
+@router.get("/api/recommendations")
+def get_equipment_recommendations(
+    machine_type: str = Query(..., description="Machine category e.g. AIR_COMPRESSOR, FURNACE, CNC_MACHINE"),
+    residual_kwh: Optional[float] = Query(None, description="Residual excess energy in kWh"),
+    power_kw: Optional[float] = Query(None, description="Active power in kW"),
+    operating_state: Optional[str] = Query(None, description="Operating state e.g. running, idle"),
+):
+    """
+    Generate evidence-linked industrial energy optimization recommendations without unevidenced mechanical claims.
+    """
+    recs = RecommendationEngine.generate_recommendations(
+        machine_type=machine_type,
+        evidence_list=[f"Residual deviation: {residual_kwh} kWh"] if residual_kwh else [],
+        residual_kwh=residual_kwh,
+        power_kw=power_kw,
+        operating_state=operating_state,
+    )
+    return [r.dict() if hasattr(r, "dict") else r.model_dump() for r in recs]
+
+
+@router.get("/api/data-quality/status")
+def get_data_quality_health():
+    """
+    Retrieve sensor data quality warnings and telemetry validation status.
+    """
+    store = get_incident_store()
+    summary = store.get_optimization_summary()
+    dq_warnings = summary["summary_metrics"]["data_quality_warnings"]
+    return {
+        "status": "healthy" if dq_warnings == 0 else "warnings_detected",
+        "total_quality_warnings": dq_warnings,
+        "monitored_equipment_count": summary["summary_metrics"]["unique_incident_episodes"],
+        "message": (
+            "All sensor telemetry streams within nominal calibration."
+            if dq_warnings == 0
+            else f"{dq_warnings} sensor data quality warning(s) detected across equipment."
+        ),
+    }
 
 
 @router.post("/api/anomalies/{incident_id}/report")

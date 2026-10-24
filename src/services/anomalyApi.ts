@@ -27,15 +27,34 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}): Promise
   }
 }
 
+export interface ActionRecommendation {
+  observed_evidence: string;
+  recommended_action: string;
+  why_relevant: string;
+  suggested_priority: string;
+  suggested_verification: string;
+  estimated_savings_kwh?: number;
+  estimated_savings_inr?: number;
+  avoidable_co2e_kg?: number;
+  assumptions_and_disclaimer?: string;
+}
+
 export interface AnomalyIncident {
   incident_id: string;
   equipment_id: string;
+  machine_id?: string;
   equipment_type?: string;
+  machine_type?: string;
+  site_id?: string;
   timestamp: string;
+  first_detected?: string;
+  latest_occurrence?: string;
+  recurrence_count?: number;
   anomaly_type: string;
+  alert_category?: string;
   severity: 'critical' | 'high' | 'medium' | 'low';
   is_energy_waste?: boolean;
-  status: 'New' | 'Investigating' | 'Resolved' | 'False Positive';
+  status: string;
   model_name?: string;
   model_score?: number;
   confidence?: number;
@@ -43,15 +62,29 @@ export interface AnomalyIncident {
   expected_power_kw?: number;
   deviation_kw?: number;
   deviation_pct?: number;
+  actual_energy_kwh?: number;
+  predicted_energy_kwh?: number;
+  residual_kwh?: number;
+  abs_residual_kwh?: number;
+  relative_deviation_pct?: number;
+  direction?: string;
+  detector_score?: number;
+  threshold?: number;
+  threshold_basis?: string;
+  explanation?: string;
   estimated_excess_energy_kwh?: number | null;
   evidence: string[];
   possible_causes?: string[];
   recommended_action: string;
+  action_recommendations?: ActionRecommendation[];
   sensor_readings?: Record<string, number | string>;
   technician_notes?: string;
   resolution_notes?: string;
   data_provenance?: string;
+  missing_inputs?: string[];
+  quality_warnings?: string[];
 }
+
 
 export interface TelemetryPoint {
   timestamp: string;
@@ -245,6 +278,53 @@ export async function uploadTelemetry(
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.detail || `Telemetry upload failed (HTTP ${res.status})`);
+  }
+  return res.json();
+}
+
+export async function fetchOptimizationSummary(
+  siteId?: string,
+  machineId?: string
+): Promise<any> {
+  const params = new URLSearchParams();
+  if (siteId) params.append('site_id', siteId);
+  if (machineId) params.append('machine_id', machineId);
+  const q = params.toString() ? `?${params.toString()}` : '';
+  const res = await fetchWithTimeout(`${API_BASE_URL}/api/optimization/summary${q}`);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Failed to fetch optimization summary (HTTP ${res.status})`);
+  }
+  return res.json();
+}
+
+export async function fetchForecastStatus(): Promise<any> {
+  const res = await fetchWithTimeout(`${API_BASE_URL}/api/forecast/status`);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Failed to fetch forecast status (HTTP ${res.status})`);
+  }
+  return res.json();
+}
+
+export async function fetchForecastComparison(
+  machineId: string,
+  targetTimestamp: string,
+  actualEnergyKwh?: number,
+  siteId: string = 'SITE-01'
+): Promise<any> {
+  const params = new URLSearchParams({
+    machine_id: machineId,
+    target_timestamp: targetTimestamp,
+    site_id: siteId,
+  });
+  if (actualEnergyKwh !== undefined) {
+    params.append('actual_energy_kwh', actualEnergyKwh.toString());
+  }
+  const res = await fetchWithTimeout(`${API_BASE_URL}/api/forecast/comparison?${params.toString()}`);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Failed to fetch forecast comparison (HTTP ${res.status})`);
   }
   return res.json();
 }

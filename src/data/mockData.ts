@@ -8,7 +8,7 @@ export const PLANT = {
   todSolarRebate: 1.5,   // -₹1.50/unit during 10:00-16:00
   contractDemandKva: 160,// kVA contract sanction limit
   baselineDemandKva: 147.2, // kVA baseline peak demand (dangerously close to 160 kVA)
-  gridEF: 0.82,          // kg CO2e/kWh (CEA India Baseline v20)
+  gridEF: 0.728862,      // kg CO2e/kWh (CEA India Baseline Database v22.0 2023-24 location-based)
   baselineEnergy: 12480, // kWh/period
   baselineCost: 99840,   // ₹
   targetShiftUnits: 1200, // production parts/shift
@@ -278,12 +278,13 @@ export const CARBON = {
       formula: `${kgLPG.toLocaleString()} kg LPG (${days}d) × 2.9872 kg CO₂e/kg ÷ 1000 = ${totalCO2e} tCO₂e`,
     };
   },
-  // Scope 2: CEA Location-based grid emission factor
-  scope2Calc: (kwh: number = 12480, ef: number = 0.82) => {
+  // Scope 2: CEA Location-based grid emission factor (CEA v22.0 FY 2023-24 weighted avg with RES)
+  scope2Calc: (kwh: number = 12480, ef: number = 0.728862) => {
     const kgCO2 = kwh * ef;
+    const tCO2e = +(kgCO2 / 1000).toFixed(4);
     return {
-      kgCO2e: +(kgCO2 / 1000).toFixed(2),
-      formula: `${kwh.toLocaleString()} kWh × ${ef} kg CO₂e/kWh ÷ 1000 = ${(kgCO2 / 1000).toFixed(2)} tCO₂e`,
+      kgCO2e: tCO2e,
+      formula: `${kwh.toLocaleString()} kWh × ${ef} kg CO₂e/kWh ÷ 1000 = ${tCO2e} tCO₂e`,
     };
   },
 };

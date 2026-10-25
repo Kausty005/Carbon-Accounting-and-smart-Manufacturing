@@ -128,15 +128,16 @@ const UNSUPPORTED_ASSET_IDS = new Set([
 ]);
 
 // Maps any 50-catalog asset to its corresponding physics digital twin benchmark archetype
-export function getBenchmarkTwinArchetype(asset: FleetAsset): 'COMP-01' | 'CNC-01' | 'FURN-01' | 'PAINT-01' {
-  if (asset.digitalTwinMachineId && ['COMP-01', 'CNC-01', 'FURN-01', 'PAINT-01'].includes(asset.digitalTwinMachineId)) {
+export function getBenchmarkTwinArchetype(asset: FleetAsset): 'COMP-01' | 'CNC-01' | 'FURN-01' | 'CHIL-01' | 'PAINT-01' {
+  if (asset.digitalTwinMachineId && ['COMP-01', 'CNC-01', 'FURN-01', 'CHIL-01', 'PAINT-01'].includes(asset.digitalTwinMachineId)) {
     return asset.digitalTwinMachineId as any;
   }
   const idUpper = asset.id.toUpperCase();
   if (idUpper.startsWith('COMP') || asset.cellId === 'utility_1') return 'COMP-01';
   if (idUpper.startsWith('CNC') || idUpper.startsWith('MCH') || idUpper.startsWith('LAT') || idUpper.startsWith('PRS') || asset.cellId === 'utility_4') return 'CNC-01';
   if (idUpper.startsWith('FURN') || idUpper.startsWith('BLR') || idUpper.startsWith('OVEN') || asset.cellId === 'utility_2') return 'FURN-01';
-  if (idUpper.startsWith('CHIL') || idUpper.startsWith('COOL') || idUpper.startsWith('PNT') || idUpper.startsWith('BOOT') || asset.cellId === 'utility_5' || asset.cellId === 'utility_6') return 'PAINT-01';
+  if (idUpper.startsWith('CHIL') || idUpper.startsWith('COOL') || asset.cellId === 'utility_5') return 'CHIL-01';
+  if (idUpper.startsWith('PNT') || idUpper.startsWith('BOOT') || asset.cellId === 'utility_6') return 'PAINT-01';
   if (asset.cellId === 'utility_3') return 'COMP-01';
   return 'COMP-01';
 }
@@ -1484,7 +1485,16 @@ export function AssetSimulationWorkspace({
       const rawBaseline = get24HourBaseline(6);
 
       // 3. Map asset rated power scaling if not direct core twin
-      const archetypeRatedKw = benchmarkMachineId === 'COMP-01' ? 30.0 : benchmarkMachineId === 'CNC-01' ? 25.0 : benchmarkMachineId === 'FURN-01' ? 50.0 : 20.0;
+      const archetypeRatedKw =
+        benchmarkMachineId === 'COMP-01'
+          ? 45.0
+          : benchmarkMachineId === 'CNC-01'
+          ? 32.0
+          : benchmarkMachineId === 'FURN-01'
+          ? 85.0
+          : benchmarkMachineId === 'CHIL-01'
+          ? 28.0
+          : 20.0;
       const scaleFactor = isDirectTwin
         ? 1.0
         : (selectedAsset.ratedPowerKw || 25.0) / archetypeRatedKw;
@@ -1548,7 +1558,7 @@ export function AssetSimulationWorkspace({
           overridden_sensors: valResult.overriddenCount,
           model_archetype: benchmarkMachineId,
           tariff_standard: 'Maharashtra Industrial HT ToD 2026',
-          grid_emission_standard: 'CEA India Baseline v22 (0.82 kg CO2/kWh)',
+          grid_emission_standard: 'CEA India Baseline v22.0 (0.728862 kg CO2/kWh)',
         },
       };
 
@@ -2957,7 +2967,7 @@ export function AssetSimulationWorkspace({
                 </p>
               </div>
               <span style={{ fontSize: 11, fontWeight: 600, color: '#64748B', background: '#FAF7F2', border: '1px solid #EAE3D7', padding: '3px 8px', borderRadius: 6 }}>
-                Contract Limit: 85.0 kW
+                Contract Sanction: 160.0 kVA
               </span>
             </div>
 

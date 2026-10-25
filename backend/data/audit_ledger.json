@@ -5281,5 +5281,135 @@
       }
     ],
     "verified_valid": true
+  },
+  {
+    "block_height": 102,
+    "timestamp": "2026-10-25T06:51:56.588531+00:00",
+    "prev_hash": "b2e5116e03f3a8ed9763b970b9cf7544b31885033fc6d49ebeaf63c534296f88",
+    "merkle_root": "9166cc6ad43b83271671e1f235f27f715fc7cbb83e5bed10311ebbd340b7890a",
+    "telemetry_summary": {
+      "grid_electricity_kwh": 1450.0,
+      "diesel_liters": 50.0
+    },
+    "gross_carbon_tco2e": {
+      "scope1_combustion": 0.134,
+      "scope2_grid": 1.057,
+      "total": 1.191
+    },
+    "audit_signature": "9223ece972f464a6a91f407b97f884d80532e2f91e8eda36f8f81e945fb195c2",
+    "block_hash": "9223ece972f464a6a91f407b97f884d80532e2f91e8eda36f8f81e945fb195c2",
+    "previous_block_hash": "b2e5116e03f3a8ed9763b970b9cf7544b31885033fc6d49ebeaf63c534296f88",
+    "timestamp_iso": "2026-10-25T06:51:56.588531+00:00",
+    "transaction_count": 2,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1450.0
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 50.0
+      }
+    ],
+    "verified_valid": true
+  },
+  {
+    "block_height": 103,
+    "timestamp": "2026-10-25T06:51:57.091777+00:00",
+    "prev_hash": "9223ece972f464a6a91f407b97f884d80532e2f91e8eda36f8f81e945fb195c2",
+    "merkle_root": "190f61bf2a322e2e00ca5edfb0911107d62b6972cfb8638a846a68c62c3b4723",
+    "telemetry_summary": {
+      "event": "CARBON_CREDIT_RETIREMENT",
+      "serial": "BEE-IN-CCTS-KPCL-2026-000005-000011",
+      "quantity": 6.85
+    },
+    "gross_carbon_tco2e": {
+      "offset_applied": 6.85
+    },
+    "audit_signature": "2ddaad0910fe1cf7aebe7fbad4310a4c7dc32e8b9af6eac3771fecc70cf94eae",
+    "block_hash": "2ddaad0910fe1cf7aebe7fbad4310a4c7dc32e8b9af6eac3771fecc70cf94eae",
+    "previous_block_hash": "9223ece972f464a6a91f407b97f884d80532e2f91e8eda36f8f81e945fb195c2",
+    "timestamp_iso": "2026-10-25T06:51:57.091777+00:00",
+    "transaction_count": 3,
+    "transactions": [
+      {
+        "metric": "event",
+        "value": "CARBON_CREDIT_RETIREMENT"
+      },
+      {
+        "metric": "serial",
+        "value": "BEE-IN-CCTS-KPCL-2026-000005-000011"
+      },
+      {
+        "metric": "quantity",
+        "value": 6.85
+      }
+    ],
+    "verified_valid": true
+  },
+  {
+    "block_height": 104,
+    "timestamp": "2026-10-25T08:32:14.439268+00:00",
+    "prev_hash": "2ddaad0910fe1cf7aebe7fbad4310a4c7dc32e8b9af6eac3771fecc70cf94eae",
+    "merkle_root": "190f61bf2a322e2e00ca5edfb0911107d62b6972cfb8638a846a68c62c3b4723",
+    "telemetry_summary": {
+      "event": "CARBON_CREDIT_RETIREMENT",
+      "serial": "BEE-IN-CCTS-KPCL-2026-000005-000011",
+      "quantity": 6.85
+    },
+    "gross_carbon_tco2e": {
+      "offset_applied": 6.85
+    },
+    "audit_signature": "0fd02998a713dfdf2630aa2ef4be93037db24f7cf31f613fc0968a03008050e6",
+    "block_hash": "0fd02998a713dfdf2630aa2ef4be93037db24f7cf31f613fc0968a03008050e6",
+    "previous_block_hash": "2ddaad0910fe1cf7aebe7fbad4310a4c7dc32e8b9af6eac3771fecc70cf94eae",
+    "timestamp_iso": "2026-10-25T08:32:14.439268+00:00",
+    "transaction_count": 3,
+    "transactions": [
+      {
+        "metric": "event",
+        "value": "CARBON_CREDIT_RETIREMENT"
+      },
+      {
+        "metric": "serial",
+        "value": "BEE-IN-CCTS-KPCL-2026-000005-000011"
+      },
+      {
+        "metric": "quantity",
+        "value": 6.85
+      }
+    ],
+    "verified_valid": true
+  },
+  {
+    "block_height": 105,
+    "timestamp": "2026-10-25T08:32:14.461527+00:00",
+    "prev_hash": "0fd02998a713dfdf2630aa2ef4be93037db24f7cf31f613fc0968a03008050e6",
+    "merkle_root": "9166cc6ad43b83271671e1f235f27f715fc7cbb83e5bed10311ebbd340b7890a",
+    "telemetry_summary": {
+      "grid_electricity_kwh": 1450.0,
+      "diesel_liters": 50.0
+    },
+    "gross_carbon_tco2e": {
+      "scope1_combustion": 0.134,
+      "scope2_grid": 1.057,
+      "total": 1.191
+    },
+    "audit_signature": "0683d8673c7bda45ea492ce560e40be52a2bc5ed7f024ee83ca0716955b6cf17",
+    "block_hash": "0683d8673c7bda45ea492ce560e40be52a2bc5ed7f024ee83ca0716955b6cf17",
+    "previous_block_hash": "0fd02998a713dfdf2630aa2ef4be93037db24f7cf31f613fc0968a03008050e6",
+    "timestamp_iso": "2026-10-25T08:32:14.461527+00:00",
+    "transaction_count": 2,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1450.0
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 50.0
+      }
+    ],
+    "verified_valid": true
   }
 ]

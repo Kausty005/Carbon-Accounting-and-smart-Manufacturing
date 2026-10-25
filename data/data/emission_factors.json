@@ -1,11 +1,11 @@
 {
-  "factor_id": "EF-GRID-IN-2023",
-  "name": "India National Grid Baseline Emission Factor",
-  "kg_co2e_per_kwh": 0.82,
-  "unit": "kg CO2e/kWh",
+  "factor_id": "EF-GRID-IN-2023-24-V22",
+  "name": "India National Grid Baseline Emission Factor (Weighted Avg with RES)",
+  "kg_co2e_per_kwh": 0.728862,
+  "unit": "kg CO2/kWh",
   "geography": "National Grid (CEA India)",
-  "source": "Central Electricity Authority (CEA) Baseline Database v19 (2023-24)",
+  "source": "Central Electricity Authority (CEA) Baseline Database v22.0 (2023-24)",
   "reporting_period": "2023-2024",
-  "methodology": "GHG Protocol Location-based Scope 2",
-  "version": "1.0.0"
+  "methodology": "GHG Protocol Location-based Scope 2 (Weighted Average with RES)",
+  "version": "22.0"
 }

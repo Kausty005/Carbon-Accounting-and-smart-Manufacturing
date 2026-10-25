@@ -1,6 +1,7 @@
 import json
 import os
 from typing import Dict, Any, Optional
+from .canonical_assets import normalize_to_canonical_asset_id, resolve_legacy_twin_archetype
 
 class ProfileStore:
     def __init__(self, profiles_path: Optional[str] = None):
@@ -22,7 +23,23 @@ class ProfileStore:
                 self.profiles = json.load(f)
 
     def get_profile(self, machine_id: str) -> Optional[Dict[str, Any]]:
-        return self.profiles.get(machine_id)
+        if not machine_id:
+            return None
+        if machine_id in self.profiles:
+            return self.profiles[machine_id]
+        
+        # Try resolving via archetype
+        archetype = resolve_legacy_twin_archetype(machine_id)
+        if archetype in self.profiles:
+            return self.profiles[archetype]
+
+        # Try resolving via canonical asset id
+        canon_id = normalize_to_canonical_asset_id(machine_id)
+        if canon_id and canon_id in self.profiles:
+            return self.profiles[canon_id]
+
+        return None
 
     def list_machines(self) -> Dict[str, Any]:
         return self.profiles
+

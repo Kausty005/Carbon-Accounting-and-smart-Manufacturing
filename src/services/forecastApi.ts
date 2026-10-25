@@ -10,6 +10,7 @@
  */
 
 import type { Asset } from '../data/mockData';
+import { normalizeToCanonicalAssetId, CANONICAL_ASSETS } from '../data/canonicalAssets';
 
 export type ProvenanceType = 'MEASURED' | 'ESTIMATED' | 'SIMULATED' | 'PREDICTED';
 export type ForecastHorizon = '15m' | '1d' | '1w';
@@ -149,14 +150,19 @@ export class ForecastUnavailableError extends Error {
  * Maps frontend digital twin asset to model input taxonomy.
  */
 export function mapAssetToForecastRequest(asset: Asset): EnergyForecastRequest {
+  const canonId = normalizeToCanonicalAssetId(asset.id);
+  const canonAsset = canonId ? CANONICAL_ASSETS[canonId] : null;
+
   let machineType = 'CONVEYOR';
-  if (asset.id === 'compressor') {
+  if (canonAsset) {
+    machineType = canonAsset.taxonomies.mlForecasting;
+  } else if (asset.id.toLowerCase().includes('comp')) {
     machineType = 'AIR_COMPRESSOR';
-  } else if (asset.id === 'cnc') {
+  } else if (asset.id.toLowerCase().includes('cnc')) {
     machineType = 'CNC_MILL';
-  } else if (asset.id === 'furnace') {
+  } else if (asset.id.toLowerCase().includes('furn') || asset.id.toLowerCase().includes('oven')) {
     machineType = 'OVEN_FURNACE';
-  } else if (asset.id === 'cooling') {
+  } else if (asset.id.toLowerCase().includes('cool') || asset.id.toLowerCase().includes('chil') || asset.id.toLowerCase().includes('pump')) {
     machineType = 'PUMP';
   }
 
@@ -175,7 +181,7 @@ export function mapAssetToForecastRequest(asset: Asset): EnergyForecastRequest {
   const currentDayOfWeek = now.getUTCDay() === 0 ? 6 : now.getUTCDay() - 1; // Monday=0
 
   return {
-    machine_id: asset.id.toUpperCase(),
+    machine_id: canonId || asset.id.toUpperCase(),
     machine_type: machineType,
     site_id: 'SITE_01',
     rated_power_kw: asset.ratedKw,

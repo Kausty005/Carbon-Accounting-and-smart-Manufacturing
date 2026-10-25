@@ -86,17 +86,17 @@ export function validateScenarioConstraints(
     }
   }
 
-  // 5. Paint exhaust ventilation check (PAINT-01)
+  // 5. Paint exhaust ventilation check (PAINT-01) — applies strictly when ventilation constraint is present
   if (constraints.ventilation_mandatory_during_paint) {
     if (action.type === 'reduce_idle_power' || action.type === 'reduce_runtime') {
       const isVentCut = scenarioRecords.some(
-        r => r.machine_id === 'PAINT-01' && r.machine_state === 'running' && r.power_kw < 5.0
+        r => (r.machine_id === 'PAINT-01' || r.machine_id === 'ASSET-PNT-01') && r.machine_state === 'running' && r.power_kw < 5.0
       );
       if (isVentCut) {
         violations.push({
           code: 'ERR_VENTILATION_REQUIRED',
           severity: 'error',
-          machine_id: 'PAINT-01',
+          machine_id: machineId,
           message: 'Mandatory exhaust ventilation (min 5.0 kW) must remain active during painting operations to comply with factory VOC health and safety interlocks.',
           limit_value: 5.0,
           simulated_value: 0.0,
@@ -105,6 +105,24 @@ export function validateScenarioConstraints(
       }
     }
   }
+
+  // 5b. Chiller supply water temperature & evaporator freeze protection (CHIL-01)
+  if (constraints.min_chw_supply_temp_c && typeof (action as any).target_chw_temp_c === 'number') {
+    const tempC = (action as any).target_chw_temp_c;
+    const minTemp = constraints.min_chw_supply_temp_c;
+    if (tempC < minTemp) {
+      violations.push({
+        code: 'ERR_CHW_TEMP_TOO_LOW',
+        severity: 'error',
+        machine_id: machineId,
+        message: `Proposed chilled water supply temp (${tempC}°C) is below minimum evaporator freeze threshold (${minTemp}°C) on ${profile.name}.`,
+        limit_value: minTemp,
+        simulated_value: tempC,
+        provenance: PROVENANCE,
+      });
+    }
+  }
+
 
   // 6. Production target check (CNC-01)
   if (constraints.production_target_required) {

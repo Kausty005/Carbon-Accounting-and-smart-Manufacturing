@@ -32,8 +32,16 @@ CORE_TWIN_MAPPING = {
     "CNC-01": "CNC-01",
     "FURN-IND-01": "FURN-01",
     "FURN-01": "FURN-01",
+    "CHIL-CENT-01": "CHIL-01",
+    "CHILLER-01": "CHIL-01",
+    "CHIL-01": "CHIL-01",
     "BOOT-PNT-01": "PAINT-01",
     "PAINT-01": "PAINT-01",
+    "ASSET-COMP-01": "COMP-01",
+    "ASSET-CNC-01": "CNC-01",
+    "ASSET-FURN-01": "FURN-01",
+    "ASSET-CHIL-01": "CHIL-01",
+    "ASSET-PNT-01": "PAINT-01",
 }
 
 _fleet_cache: Optional[List[Dict[str, Any]]] = None
@@ -609,7 +617,7 @@ def run_fleet_analytics(payload: RunAnalyticsRequest):
     insights = [
         f"Successfully processed {processed_count} of {total_selected} assets in {duration_ms} ms.",
         f"Identified {anomalies_detected} assets requiring operational attention (high idle draw or thermal drift).",
-        "Confirmed 4 core physics Digital Twins active: Air Compressor (COMP-01), CNC (CNC-01), Furnace (FURN-01), Paint Line (PAINT-01).",
+        "Confirmed 4 core physics Digital Twins active: Air Compressor (COMP-01), CNC (CNC-01), Furnace (FURN-01), Chiller (CHIL-01).",
         f"Fleet 24h projected energy consumption: {round(sum(r.forecast_24h_kwh for r in asset_results), 1)} kWh ({round(sum(r.carbon_emissions_kg_co2e for r in asset_results), 1)} kg CO2e).",
     ]
 
@@ -632,3 +640,31 @@ def run_fleet_analytics(payload: RunAnalyticsRequest):
         insights_summary=insights,
         asset_results=asset_results,
     )
+
+
+@router.get("/canonical-assets", summary="List All Canonical Machine Assets")
+def list_canonical_assets():
+    """Returns the centralized canonical asset registry definitions."""
+    from backend.app.services.canonical_assets import get_all_canonical_assets
+    return {
+        "status": "success",
+        "total_assets": len(get_all_canonical_assets()),
+        "assets": get_all_canonical_assets(),
+    }
+
+
+@router.get("/canonical-assets/{asset_id}", summary="Get Canonical Asset Details or Resolve Legacy Alias")
+def get_canonical_asset(asset_id: str):
+    """Resolves any canonical ID or legacy alias deterministically."""
+    from backend.app.services.canonical_assets import get_canonical_asset_or_throw
+    try:
+        asset = get_canonical_asset_or_throw(asset_id)
+        return {
+            "status": "success",
+            "requested_id": asset_id,
+            "canonical_id": asset["canonical_id"],
+            "asset": asset,
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+

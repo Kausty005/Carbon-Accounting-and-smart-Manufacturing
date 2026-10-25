@@ -1,4 +1,19 @@
-export type MachineId = 'COMP-01' | 'CNC-01' | 'FURN-01' | 'PAINT-01' | 'compressor' | 'cnc' | 'furnace' | 'cooling';
+export type MachineId =
+  | 'COMP-01'
+  | 'CNC-01'
+  | 'FURN-01'
+  | 'CHIL-01'
+  | 'PAINT-01'
+  | 'ASSET-COMP-01'
+  | 'ASSET-CNC-01'
+  | 'ASSET-FURN-01'
+  | 'ASSET-CHIL-01'
+  | 'ASSET-PNT-01'
+  | 'compressor'
+  | 'cnc'
+  | 'furnace'
+  | 'cooling'
+  | 'painting';
 
 export type MachineState = 'running' | 'idle' | 'off' | 'maintenance';
 
@@ -15,7 +30,12 @@ export interface MachineConstraints {
   cannot_interrupt_holding_cycle?: boolean;
   ventilation_mandatory_during_paint?: boolean;
   voc_compliance_active?: boolean;
+  min_chw_supply_temp_c?: number;
+  max_chw_supply_temp_c?: number;
+  min_cop?: number;
+  min_flow_required?: boolean;
 }
+
 
 export interface MachineProfile {
   machine_id: string;

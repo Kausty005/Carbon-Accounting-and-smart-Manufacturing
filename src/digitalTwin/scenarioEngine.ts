@@ -7,7 +7,7 @@ import type {
 } from './types';
 import { calculateMetrics, calculateDeltas, extractHourFromTimestamp } from './calculationEngine';
 import { validateScenarioConstraints } from './constraintValidator';
-import { resolveMachineId } from './twinProfiles';
+import { resolveMachineId, MACHINE_PROFILES } from './twinProfiles';
 import { calculateInvestmentCase } from './confidenceEngine';
 
 export function runScenarioSimulation(
@@ -26,9 +26,10 @@ export function runScenarioSimulation(
   if (action.type === 'reduce_idle_power') {
     let targetKw = action.target_power_kw ?? 8.0;
     if (typeof action.target_load_factor === 'number' && typeof action.target_power_kw !== 'number') {
-      const rated = machineId === 'COMP-01' ? 30.0 : machineId === 'CNC-01' ? 25.0 : machineId === 'FURN-01' ? 50.0 : 20.0;
+      const rated = MACHINE_PROFILES[machineId]?.rated_power_kw ?? (machineId === 'CHIL-01' ? 28.0 : 20.0);
       targetKw = Number((rated * action.target_load_factor).toFixed(2));
     }
+
     const targetState = action.target_state ?? 'idle';
     const durationHours = action.duration_hours ?? 2.0;
 

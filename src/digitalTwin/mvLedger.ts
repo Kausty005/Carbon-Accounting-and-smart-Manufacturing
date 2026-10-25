@@ -19,7 +19,7 @@ export const INITIAL_MV_LEDGER: MVLedgerEntry[] = [
     expected_savings_kwh: 15.0,
     realized_savings_kwh: 14.43,   // 1149.43 - 1135.0
     realization_rate_pct: 96.2,
-    verified_scope2_kg_co2e: 11.83, // 14.43 * 0.82
+    verified_scope2_kg_co2e: 10.52, // 14.43 * 0.728862 kg CO2e/kWh
     status: 'verified',
     variance_notes:
       'Raw submeter dropped 185.0 kWh (-14.01%). A naive twin would claim 14% savings. IPMVP normalization proved 170.57 kWh was output reduction (122 vs 140 parts), while 14.43 kWh/day (72.15 kWh/wk) was true verified operational efficiency.',
@@ -128,7 +128,7 @@ export function createMVEntryFromSimulation(
     expected_savings_kwh: expectedSaving,
     realized_savings_kwh: realizedSaving,
     realization_rate_pct: Number(((realizedSaving / (expectedSaving || 1)) * 100).toFixed(1)),
-    verified_scope2_kg_co2e: Number((realizedSaving * 0.82).toFixed(2)),
+    verified_scope2_kg_co2e: Number((realizedSaving * 0.728862).toFixed(2)),
     status: 'verified',
     variance_notes: `Production volume shifted from ${baseUnits} to ${actualUnits} units. IPMVP adjustment verified ${realizedSaving} kWh operational savings, isolating ${volumeEffect} kWh volume effect.`,
   };

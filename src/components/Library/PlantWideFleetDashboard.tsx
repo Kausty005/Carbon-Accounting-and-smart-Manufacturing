@@ -2449,7 +2449,7 @@ export function PlantWideFleetDashboard({
                       {(simResult.deltas.savings_positive.scope2_kg_co2e || 0).toFixed(1)} kg
                     </div>
                     <div style={{ fontSize: 10, color: '#64748B', marginTop: 2 }}>
-                      CEA v22.0: 0.82 kg/kWh
+                      CEA v22.0: 0.7289 kg/kWh
                     </div>
                   </div>
 
@@ -2585,7 +2585,7 @@ export function PlantWideFleetDashboard({
               }}
             >
               <div style={{ fontSize: 11, color: '#64748B' }}>
-                Simulated under <strong>CEA India Grid Factor v22.0</strong> (0.82 kg CO₂e/kWh) & ToD Tariff (Peak: ₹10.80/kWh, Off-peak: ₹7.65/kWh).
+                Simulated under <strong>CEA India Grid Factor v22.0</strong> (0.728862 kg CO₂/kWh) & ToD Tariff (Peak: ₹10.80/kWh, Off-peak: ₹7.65/kWh).
               </div>
 
               <div style={{ display: 'flex', gap: 10 }}>

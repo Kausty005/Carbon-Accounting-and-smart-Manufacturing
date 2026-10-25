@@ -86,20 +86,37 @@ class ConstraintValidator:
                         "provenance": provenance
                     })
 
-        # 5. Paint ventilation check (e.g. PAINT-01)
+        # 5. Paint ventilation check (e.g. PAINT-01) - only applies when ventilation constraint is declared
         if constraints.get("ventilation_mandatory_during_paint"):
             if action_type in ["reduce_idle_power", "reduce_runtime"]:
                 # Check if paint line power is turned completely off during painting hours
                 for r in scenario_records:
-                    if r["machine_id"] == "PAINT-01" and r["machine_state"] == "running" and r["power_kw"] < 5.0:
+                    if r["machine_id"] in ["PAINT-01", "ASSET-PNT-01"] and r["machine_state"] == "running" and r["power_kw"] < 5.0:
                         violations.append({
                             "code": "ERR_VENTILATION_REQUIRED",
                             "severity": "error",
-                            "machine_id": "PAINT-01",
+                            "machine_id": machine_id,
                             "message": "Mandatory exhaust ventilation must remain active during painting operations for VOC environmental safety.",
                             "provenance": provenance
                         })
                         break
+
+        # 5b. Chiller supply water temperature / evaporator safety check (e.g. CHIL-01)
+        if constraints.get("min_chw_supply_temp_c"):
+            target_chw_temp = action.get("target_chw_temp_c")
+            if target_chw_temp is not None:
+                min_temp = float(constraints.get("min_chw_supply_temp_c", 6.0))
+                if target_chw_temp < min_temp:
+                    violations.append({
+                        "code": "ERR_CHW_TEMP_TOO_LOW",
+                        "severity": "error",
+                        "machine_id": machine_id,
+                        "message": f"Proposed chilled water supply temp ({target_chw_temp}°C) is below minimum evaporator freeze threshold ({min_temp}°C) on {machine_id}.",
+                        "limit_value": min_temp,
+                        "simulated_value": target_chw_temp,
+                        "provenance": provenance
+                    })
+
 
         # 6. Production target check (e.g. CNC-01)
         if constraints.get("production_target_required"):

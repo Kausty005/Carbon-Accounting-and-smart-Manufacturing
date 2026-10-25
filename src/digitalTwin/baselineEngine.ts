@@ -60,17 +60,21 @@ export function generateSyntheticBaseline(
       furnKw = 15.0;
     }
 
-    // 4. PAINT-01 (painting line & ventilation)
-    let paintState: MachineState = 'off';
-    let paintKw = 0.5;
-    let paintProd = 0;
-    if (hourOfDay >= 9 && hourOfDay < 17) {
-      paintState = 'running';
-      paintKw = 18.0;
-      paintProd = 10;
-    } else if (hourOfDay >= 17 && hourOfDay < 19) {
-      paintState = 'idle';
-      paintKw = 5.0;
+    // 4. CHIL-01 (industrial process water chiller)
+    let chilState: MachineState = 'off';
+    let chilKw = 1.0;
+    if (hourOfDay >= 8 && hourOfDay < 20) {
+      if (hourOfDay >= 12 && hourOfDay <= 15) {
+        // High cooling load during midday heat peak
+        chilState = 'running';
+        chilKw = 22.0;
+      } else {
+        chilState = 'running';
+        chilKw = 18.0;
+      }
+    } else {
+      chilState = 'idle';
+      chilKw = 4.0;
     }
 
     records.push({
@@ -111,12 +115,12 @@ export function generateSyntheticBaseline(
 
     records.push({
       timestamp: isoStr,
-      machine_id: 'PAINT-01',
-      process: 'painting',
-      power_kw: paintKw,
-      energy_kwh: paintKw,
-      machine_state: paintState,
-      production_units: paintProd,
+      machine_id: 'CHIL-01',
+      process: 'chilled_water',
+      power_kw: chilKw,
+      energy_kwh: chilKw,
+      machine_state: chilState,
+      production_units: 0,
       shift,
       data_source: 'simulated',
     });
@@ -125,7 +129,7 @@ export function generateSyntheticBaseline(
   return records;
 }
 
-// Global immutable master dataset (672 records)
+// Global immutable master dataset (672 records for 4 core plant assets)
 export const MASTER_BASELINE_DATA = generateSyntheticBaseline();
 
 // Helper to get 24-hour representative slice (e.g. Day 7 with the active anomaly)
@@ -135,7 +139,7 @@ export function get24HourBaseline(dayIndex: number = 6): TelemetryRecord[] {
   return MASTER_BASELINE_DATA.slice(startSlot, endSlot).map(r => ({ ...r }));
 }
 
-// Slice arbitrary window
+// Slice arbitrary window with machine alias normalization
 export function getBaselineSlice(
   startTime?: string,
   endTime?: string,
@@ -148,3 +152,4 @@ export function getBaselineSlice(
     return true;
   }).map(r => ({ ...r }));
 }
+

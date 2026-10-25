@@ -4016,12 +4016,12 @@ export default function App() {
                 </motion.div>
               )}
               {view === 'evidence' && (
-                <motion.div key="evidence" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%' }}>
+                <motion.div key="evidence" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
                   <EvidenceVaultView />
                 </motion.div>
               )}
               {view === 'reports' && (
-                <motion.div key="reports" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%' }}>
+                <motion.div key="reports" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
                   <CarbonAuditReportView />
                 </motion.div>
               )}

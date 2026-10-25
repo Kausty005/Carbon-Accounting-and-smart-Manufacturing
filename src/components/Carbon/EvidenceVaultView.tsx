@@ -64,6 +64,7 @@ export const EvidenceVaultView: React.FC<EvidenceVaultViewProps> = ({ onBackToAc
   const [uploadPeriod, setUploadPeriod] = useState<string>('2026-10');
   const [uploadUploader, setUploadUploader] = useState<string>('Lead Auditor (PrecisionWorks)');
   const [uploadNotes, setUploadNotes] = useState<string>('');
+  const [uploadBase64, setUploadBase64] = useState<string>('');
   const [uploadSubmitting, setUploadSubmitting] = useState<boolean>(false);
 
   // Confirm Form State
@@ -148,7 +149,7 @@ export const EvidenceVaultView: React.FC<EvidenceVaultViewProps> = ({ onBackToAc
         reporting_period: uploadPeriod,
         uploaded_by: uploadUploader,
         notes: uploadNotes,
-        file_content_base64: 'JVBERi0xLjQKJcTl8uXr...',
+        file_content_base64: uploadBase64 || 'JVBERi0xLjQKJcTl8uXr...',
       };
 
       const res = await evidenceVaultApi.uploadDocument(payload);
@@ -159,6 +160,7 @@ export const EvidenceVaultView: React.FC<EvidenceVaultViewProps> = ({ onBackToAc
       setIsUploadModalOpen(false);
       setUploadFilename('');
       setUploadNotes('');
+      setUploadBase64('');
       await loadData();
     } catch (err: any) {
       setNotification({ type: 'error', message: err.message || 'Document upload failed' });
@@ -208,6 +210,9 @@ export const EvidenceVaultView: React.FC<EvidenceVaultViewProps> = ({ onBackToAc
         gap: 20,
         fontFamily: "var(--font-ui, 'Inter', -apple-system, BlinkMacSystemFont, sans-serif)",
         color: '#1C1917',
+        background: 'var(--bg-root, #F4EEE5)',
+        minHeight: '100%',
+        padding: '24px 32px 64px',
       }}
     >
       {/* Toast Notification */}
@@ -1731,6 +1736,78 @@ export const EvidenceVaultView: React.FC<EvidenceVaultViewProps> = ({ onBackToAc
               </div>
 
               <form onSubmit={handleUploadSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, fontSize: 12 }}>
+                {/* File browse and dropzone */}
+                <div>
+                  <label style={{ display: 'block', fontWeight: 600, color: '#1C1917', marginBottom: 5 }}>
+                    Select / Browse File
+                  </label>
+                  <label
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                      padding: '16px 12px',
+                      borderRadius: 8,
+                      border: '1.5px dashed #D6D3D1',
+                      background: '#FAFAF9',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.currentTarget.style.borderColor = '#059669';
+                      e.currentTarget.style.background = '#ECFDF5';
+                    }}
+                    onDragLeave={(e) => {
+                      e.preventDefault();
+                      e.currentTarget.style.borderColor = '#D6D3D1';
+                      e.currentTarget.style.background = '#FAFAF9';
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.currentTarget.style.borderColor = '#D6D3D1';
+                      e.currentTarget.style.background = '#FAFAF9';
+                      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                        const file = e.dataTransfer.files[0];
+                        setUploadFilename(file.name);
+                        const reader = new FileReader();
+                        reader.onload = (re) => {
+                          const result = re.target?.result as string;
+                          if (result) setUploadBase64(result.split(',')[1] || result);
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  >
+                    <input
+                      type="file"
+                      accept=".pdf,.png,.jpg,.jpeg,.csv,.xlsx,.json"
+                      style={{ display: 'none' }}
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          const file = e.target.files[0];
+                          setUploadFilename(file.name);
+                          const reader = new FileReader();
+                          reader.onload = (re) => {
+                            const result = re.target?.result as string;
+                            if (result) setUploadBase64(result.split(',')[1] || result);
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                    <Upload size={20} color="#059669" />
+                    <span style={{ fontSize: 12, fontWeight: 600, color: '#1C1917' }}>
+                      {uploadFilename ? uploadFilename : 'Click to browse or drag and drop a file'}
+                    </span>
+                    <span style={{ fontSize: 10.5, color: '#78716C' }}>
+                      Supports PDF, PNG, JPG, CSV, Excel (up to 50MB)
+                    </span>
+                  </label>
+                </div>
+
                 {/* Filename */}
                 <div>
                   <label style={{ display: 'block', fontWeight: 600, color: '#1C1917', marginBottom: 5 }}>

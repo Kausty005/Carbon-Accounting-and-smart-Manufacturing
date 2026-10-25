@@ -127,6 +127,20 @@ const UNSUPPORTED_ASSET_IDS = new Set([
   'TANK-DEGR-01',
 ]);
 
+// Maps any 50-catalog asset to its corresponding physics digital twin benchmark archetype
+export function getBenchmarkTwinArchetype(asset: FleetAsset): 'COMP-01' | 'CNC-01' | 'FURN-01' | 'PAINT-01' {
+  if (asset.digitalTwinMachineId && ['COMP-01', 'CNC-01', 'FURN-01', 'PAINT-01'].includes(asset.digitalTwinMachineId)) {
+    return asset.digitalTwinMachineId as any;
+  }
+  const idUpper = asset.id.toUpperCase();
+  if (idUpper.startsWith('COMP') || asset.cellId === 'utility_1') return 'COMP-01';
+  if (idUpper.startsWith('CNC') || idUpper.startsWith('MCH') || idUpper.startsWith('LAT') || idUpper.startsWith('PRS') || asset.cellId === 'utility_4') return 'CNC-01';
+  if (idUpper.startsWith('FURN') || idUpper.startsWith('BLR') || idUpper.startsWith('OVEN') || asset.cellId === 'utility_2') return 'FURN-01';
+  if (idUpper.startsWith('CHIL') || idUpper.startsWith('COOL') || idUpper.startsWith('PNT') || idUpper.startsWith('BOOT') || asset.cellId === 'utility_5' || asset.cellId === 'utility_6') return 'PAINT-01';
+  if (asset.cellId === 'utility_3') return 'COMP-01';
+  return 'COMP-01';
+}
+
 // ─── Domain-Specific Sensor Fleet Generator ───────────────────────────────────
 
 export function generateSensorsForAsset(asset: FleetAsset): SensorRecord[] {
@@ -1355,12 +1369,8 @@ export function AssetSimulationWorkspace({
       })
     );
 
-    // If updating a direct model parameter, sync with intervention controls
-    if (sensorId.includes('IDLE-PWR') || sensorId.includes('HOLD-PWR')) {
-      setParamTargetPowerKw(newReading);
-    } else if (sensorId.includes('PRES-DISCH') || sensorId.includes('SETPOINT')) {
-      setParamTargetPressureBar(newReading);
-    } else if (sensorId.includes('TEMP-AMB')) {
+    // If updating ambient temperature boundary condition, sync ambient parameter
+    if (sensorId.includes('TEMP-AMB')) {
       setParamAmbientTempC(newReading);
     }
   }, []);
@@ -1466,27 +1476,40 @@ export function AssetSimulationWorkspace({
     setIsSimulating(true);
 
     try {
-      // 1. Resolve benchmark twin baseline
-      const benchmarkMachineId = resolveMachineId(selectedAsset.id);
+      // 1. Resolve benchmark twin archetype (COMP-01, CNC-01, FURN-01, PAINT-01)
+      const benchmarkMachineId = getBenchmarkTwinArchetype(selectedAsset);
       const isDirectTwin = Boolean(MACHINE_PROFILES[selectedAsset.id]);
 
-      // 2. Fetch baseline records
-      const rawBaseline = get24HourBaseline(6); // 24 hours of representative baseline
+      // 2. Fetch baseline records (24-hour representative profile with Day 7 active anomaly)
+      const rawBaseline = get24HourBaseline(6);
 
       // 3. Map asset rated power scaling if not direct core twin
+      const archetypeRatedKw = benchmarkMachineId === 'COMP-01' ? 30.0 : benchmarkMachineId === 'CNC-01' ? 25.0 : benchmarkMachineId === 'FURN-01' ? 50.0 : 20.0;
       const scaleFactor = isDirectTwin
         ? 1.0
-        : (selectedAsset.ratedPowerKw || 25.0) / (benchmarkMachineId === 'COMP-01' ? 30.0 : benchmarkMachineId === 'CNC-01' ? 25.0 : benchmarkMachineId === 'FURN-01' ? 50.0 : 20.0);
+        : (selectedAsset.ratedPowerKw || 25.0) / archetypeRatedKw;
 
-      // Deep copy and apply scaled machine baseline
+      // Extract user sensor readings for direct model inputs
+      const idleSensor = sensors.find(s => s.sensor_id.includes('IDLE-PWR') || s.sensor_id.includes('HOLD-PWR'));
+      const presSensor = sensors.find(s => s.sensor_id.includes('PRES-DISCH') || s.sensor_id.includes('SETPOINT'));
+      const ambSensor = sensors.find(s => s.sensor_id.includes('TEMP-AMB'));
+
+      // If user provided a specific idle/standby power reading, incorporate into baseline idle draw
+      const observedIdleKw = idleSensor && typeof idleSensor.current_reading === 'number'
+        ? idleSensor.current_reading
+        : null;
+
+      // Deep copy and apply scaled machine baseline for the matched archetype
       const baselineRecords: TelemetryRecord[] = rawBaseline.map(r => {
         if (r.machine_id === benchmarkMachineId) {
-          const scaledPower = Math.round(r.power_kw * scaleFactor * 10) / 10;
+          let pKw = Math.round(r.power_kw * scaleFactor * 10) / 10;
+          if (r.machine_state === 'idle' && observedIdleKw !== null) {
+            pKw = observedIdleKw;
+          }
           return {
             ...r,
-            machine_id: selectedAsset.id, // assign selected asset identity
-            power_kw: scaledPower,
-            energy_kwh: scaledPower,
+            power_kw: pKw,
+            energy_kwh: pKw,
           };
         }
         return { ...r };
@@ -1495,7 +1518,7 @@ export function AssetSimulationWorkspace({
       // 4. Construct scenario action with mapped sensor readings
       const action: ScenarioAction = {
         type: selectedIntervention,
-        machine_id: selectedAsset.id,
+        machine_id: benchmarkMachineId, // Ensure scenarioEngine matches against the benchmark machine ID
         duration_hours: Number(paramDurationHours),
       };
 
@@ -1503,7 +1526,6 @@ export function AssetSimulationWorkspace({
         action.target_power_kw = Number(paramTargetPowerKw);
         action.target_state = 'idle';
       } else if (selectedIntervention === 'pressure_optimization') {
-        const presSensor = sensors.find(s => s.sensor_id.includes('PRES-DISCH') || s.sensor_id.includes('SETPOINT'));
         action.baseline_pressure_bar = presSensor ? presSensor.current_reading : 7.5;
         action.target_pressure_bar = Number(paramTargetPressureBar);
       } else if (selectedIntervention === 'shift_schedule') {
@@ -1511,7 +1533,6 @@ export function AssetSimulationWorkspace({
       }
 
       // Map ambient temperature sensor if present
-      const ambSensor = sensors.find(s => s.sensor_id.includes('TEMP-AMB'));
       if (ambSensor && typeof ambSensor.current_reading === 'number') {
         action.ambient_temp_c = ambSensor.current_reading;
       }
@@ -2422,6 +2443,40 @@ export function AssetSimulationWorkspace({
                 <span style={{ fontSize: 12, color: '#64748B' }}>hours</span>
               </div>
             </div>
+
+            {/* Live Delta Preview Strip */}
+            {(() => {
+              const idleSensor = sensors.find(s => s.sensor_id.includes('IDLE-PWR') || s.sensor_id.includes('HOLD-PWR'));
+              const presSensor = sensors.find(s => s.sensor_id.includes('PRES-DISCH') || s.sensor_id.includes('SETPOINT'));
+              const currentIdle = idleSensor ? idleSensor.current_reading : (selectedAsset.standbyDrawKw || 18.0);
+              const currentPres = presSensor ? presSensor.current_reading : 7.5;
+
+              return (
+                <div style={{ marginTop: 12, padding: '10px 14px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 8, fontSize: 12, color: '#166534', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Sparkles size={15} color="#15803D" />
+                    <span>
+                      {selectedIntervention === 'reduce_idle_power' ? (
+                        <>
+                          <strong>Measured Baseline Idle Sensor:</strong> {currentIdle.toFixed(1)} kW → <strong>Intervention Target:</strong> {paramTargetPowerKw.toFixed(1)} kW (Expected Relief: <strong>-{(currentIdle - paramTargetPowerKw).toFixed(1)} kW</strong> over {paramDurationHours}h)
+                        </>
+                      ) : selectedIntervention === 'pressure_optimization' ? (
+                        <>
+                          <strong>Measured Baseline Pressure:</strong> {currentPres.toFixed(1)} bar → <strong>Target Setpoint:</strong> {paramTargetPressureBar.toFixed(1)} bar (Expected Delta: <strong>-{(currentPres - paramTargetPressureBar).toFixed(1)} bar</strong>)
+                        </>
+                      ) : (
+                        <>
+                          <strong>Production Shift:</strong> Rescheduling high load {paramOffsetHours}h forward into lower tariff window (₹6.50/kWh off-peak).
+                        </>
+                      )}
+                    </span>
+                  </div>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#15803D', background: '#DCFCE7', padding: '2px 8px', borderRadius: 12 }}>
+                    Telemetry Linked
+                  </span>
+                </div>
+              );
+            })()}
           </div>
 
           {/* ─── Configurable Sensor Management Interface ───────────────────────── */}
@@ -2857,25 +2912,18 @@ export function AssetSimulationWorkspace({
             <div style={{ height: 260, width: '100%' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart
-                  data={Array.from({ length: 24 }).map((_, i) => {
-                    const hourStr = `${String(i).padStart(2, '0')}:00`;
-                    // Generate representative baseline kW and simulated kW curve based on results
-                    const baseLoad = (selectedAsset.nominalLoadKw || 20.0);
-                    const isInterventionHour = (selectedIntervention === 'reduce_idle_power' && i >= 11 && i <= 13);
-                    const baselineKw = (i >= 7 && i <= 21)
-                      ? (isInterventionHour ? selectedAsset.standbyDrawKw || 18.0 : baseLoad)
-                      : (selectedAsset.standbyDrawKw || 5.0);
-
-                    const simulatedKw = isInterventionHour
-                      ? Number(paramTargetPowerKw)
-                      : (selectedIntervention === 'pressure_optimization' && i >= 7 && i <= 21)
-                      ? Number((baselineKw * 0.92).toFixed(1))
-                      : baselineKw;
+                  data={simulationResult.baseline.hourly_plant.map((bHour, i) => {
+                    const sHour = simulationResult.scenario.hourly_plant[i] || bHour;
+                    const benchId = getBenchmarkTwinArchetype(selectedAsset);
+                    const bMachineKw = bHour.machines[benchId] ?? bHour.kw;
+                    const sMachineKw = sHour.machines[benchId] ?? sHour.kw;
 
                     return {
-                      hour: hourStr,
-                      baseline_kw: baselineKw,
-                      simulated_kw: simulatedKw,
+                      hour: bHour.label,
+                      baseline_kw: Number(bMachineKw.toFixed(1)),
+                      simulated_kw: Number(sMachineKw.toFixed(1)),
+                      plant_baseline_kw: Number(bHour.kw.toFixed(1)),
+                      plant_simulated_kw: Number(sHour.kw.toFixed(1)),
                     };
                   })}
                   margin={{ top: 10, right: 10, left: 0, bottom: 0 }}

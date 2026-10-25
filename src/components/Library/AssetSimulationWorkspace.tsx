@@ -1701,18 +1701,18 @@ export function AssetSimulationWorkspace({
   }
 
   return (
-    <div style={{ padding: '24px 32px', background: '#FAF7F2', minHeight: '100vh', color: '#0F172A' }}>
+    <div style={{ padding: '24px 32px 64px', background: 'var(--bg-root, #F4EEE5)', minHeight: '100%', color: 'var(--white, #1E252D)' }}>
       {/* ─── Top Header & Summary ─────────────────────────────────────────────── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16, marginBottom: 20 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0, color: '#0F172A', letterSpacing: '-0.02em' }}>
+            <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0, color: '#1E252D', letterSpacing: '-0.02em' }}>
               Asset Selection & Simulation
             </h1>
             <span style={{
-              background: '#EFF6FF',
-              color: '#1D4ED8',
-              border: '1px solid #BFDBFE',
+              background: '#FAF7F2',
+              color: '#0284C7',
+              border: '1px solid #EAE3D7',
               fontSize: 12,
               fontWeight: 600,
               padding: '3px 10px',
@@ -1735,7 +1735,7 @@ export function AssetSimulationWorkspace({
               gap: 6,
               padding: '8px 14px',
               borderRadius: 8,
-              border: '1px solid #E2E8F0',
+              border: '1px solid #EAE3D7',
               background: '#FFFFFF',
               color: '#475569',
               fontSize: 12,
@@ -1753,30 +1753,30 @@ export function AssetSimulationWorkspace({
 
       {/* ─── Compact Summary Metrics Cards ────────────────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 14, marginBottom: 24 }}>
-        <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 10, padding: '14px 18px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+        <div style={{ background: '#FFFFFF', border: '1px solid #EAE3D7', borderRadius: 10, padding: '14px 18px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
           <div style={{ fontSize: 11, fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Catalog Assets</div>
-          <div style={{ fontSize: 22, fontWeight: 700, color: '#0F172A', marginTop: 4 }}>50 Machines</div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: '#1E252D', marginTop: 4 }}>50 Machines</div>
           <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 2 }}>6 Unified Utility Cells</div>
         </div>
 
-        <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 10, padding: '14px 18px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+        <div style={{ background: '#FFFFFF', border: '1px solid #EAE3D7', borderRadius: 10, padding: '14px 18px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
           <div style={{ fontSize: 11, fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Asset Categories</div>
-          <div style={{ fontSize: 22, fontWeight: 700, color: '#0F172A', marginTop: 4 }}>6 Cells</div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: '#1E252D', marginTop: 4 }}>6 Cells</div>
           <div style={{ fontSize: 11, color: '#059669', fontWeight: 600, marginTop: 2 }}>Air, Heat, Power, CNC, HVAC, Chem</div>
         </div>
 
-        <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 10, padding: '14px 18px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+        <div style={{ background: '#FFFFFF', border: '1px solid #EAE3D7', borderRadius: 10, padding: '14px 18px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
           <div style={{ fontSize: 11, fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Simulation Compatibility</div>
-          <div style={{ fontSize: 22, fontWeight: 700, color: '#2563EB', marginTop: 4 }}>46 Compatible</div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: '#0284C7', marginTop: 4 }}>46 Compatible</div>
           <div style={{ fontSize: 11, color: '#64748B', marginTop: 2 }}>4 Core Twins + 42 Parametric</div>
         </div>
 
-        <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 10, padding: '14px 18px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+        <div style={{ background: '#FFFFFF', border: '1px solid #EAE3D7', borderRadius: 10, padding: '14px 18px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
           <div style={{ fontSize: 11, fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Currently Selected</div>
-          <div style={{ fontSize: 16, fontWeight: 700, color: selectedAsset ? '#0F172A' : '#94A3B8', marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: selectedAsset ? '#1E252D' : '#94A3B8', marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {selectedAsset ? selectedAsset.name : 'None Selected'}
           </div>
-          <div style={{ fontSize: 11, color: selectedAsset ? '#2563EB' : '#94A3B8', fontFamily: 'var(--font-mono)', fontWeight: 600, marginTop: 2 }}>
+          <div style={{ fontSize: 11, color: selectedAsset ? '#0284C7' : '#94A3B8', fontFamily: 'var(--font-mono)', fontWeight: 600, marginTop: 2 }}>
             {selectedAsset ? `${selectedAsset.id} (${selectedAsset.ratedPowerKw} kW)` : 'Select an asset below'}
           </div>
         </div>
@@ -1787,7 +1787,7 @@ export function AssetSimulationWorkspace({
         display: 'flex',
         alignItems: 'center',
         background: '#FFFFFF',
-        border: '1px solid #E2E8F0',
+        border: '1px solid #EAE3D7',
         borderRadius: 12,
         padding: '6px',
         marginBottom: 24,
@@ -1804,7 +1804,7 @@ export function AssetSimulationWorkspace({
             padding: '10px 16px',
             borderRadius: 8,
             border: 'none',
-            background: currentStep === 1 ? '#1E293B' : 'transparent',
+            background: currentStep === 1 ? '#1E252D' : 'transparent',
             color: currentStep === 1 ? '#FFFFFF' : '#475569',
             fontSize: 13,
             fontWeight: 600,
@@ -1819,7 +1819,7 @@ export function AssetSimulationWorkspace({
             width: 22,
             height: 22,
             borderRadius: '50%',
-            background: currentStep === 1 ? '#3B82F6' : '#E2E8F0',
+            background: currentStep === 1 ? '#0284C7' : '#EAE3D7',
             color: currentStep === 1 ? '#FFFFFF' : '#64748B',
             fontSize: 11,
             fontWeight: 700,
@@ -1828,13 +1828,13 @@ export function AssetSimulationWorkspace({
           </span>
           <span>1. Select Asset</span>
           {selectedAsset && (
-            <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 10, background: currentStep === 1 ? '#334155' : '#EFF6FF', color: currentStep === 1 ? '#93C5FD' : '#1D4ED8' }}>
+            <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 10, background: currentStep === 1 ? '#334155' : '#FAF7F2', color: currentStep === 1 ? '#BAE6FD' : '#0284C7', border: currentStep === 1 ? 'none' : '1px solid #EAE3D7' }}>
               {selectedAsset.id}
             </span>
           )}
         </button>
 
-        <ChevronRight size={16} color="#CBD5E1" style={{ margin: '0 4px' }} />
+        <ChevronRight size={16} color="#D9D0C1" style={{ margin: '0 4px' }} />
 
         <button
           onClick={() => {
@@ -1850,7 +1850,7 @@ export function AssetSimulationWorkspace({
             padding: '10px 16px',
             borderRadius: 8,
             border: 'none',
-            background: currentStep === 2 ? '#1E293B' : 'transparent',
+            background: currentStep === 2 ? '#1E252D' : 'transparent',
             color: currentStep === 2 ? '#FFFFFF' : selectedAsset ? '#475569' : '#94A3B8',
             fontSize: 13,
             fontWeight: 600,
@@ -1865,7 +1865,7 @@ export function AssetSimulationWorkspace({
             width: 22,
             height: 22,
             borderRadius: '50%',
-            background: currentStep === 2 ? '#3B82F6' : '#E2E8F0',
+            background: currentStep === 2 ? '#0284C7' : '#EAE3D7',
             color: currentStep === 2 ? '#FFFFFF' : '#64748B',
             fontSize: 11,
             fontWeight: 700,
@@ -1873,12 +1873,12 @@ export function AssetSimulationWorkspace({
             2
           </span>
           <span>2. Configure Sensors</span>
-          <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 10, background: currentStep === 2 ? '#334155' : '#F1F5F9', color: currentStep === 2 ? '#93C5FD' : '#64748B' }}>
+          <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 10, background: currentStep === 2 ? '#334155' : '#FAF7F2', color: currentStep === 2 ? '#BAE6FD' : '#64748B', border: currentStep === 2 ? 'none' : '1px solid #EAE3D7' }}>
             {sensors.length} Inputs
           </span>
         </button>
 
-        <ChevronRight size={16} color="#CBD5E1" style={{ margin: '0 4px' }} />
+        <ChevronRight size={16} color="#D9D0C1" style={{ margin: '0 4px' }} />
 
         <button
           onClick={() => {
@@ -1894,7 +1894,7 @@ export function AssetSimulationWorkspace({
             padding: '10px 16px',
             borderRadius: 8,
             border: 'none',
-            background: currentStep === 3 ? '#1E293B' : 'transparent',
+            background: currentStep === 3 ? '#1E252D' : 'transparent',
             color: currentStep === 3 ? '#FFFFFF' : simulationResult ? '#475569' : '#94A3B8',
             fontSize: 13,
             fontWeight: 600,
@@ -1909,7 +1909,7 @@ export function AssetSimulationWorkspace({
             width: 22,
             height: 22,
             borderRadius: '50%',
-            background: currentStep === 3 ? '#10B981' : '#E2E8F0',
+            background: currentStep === 3 ? '#10B981' : '#EAE3D7',
             color: currentStep === 3 ? '#FFFFFF' : '#64748B',
             fontSize: 11,
             fontWeight: 700,
@@ -2006,8 +2006,8 @@ export function AssetSimulationWorkspace({
                     borderRadius: 16,
                     fontSize: 12,
                     fontWeight: isSelected ? 600 : 500,
-                    border: isSelected ? '1px solid #1E293B' : '1px solid #E2E8F0',
-                    background: isSelected ? '#1E293B' : '#F8FAFC',
+                    border: isSelected ? '1px solid #1E252D' : '1px solid #EAE3D7',
+                    background: isSelected ? '#1E252D' : '#FFFFFF',
                     color: isSelected ? '#FFFFFF' : '#475569',
                     cursor: 'pointer',
                     transition: 'all 0.15s ease',
@@ -2018,8 +2018,8 @@ export function AssetSimulationWorkspace({
                     fontSize: 10,
                     padding: '1px 6px',
                     borderRadius: 10,
-                    background: isSelected ? '#334155' : '#E2E8F0',
-                    color: isSelected ? '#93C5FD' : '#64748B',
+                    background: isSelected ? '#334155' : '#FAF7F2',
+                    color: isSelected ? '#BAE6FD' : '#64748B',
                     fontWeight: 600,
                   }}>
                     {c.count}
@@ -2044,7 +2044,7 @@ export function AssetSimulationWorkspace({
                 width: '100%',
                 padding: '8px 12px 8px 34px',
                 borderRadius: 8,
-                border: '1px solid #CBD5E1',
+                border: '1px solid #EAE3D7',
                 fontSize: 13,
                 outline: 'none',
                 background: '#FFFFFF',
@@ -2056,7 +2056,7 @@ export function AssetSimulationWorkspace({
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 12 }}>
               <thead>
-                <tr style={{ background: '#F8FAFC', borderBottom: '2px solid #E2E8F0', color: '#475569', fontWeight: 600 }}>
+                <tr style={{ background: '#FAF7F2', borderBottom: '1px solid #EAE3D7', color: '#64748B', fontWeight: 600 }}>
                   <th style={{ padding: '10px 12px', width: 130 }}>Asset ID</th>
                   <th style={{ padding: '10px 12px' }}>Equipment Name</th>
                   <th style={{ padding: '10px 12px' }}>Utility Cell</th>
@@ -2092,9 +2092,9 @@ export function AssetSimulationWorkspace({
                         key={asset.id}
                         onClick={() => handleSelectAsset(asset, true)}
                         style={{
-                          borderBottom: '1px solid #F1F5F9',
+                          borderBottom: '1px solid #F5F2EB',
                           cursor: 'pointer',
-                          background: isSelected ? 'rgba(37, 99, 235, 0.05)' : 'transparent',
+                          background: isSelected ? 'rgba(2, 132, 199, 0.08)' : 'transparent',
                           transition: 'background 0.1s',
                         }}
                         onMouseEnter={(e) => {
@@ -2104,10 +2104,10 @@ export function AssetSimulationWorkspace({
                           if (!isSelected) e.currentTarget.style.background = 'transparent';
                         }}
                       >
-                        <td style={{ padding: '10px 12px', fontFamily: 'var(--font-mono)', fontWeight: 600, color: '#2563EB' }}>
+                        <td style={{ padding: '10px 12px', fontFamily: 'var(--font-mono)', fontWeight: 600, color: '#0284C7' }}>
                           {asset.id}
                         </td>
-                        <td style={{ padding: '10px 12px', fontWeight: 600, color: '#0F172A' }}>
+                        <td style={{ padding: '10px 12px', fontWeight: 600, color: '#1E252D' }}>
                           {asset.name}
                         </td>
                         <td style={{ padding: '10px 12px', color: '#64748B', fontSize: 11 }}>
@@ -2144,8 +2144,9 @@ export function AssetSimulationWorkspace({
                               gap: 4,
                               padding: '2px 8px',
                               borderRadius: 10,
-                              background: '#EFF6FF',
-                              color: '#1D4ED8',
+                              background: '#F0F9FF',
+                              color: '#0284C7',
+                              border: '1px solid #BAE6FD',
                               fontSize: 11,
                               fontWeight: 700,
                             }}>
@@ -2158,9 +2159,9 @@ export function AssetSimulationWorkspace({
                               gap: 4,
                               padding: '2px 8px',
                               borderRadius: 10,
-                              background: '#F8FAFC',
+                              background: '#FAF7F2',
                               color: '#334155',
-                              border: '1px solid #E2E8F0',
+                              border: '1px solid #EAE3D7',
                               fontSize: 11,
                               fontWeight: 500,
                             }}>
@@ -2178,14 +2179,15 @@ export function AssetSimulationWorkspace({
                               display: 'inline-flex',
                               alignItems: 'center',
                               gap: 4,
-                              padding: '5px 11px',
+                              padding: '5px 12px',
                               borderRadius: 6,
-                              border: isSelected ? '1px solid #2563EB' : '1px solid #CBD5E1',
-                              background: isSelected ? '#2563EB' : '#FFFFFF',
-                              color: isSelected ? '#FFFFFF' : '#1E293B',
+                              border: isSelected ? '1px solid #1E252D' : '1px solid #D9D0C1',
+                              background: isSelected ? '#1E252D' : '#FAF7F2',
+                              color: isSelected ? '#FFFFFF' : '#1E252D',
                               fontSize: 11,
                               fontWeight: 600,
                               cursor: 'pointer',
+                              transition: 'all 0.15s ease',
                             }}
                           >
                             <span>Configure</span>
@@ -2201,7 +2203,7 @@ export function AssetSimulationWorkspace({
           </div>
 
           {/* Pagination */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 14, paddingTop: 10, borderTop: '1px solid #E2E8F0', fontSize: 12, color: '#64748B' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 14, paddingTop: 10, borderTop: '1px solid #EAE3D7', fontSize: 12, color: '#64748B' }}>
             <div>
               Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, sortedAssets.length)} of {sortedAssets.length} machines
             </div>
@@ -2209,15 +2211,15 @@ export function AssetSimulationWorkspace({
               <button
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                style={{ padding: '4px 8px', borderRadius: 4, border: '1px solid #CBD5E1', background: currentPage === 1 ? '#F1F5F9' : '#FFFFFF', cursor: currentPage === 1 ? 'not-allowed' : 'pointer' }}
+                style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #EAE3D7', background: currentPage === 1 ? '#FAF7F2' : '#FFFFFF', color: currentPage === 1 ? '#94A3B8' : '#1E252D', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', fontWeight: 500 }}
               >
                 Prev
               </button>
-              <span style={{ padding: '0 8px', fontWeight: 600 }}>Page {currentPage} of {totalPages}</span>
+              <span style={{ padding: '0 8px', fontWeight: 600, color: '#1E252D' }}>Page {currentPage} of {totalPages}</span>
               <button
                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
-                style={{ padding: '4px 8px', borderRadius: 4, border: '1px solid #CBD5E1', background: currentPage === totalPages ? '#F1F5F9' : '#FFFFFF', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer' }}
+                style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #EAE3D7', background: currentPage === totalPages ? '#FAF7F2' : '#FFFFFF', color: currentPage === totalPages ? '#94A3B8' : '#1E252D', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', fontWeight: 500 }}
               >
                 Next
               </button>
@@ -2230,17 +2232,17 @@ export function AssetSimulationWorkspace({
       {currentStep === 2 && selectedAsset && (
         <div>
           {/* Selected Asset Header Card */}
-          <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderTop: '3px solid #2563EB', borderRadius: 12, padding: '18px 22px', marginBottom: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.02)' }}>
+          <div style={{ background: '#FFFFFF', border: '1px solid #EAE3D7', borderTop: '3px solid #0284C7', borderRadius: 12, padding: '18px 22px', marginBottom: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.02)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 14 }}>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', fontWeight: 700, padding: '2px 8px', borderRadius: 6, background: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE' }}>
+                  <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', fontWeight: 700, padding: '2px 8px', borderRadius: 6, background: '#F0F9FF', color: '#0284C7', border: '1px solid #BAE6FD' }}>
                     {selectedAsset.id}
                   </span>
-                  <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: '#0F172A' }}>
+                  <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: '#1E252D' }}>
                     {selectedAsset.name}
                   </h2>
-                  <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 10, background: '#F1F5F9', color: '#475569', fontWeight: 600 }}>
+                  <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 10, background: '#FAF7F2', color: '#475569', fontWeight: 600, border: '1px solid #EAE3D7' }}>
                     {selectedAsset.cell}
                   </span>
                 </div>
@@ -2267,12 +2269,13 @@ export function AssetSimulationWorkspace({
                     gap: 6,
                     padding: '6px 12px',
                     borderRadius: 6,
-                    border: '1px solid #CBD5E1',
-                    background: '#FFFFFF',
-                    color: '#334155',
+                    border: '1px solid #D9D0C1',
+                    background: '#FAF7F2',
+                    color: '#1E252D',
                     fontSize: 12,
                     fontWeight: 600,
                     cursor: 'pointer',
+                    transition: 'all 0.15s ease',
                   }}
                 >
                   <ArrowLeft size={13} />
@@ -2290,7 +2293,7 @@ export function AssetSimulationWorkspace({
                 </span>
               </div>
             ) : (
-              <div style={{ marginTop: 14, padding: '10px 14px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, fontSize: 12, color: '#334155', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ marginTop: 14, padding: '10px 14px', background: '#FAF7F2', border: '1px solid #EAE3D7', borderRadius: 8, fontSize: 12, color: '#1E252D', display: 'flex', alignItems: 'center', gap: 8 }}>
                 <CheckCircle2 size={16} color="#10B981" />
                 <span>
                   <strong>Simulation Engine Active:</strong> Mapped to <strong>{resolveMachineId(selectedAsset.id)}</strong> physics profile. Configured sensor values will feed into the operational intervention model.
@@ -2300,17 +2303,17 @@ export function AssetSimulationWorkspace({
           </div>
 
           {/* Intervention Configuration Panel */}
-          <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 12, padding: '18px 22px', marginBottom: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.02)' }}>
+          <div style={{ background: '#FFFFFF', border: '1px solid #EAE3D7', borderRadius: 12, padding: '18px 22px', marginBottom: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.02)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
               <div>
-                <h3 style={{ fontSize: 15, fontWeight: 700, margin: 0, color: '#0F172A' }}>
+                <h3 style={{ fontSize: 15, fontWeight: 700, margin: 0, color: '#1E252D' }}>
                   Select Operational Intervention to Simulate
                 </h3>
                 <p style={{ margin: '2px 0 0', fontSize: 12, color: '#64748B' }}>
                   Choose which physical parameter adjustment the digital twin will evaluate against safety interlocks.
                 </p>
               </div>
-              <span style={{ fontSize: 11, fontWeight: 600, color: '#2563EB', background: '#EFF6FF', padding: '3px 8px', borderRadius: 6 }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: '#0284C7', background: '#F0F9FF', border: '1px solid #BAE6FD', padding: '3px 8px', borderRadius: 6 }}>
                 Physics & Tariff Aware
               </span>
             </div>
@@ -2320,8 +2323,8 @@ export function AssetSimulationWorkspace({
               <div
                 onClick={() => setSelectedIntervention('reduce_idle_power')}
                 style={{
-                  border: `2px solid ${selectedIntervention === 'reduce_idle_power' ? '#2563EB' : '#E2E8F0'}`,
-                  background: selectedIntervention === 'reduce_idle_power' ? '#F8FAFC' : '#FFFFFF',
+                  border: `1.5px solid ${selectedIntervention === 'reduce_idle_power' ? '#0284C7' : '#EAE3D7'}`,
+                  background: selectedIntervention === 'reduce_idle_power' ? '#F0F9FF' : '#FFFFFF',
                   borderRadius: 10,
                   padding: '12px 14px',
                   cursor: 'pointer',
@@ -2329,8 +2332,8 @@ export function AssetSimulationWorkspace({
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>Idle-Power Auto-Cutoff</span>
-                  <input type="radio" checked={selectedIntervention === 'reduce_idle_power'} readOnly />
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#1E252D' }}>Idle-Power Auto-Cutoff</span>
+                  <input type="radio" checked={selectedIntervention === 'reduce_idle_power'} readOnly style={{ accentColor: '#0284C7' }} />
                 </div>
                 <p style={{ margin: 0, fontSize: 11, color: '#64748B' }}>
                   Reduces unloaded standby draw during shift breaks or line idle periods down to target setting.
@@ -2341,8 +2344,8 @@ export function AssetSimulationWorkspace({
               <div
                 onClick={() => setSelectedIntervention('pressure_optimization')}
                 style={{
-                  border: `2px solid ${selectedIntervention === 'pressure_optimization' ? '#2563EB' : '#E2E8F0'}`,
-                  background: selectedIntervention === 'pressure_optimization' ? '#F8FAFC' : '#FFFFFF',
+                  border: `1.5px solid ${selectedIntervention === 'pressure_optimization' ? '#0284C7' : '#EAE3D7'}`,
+                  background: selectedIntervention === 'pressure_optimization' ? '#F0F9FF' : '#FFFFFF',
                   borderRadius: 10,
                   padding: '12px 14px',
                   cursor: 'pointer',
@@ -2350,8 +2353,8 @@ export function AssetSimulationWorkspace({
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>Header Pressure / Temp Optimization</span>
-                  <input type="radio" checked={selectedIntervention === 'pressure_optimization'} readOnly />
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#1E252D' }}>Header Pressure / Temp Optimization</span>
+                  <input type="radio" checked={selectedIntervention === 'pressure_optimization'} readOnly style={{ accentColor: '#0284C7' }} />
                 </div>
                 <p style={{ margin: 0, fontSize: 11, color: '#64748B' }}>
                   Trims delivery setpoint (e.g. 7.5 to 6.8 bar on air; +1.5°C on chilled water) to reduce lift power.
@@ -2362,8 +2365,8 @@ export function AssetSimulationWorkspace({
               <div
                 onClick={() => setSelectedIntervention('shift_schedule')}
                 style={{
-                  border: `2px solid ${selectedIntervention === 'shift_schedule' ? '#2563EB' : '#E2E8F0'}`,
-                  background: selectedIntervention === 'shift_schedule' ? '#F8FAFC' : '#FFFFFF',
+                  border: `1.5px solid ${selectedIntervention === 'shift_schedule' ? '#0284C7' : '#EAE3D7'}`,
+                  background: selectedIntervention === 'shift_schedule' ? '#F0F9FF' : '#FFFFFF',
                   borderRadius: 10,
                   padding: '12px 14px',
                   cursor: 'pointer',
@@ -2371,8 +2374,8 @@ export function AssetSimulationWorkspace({
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>Coincident Peak Shaving</span>
-                  <input type="radio" checked={selectedIntervention === 'shift_schedule'} readOnly />
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#1E252D' }}>Coincident Peak Shaving</span>
+                  <input type="radio" checked={selectedIntervention === 'shift_schedule'} readOnly style={{ accentColor: '#0284C7' }} />
                 </div>
                 <p style={{ margin: 0, fontSize: 11, color: '#64748B' }}>
                   Reschedules high-draw production cycles away from peak tariff windows into lower off-peak hours.
@@ -2381,10 +2384,10 @@ export function AssetSimulationWorkspace({
             </div>
 
             {/* Dynamic Controls based on selected intervention */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, padding: '12px 16px', background: '#F8FAFC', borderRadius: 8, border: '1px solid #E2E8F0', alignItems: 'center' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, padding: '12px 16px', background: '#FAF7F2', borderRadius: 8, border: '1px solid #EAE3D7', alignItems: 'center' }}>
               {selectedIntervention === 'reduce_idle_power' && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: '#334155' }}>Target Idle Power:</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: '#1E252D' }}>Target Idle Power:</span>
                   <input
                     type="number"
                     step="0.5"
@@ -2392,7 +2395,7 @@ export function AssetSimulationWorkspace({
                     max={selectedAsset.ratedPowerKw}
                     value={paramTargetPowerKw}
                     onChange={(e) => setParamTargetPowerKw(Number(e.target.value))}
-                    style={{ width: 80, padding: '5px 8px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12, textAlign: 'right' }}
+                    style={{ width: 80, padding: '5px 8px', borderRadius: 6, border: '1px solid #D9D0C1', background: '#FFFFFF', color: '#1E252D', fontSize: 12, textAlign: 'right' }}
                   />
                   <span style={{ fontSize: 12, color: '#64748B' }}>kW</span>
                 </div>
@@ -2400,7 +2403,7 @@ export function AssetSimulationWorkspace({
 
               {selectedIntervention === 'pressure_optimization' && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: '#334155' }}>Optimized Setpoint:</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: '#1E252D' }}>Optimized Setpoint:</span>
                   <input
                     type="number"
                     step="0.1"
@@ -2408,7 +2411,7 @@ export function AssetSimulationWorkspace({
                     max="10.0"
                     value={paramTargetPressureBar}
                     onChange={(e) => setParamTargetPressureBar(Number(e.target.value))}
-                    style={{ width: 80, padding: '5px 8px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12, textAlign: 'right' }}
+                    style={{ width: 80, padding: '5px 8px', borderRadius: 6, border: '1px solid #D9D0C1', background: '#FFFFFF', color: '#1E252D', fontSize: 12, textAlign: 'right' }}
                   />
                   <span style={{ fontSize: 12, color: '#64748B' }}>bar / °C</span>
                 </div>
@@ -2416,11 +2419,11 @@ export function AssetSimulationWorkspace({
 
               {selectedIntervention === 'shift_schedule' && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: '#334155' }}>Shift Offset:</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: '#1E252D' }}>Shift Offset:</span>
                   <select
                     value={paramOffsetHours}
                     onChange={(e) => setParamOffsetHours(Number(e.target.value))}
-                    style={{ padding: '5px 8px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12 }}
+                    style={{ padding: '5px 8px', borderRadius: 6, border: '1px solid #D9D0C1', background: '#FFFFFF', color: '#1E252D', fontSize: 12 }}
                   >
                     <option value={1}>1 hour forward</option>
                     <option value={2}>2 hours forward (Into Off-Peak)</option>
@@ -2430,7 +2433,7 @@ export function AssetSimulationWorkspace({
               )}
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ fontSize: 12, fontWeight: 600, color: '#334155' }}>Intervention Duration:</span>
+                <span style={{ fontSize: 12, fontWeight: 600, color: '#1E252D' }}>Intervention Duration:</span>
                 <input
                   type="number"
                   step="0.5"
@@ -2438,7 +2441,7 @@ export function AssetSimulationWorkspace({
                   max="8.0"
                   value={paramDurationHours}
                   onChange={(e) => setParamDurationHours(Number(e.target.value))}
-                  style={{ width: 65, padding: '5px 8px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12, textAlign: 'right' }}
+                  style={{ width: 65, padding: '5px 8px', borderRadius: 6, border: '1px solid #D9D0C1', background: '#FFFFFF', color: '#1E252D', fontSize: 12, textAlign: 'right' }}
                 />
                 <span style={{ fontSize: 12, color: '#64748B' }}>hours</span>
               </div>
@@ -2480,14 +2483,14 @@ export function AssetSimulationWorkspace({
           </div>
 
           {/* ─── Configurable Sensor Management Interface ───────────────────────── */}
-          <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 12, padding: '20px 24px', marginBottom: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.02)' }}>
+          <div style={{ background: '#FFFFFF', border: '1px solid #EAE3D7', borderRadius: 12, padding: '20px 24px', marginBottom: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.02)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 12 }}>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: '#0F172A' }}>
+                  <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: '#1E252D' }}>
                     Sensor Configuration & Telemetry
                   </h3>
-                  <span style={{ fontSize: 12, fontWeight: 600, padding: '2px 8px', borderRadius: 10, background: '#EFF6FF', color: '#1D4ED8' }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, padding: '2px 8px', borderRadius: 10, background: '#F0F9FF', color: '#0284C7', border: '1px solid #BAE6FD' }}>
                     {sensorStats.validCount} of {sensorStats.configuredCount} Valid Readings
                   </span>
                   {sensorStats.overriddenCount > 0 && (
@@ -2511,12 +2514,13 @@ export function AssetSimulationWorkspace({
                     gap: 6,
                     padding: '6px 12px',
                     borderRadius: 6,
-                    border: '1px solid #2563EB',
-                    background: '#EFF6FF',
-                    color: '#1D4ED8',
+                    border: '1px solid #BAE6FD',
+                    background: '#F0F9FF',
+                    color: '#0284C7',
                     fontSize: 12,
                     fontWeight: 600,
                     cursor: 'pointer',
+                    transition: 'all 0.15s ease',
                   }}
                 >
                   <Plus size={14} /> Add Sensor
@@ -2530,12 +2534,13 @@ export function AssetSimulationWorkspace({
                     gap: 6,
                     padding: '6px 12px',
                     borderRadius: 6,
-                    border: '1px solid #CBD5E1',
-                    background: '#FFFFFF',
-                    color: sensorStats.overriddenCount === 0 ? '#94A3B8' : '#475569',
+                    border: '1px solid #EAE3D7',
+                    background: '#FAF7F2',
+                    color: sensorStats.overriddenCount === 0 ? '#94A3B8' : '#1E252D',
                     fontSize: 12,
                     fontWeight: 500,
                     cursor: sensorStats.overriddenCount === 0 ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.15s ease',
                   }}
                 >
                   Clear Overrides
@@ -2548,12 +2553,13 @@ export function AssetSimulationWorkspace({
                     gap: 6,
                     padding: '6px 12px',
                     borderRadius: 6,
-                    border: '1px solid #CBD5E1',
-                    background: '#FFFFFF',
-                    color: '#475569',
+                    border: '1px solid #EAE3D7',
+                    background: '#FAF7F2',
+                    color: '#1E252D',
                     fontSize: 12,
                     fontWeight: 500,
                     cursor: 'pointer',
+                    transition: 'all 0.15s ease',
                   }}
                 >
                   <RefreshCw size={13} /> Restore Defaults
@@ -2570,14 +2576,14 @@ export function AssetSimulationWorkspace({
                   placeholder="Filter sensors by ID or name..."
                   value={sensorSearch}
                   onChange={(e) => setSensorSearch(e.target.value)}
-                  style={{ width: '100%', padding: '6px 10px 6px 30px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12 }}
+                  style={{ width: '100%', padding: '6px 10px 6px 30px', borderRadius: 6, border: '1px solid #EAE3D7', background: '#FFFFFF', color: '#1E252D', fontSize: 12 }}
                 />
               </div>
 
               <select
                 value={sensorFilter}
                 onChange={(e) => setSensorFilter(e.target.value as any)}
-                style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12, background: '#FFFFFF' }}
+                style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid #EAE3D7', fontSize: 12, background: '#FAF7F2', color: '#1E252D' }}
               >
                 <option value="all">All Configured Sensors ({sensors.length})</option>
                 <option value="required">Required Model Inputs Only</option>
@@ -2590,7 +2596,7 @@ export function AssetSimulationWorkspace({
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 12 }}>
                 <thead>
-                  <tr style={{ background: '#F8FAFC', borderBottom: '2px solid #E2E8F0', color: '#475569', fontWeight: 600 }}>
+                  <tr style={{ background: '#FAF7F2', borderBottom: '1px solid #EAE3D7', color: '#64748B', fontWeight: 600 }}>
                     <th style={{ padding: '8px 10px', width: 140 }}>Sensor ID</th>
                     <th style={{ padding: '8px 10px' }}>Instrument Name</th>
                     <th style={{ padding: '8px 10px', width: 110 }}>Type</th>
@@ -2608,14 +2614,14 @@ export function AssetSimulationWorkspace({
                     const isOut = s.validation_status === 'out_of_range';
 
                     return (
-                      <tr key={s.sensor_id} style={{ borderBottom: '1px solid #F1F5F9', background: s.source === 'manual_override' ? '#FDFBF7' : 'transparent' }}>
-                        <td style={{ padding: '8px 10px', fontFamily: 'var(--font-mono)', fontWeight: 600, color: '#2563EB' }}>
+                      <tr key={s.sensor_id} style={{ borderBottom: '1px solid #F5F2EB', background: s.source === 'manual_override' ? '#FDFBF7' : 'transparent' }}>
+                        <td style={{ padding: '8px 10px', fontFamily: 'var(--font-mono)', fontWeight: 600, color: '#0284C7' }}>
                           {s.sensor_id}
                           {s.is_required && (
                             <span style={{ color: '#DC2626', marginLeft: 3 }} title="Required input for simulation">*</span>
                           )}
                         </td>
-                        <td style={{ padding: '8px 10px', fontWeight: 600, color: '#0F172A' }}>
+                        <td style={{ padding: '8px 10px', fontWeight: 600, color: '#1E252D' }}>
                           <div>{s.sensor_name}</div>
                           <div style={{ fontSize: 10, color: '#94A3B8', fontWeight: 400 }}>{s.description}</div>
                         </td>
@@ -2633,8 +2639,9 @@ export function AssetSimulationWorkspace({
                                 width: 85,
                                 padding: '4px 6px',
                                 borderRadius: 4,
-                                border: `1px solid ${isOut ? '#EF4444' : s.source === 'manual_override' ? '#2563EB' : '#CBD5E1'}`,
-                                background: isOut ? '#FEF2F2' : s.source === 'manual_override' ? '#EFF6FF' : '#FFFFFF',
+                                border: `1px solid ${isOut ? '#EF4444' : s.source === 'manual_override' ? '#0284C7' : '#EAE3D7'}`,
+                                background: isOut ? '#FEF2F2' : s.source === 'manual_override' ? '#F0F9FF' : '#FFFFFF',
+                                color: '#1E252D',
                                 fontWeight: 600,
                                 fontSize: 12,
                                 textAlign: 'right',
@@ -2648,11 +2655,11 @@ export function AssetSimulationWorkspace({
                         </td>
                         <td style={{ padding: '8px 10px' }}>
                           {s.source === 'manual_override' ? (
-                            <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 8, background: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE' }}>
+                            <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 8, background: '#F0F9FF', color: '#0284C7', border: '1px solid #BAE6FD' }}>
                               Manual
                             </span>
                           ) : (
-                            <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 8, background: '#F1F5F9', color: '#475569' }}>
+                            <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 8, background: '#FAF7F2', color: '#475569', border: '1px solid #EAE3D7' }}>
                               Live Modbus
                             </span>
                           )}
@@ -2663,7 +2670,7 @@ export function AssetSimulationWorkspace({
                               Direct Input
                             </span>
                           ) : (
-                            <span style={{ fontSize: 10, padding: '2px 6px', borderRadius: 8, background: '#F8FAFC', color: '#64748B' }}>
+                            <span style={{ fontSize: 10, padding: '2px 6px', borderRadius: 8, background: '#FAF7F2', color: '#64748B' }}>
                               Supervisory
                             </span>
                           )}
@@ -2672,7 +2679,7 @@ export function AssetSimulationWorkspace({
                           {isOut ? (
                             <span style={{ fontSize: 10, fontWeight: 700, color: '#DC2626' }}>Out of Range</span>
                           ) : s.source === 'manual_override' ? (
-                            <span style={{ fontSize: 10, fontWeight: 600, color: '#2563EB' }}>Overridden</span>
+                            <span style={{ fontSize: 10, fontWeight: 600, color: '#0284C7' }}>Overridden</span>
                           ) : (
                             <span style={{ fontSize: 10, fontWeight: 600, color: '#059669' }}>Valid</span>
                           )}
@@ -2702,7 +2709,7 @@ export function AssetSimulationWorkspace({
             justifyContent: 'space-between',
             alignItems: 'center',
             background: '#FFFFFF',
-            border: '1px solid #E2E8F0',
+            border: '1px solid #EAE3D7',
             borderRadius: 12,
             padding: '16px 24px',
             boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
@@ -2721,12 +2728,13 @@ export function AssetSimulationWorkspace({
                 style={{
                   padding: '9px 16px',
                   borderRadius: 8,
-                  border: '1px solid #CBD5E1',
-                  background: '#FFFFFF',
-                  color: '#334155',
+                  border: '1px solid #D9D0C1',
+                  background: '#FAF7F2',
+                  color: '#1E252D',
                   fontSize: 13,
                   fontWeight: 600,
                   cursor: 'pointer',
+                  transition: 'all 0.15s ease',
                 }}
               >
                 Back to Catalog
@@ -2741,19 +2749,25 @@ export function AssetSimulationWorkspace({
                   gap: 8,
                   padding: '10px 22px',
                   borderRadius: 8,
-                  border: 'none',
+                  border: (!sensorStats.isValid || UNSUPPORTED_ASSET_IDS.has(selectedAsset.id))
+                    ? '1px solid #D9D0C1'
+                    : '1px solid #0284C7',
                   background: (!sensorStats.isValid || UNSUPPORTED_ASSET_IDS.has(selectedAsset.id))
-                    ? '#CBD5E1'
+                    ? '#EAE3D7'
                     : isSimulating
-                    ? '#93C5FD'
-                    : '#2563EB',
-                  color: '#FFFFFF',
+                    ? '#0369A1'
+                    : '#0284C7',
+                  color: (!sensorStats.isValid || UNSUPPORTED_ASSET_IDS.has(selectedAsset.id))
+                    ? '#8C827A'
+                    : '#FFFFFF',
                   fontSize: 13,
                   fontWeight: 600,
                   cursor: (!sensorStats.isValid || UNSUPPORTED_ASSET_IDS.has(selectedAsset.id) || isSimulating)
                     ? 'not-allowed'
                     : 'pointer',
-                  boxShadow: '0 2px 4px rgba(37,99,235,0.2)',
+                  boxShadow: (!sensorStats.isValid || UNSUPPORTED_ASSET_IDS.has(selectedAsset.id))
+                    ? 'none'
+                    : '0 2px 6px rgba(2, 132, 199, 0.28)',
                   transition: 'all 0.15s ease',
                 }}
               >
@@ -2781,7 +2795,7 @@ export function AssetSimulationWorkspace({
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0, color: '#0F172A' }}>
+                <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0, color: '#1E252D' }}>
                   Simulation Results: {selectedAsset.name}
                 </h2>
                 <span style={{
@@ -2810,12 +2824,13 @@ export function AssetSimulationWorkspace({
                   gap: 6,
                   padding: '8px 14px',
                   borderRadius: 8,
-                  border: '1px solid #CBD5E1',
-                  background: '#FFFFFF',
-                  color: '#1E293B',
+                  border: '1px solid #D9D0C1',
+                  background: '#FAF7F2',
+                  color: '#1E252D',
                   fontSize: 12,
                   fontWeight: 600,
                   cursor: 'pointer',
+                  transition: 'all 0.15s ease',
                 }}
               >
                 <ArrowLeft size={14} /> Adjust Sensor Inputs
@@ -2829,12 +2844,14 @@ export function AssetSimulationWorkspace({
                   gap: 6,
                   padding: '8px 14px',
                   borderRadius: 8,
-                  border: 'none',
-                  background: '#2563EB',
+                  border: '1px solid #0284C7',
+                  background: '#0284C7',
                   color: '#FFFFFF',
                   fontSize: 12,
                   fontWeight: 600,
                   cursor: 'pointer',
+                  boxShadow: '0 1px 3px rgba(2, 132, 199, 0.25)',
+                  transition: 'all 0.15s ease',
                 }}
               >
                 <RotateCcw size={14} /> Re-Simulate
@@ -2845,7 +2862,7 @@ export function AssetSimulationWorkspace({
           {/* KPI Delta Cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14, marginBottom: 24 }}>
             {/* Energy Savings */}
-            <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 10, padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+            <div style={{ background: '#FFFFFF', border: '1px solid #EAE3D7', borderRadius: 10, padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
               <div style={{ fontSize: 11, fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>Daily Energy Saved</div>
               <div style={{ fontSize: 24, fontWeight: 700, color: '#059669', display: 'flex', alignItems: 'baseline', gap: 4, marginTop: 4 }}>
                 {Math.abs(simulationResult.deltas.energy_kwh).toFixed(1)}
@@ -2857,9 +2874,9 @@ export function AssetSimulationWorkspace({
             </div>
 
             {/* Demand Impact */}
-            <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 10, padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+            <div style={{ background: '#FFFFFF', border: '1px solid #EAE3D7', borderRadius: 10, padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
               <div style={{ fontSize: 11, fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>Peak Demand Relief</div>
-              <div style={{ fontSize: 24, fontWeight: 700, color: '#2563EB', display: 'flex', alignItems: 'baseline', gap: 4, marginTop: 4 }}>
+              <div style={{ fontSize: 24, fontWeight: 700, color: '#0284C7', display: 'flex', alignItems: 'baseline', gap: 4, marginTop: 4 }}>
                 {Math.abs(simulationResult.deltas.peak_kw).toFixed(1)}
                 <span style={{ fontSize: 12, fontWeight: 500, color: '#64748B' }}>kW</span>
               </div>
@@ -2869,9 +2886,9 @@ export function AssetSimulationWorkspace({
             </div>
 
             {/* Cost Savings */}
-            <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 10, padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+            <div style={{ background: '#FFFFFF', border: '1px solid #EAE3D7', borderRadius: 10, padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
               <div style={{ fontSize: 11, fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>Estimated Cost Savings</div>
-              <div style={{ fontSize: 24, fontWeight: 700, color: '#0F172A', display: 'flex', alignItems: 'baseline', gap: 4, marginTop: 4 }}>
+              <div style={{ fontSize: 24, fontWeight: 700, color: '#1E252D', display: 'flex', alignItems: 'baseline', gap: 4, marginTop: 4 }}>
                 ₹{Math.abs(simulationResult.deltas.cost_inr).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                 <span style={{ fontSize: 12, fontWeight: 500, color: '#64748B' }}>/ day</span>
               </div>
@@ -2881,7 +2898,7 @@ export function AssetSimulationWorkspace({
             </div>
 
             {/* Carbon Avoided */}
-            <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 10, padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+            <div style={{ background: '#FFFFFF', border: '1px solid #EAE3D7', borderRadius: 10, padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
               <div style={{ fontSize: 11, fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>Scope 2 Avoided</div>
               <div style={{ fontSize: 24, fontWeight: 700, color: '#059669', display: 'flex', alignItems: 'baseline', gap: 4, marginTop: 4 }}>
                 {Math.abs(simulationResult.deltas.scope2_kg_co2e ?? 0).toFixed(1)}
@@ -2894,17 +2911,17 @@ export function AssetSimulationWorkspace({
           </div>
 
           {/* 24-Hour Comparison Demand Chart */}
-          <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 12, padding: '20px 24px', marginBottom: 24, boxShadow: '0 1px 4px rgba(0,0,0,0.02)' }}>
+          <div style={{ background: '#FFFFFF', border: '1px solid #EAE3D7', borderRadius: 12, padding: '20px 24px', marginBottom: 24, boxShadow: '0 1px 4px rgba(0,0,0,0.02)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
               <div>
-                <h3 style={{ fontSize: 15, fontWeight: 700, margin: 0, color: '#0F172A' }}>
+                <h3 style={{ fontSize: 15, fontWeight: 700, margin: 0, color: '#1E252D' }}>
                   24-Hour Operational Load Curve: Baseline vs Simulated
                 </h3>
                 <p style={{ margin: '2px 0 0', fontSize: 12, color: '#64748B' }}>
                   Comparing measured telemetry baseline against the proposed sensor intervention over 24 hourly intervals.
                 </p>
               </div>
-              <span style={{ fontSize: 11, fontWeight: 600, color: '#475569', background: '#F1F5F9', padding: '3px 8px', borderRadius: 6 }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: '#64748B', background: '#FAF7F2', border: '1px solid #EAE3D7', padding: '3px 8px', borderRadius: 6 }}>
                 Contract Limit: 85.0 kW
               </span>
             </div>
@@ -2938,12 +2955,12 @@ export function AssetSimulationWorkspace({
                       <stop offset="95%" stopColor="#10B981" stopOpacity={0.0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EAE3D7" />
                   <XAxis dataKey="hour" tick={{ fontSize: 11, fill: '#64748B' }} />
                   <YAxis unit=" kW" domain={[0, Math.round(selectedAsset.ratedPowerKw * 1.2)]} tick={{ fontSize: 11, fill: '#64748B' }} width={50} />
                   <Tooltip
                     formatter={(val: any, name: any) => [`${val} kW`, name === 'baseline_kw' ? 'Baseline Telemetry' : 'Simulated Scenario']}
-                    contentStyle={{ background: '#FFFFFF', border: '1px solid #CBD5E1', borderRadius: 8, fontSize: 12 }}
+                    contentStyle={{ background: '#FFFFFF', border: '1px solid #EAE3D7', borderRadius: 8, fontSize: 12, color: '#1E252D' }}
                   />
                   <ReferenceLine y={85} stroke="#EF4444" strokeDasharray="4 4" label={{ value: 'Contract Peak 85 kW', fill: '#EF4444', fontSize: 10 }} />
                   <Area type="monotone" dataKey="baseline_kw" stroke="#94A3B8" strokeWidth={2} fillOpacity={1} fill="url(#baseGrad)" name="baseline_kw" />
@@ -2954,8 +2971,8 @@ export function AssetSimulationWorkspace({
           </div>
 
           {/* Process Constraints & Interlock Outcomes */}
-          <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 12, padding: '18px 22px', marginBottom: 24, boxShadow: '0 1px 4px rgba(0,0,0,0.02)' }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 12px', color: '#0F172A' }}>
+          <div style={{ background: '#FFFFFF', border: '1px solid #EAE3D7', borderRadius: 12, padding: '18px 22px', marginBottom: 24, boxShadow: '0 1px 4px rgba(0,0,0,0.02)' }}>
+            <h3 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 12px', color: '#1E252D' }}>
               Safety Interlocks & Statutory Feasibility Analysis
             </h3>
 
@@ -2989,12 +3006,12 @@ export function AssetSimulationWorkspace({
                   <div>Shift schedule shift does not breach continuous manufacturing cycle constraints or parts target.</div>
                 </div>
 
-                <div style={{ padding: '12px 14px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, fontSize: 12, color: '#334155' }}>
+                <div style={{ padding: '12px 14px', background: '#FAF7F2', border: '1px solid #EAE3D7', borderRadius: 8, fontSize: 12, color: '#1E252D' }}>
                   <div style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                    <ShieldCheck size={16} color="#2563EB" />
+                    <ShieldCheck size={16} color="#0284C7" />
                     Operator Approval Workflow Enforced
                   </div>
-                  <div>Scenario generated in advisory mode under ISO 50001:2018. Requires floor supervisor sign-off before PLC dispatch.</div>
+                  <div style={{ color: '#64748B' }}>Scenario generated in advisory mode under ISO 50001:2018. Requires floor supervisor sign-off before PLC dispatch.</div>
                 </div>
               </div>
             )}
@@ -3002,14 +3019,14 @@ export function AssetSimulationWorkspace({
 
           {/* Session Simulation Run History */}
           {simulationHistory.length > 1 && (
-            <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 12, padding: '18px 22px', boxShadow: '0 1px 4px rgba(0,0,0,0.02)' }}>
-              <h3 style={{ fontSize: 14, fontWeight: 700, margin: '0 0 10px', color: '#0F172A' }}>
+            <div style={{ background: '#FFFFFF', border: '1px solid #EAE3D7', borderRadius: 12, padding: '18px 22px', boxShadow: '0 1px 4px rgba(0,0,0,0.02)' }}>
+              <h3 style={{ fontSize: 14, fontWeight: 700, margin: '0 0 10px', color: '#1E252D' }}>
                 Session Scenario Comparison History
               </h3>
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 12 }}>
                   <thead>
-                    <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#64748B' }}>
+                    <tr style={{ background: '#FAF7F2', borderBottom: '1px solid #EAE3D7', color: '#64748B' }}>
                       <th style={{ padding: '6px 10px' }}>Run ID</th>
                       <th style={{ padding: '6px 10px' }}>Machine</th>
                       <th style={{ padding: '6px 10px' }}>Intervention</th>
@@ -3021,12 +3038,12 @@ export function AssetSimulationWorkspace({
                   </thead>
                   <tbody>
                     {simulationHistory.map(h => (
-                      <tr key={h.run_id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                        <td style={{ padding: '6px 10px', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{h.run_id}</td>
-                        <td style={{ padding: '6px 10px' }}>{h.asset_name}</td>
+                      <tr key={h.run_id} style={{ borderBottom: '1px solid #F5F2EB' }}>
+                        <td style={{ padding: '6px 10px', fontFamily: 'var(--font-mono)', fontWeight: 600, color: '#0284C7' }}>{h.run_id}</td>
+                        <td style={{ padding: '6px 10px', fontWeight: 600, color: '#1E252D' }}>{h.asset_name}</td>
                         <td style={{ padding: '6px 10px', color: '#64748B' }}>{h.intervention_type}</td>
                         <td style={{ padding: '6px 10px', color: '#059669', fontWeight: 600 }}>{Math.abs(h.result.deltas.energy_kwh).toFixed(1)} kWh</td>
-                        <td style={{ padding: '6px 10px', fontWeight: 600 }}>₹{Math.abs(h.result.deltas.cost_inr).toFixed(0)}</td>
+                        <td style={{ padding: '6px 10px', fontWeight: 600, color: '#1E252D' }}>₹{Math.abs(h.result.deltas.cost_inr).toFixed(0)}</td>
                         <td style={{ padding: '6px 10px', color: '#059669' }}>{Math.abs(h.result.deltas.scope2_kg_co2e ?? 0).toFixed(1)} kg</td>
                         <td style={{ padding: '6px 10px' }}>
                           <span style={{ fontSize: 10, fontWeight: 700, color: h.result.feasibility === 'feasible' ? '#059669' : '#B45309' }}>
@@ -3048,7 +3065,7 @@ export function AssetSimulationWorkspace({
         <div style={{
           position: 'fixed',
           inset: 0,
-          background: 'rgba(15, 23, 42, 0.6)',
+          background: 'rgba(30, 37, 45, 0.65)',
           backdropFilter: 'blur(3px)',
           display: 'flex',
           alignItems: 'center',
@@ -3058,6 +3075,7 @@ export function AssetSimulationWorkspace({
         }}>
           <div style={{
             background: '#FFFFFF',
+            border: '1px solid #EAE3D7',
             borderRadius: 12,
             width: '100%',
             maxWidth: 480,
@@ -3065,7 +3083,7 @@ export function AssetSimulationWorkspace({
             boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)',
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: '#0F172A' }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: '#1E252D' }}>
                 Add Custom Sensor to {selectedAsset.id}
               </h3>
               <button
@@ -3078,7 +3096,7 @@ export function AssetSimulationWorkspace({
 
             <form onSubmit={handleAddCustomSensor}>
               <div style={{ marginBottom: 12 }}>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#334155', marginBottom: 4 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#1E252D', marginBottom: 4 }}>
                   Sensor Tag / ID:
                 </label>
                 <input
@@ -3087,12 +3105,12 @@ export function AssetSimulationWorkspace({
                   value={newSensorId}
                   onChange={(e) => setNewSensorId(e.target.value)}
                   required
-                  style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12 }}
+                  style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #D9D0C1', background: '#FFFFFF', color: '#1E252D', fontSize: 12 }}
                 />
               </div>
 
               <div style={{ marginBottom: 12 }}>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#334155', marginBottom: 4 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#1E252D', marginBottom: 4 }}>
                   Instrument Name:
                 </label>
                 <input
@@ -3101,19 +3119,19 @@ export function AssetSimulationWorkspace({
                   value={newSensorName}
                   onChange={(e) => setNewSensorName(e.target.value)}
                   required
-                  style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12 }}
+                  style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #D9D0C1', background: '#FFFFFF', color: '#1E252D', fontSize: 12 }}
                 />
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#334155', marginBottom: 4 }}>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#1E252D', marginBottom: 4 }}>
                     Measurement Type:
                   </label>
                   <select
                     value={newSensorType}
                     onChange={(e) => setNewSensorType(e.target.value)}
-                    style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12, background: '#FFFFFF' }}
+                    style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #D9D0C1', background: '#FAF7F2', color: '#1E252D', fontSize: 12 }}
                   >
                     <option value="Active Power">Active Power</option>
                     <option value="Pressure">Pressure</option>
@@ -3127,7 +3145,7 @@ export function AssetSimulationWorkspace({
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#334155', marginBottom: 4 }}>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#1E252D', marginBottom: 4 }}>
                     Unit of Measurement:
                   </label>
                   <input
@@ -3136,14 +3154,14 @@ export function AssetSimulationWorkspace({
                     value={newSensorUnit}
                     onChange={(e) => setNewSensorUnit(e.target.value)}
                     required
-                    style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12 }}
+                    style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #D9D0C1', background: '#FFFFFF', color: '#1E252D', fontSize: 12 }}
                   />
                 </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 16 }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#334155', marginBottom: 4 }}>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#1E252D', marginBottom: 4 }}>
                     Reading:
                   </label>
                   <input
@@ -3152,12 +3170,12 @@ export function AssetSimulationWorkspace({
                     value={newSensorReading}
                     onChange={(e) => setNewSensorReading(Number(e.target.value))}
                     required
-                    style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12 }}
+                    style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #D9D0C1', background: '#FFFFFF', color: '#1E252D', fontSize: 12 }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#334155', marginBottom: 4 }}>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#1E252D', marginBottom: 4 }}>
                     Min Limit:
                   </label>
                   <input
@@ -3166,12 +3184,12 @@ export function AssetSimulationWorkspace({
                     value={newSensorMin}
                     onChange={(e) => setNewSensorMin(Number(e.target.value))}
                     required
-                    style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12 }}
+                    style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #D9D0C1', background: '#FFFFFF', color: '#1E252D', fontSize: 12 }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#334155', marginBottom: 4 }}>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#1E252D', marginBottom: 4 }}>
                     Max Limit:
                   </label>
                   <input
@@ -3180,7 +3198,7 @@ export function AssetSimulationWorkspace({
                     value={newSensorMax}
                     onChange={(e) => setNewSensorMax(Number(e.target.value))}
                     required
-                    style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12 }}
+                    style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #D9D0C1', background: '#FFFFFF', color: '#1E252D', fontSize: 12 }}
                   />
                 </div>
               </div>
@@ -3191,8 +3209,9 @@ export function AssetSimulationWorkspace({
                   id="reqCheckbox"
                   checked={newSensorRequired}
                   onChange={(e) => setNewSensorRequired(e.target.checked)}
+                  style={{ accentColor: '#0284C7' }}
                 />
-                <label htmlFor="reqCheckbox" style={{ fontSize: 12, color: '#334155', cursor: 'pointer' }}>
+                <label htmlFor="reqCheckbox" style={{ fontSize: 12, color: '#1E252D', cursor: 'pointer' }}>
                   Mark as Required Input for Simulation
                 </label>
               </div>
@@ -3201,13 +3220,13 @@ export function AssetSimulationWorkspace({
                 <button
                   type="button"
                   onClick={() => setIsAddSensorModalOpen(false)}
-                  style={{ padding: '7px 14px', borderRadius: 6, border: '1px solid #CBD5E1', background: '#FFFFFF', color: '#475569', fontSize: 12, cursor: 'pointer' }}
+                  style={{ padding: '7px 14px', borderRadius: 6, border: '1px solid #D9D0C1', background: '#FAF7F2', color: '#1E252D', fontSize: 12, cursor: 'pointer', transition: 'all 0.15s ease' }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  style={{ padding: '7px 18px', borderRadius: 6, border: 'none', background: '#2563EB', color: '#FFFFFF', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                  style={{ padding: '7px 18px', borderRadius: 6, border: '1px solid #0284C7', background: '#0284C7', color: '#FFFFFF', fontSize: 12, fontWeight: 600, cursor: 'pointer', boxShadow: '0 1px 3px rgba(2, 132, 199, 0.25)', transition: 'all 0.15s ease' }}
                 >
                   Add to Fleet
                 </button>

@@ -56,6 +56,10 @@ export function runScenarioSimulation(
           const h = extractHourFromTimestamp(r.timestamp);
           const isTargetSlot = machineId === 'COMP-01'
             ? (h >= 11 && h <= 11 + Math.max(0, durationHours - 1))
+            : machineId === 'PAINT-01'
+            ? (h >= 12 && h <= 12 + Math.max(0, durationHours - 1))
+            : machineId === 'FURN-01'
+            ? (h >= 10 && h <= 10 + Math.max(0, durationHours - 1))
             : (r.machine_state === 'idle' || (h >= 10 && h <= 10 + Math.max(0, durationHours - 1)));
 
           if (isTargetSlot && modifiedSlots < maxSlotsToModify) {

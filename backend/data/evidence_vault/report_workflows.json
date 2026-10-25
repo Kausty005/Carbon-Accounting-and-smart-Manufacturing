@@ -73,5 +73,27 @@
     "missing_evidence_count": 0,
     "can_approve": true,
     "audit_pack_available": true
+  },
+  "WW-AUD-20261025-0687": {
+    "report_id": "WW-AUD-20261025-0687",
+    "status": "APPROVED",
+    "version": "v1.2",
+    "company_id": "precisionworks",
+    "reporting_period_desc": "October 2026 (Monthly Standard)",
+    "created_at": "2026-10-25T05:19:38.464608+00:00",
+    "created_by": "Dr. Ananya Sharma (Lead Energy Auditor)",
+    "approval_history": [
+      {
+        "action": "APPROVED",
+        "actor_name": "Rajesh Nair",
+        "actor_role": "manager",
+        "timestamp": "2026-10-25T05:19:38.464608+00:00",
+        "comments": "Automated verification passed. Sign-off recorded."
+      }
+    ],
+    "reviewer_comments": [],
+    "missing_evidence_count": 0,
+    "can_approve": true,
+    "audit_pack_available": true
   }
 }

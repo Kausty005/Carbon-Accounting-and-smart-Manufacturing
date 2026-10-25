@@ -4,7 +4,8 @@ import {
   Cpu, Zap, TrendingDown, Layers, FileText, ArrowRight, Gauge,
   Info, Activity, Clock, DollarSign, Leaf, Sparkles, AlertCircle,
   Award, BarChart3, BookmarkCheck, ChevronDown, ChevronUp, Check,
-  Target, Compass, CheckSquare, XCircle, ArrowUpRight, HelpCircle
+  Target, Compass, CheckSquare, XCircle, ArrowUpRight, HelpCircle,
+  Filter, Eye, ShieldCheck
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -189,6 +190,267 @@ const DEMO_PIPELINE: DemoStep[] = [
   },
 ];
 
+// ─── Machine Intelligence & Dynamic Recommendation Matrix ───────────────────
+interface MachineIntelligenceData {
+  machineId: string;
+  name: string;
+  category: string;
+  color: string;
+  anomalyTitle: string;
+  severity: 'anomaly' | 'peak' | 'thermal' | 'airflow' | 'safety' | 'plant';
+  telemetryObservation: string;
+  rootCausePhysics: string;
+  recommendedAction: string;
+  targetKwhSavingsDay: number;
+  targetCostSavingsDay: number;
+  targetCarbonKgDay: number;
+  capexEstimateInr: number;
+  paybackPeriodMonths: number;
+  safetyInterlockContract: string;
+  complianceStandard: string;
+  quickPresets: {
+    label: string;
+    description: string;
+    actionType: ScenarioAction['type'];
+    targetPowerKw?: number;
+    offsetHours?: number;
+    targetPressureBar?: number;
+    durationHours?: number;
+    isPrimary?: boolean;
+    isSafetyTest?: boolean;
+  }[];
+}
+
+const MACHINE_INTELLIGENCE: Record<string, MachineIntelligenceData> = {
+  'COMP-01': {
+    machineId: 'COMP-01',
+    name: 'Air Compressor (ELGi EN 45)',
+    category: 'PNEUMATIC & UTILITY INFRASTRUCTURE',
+    color: '#F59E0B',
+    anomalyTitle: '18.0 kW Unloaded Idle Bleed (Hours 11:00–14:00)',
+    severity: 'anomaly',
+    telemetryObservation:
+      'Sensor telemetry captures 18.0 kW continuous draw during shift transitions (11:00–14:00) with 0.0 CFM plant air consumption. Compressor idles unloaded rather than auto-cutting off.',
+    rootCausePhysics:
+      'Missing 5-minute auto-cutoff timer relay or sticking blow-down unloader solenoid valve. Motor continues consuming power against unloader backpressure.',
+    recommendedAction:
+      'Install 5-min timer auto-cutoff relay or tune unloader solenoid to restore 8.0 kW idle level. In parallel, tune header pressure from 7.5 to 6.8 bar (1% kW saving per 0.1 bar drop).',
+    targetKwhSavingsDay: 30.0,
+    targetCostSavingsDay: 270.0,
+    targetCarbonKgDay: 24.6,
+    capexEstimateInr: 25000,
+    paybackPeriodMonths: 2.1,
+    safetyInterlockContract:
+      'Pneumatic ring main clamp floor >= 6.5 bar strictly enforced by Digital Twin. Pressure requests below 6.5 bar are rejected.',
+    complianceStandard: 'ISO 1217 Annex C & CAGI Compressed Air Standard',
+    quickPresets: [
+      {
+        label: 'Auto-Cutoff Relay (8.0 kW)',
+        description: 'Eliminate 10 kW unloaded idle bleed during lunch break (Saves 30 kWh/d)',
+        actionType: 'reduce_idle_power',
+        targetPowerKw: 8.0,
+        durationHours: 3.0,
+        isPrimary: true,
+      },
+      {
+        label: 'Header Pressure (6.8 bar)',
+        description: 'Lower discharge pressure setpoint while retaining 0.3 bar safety margin',
+        actionType: 'pressure_optimization',
+        targetPressureBar: 6.8,
+      },
+      {
+        label: 'Test Low Pressure (5.8 bar)',
+        description: 'Simulate unsafe pressure drop (triggers clamp failure warning)',
+        actionType: 'pressure_optimization',
+        targetPressureBar: 5.8,
+        isSafetyTest: true,
+      },
+    ],
+  },
+  'CNC-01': {
+    machineId: 'CNC-01',
+    name: 'CNC Machining Center (NLX-2500)',
+    category: 'PRECISION SUBTRACTIVE MACHINING',
+    color: '#0284C7',
+    anomalyTitle: 'Coincident Morning Peak Demand Spike (98.0 kW Over-Limit)',
+    severity: 'peak',
+    telemetryObservation:
+      'Spindle & servo power ramp (22.0 kW) at 08:00 directly overlaps with morning furnace preheating (48.0 kW) and compressor base load, spiking plant demand to 98.0 kW (exceeding 85 kW contract limit).',
+    rootCausePhysics:
+      'Rigid simultaneous start-up schedules without cross-cell coordination, causing simultaneous peak coincidence penalties under ToD tariffs.',
+    recommendedAction:
+      'Stagger CNC production shift start by +2 hours (from 08:00 to 10:00). Existing CNC batch buffer inventory absorbs the schedule offset with zero delivery delay.',
+    targetKwhSavingsDay: 22.0,
+    targetCostSavingsDay: 400.0,
+    targetCarbonKgDay: 18.0,
+    capexEstimateInr: 0,
+    paybackPeriodMonths: 0.0,
+    safetyInterlockContract:
+      'Daily production quota of >= 140 parts enforced. The +2h shift produces 148 parts (compliant), while +4h shifts trigger production warnings.',
+    complianceStandard: 'ISO 50001:2018 Clause 6.3 & Peak Shaving Standard',
+    quickPresets: [
+      {
+        label: '+2h Schedule Stagger (Optimal)',
+        description: 'De-conflict from furnace ramp-up; shaves peak to 74 kW (below 85 kW limit)',
+        actionType: 'shift_schedule',
+        offsetHours: 2,
+        isPrimary: true,
+      },
+      {
+        label: '+4h Night Shift (Test Quota)',
+        description: 'Simulates excessive shift triggering WARN_PRODUCTION_DEFICIT (110 < 140 units)',
+        actionType: 'shift_schedule',
+        offsetHours: 4,
+        isSafetyTest: true,
+      },
+      {
+        label: '0h Baseline (Coincident 98 kW)',
+        description: 'Restore uncoordinated 08:00 start (causes contract penalty exceedance)',
+        actionType: 'shift_schedule',
+        offsetHours: 0,
+      },
+    ],
+  },
+  'FURN-01': {
+    machineId: 'FURN-01',
+    name: 'Heat-Treatment Furnace (IF-85)',
+    category: 'THERMAL METALLURGY & HEAT TREATMENT',
+    color: '#EF4444',
+    anomalyTitle: 'Standby Soaking Setback Drift (18.5 kW vs 15.0 kW Floor)',
+    severity: 'thermal',
+    telemetryObservation:
+      'During 10:00–14:00 billet wait times, furnace holding power creeps to 18.5 kW (3.5 kW above 15.0 kW rated holding floor). High thermal mass creates steady energy drain.',
+    rootCausePhysics:
+      'Standby temperature controller deadband drift and lack of optimized soaking setback schedule during non-melting intervals.',
+    recommendedAction:
+      'Regulate standby element holding power to exactly 15.0 kW quench floor. CRITICAL INTERLOCK: Digital Twin strictly rejects any cut below 15.0 kW to prevent billet metallurgical quench failure.',
+    targetKwhSavingsDay: 24.0,
+    targetCostSavingsDay: 216.0,
+    targetCarbonKgDay: 17.2,
+    capexEstimateInr: 12000,
+    paybackPeriodMonths: 1.8,
+    safetyInterlockContract:
+      'CRITICAL SAFETY INTERLOCK: Minimum holding threshold strictly >= 15.0 kW. Any cut below 15 kW triggers ERR_PROTECTED_PROCESS_VIOLATION and is blocked.',
+    complianceStandard: 'CQI-9 Heat Treat Assessment & Metallurgical Standards',
+    quickPresets: [
+      {
+        label: '15.0 kW Quench Floor (Safe Setback)',
+        description: 'Eliminate 3.5 kW drift while strictly respecting metallurgical quench floor',
+        actionType: 'reduce_idle_power',
+        targetPowerKw: 15.0,
+        durationHours: 2.0,
+        isPrimary: true,
+      },
+      {
+        label: 'Test 10.0 kW Cut (Safety Interlock)',
+        description: 'Simulate unsafe power cut rejected by Digital Twin interlock (metallurgy protection)',
+        actionType: 'reduce_idle_power',
+        targetPowerKw: 10.0,
+        durationHours: 2.0,
+        isSafetyTest: true,
+      },
+      {
+        label: '18.5 kW Drift (Baseline)',
+        description: 'Reset to un-optimized standby holding with thermal drift',
+        actionType: 'reduce_idle_power',
+        targetPowerKw: 18.5,
+        durationHours: 2.0,
+      },
+    ],
+  },
+  'PAINT-01': {
+    machineId: 'PAINT-01',
+    name: 'Paint Booth & Exhaust Fan (PL-20)',
+    category: 'FINISHING & ENVIRONMENTAL VENTILATION',
+    color: '#10B981',
+    anomalyTitle: 'Unmodulated Exhaust Fan Overdraw (18.0 kW Constant)',
+    severity: 'airflow',
+    telemetryObservation:
+      'Ventilation exhaust fan runs continuously at 100% capacity (18.0 kW) during the entire 09:00–17:00 shift, including operator lunch (12:00–14:00) when spray guns are idle.',
+    rootCausePhysics:
+      'Fixed-speed exhaust fan without VFD frequency modulation or spray-gun air pressure sensing interlock.',
+    recommendedAction:
+      'Modulate exhaust fan VFD speed during non-spraying intervals (12:00–14:00), reducing power to 5.0 kW while enforcing VOC dilution safety floor.',
+    targetKwhSavingsDay: 18.0,
+    targetCostSavingsDay: 162.0,
+    targetCarbonKgDay: 14.4,
+    capexEstimateInr: 18000,
+    paybackPeriodMonths: 3.7,
+    safetyInterlockContract:
+      'Mandatory minimum exhaust ventilation floor: >= 5.0 kW during all production hours (CPCB & OSHA 1910.107 VOC dilution interlock).',
+    complianceStandard: 'OSHA 1910.107 Spray Finishing & CPCB Environmental Norms',
+    quickPresets: [
+      {
+        label: '5.0 kW VFD Modulated Idle (Safe)',
+        description: 'Trim ventilation power during lunch while preserving VOC dilution compliance',
+        actionType: 'reduce_idle_power',
+        targetPowerKw: 5.0,
+        durationHours: 2.0,
+        isPrimary: true,
+      },
+      {
+        label: 'Test 3.0 kW Cut (VOC Alarm)',
+        description: 'Simulate unsafe exhaust cut below 5 kW minimum (triggers VOC safety violation)',
+        actionType: 'reduce_idle_power',
+        targetPowerKw: 3.0,
+        durationHours: 2.0,
+        isSafetyTest: true,
+      },
+      {
+        label: '18.0 kW Continuous (Baseline)',
+        description: 'Reset to unmodulated 100% exhaust fan draw',
+        actionType: 'reduce_idle_power',
+        targetPowerKw: 18.0,
+        durationHours: 2.0,
+      },
+    ],
+  },
+  'ALL': {
+    machineId: 'ALL',
+    name: 'Entire Plant (PrecisionWorks Mfg)',
+    category: 'FACILITY-WIDE DEMAND & TARIFF OPTIMIZATION',
+    color: '#0284C7',
+    anomalyTitle: 'Plant-Wide Coordinated Multi-Asset Optimization',
+    severity: 'plant',
+    telemetryObservation:
+      'Morning peak at 08:00 reaches 98.0 kW (violating 85 kW limit). Cumulative idle losses across Compressor (18 kW bleed) and Paint Exhaust (18 kW continuous) add 48 kWh/d avoidable waste.',
+    rootCausePhysics:
+      'Unsynchronized cell operations without centralized energy supervision and interlock coordination.',
+    recommendedAction:
+      'Apply comprehensive multi-lever dispatch: +2h CNC schedule stagger, 8.0 kW compressor cutoff relay, 6.8 bar pressure tuning, 15.0 kW furnace quench hold, and 5.0 kW paint VFD modulation.',
+    targetKwhSavingsDay: 72.0,
+    targetCostSavingsDay: 648.0,
+    targetCarbonKgDay: 57.6,
+    capexEstimateInr: 55000,
+    paybackPeriodMonths: 2.8,
+    safetyInterlockContract:
+      'All equipment guardrails simultaneously active: >= 6.5 bar pressure floor, >= 15 kW quench, >= 5 kW VOC, >= 140 parts quota.',
+    complianceStandard: 'ISO 50001:2018 Energy Management Systems & IPMVP Option B',
+    quickPresets: [
+      {
+        label: 'Multi-Asset Overhaul (Optimal)',
+        description: 'Idle cutoffs + +2h CNC shift + 6.8 bar pressure tuning (Plant peak 74 kW)',
+        actionType: 'reduce_idle_power',
+        targetPowerKw: 8.0,
+        durationHours: 3.0,
+        isPrimary: true,
+      },
+      {
+        label: 'Auto-Stagger Peak Optimizer',
+        description: 'Run algorithmic scheduling search across start-time offsets',
+        actionType: 'shift_schedule',
+        offsetHours: 2,
+      },
+      {
+        label: 'Reset Entire Plant to Baseline',
+        description: 'Restore un-modified factory baseline conditions',
+        actionType: 'shift_schedule',
+        offsetHours: 0,
+      },
+    ],
+  },
+};
+
 export default function DigitalTwinView({
   baselineRecords,
   tariffConfig,
@@ -202,13 +464,159 @@ export default function DigitalTwinView({
   const [activeCaseId, setActiveCaseId] = useState<string>('case-1-idle');
   const [selectedPresetId, setSelectedPresetId] = useState<string>('SCN-IDLE-FIX');
 
-  // Custom action state
+  // Custom action state & View Scope Filter
   const [selectedMachineId, setSelectedMachineId] = useState<string>('COMP-01');
+  const [chartScope, setChartScope] = useState<'ALL' | 'COMP-01' | 'CNC-01' | 'FURN-01' | 'PAINT-01'>('ALL');
   const [actionType, setActionType] = useState<ScenarioAction['type']>('reduce_idle_power');
   const [targetPowerKw, setTargetPowerKw] = useState<number>(8.0);
   const [durationHours, setDurationHours] = useState<number>(3.0);
   const [offsetHours, setOffsetHours] = useState<number>(2);
   const [targetPressureBar, setTargetPressureBar] = useState<number>(6.8);
+
+  // Switch target machine asset and auto-configure relevant scenario & chart view
+  const handleSwitchMachine = (machineId: string) => {
+    setSelectedMachineId(machineId);
+    setChartScope(machineId as any);
+
+    let newActionType: ScenarioAction['type'] = 'reduce_idle_power';
+    let newTargetPower = 8.0;
+    let newDuration = 3.0;
+    let newOffset = 2;
+    let newPressure = 6.8;
+    let newCaseId = 'case-1-idle';
+    let newPresetId = 'SCN-IDLE-FIX';
+
+    if (machineId === 'COMP-01') {
+      newActionType = 'reduce_idle_power';
+      newTargetPower = 8.0;
+      newDuration = 3.0;
+      newPressure = 6.8;
+      newCaseId = 'case-1-idle';
+      newPresetId = 'SCN-IDLE-FIX';
+    } else if (machineId === 'CNC-01') {
+      newActionType = 'shift_schedule';
+      newOffset = 2;
+      newTargetPower = 3.0;
+      newDuration = 2.0;
+      newCaseId = 'case-2-peak';
+      newPresetId = 'SCN-PEAK-SHIFT';
+    } else if (machineId === 'FURN-01') {
+      newActionType = 'reduce_idle_power';
+      newTargetPower = 15.0; // quench holding floor
+      newDuration = 2.0;
+      newCaseId = 'case-4-furnace';
+      newPresetId = 'SCN-FURNACE-OPT';
+    } else if (machineId === 'PAINT-01') {
+      newActionType = 'reduce_idle_power';
+      newTargetPower = 5.0; // VFD floor
+      newDuration = 2.0;
+      newCaseId = 'case-5-paint';
+      newPresetId = 'SCN-PAINT-OPT';
+    }
+
+    setActionType(newActionType);
+    setTargetPowerKw(newTargetPower);
+    setDurationHours(newDuration);
+    setOffsetHours(newOffset);
+    setTargetPressureBar(newPressure);
+    setActiveCaseId(newCaseId);
+    setSelectedPresetId(newPresetId);
+
+    const preset = SCENARIO_PRESETS.find(p => p.id === newPresetId);
+    if (preset) {
+      const req: ScenarioRequest = {
+        scenario_id: preset.id,
+        action: preset.action,
+        assumptions: preset.assumptions,
+      };
+      const res = runScenarioSimulation(baselineRecords, req, tariffConfig, emissionFactor);
+      setCurrentResult(res);
+    }
+  };
+
+  // Live interactive simulation runner on slider changes
+  const runInteractiveSimulation = (overrides?: Partial<ScenarioAction>) => {
+    const finalActionType = overrides?.type ?? actionType;
+    const finalTargetPower = overrides?.target_power_kw ?? targetPowerKw;
+    const finalDuration = overrides?.duration_hours ?? durationHours;
+    const finalOffset = overrides?.offset_hours ?? offsetHours;
+    const finalPressure = overrides?.target_pressure_bar ?? targetPressureBar;
+    const targetMid = overrides?.machine_id ?? selectedMachineId;
+
+    const currentAction: ScenarioAction = {
+      type: finalActionType,
+      machine_id: targetMid,
+      ambient_temp_c: ambientTempC,
+      relative_humidity_pct: relativeHumidityPct,
+      sensor_quality: sensorQuality,
+      shift_pattern: shiftPattern,
+      ...overrides,
+    };
+
+    if (finalActionType === 'reduce_idle_power') {
+      currentAction.type = 'reduce_idle_power';
+      currentAction.target_power_kw = finalTargetPower;
+      currentAction.duration_hours = finalDuration;
+      currentAction.target_state = 'idle';
+      const prof = MACHINE_PROFILES[targetMid];
+      const rated = prof?.rated_power_kw || 30;
+      currentAction.target_load_factor = Number((finalTargetPower / rated).toFixed(3));
+    } else if (finalActionType === 'shift_schedule') {
+      currentAction.type = 'shift_schedule';
+      currentAction.offset_hours = finalOffset;
+    } else if (finalActionType === 'pressure_optimization') {
+      currentAction.type = 'pressure_optimization';
+      currentAction.baseline_pressure_bar = 7.5;
+      currentAction.target_pressure_bar = finalPressure;
+    } else if (finalActionType === 'reduce_runtime') {
+      currentAction.type = 'reduce_runtime';
+      currentAction.duration_hours = finalDuration;
+    }
+
+    const req: ScenarioRequest = {
+      scenario_id: `LIVE-${targetMid}-${Date.now().toString().slice(-4)}`,
+      action: currentAction,
+      assumptions: {
+        source: 'interactive_what_if_slider',
+        requires_operator_approval: true,
+      },
+    };
+
+    const res = runScenarioSimulation(baselineRecords, req, tariffConfig, emissionFactor);
+    setCurrentResult(res);
+    setSelectedPresetId('custom');
+    setActiveCaseId('custom');
+  };
+
+  // Quick preset runner
+  const handleApplyQuickPreset = (preset: MachineIntelligenceData['quickPresets'][0], machineId?: string) => {
+    const targetMid = machineId || selectedMachineId;
+    setSelectedMachineId(targetMid);
+    setChartScope(targetMid as any);
+    setActionType(preset.actionType);
+
+    if (typeof preset.targetPowerKw === 'number') {
+      setTargetPowerKw(preset.targetPowerKw);
+    }
+    if (typeof preset.durationHours === 'number') {
+      setDurationHours(preset.durationHours);
+    }
+    if (typeof preset.offsetHours === 'number') {
+      setOffsetHours(preset.offsetHours);
+    }
+    if (typeof preset.targetPressureBar === 'number') {
+      setTargetPressureBar(preset.targetPressureBar);
+    }
+
+    runInteractiveSimulation({
+      machine_id: targetMid,
+      type: preset.actionType,
+      target_power_kw: preset.targetPowerKw,
+      duration_hours: preset.durationHours,
+      offset_hours: preset.offsetHours,
+      target_pressure_bar: preset.targetPressureBar,
+    });
+  };
 
   // Spreadsheet Finalized Input Parameters
   const [ambientTempC, setAmbientTempC] = useState<number>(24.0);
@@ -244,6 +652,7 @@ export default function DigitalTwinView({
     setActiveCaseId(c.id);
     setSelectedPresetId(c.presetId);
     setSelectedMachineId(c.machineId);
+    setChartScope(c.machineId as any);
 
     const preset = SCENARIO_PRESETS.find(p => p.id === c.presetId);
     if (preset) {
@@ -432,7 +841,7 @@ export default function DigitalTwinView({
     }
   };
 
-  // Chart data calculation
+  // Chart data calculation with machine-isolated baseline & simulated profiles
   const chartData = useMemo(() => {
     const baseHourly = currentResult.baseline.hourly_plant || [];
     const scenHourly = currentResult.scenario.hourly_plant || [];
@@ -442,36 +851,92 @@ export default function DigitalTwinView({
       const hour = b.hour ?? (i % 24);
       const label = b.label || `${String(hour).padStart(2, '0')}:00`;
 
-      const compProfile = MACHINE_PROFILES['COMP-01'];
-      const cncProfile = MACHINE_PROFILES['CNC-01'];
-      const furnProfile = MACHINE_PROFILES['FURN-01'];
-      const paintProfile = MACHINE_PROFILES['PAINT-01'];
+      // Machine baseline curves
+      const compBase = b.machines?.['COMP-01'] ?? (hour >= 7 && hour < 21 ? (hour >= 11 && hour <= 13 ? 18.0 : 28.0) : 8.0);
+      const cncBase = b.machines?.['CNC-01'] ?? (hour >= 8 && hour < 20 ? (hour === 13 ? 3.0 : 22.0) : 0.8);
+      const furnBase = b.machines?.['FURN-01'] ?? ((hour >= 6 && hour < 10) || (hour >= 14 && hour < 18) ? 48.0 : (hour >= 10 && hour < 14 ? 18.5 : 2.0));
+      const paintBase = b.machines?.['PAINT-01'] ?? (hour >= 9 && hour < 17 ? 18.0 : (hour >= 17 && hour < 19 ? 5.0 : 0.5));
 
-      let compKw = s.machines?.['COMP-01'] ?? (compProfile ? compProfile.rated_power_kw * 0.75 : 22.5);
-      let cncKw = s.machines?.['CNC-01'] ?? (cncProfile ? cncProfile.rated_power_kw * 0.70 : 17.5);
-      let furnKw = s.machines?.['FURN-01'] ?? (furnProfile ? furnProfile.rated_power_kw * 0.85 : 51.0);
-      let paintKw = s.machines?.['PAINT-01'] ?? (paintProfile ? paintProfile.rated_power_kw * 0.60 : 27.0);
+      // Machine simulated curves from simulation result
+      let compScen = s.machines?.['COMP-01'] ?? compBase;
+      let cncScen = s.machines?.['CNC-01'] ?? cncBase;
+      let furnScen = s.machines?.['FURN-01'] ?? furnBase;
+      let paintScen = s.machines?.['PAINT-01'] ?? paintBase;
 
-      if (hour >= 11 && hour <= 13 && actionType === 'reduce_idle_power' && selectedMachineId === 'COMP-01') {
-        compKw = targetPowerKw;
-      }
-      if (selectedMachineId === 'CNC-01' && actionType === 'shift_schedule') {
-        const shiftedHour = (hour - offsetHours + 24) % 24;
-        cncKw = shiftedHour >= 8 && shiftedHour <= 16 ? 17.5 : 3.0;
+      // Select active curve depending on chartScope
+      let activeBaselineKw = Number((b.kw ?? 0).toFixed(1));
+      let activeScenarioKw = Number((s.kw ?? 0).toFixed(1));
+
+      if (chartScope === 'COMP-01') {
+        activeBaselineKw = Number(compBase.toFixed(1));
+        activeScenarioKw = Number(compScen.toFixed(1));
+      } else if (chartScope === 'CNC-01') {
+        activeBaselineKw = Number(cncBase.toFixed(1));
+        activeScenarioKw = Number(cncScen.toFixed(1));
+      } else if (chartScope === 'FURN-01') {
+        activeBaselineKw = Number(furnBase.toFixed(1));
+        activeScenarioKw = Number(furnScen.toFixed(1));
+      } else if (chartScope === 'PAINT-01') {
+        activeBaselineKw = Number(paintBase.toFixed(1));
+        activeScenarioKw = Number(paintScen.toFixed(1));
       }
 
       return {
         hour,
         label,
-        baselineKw: Number((b.kw ?? 0).toFixed(1)),
-        scenarioKw: Number((s.kw ?? 0).toFixed(1)),
-        compressor: Number(compKw.toFixed(1)),
-        cnc: Number(cncKw.toFixed(1)),
-        furnace: Number(furnKw.toFixed(1)),
-        paint: Number(paintKw.toFixed(1)),
+        baselineKw: activeBaselineKw,
+        scenarioKw: activeScenarioKw,
+        plantBaselineKw: Number((b.kw ?? 0).toFixed(1)),
+        plantScenarioKw: Number((s.kw ?? 0).toFixed(1)),
+        compBase: Number(compBase.toFixed(1)),
+        compScen: Number(compScen.toFixed(1)),
+        cncBase: Number(cncBase.toFixed(1)),
+        cncScen: Number(cncScen.toFixed(1)),
+        furnBase: Number(furnBase.toFixed(1)),
+        furnScen: Number(furnScen.toFixed(1)),
+        paintBase: Number(paintBase.toFixed(1)),
+        paintScen: Number(paintScen.toFixed(1)),
+        compressor: Number(compScen.toFixed(1)),
+        cnc: Number(cncScen.toFixed(1)),
+        furnace: Number(furnScen.toFixed(1)),
+        paint: Number(paintScen.toFixed(1)),
       };
     });
-  }, [currentResult, actionType, selectedMachineId, targetPowerKw, offsetHours]);
+  }, [currentResult, chartScope]);
+
+  // Contextual Scope Metrics for the selected scope filter
+  const scopeMetrics = useMemo(() => {
+    let baseKwh = 0;
+    let scenKwh = 0;
+    let maxKw = 0;
+
+    for (const d of chartData) {
+      baseKwh += d.baselineKw;
+      scenKwh += d.scenarioKw;
+      if (d.scenarioKw > maxKw) maxKw = d.scenarioKw;
+    }
+
+    const deltaKwh = scenKwh - baseKwh;
+    const pctReduction = baseKwh > 0 ? (Math.abs(deltaKwh) / baseKwh) * 100 : 0;
+    const rate = tariffConfig.energy_rate_inr_per_kwh || 9.0;
+    const costSavedInr = Math.abs(deltaKwh) * rate;
+    const ef = emissionFactor?.kg_co2e_per_kwh || 0.82;
+    const carbonSavedKg = Math.abs(deltaKwh) * ef;
+
+    return {
+      baseKwh: Number(baseKwh.toFixed(1)),
+      scenKwh: Number(scenKwh.toFixed(1)),
+      deltaKwh: Number(deltaKwh.toFixed(1)),
+      pctReduction: Number(pctReduction.toFixed(1)),
+      costSavedInr: Number(costSavedInr.toFixed(0)),
+      carbonSavedKg: Number(carbonSavedKg.toFixed(1)),
+      maxKw: Number(maxKw.toFixed(1)),
+    };
+  }, [chartData, tariffConfig, emissionFactor]);
+
+  // Active intelligence data for recommendation cards
+  const activeIntel = MACHINE_INTELLIGENCE[chartScope !== 'ALL' ? chartScope : selectedMachineId] || MACHINE_INTELLIGENCE['ALL'];
+  const activeMachineIntel = MACHINE_INTELLIGENCE[selectedMachineId] || MACHINE_INTELLIGENCE['COMP-01'];
 
   // Dynamic Investment Case based on Sensor Sufficiency toggle (Idea A)
   const inv = useMemo(() => {
@@ -1212,11 +1677,14 @@ export default function DigitalTwinView({
                 <span style={{ fontSize: 13, fontWeight: 700, color: '#1C1917' }}>Stage A: Simulation Setup</span>
               </div>
 
-              {/* Target Asset Selector */}
+              {/* Target Asset Selector (Safe Switching Without Unwanted 3D Redirection) */}
               <div style={{ marginBottom: 14 }}>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#78716C', marginBottom: 6 }}>
-                  Target Machine Asset
-                </label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: '#78716C' }}>
+                    Target Machine Asset
+                  </label>
+                  <span style={{ fontSize: 10, color: '#0284C7', fontWeight: 600 }}>Click to Focus Twin</span>
+                </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 6 }}>
                   {Object.values(MACHINE_PROFILES).map(profile => {
                     const isSelected = selectedMachineId === profile.machine_id;
@@ -1225,10 +1693,7 @@ export default function DigitalTwinView({
                         key={profile.machine_id}
                         type="button"
                         onClick={() => {
-                          setSelectedMachineId(profile.machine_id);
-                          if (onSelectMachineIn3D && profile.model3DId) {
-                            onSelectMachineIn3D(profile.model3DId);
-                          }
+                          handleSwitchMachine(profile.machine_id);
                         }}
                         style={{
                           display: 'flex',
@@ -1249,14 +1714,76 @@ export default function DigitalTwinView({
                             {profile.machine_id}
                           </span>
                         </div>
-                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#78716C' }}>
-                          {profile.rated_power_kw}kW
-                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#78716C' }}>
+                            {profile.rated_power_kw}kW
+                          </span>
+                          {onSelectMachineIn3D && profile.model3DId && (
+                            <span
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onSelectMachineIn3D(profile.model3DId!);
+                              }}
+                              title={`Inspect ${profile.machine_id} in 3D Factory Twin`}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 2,
+                                padding: '1px 4px',
+                                borderRadius: 3,
+                                background: isSelected ? '#E0F2FE' : '#F5F5F4',
+                                color: isSelected ? '#0284C7' : '#78716C',
+                                fontSize: 9,
+                                fontWeight: 700,
+                              }}
+                            >
+                              3D ↗
+                            </span>
+                          )}
+                        </div>
                       </button>
                     );
                   })}
                 </div>
               </div>
+
+              {/* Machine-Specific Quick Scenarios Levers */}
+              {activeMachineIntel && (
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+                    <span style={{ fontSize: 10.5, fontWeight: 600, color: '#78716C' }}>
+                      Quick Scenarios ({selectedMachineId})
+                    </span>
+                    <span style={{ fontSize: 9.5, color: '#0284C7', fontWeight: 600 }}>1-Click Apply</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {activeMachineIntel.quickPresets.map((qp, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => handleApplyQuickPreset(qp, selectedMachineId)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '5px 8px',
+                          borderRadius: 5,
+                          fontSize: 10.5,
+                          background: qp.isPrimary ? '#F0F9FF' : qp.isSafetyTest ? 'rgba(239, 68, 68, 0.05)' : '#FAF7F2',
+                          border: qp.isPrimary ? '1px solid #0284C7' : qp.isSafetyTest ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid #EAE3D7',
+                          color: qp.isPrimary ? '#0284C7' : qp.isSafetyTest ? '#DC2626' : '#1C1917',
+                          cursor: 'pointer',
+                          textAlign: 'left'
+                        }}
+                      >
+                        <span style={{ fontWeight: qp.isPrimary ? 700 : 500 }}>{qp.label}</span>
+                        {qp.isPrimary && <Sparkles size={11} color="#0284C7" />}
+                        {qp.isSafetyTest && <ShieldAlert size={11} color="#DC2626" />}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Intervention Action Form */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -1266,7 +1793,7 @@ export default function DigitalTwinView({
                   </label>
                   <select
                     value={actionType}
-                    onChange={e => setActionType(e.target.value as ScenarioAction['type'])}
+                    onChange={e => { const v = e.target.value as ScenarioAction['type']; setActionType(v); runInteractiveSimulation({ type: v }); }}
                     style={{
                       width: '100%',
                       background: '#FFFFFF',
@@ -1302,7 +1829,7 @@ export default function DigitalTwinView({
                         max={selectedProfile.rated_power_kw * 1.5}
                         step={0.5}
                         value={targetPowerKw}
-                        onChange={e => setTargetPowerKw(parseFloat(e.target.value))}
+                        onChange={e => { const v = parseFloat(e.target.value); setTargetPowerKw(v); runInteractiveSimulation({ target_power_kw: v }); }}
                         style={{ width: '100%', accentColor: '#0284C7', cursor: 'pointer' }}
                       />
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9.5, color: '#78716C', marginTop: 2 }}>
@@ -1325,7 +1852,7 @@ export default function DigitalTwinView({
                         max={6}
                         step={0.5}
                         value={durationHours}
-                        onChange={e => setDurationHours(parseFloat(e.target.value))}
+                        onChange={e => { const v = parseFloat(e.target.value); setDurationHours(v); runInteractiveSimulation({ duration_hours: v }); }}
                         style={{ width: '100%', accentColor: '#0284C7', cursor: 'pointer' }}
                       />
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9.5, color: '#78716C', marginTop: 2 }}>
@@ -1351,7 +1878,7 @@ export default function DigitalTwinView({
                       max={4}
                       step={1}
                       value={offsetHours}
-                      onChange={e => setOffsetHours(parseInt(e.target.value))}
+                      onChange={e => { const v = parseInt(e.target.value); setOffsetHours(v); runInteractiveSimulation({ offset_hours: v }); }}
                       style={{ width: '100%', accentColor: '#0284C7', cursor: 'pointer' }}
                     />
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9.5, color: '#78716C', marginTop: 2 }}>
@@ -1377,7 +1904,7 @@ export default function DigitalTwinView({
                       max={7.5}
                       step={0.1}
                       value={targetPressureBar}
-                      onChange={e => setTargetPressureBar(parseFloat(e.target.value))}
+                      onChange={e => { const v = parseFloat(e.target.value); setTargetPressureBar(v); runInteractiveSimulation({ target_pressure_bar: v }); }}
                       style={{ width: '100%', accentColor: targetPressureBar < 6.5 ? '#DC2626' : '#0284C7', cursor: 'pointer' }}
                     />
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9.5, color: '#78716C', marginTop: 2 }}>
@@ -1758,10 +2285,204 @@ export default function DigitalTwinView({
               </button>
             </div>
 
-            {/* TAB 1: 24h Factory Demand Curves */}
+            {/* TAB 1: Dynamic Machine Intelligence & 24h Factory Demand Curves */}
             {analyticsTab === 'simulator' && (
               <>
-                {/* 24-Hour Demand Curve */}
+                {/* 1. Dynamic Machine Intelligence & Actionable Recommendation Card */}
+                {activeIntel && (
+                  <div style={{
+                    background: '#FFFFFF',
+                    border: '1.5px solid #EAE3D7',
+                    borderRadius: 10,
+                    padding: '16px 18px',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 12
+                  }}>
+                    {/* Card Header with Machine Identity & Health Badge */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div style={{
+                          width: 28,
+                          height: 28,
+                          borderRadius: 7,
+                          background: `${activeIntel.color}15`,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}>
+                          <Sparkles size={15} color={activeIntel.color} />
+                        </div>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ fontSize: 13.5, fontWeight: 700, color: '#1C1917' }}>
+                              {activeIntel.name}
+                            </span>
+                            <span style={{
+                              fontFamily: 'var(--font-mono)',
+                              fontSize: 10,
+                              fontWeight: 700,
+                              padding: '1px 6px',
+                              borderRadius: 4,
+                              background: '#F5F5F4',
+                              color: '#57534E'
+                            }}>
+                              {activeIntel.machineId}
+                            </span>
+                          </div>
+                          <span style={{ fontSize: 10.5, color: '#78716C' }}>
+                            {activeIntel.category}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{
+                          fontSize: 10.5,
+                          fontWeight: 700,
+                          padding: '3px 9px',
+                          borderRadius: 9999,
+                          background: activeIntel.severity === 'anomaly' ? 'rgba(245, 158, 11, 0.12)' : activeIntel.severity === 'peak' ? 'rgba(2, 132, 199, 0.12)' : activeIntel.severity === 'thermal' ? 'rgba(239, 68, 68, 0.12)' : activeIntel.severity === 'airflow' ? 'rgba(16, 185, 129, 0.12)' : '#F0F9FF',
+                          color: activeIntel.severity === 'anomaly' ? '#D97706' : activeIntel.severity === 'peak' ? '#0284C7' : activeIntel.severity === 'thermal' ? '#DC2626' : activeIntel.severity === 'airflow' ? '#059669' : '#0284C7',
+                          border: `1px solid ${activeIntel.color}40`,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 4
+                        }}>
+                          <AlertCircle size={11} />
+                          {activeIntel.anomalyTitle}
+                        </span>
+
+                        {onSelectMachineIn3D && activeIntel.machineId !== 'ALL' && MACHINE_PROFILES[activeIntel.machineId]?.model3DId && (
+                          <button
+                            type="button"
+                            onClick={() => onSelectMachineIn3D(MACHINE_PROFILES[activeIntel.machineId].model3DId!)}
+                            title="Inspect in 3D Factory Twin"
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 4,
+                              padding: '3px 8px',
+                              borderRadius: 6,
+                              background: '#FAF7F2',
+                              border: '1px solid #D9D0C1',
+                              color: '#475569',
+                              fontSize: 10.5,
+                              fontWeight: 600,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <span>Inspect 3D</span>
+                            <ArrowUpRight size={11} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Dual Insights Grid: Telemetry Diagnostic vs Recommended Intervention */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 10 }}>
+                      {/* Telemetry Observation */}
+                      <div style={{ background: '#FAF7F2', border: '1px solid #EAE3D7', borderRadius: 8, padding: '10px 12px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 4 }}>
+                          <Activity size={12} color="#D97706" />
+                          <span style={{ fontSize: 11, fontWeight: 700, color: '#1C1917' }}>Telemetry Diagnostic & Root Cause</span>
+                        </div>
+                        <p style={{ fontSize: 11, color: '#57534E', lineHeight: 1.45, margin: 0 }}>
+                          {activeIntel.telemetryObservation}
+                        </p>
+                        <div style={{ marginTop: 6, fontSize: 10.5, color: '#78716C', borderTop: '1px dashed #EAE3D7', paddingTop: 5 }}>
+                          <strong>Physics Basis: </strong>{activeIntel.rootCausePhysics}
+                        </div>
+                      </div>
+
+                      {/* Recommended Digital Twin Intervention */}
+                      <div style={{ background: '#F0F9FF', border: '1px solid rgba(2, 132, 199, 0.3)', borderRadius: 8, padding: '10px 12px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 4 }}>
+                          <Target size={12} color="#0284C7" />
+                          <span style={{ fontSize: 11, fontWeight: 700, color: '#0284C7' }}>Recommended Digital Twin Action</span>
+                        </div>
+                        <p style={{ fontSize: 11, color: '#1E293B', lineHeight: 1.45, margin: 0 }}>
+                          {activeIntel.recommendedAction}
+                        </p>
+                        <div style={{ marginTop: 6, fontSize: 10.5, color: '#0369A1', borderTop: '1px dashed rgba(2, 132, 199, 0.25)', paddingTop: 5 }}>
+                          <strong>Safety Contract (Idea C): </strong>{activeIntel.safetyInterlockContract}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Financial, Energy & Carbon Impact Ribbon */}
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+                      gap: 8,
+                      background: '#FFFFFF',
+                      border: '1px solid #EAE3D7',
+                      borderRadius: 8,
+                      padding: '8px 12px'
+                    }}>
+                      <div>
+                        <div style={{ fontSize: 10, color: '#78716C', fontWeight: 600 }}>ENERGY SAVINGS</div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: '#059669', fontFamily: 'var(--font-mono)' }}>
+                          {activeIntel.targetKwhSavingsDay > 0 ? `-${activeIntel.targetKwhSavingsDay} kWh/d` : `${activeIntel.targetKwhSavingsDay} kW Shaved`}
+                        </div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 10, color: '#78716C', fontWeight: 600 }}>COST BENEFIT</div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: '#059669', fontFamily: 'var(--font-mono)' }}>
+                          +₹{activeIntel.targetCostSavingsDay.toLocaleString()}/d
+                        </div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 10, color: '#78716C', fontWeight: 600 }}>SCOPE 2 CARBON</div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: '#059669', fontFamily: 'var(--font-mono)' }}>
+                          -{activeIntel.targetCarbonKgDay} kg CO₂e
+                        </div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 10, color: '#78716C', fontWeight: 600 }}>CAPEX / PAYBACK</div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#1C1917', fontFamily: 'var(--font-mono)' }}>
+                          {activeIntel.capexEstimateInr === 0 ? '₹0 Capex (Pure ToD)' : `₹${activeIntel.capexEstimateInr.toLocaleString()} · ${activeIntel.paybackPeriodMonths} mo`}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Quick Presets / What-If Testing Levers */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 10.5, fontWeight: 600, color: '#78716C', marginRight: 4 }}>
+                        Test Actions:
+                      </span>
+                      {activeIntel.quickPresets.map((qp, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => handleApplyQuickPreset(qp, activeIntel.machineId === 'ALL' ? undefined : activeIntel.machineId)}
+                          title={qp.description}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 4,
+                            padding: '5px 10px',
+                            borderRadius: 6,
+                            fontSize: 11,
+                            fontWeight: qp.isPrimary ? 700 : 500,
+                            background: qp.isPrimary ? '#0284C7' : qp.isSafetyTest ? 'rgba(239, 68, 68, 0.08)' : '#FAF7F2',
+                            color: qp.isPrimary ? '#FFFFFF' : qp.isSafetyTest ? '#DC2626' : '#1C1917',
+                            border: qp.isPrimary ? 'none' : qp.isSafetyTest ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid #D9D0C1',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          {qp.isPrimary && <Sparkles size={11} />}
+                          {qp.isSafetyTest && <ShieldAlert size={11} />}
+                          <span>{qp.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 2. 24-Hour Demand Curve with Machine/Plant View Scope Filter */}
                 <div style={{
                   background: '#FFFFFF',
                   border: '1px solid #EAE3D7',
@@ -1769,16 +2490,87 @@ export default function DigitalTwinView({
                   padding: '16px 18px',
                   boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
                 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  {/* Category / Scope Filter Buttons */}
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: 8,
+                    marginBottom: 12,
+                    paddingBottom: 10,
+                    borderBottom: '1px solid #F1F5F9'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Filter size={13} color="#64748B" />
+                      <span style={{ fontSize: 11, fontWeight: 700, color: '#475569', letterSpacing: '0.04em' }}>
+                        24-HOUR VIEW SCOPE:
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+                      {[
+                        { id: 'ALL', label: '🏭 Entire Plant', color: '#0284C7' },
+                        { id: 'COMP-01', label: '💨 COMP-01 (Air)', color: '#F59E0B' },
+                        { id: 'CNC-01', label: '⚙️ CNC-01 (Machining)', color: '#0284C7' },
+                        { id: 'FURN-01', label: '🔥 FURN-01 (Furnace)', color: '#EF4444' },
+                        { id: 'PAINT-01', label: '🎨 PAINT-01 (Paint)', color: '#10B981' },
+                      ].map(scope => {
+                        const isScopeActive = chartScope === scope.id;
+                        return (
+                          <button
+                            key={scope.id}
+                            type="button"
+                            onClick={() => {
+                              setChartScope(scope.id as any);
+                              if (scope.id !== 'ALL' && scope.id !== selectedMachineId) {
+                                handleSwitchMachine(scope.id);
+                              }
+                            }}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 4,
+                              padding: '4px 9px',
+                              borderRadius: 6,
+                              fontSize: 11,
+                              fontWeight: isScopeActive ? 700 : 500,
+                              background: isScopeActive ? '#F0F9FF' : '#FFFFFF',
+                              border: isScopeActive ? `1.5px solid ${scope.color}` : '1px solid #D9D0C1',
+                              color: isScopeActive ? '#1C1917' : '#57534E',
+                              cursor: 'pointer',
+                              transition: 'all 0.15s ease'
+                            }}
+                          >
+                            <span>{scope.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Contextual Header & Legend */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                     <div>
-                      <h3 style={{ fontSize: 14, fontWeight: 700, color: '#1C1917', margin: 0 }}>
-                        24-Hour Plant Demand: Baseline vs. Simulated Scenario
+                      <h3 style={{ fontSize: 13.5, fontWeight: 700, color: '#1C1917', margin: 0 }}>
+                        {chartScope === 'ALL'
+                          ? '24-Hour Plant Demand: Baseline vs. Simulated Scenario'
+                          : `24-Hour Machine Load Curve: ${chartScope} (${MACHINE_PROFILES[chartScope]?.name || chartScope})`}
                       </h3>
-                      <p style={{ fontSize: 11.5, color: '#78716C', margin: '2px 0 0' }}>
-                        Simulated power curve overlay with contract demand limits
+                      <p style={{ fontSize: 11, color: '#78716C', margin: '2px 0 0' }}>
+                        {chartScope === 'ALL'
+                          ? 'Simulated power curve overlay with 85 kW contract demand limit & peak shaving'
+                          : chartScope === 'COMP-01'
+                          ? 'Visualizing 18 kW unloaded idle anomaly repair (11:00–14:00) vs. 30 kW rated limit'
+                          : chartScope === 'CNC-01'
+                          ? 'Visualizing +2h schedule shift de-conflicting spindle power from furnace morning surge'
+                          : chartScope === 'FURN-01'
+                          ? 'Visualizing 15.0 kW soaking standby setback while enforcing metallurgical quench floor'
+                          : 'Visualizing VFD exhaust ventilation modulation during non-spraying intervals'}
                       </p>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 11 }}>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 10.5 }}>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: '#57534E' }}>
                         <span style={{ width: 10, height: 2, background: '#F59E0B' }} />
                         Baseline (Dashed)
@@ -1787,9 +2579,63 @@ export default function DigitalTwinView({
                         <span style={{ width: 10, height: 2, background: '#0284C7' }} />
                         Simulated (Solid)
                       </span>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: '#DC2626' }}>
-                        <span style={{ width: 10, height: 2, borderBottom: '2px dashed #DC2626' }} />
-                        {tariffConfig.contract_demand_limit_kw} kW Limit
+                      {chartScope === 'ALL' && (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: '#DC2626' }}>
+                          <span style={{ width: 10, height: 2, borderBottom: '2px dashed #DC2626' }} />
+                          {tariffConfig.contract_demand_limit_kw} kW Limit
+                        </span>
+                      )}
+                      {chartScope === 'FURN-01' && (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: '#DC2626' }}>
+                          <span style={{ width: 10, height: 2, borderBottom: '2px dashed #DC2626' }} />
+                          15 kW Quench Floor
+                        </span>
+                      )}
+                      {chartScope === 'COMP-01' && (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: '#10B981' }}>
+                          <span style={{ width: 10, height: 2, borderBottom: '2px dashed #10B981' }} />
+                          8 kW Rated Idle
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Scope Summary Strip */}
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: 12,
+                    background: '#FAF7F2',
+                    border: '1px solid #EAE3D7',
+                    borderRadius: 6,
+                    padding: '6px 12px',
+                    marginBottom: 10,
+                    fontSize: 10.5
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <span style={{ color: '#78716C' }}>
+                        24h Base: <strong style={{ color: '#1C1917', fontFamily: 'var(--font-mono)' }}>{scopeMetrics.baseKwh} kWh</strong>
+                      </span>
+                      <span style={{ color: '#78716C' }}>
+                        Simulated: <strong style={{ color: '#0284C7', fontFamily: 'var(--font-mono)' }}>{scopeMetrics.scenKwh} kWh</strong>
+                      </span>
+                      <span style={{
+                        color: scopeMetrics.deltaKwh <= 0 ? '#059669' : '#DC2626',
+                        fontFamily: 'var(--font-mono)',
+                        fontWeight: 600
+                      }}>
+                        {scopeMetrics.deltaKwh <= 0 ? '▼ -' : '▲ +'}{Math.abs(scopeMetrics.deltaKwh)} kWh ({scopeMetrics.pctReduction}% cut)
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <span style={{ color: '#78716C' }}>
+                        Daily Cost Saved: <strong style={{ color: '#059669', fontFamily: 'var(--font-mono)' }}>₹{scopeMetrics.costSavedInr}</strong>
+                      </span>
+                      <span style={{ color: '#78716C' }}>
+                        Scope Peak: <strong style={{ color: '#1C1917', fontFamily: 'var(--font-mono)' }}>{scopeMetrics.maxKw} kW</strong>
                       </span>
                     </div>
                   </div>
@@ -1799,13 +2645,20 @@ export default function DigitalTwinView({
                       <ComposedChart data={chartData} margin={{ top: 10, right: 15, left: -10, bottom: 0 }}>
                         <defs>
                           <linearGradient id="scenGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#0284C7" stopOpacity={0.2} />
+                            <stop offset="5%" stopColor="#0284C7" stopOpacity={0.25} />
                             <stop offset="95%" stopColor="#0284C7" stopOpacity={0.0} />
                           </linearGradient>
                         </defs>
                         <CartesianGrid stroke="#F1F5F9" strokeDasharray="3 3" vertical={false} />
                         <XAxis dataKey="label" stroke="#A8A29E" fontSize={10.5} fontFamily="var(--font-mono)" tickLine={false} />
-                        <YAxis stroke="#A8A29E" fontSize={10.5} fontFamily="var(--font-mono)" unit=" kW" tickLine={false} domain={[0, 110]} />
+                        <YAxis
+                          stroke="#A8A29E"
+                          fontSize={10.5}
+                          fontFamily="var(--font-mono)"
+                          unit=" kW"
+                          tickLine={false}
+                          domain={chartScope === 'ALL' ? [0, 110] : chartScope === 'FURN-01' ? [0, 60] : chartScope === 'COMP-01' ? [0, 36] : chartScope === 'CNC-01' ? [0, 30] : [0, 26]}
+                        />
                         <Tooltip
                           contentStyle={{
                             backgroundColor: '#1C1917',
@@ -1815,23 +2668,136 @@ export default function DigitalTwinView({
                             color: '#FFFFFF',
                           }}
                         />
-                        <ReferenceLine
-                          y={tariffConfig.contract_demand_limit_kw}
-                          stroke="#EF4444"
-                          strokeWidth={1.5}
-                          strokeDasharray="4 4"
-                          label={{
-                            value: `Contract Limit ${tariffConfig.contract_demand_limit_kw} kW`,
-                            fill: '#EF4444',
-                            fontSize: 9.5,
-                            position: 'top',
-                            fontFamily: 'var(--font-mono)',
-                          }}
-                        />
+
+                        {chartScope === 'ALL' && (
+                          <ReferenceLine
+                            y={tariffConfig.contract_demand_limit_kw}
+                            stroke="#EF4444"
+                            strokeWidth={1.5}
+                            strokeDasharray="4 4"
+                            label={{
+                              value: `Contract Limit ${tariffConfig.contract_demand_limit_kw} kW`,
+                              fill: '#EF4444',
+                              fontSize: 9.5,
+                              position: 'top',
+                              fontFamily: 'var(--font-mono)',
+                            }}
+                          />
+                        )}
+
+                        {chartScope === 'COMP-01' && (
+                          <>
+                            <ReferenceLine
+                              y={30.0}
+                              stroke="#F59E0B"
+                              strokeWidth={1.2}
+                              strokeDasharray="4 4"
+                              label={{
+                                value: 'Rated Motor: 30 kW',
+                                fill: '#F59E0B',
+                                fontSize: 9.5,
+                                position: 'top',
+                                fontFamily: 'var(--font-mono)',
+                              }}
+                            />
+                            <ReferenceLine
+                              y={8.0}
+                              stroke="#10B981"
+                              strokeWidth={1.2}
+                              strokeDasharray="3 3"
+                              label={{
+                                value: 'Rated Idle: 8 kW (vs 18 kW bleed)',
+                                fill: '#10B981',
+                                fontSize: 9.5,
+                                position: 'top',
+                                fontFamily: 'var(--font-mono)',
+                              }}
+                            />
+                          </>
+                        )}
+
+                        {chartScope === 'CNC-01' && (
+                          <ReferenceLine
+                            y={25.0}
+                            stroke="#0284C7"
+                            strokeWidth={1.2}
+                            strokeDasharray="4 4"
+                            label={{
+                              value: 'Rated Spindle: 25 kW',
+                              fill: '#0284C7',
+                              fontSize: 9.5,
+                              position: 'top',
+                              fontFamily: 'var(--font-mono)',
+                            }}
+                          />
+                        )}
+
+                        {chartScope === 'FURN-01' && (
+                          <>
+                            <ReferenceLine
+                              y={50.0}
+                              stroke="#EF4444"
+                              strokeWidth={1.2}
+                              strokeDasharray="4 4"
+                              label={{
+                                value: 'Rated Thermal: 50 kW',
+                                fill: '#EF4444',
+                                fontSize: 9.5,
+                                position: 'top',
+                                fontFamily: 'var(--font-mono)',
+                              }}
+                            />
+                            <ReferenceLine
+                              y={15.0}
+                              stroke="#DC2626"
+                              strokeWidth={1.5}
+                              strokeDasharray="3 3"
+                              label={{
+                                value: 'Quench Safety Floor: 15 kW',
+                                fill: '#DC2626',
+                                fontSize: 9.5,
+                                position: 'top',
+                                fontFamily: 'var(--font-mono)',
+                              }}
+                            />
+                          </>
+                        )}
+
+                        {chartScope === 'PAINT-01' && (
+                          <>
+                            <ReferenceLine
+                              y={20.0}
+                              stroke="#10B981"
+                              strokeWidth={1.2}
+                              strokeDasharray="4 4"
+                              label={{
+                                value: 'Rated Fan: 20 kW',
+                                fill: '#10B981',
+                                fontSize: 9.5,
+                                position: 'top',
+                                fontFamily: 'var(--font-mono)',
+                              }}
+                            />
+                            <ReferenceLine
+                              y={5.0}
+                              stroke="#06B6D4"
+                              strokeWidth={1.2}
+                              strokeDasharray="3 3"
+                              label={{
+                                value: 'VOC Safety Floor: 5 kW',
+                                fill: '#06B6D4',
+                                fontSize: 9.5,
+                                position: 'top',
+                                fontFamily: 'var(--font-mono)',
+                              }}
+                            />
+                          </>
+                        )}
+
                         <Line
                           type="monotone"
                           dataKey="baselineKw"
-                          name="Baseline Load"
+                          name={chartScope === 'ALL' ? 'Plant Baseline' : `${chartScope} Baseline`}
                           stroke="#F59E0B"
                           strokeWidth={1.8}
                           strokeDasharray="4 4"
@@ -1840,7 +2806,7 @@ export default function DigitalTwinView({
                         <Area
                           type="monotone"
                           dataKey="scenarioKw"
-                          name="Simulated Scenario"
+                          name={chartScope === 'ALL' ? 'Plant Simulated' : `${chartScope} Simulated`}
                           stroke="#0284C7"
                           strokeWidth={2.2}
                           fill="url(#scenGrad)"

@@ -549,408 +549,39 @@ export function PlantWideFleetDashboard({
         </Explainable>
       </div>
 
-      {/* ─── 2. Fleet Processing & Scalability Engine ─────────────────────────── */}
-      <div style={{ background: '#FFFFFF', border: '1px solid #EAE6DF', borderRadius: 12, padding: '18px 22px', marginBottom: 24, boxShadow: '0 1px 4px rgba(0,0,0,0.02)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14 }}>
+      {/* ─── 2. Plant-Wide Configured Machinery Inventory (Hero Component) ─── */}
+      <div id="fleet-inventory-section" style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderTop: '3px solid #2563EB', borderRadius: 12, padding: '20px 24px', marginBottom: 24, boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 10 }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: '#111827' }}>
-                Fleet Processing & Scalability Engine
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <h2 style={{ fontSize: 17, fontWeight: 700, margin: 0, color: '#111827' }}>
+                Configured Machinery Inventory
               </h2>
-              <span style={{ background: '#F1F5F9', color: '#475569', fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 10 }}>
-                High-Throughput Orchestrator
+              <span style={{
+                background: '#EFF6FF',
+                color: '#1D4ED8',
+                border: '1px solid #BFDBFE',
+                fontSize: 12,
+                fontWeight: 600,
+                padding: '2px 10px',
+                borderRadius: 12,
+              }}>
+                Showing {filteredAssets.length} of {assets.length} Assets
+              </span>
+              <span style={{
+                background: '#F8FAFC',
+                color: '#475569',
+                border: '1px solid #E2E8F0',
+                fontSize: 11,
+                fontWeight: 600,
+                padding: '2px 8px',
+                borderRadius: 12,
+              }}>
+                Core Fleet Catalog
               </span>
             </div>
             <p style={{ margin: '4px 0 0', fontSize: 12, color: '#6B7280' }}>
-              Triggers synchronous backend orchestration across all 50 assets. Evaluates machine-level energy forecasts, residual anomaly thresholds, and carbon accounting.
-            </p>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            {latestRun && (
-              <div style={{ textAlign: 'right', marginRight: 4 }}>
-                <div style={{ fontSize: 11, color: '#6B7280' }}>
-                  Execution ID: <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, color: '#111827' }}>{latestRun.execution_id}</span>
-                </div>
-                <div style={{ fontSize: 11, color: '#10B981', fontWeight: 600 }}>
-                  Processed 50 in {latestRun.duration_ms} ms
-                </div>
-              </div>
-            )}
-
-            <button
-              onClick={handleRunFleetAnalytics}
-              disabled={isRunningAnalytics}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '10px 18px',
-                borderRadius: 8,
-                border: 'none',
-                background: isRunningAnalytics ? '#93C5FD' : '#2563EB',
-                color: '#FFFFFF',
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: isRunningAnalytics ? 'not-allowed' : 'pointer',
-                boxShadow: '0 1px 3px rgba(37,99,235,0.2)',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              {isRunningAnalytics ? (
-                <>
-                  <RotateCcw size={15} className="animate-spin" />
-                  Running Pipeline...
-                </>
-              ) : (
-                <>
-                  <Play size={15} fill="#FFFFFF" />
-                  Run Fleet Analytics (50 Assets)
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* Success feedback and summary pill */}
-        {runSuccessMessage && (
-          <div style={{ marginTop: 14, padding: '10px 14px', background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: 8, fontSize: 12, color: '#065F46', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <CheckCircle2 size={16} color="#10B981" />
-            <span>{runSuccessMessage}</span>
-          </div>
-        )}
-      </div>
-
-      {/* ─── 3. Attention Queue Strip ─────────────────────────────────────────── */}
-      <div style={{ background: '#FFFFFF', border: '1px solid #EAE6DF', borderRadius: 12, padding: '18px 22px', marginBottom: 24, boxShadow: '0 1px 4px rgba(0,0,0,0.02)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-          <div>
-            <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: '#111827' }}>
-              Assets Requiring Attention
-            </h2>
-            <p style={{ margin: '2px 0 0', fontSize: 12, color: '#6B7280' }}>
-              Prioritized operational interventions ranked by estimated energy waste, economic cost, and carbon impact.
-            </p>
-          </div>
-          <span style={{ fontSize: 12, fontWeight: 600, color: '#D97706', background: '#FFFBEB', padding: '4px 10px', borderRadius: 12, border: '1px solid #FDE68A' }}>
-            {attentionQueue?.queue_count || 4} Urgent Operational Findings
-          </span>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14 }}>
-          {attentionQueue?.queue.map(item => (
-            <div
-              key={item.asset_id}
-              style={{
-                border: '1px solid #E5E7EB',
-                borderRadius: 10,
-                padding: '14px 16px',
-                background: '#FDFBF7',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-              }}
-            >
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-                  <div>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: '#2563EB', fontFamily: 'var(--font-mono)' }}>
-                      {item.asset_id}
-                    </span>
-                    <h3 style={{ fontSize: 14, fontWeight: 700, margin: '2px 0 0', color: '#111827' }}>
-                      {item.asset_name}
-                    </h3>
-                  </div>
-                  <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 8, background: '#FFFBEB', color: '#B45309', border: '1px solid #FDE68A' }}>
-                    {item.severity}
-                  </span>
-                </div>
-
-                <div style={{ fontSize: 12, color: '#4B5563', marginBottom: 10, lineHeight: 1.4 }}>
-                  {item.detected_issue}
-                </div>
-
-                <div style={{ background: '#FFFFFF', border: '1px solid #EAE6DF', borderRadius: 8, padding: '8px 10px', marginBottom: 12 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#6B7280', marginBottom: 2 }}>
-                    <span>Estimated Daily Waste:</span>
-                    <span style={{ fontWeight: 700, color: '#D97706' }}>{item.estimated_impact.waste_kwh_per_day} kWh / day</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#6B7280' }}>
-                    <span>Economic Impact:</span>
-                    <span style={{ fontWeight: 700, color: '#111827' }}>₹{item.estimated_impact.cost_inr_per_day.toLocaleString()} / day</span>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <div style={{ fontSize: 11, color: '#6B7280', marginBottom: 8 }}>
-                  <strong>Action:</strong> {item.recommended_action}
-                </div>
-
-                {item.digital_twin_supported && item.digital_twin_machine_id ? (
-                  <button
-                    onClick={() => {
-                      const matched = assets.find(a => a.id === item.asset_id) || ({
-                        id: item.asset_id,
-                        name: item.asset_name,
-                        cell: item.cell,
-                        cellId: 'utility_1',
-                        energyVector: 'Electricity',
-                        ratedPowerKw: item.rated_power_kw || 30,
-                        nominalLoadKw: item.current_power_kw || 28,
-                        standbyDrawKw: 8.0,
-                        secMetric: '0.12 kWh/Nm3',
-                        fuelType: null,
-                        modbusRegisters: { 'Active Power': 30001 },
-                        safetyConstraints: 'Standard Interlocks',
-                        operationalStatus: 'WARNING' as const,
-                        description: item.detected_issue,
-                        currentPowerKw: item.current_power_kw || 28,
-                        energy24hKwh: (item.current_power_kw || 28) * 18,
-                        anomalyStatus: 'Warning' as const,
-                        forecastAvailable: true,
-                        forecastHorizons: ['1h', '6h', '24h'],
-                        digitalTwinEligible: true,
-                        digitalTwinMachineId: item.digital_twin_machine_id,
-                        telemetryMode: 'real_time',
-                        lastTelemetryTimestamp: new Date().toISOString(),
-                      } as unknown as FleetAsset);
-                      openDigitalTwinSandbox(matched);
-                    }}
-                    style={{
-                      width: '100%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 6,
-                      padding: '8px 12px',
-                      borderRadius: 6,
-                      border: '1px solid #2563EB',
-                      background: '#EFF6FF',
-                      color: '#1D4ED8',
-                      fontSize: 12,
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <Sliders size={13} />
-                    Simulate in Digital Twin ({item.digital_twin_machine_id})
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => {
-                      const matched = assets.find(a => a.id === item.asset_id);
-                      if (matched) handleOpenAssetDrawer(matched);
-                    }}
-                    style={{
-                      width: '100%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 6,
-                      padding: '8px 12px',
-                      borderRadius: 6,
-                      border: '1px solid #D1D5DB',
-                      background: '#FFFFFF',
-                      color: '#374151',
-                      fontSize: 12,
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <Activity size={13} />
-                    View Diagnostics & Modbus Registers
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ─── 4. Fleet Energy Overview & Charts ─────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: 20, marginBottom: 24 }}>
-        {/* Historical 24h Demand Trend */}
-        <div style={{ background: '#FFFFFF', border: '1px solid #EAE6DF', borderRadius: 12, padding: '18px 20px', boxShadow: '0 1px 4px rgba(0,0,0,0.02)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-            <div>
-              <h3 style={{ fontSize: 15, fontWeight: 700, margin: 0, color: '#111827' }}>
-                Fleet Aggregate Demand Profile (24 Hours)
-              </h3>
-              <p style={{ margin: '2px 0 0', fontSize: 11, color: '#6B7280' }}>
-                Synchronized instantaneous kW load curve across all 50 assets against plant contract limit (1,250 kW).
-              </p>
-            </div>
-            <span style={{ fontSize: 10, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: '#F1F5F9', color: '#475569' }}>
-              Simulated Demonstration Profile
-            </span>
-          </div>
-
-          <div style={{ height: 220, width: '100%' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={overview?.historical_demand_trend || []} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="fleetDemandGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#2563EB" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#2563EB" stopOpacity={0.0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                <XAxis dataKey="hour" tick={{ fontSize: 10, fill: '#64748B' }} />
-                <YAxis unit=" kW" domain={[0, 1400]} tick={{ fontSize: 10, fill: '#64748B' }} width={55} />
-                <Tooltip
-                  formatter={(val: any) => [`${val} kW`, 'Demand']}
-                  labelFormatter={(lbl) => `Time: ${lbl}`}
-                  contentStyle={{ background: '#FFFFFF', border: '1px solid #CBD5E1', borderRadius: 8, fontSize: 12 }}
-                />
-                <ReferenceLine y={1250} stroke="#EF4444" strokeDasharray="4 4" label={{ value: 'Contract 1250 kW', fill: '#EF4444', fontSize: 10, position: 'top' }} />
-                <Area type="monotone" dataKey="demand_kw" stroke="#2563EB" strokeWidth={2} fillOpacity={1} fill="url(#fleetDemandGrad)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Utility Cell Energy Distribution */}
-        <div style={{ background: '#FFFFFF', border: '1px solid #EAE6DF', borderRadius: 12, padding: '18px 20px', boxShadow: '0 1px 4px rgba(0,0,0,0.02)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-            <div>
-              <h3 style={{ fontSize: 15, fontWeight: 700, margin: 0, color: '#111827' }}>
-                Energy Distribution by Utility Cell (6 Cells)
-              </h3>
-              <p style={{ margin: '2px 0 0', fontSize: 11, color: '#6B7280' }}>
-                Total 24-hour kilowatt-hour consumption aggregated without double counting.
-              </p>
-            </div>
-            <span style={{ fontSize: 10, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: '#F1F5F9', color: '#475569' }}>
-              6 Cells / 50 Assets
-            </span>
-          </div>
-
-          <div style={{ height: 220, width: '100%' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={overview?.category_breakdown || []}
-                layout="vertical"
-                margin={{ top: 5, right: 30, left: 30, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#F1F5F9" />
-                <XAxis type="number" unit=" kWh" tick={{ fontSize: 10, fill: '#64748B' }} />
-                <YAxis
-                  dataKey="cell_name"
-                  type="category"
-                  width={140}
-                  tick={{ fontSize: 10, fill: '#334155' }}
-                  tickFormatter={(val) => val.split(',')[0]}
-                />
-                <Tooltip
-                  formatter={(val: any) => [`${val} kWh`, '24h Energy']}
-                  contentStyle={{ background: '#FFFFFF', border: '1px solid #CBD5E1', borderRadius: 8, fontSize: 12 }}
-                />
-                <Bar dataKey="energy_24h_kwh" fill="#0284C7" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
-
-      {/* ─── 5. AI Analytics & Fleet Coverage Matrix ──────────────────────────── */}
-      <div style={{ background: '#FFFFFF', border: '1px solid #EAE6DF', borderRadius: 12, padding: '18px 22px', marginBottom: 24, boxShadow: '0 1px 4px rgba(0,0,0,0.02)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
-          <div>
-            <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: '#111827' }}>
-              AI Analytics & Fleet Coverage Matrix
-            </h2>
-            <p style={{ margin: '2px 0 0', fontSize: 12, color: '#6B7280' }}>
-              Capability map establishing what services run fleet-wide vs. what requires detailed Digital Twin physical modeling.
-            </p>
-          </div>
-          <span style={{ fontSize: 11, fontWeight: 600, color: '#0369A1', background: '#F0F9FF', padding: '4px 10px', borderRadius: 8, border: '1px solid #BAE6FD' }}>
-            Auditable Platform Boundary
-          </span>
-        </div>
-
-        {/* Hackathon Alignment Banner */}
-        <div style={{ background: '#FAF5FF', border: '1px solid #E9D5FF', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 12, color: '#6B21A8', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Sparkles size={16} color="#9333EA" />
-          <span>
-            <strong>Architectural Principle:</strong> WattWise AI separates fleet-wide monitoring and AI analytics from detailed physics- and constraint-aware operational simulation. The platform can analyze a larger fleet while reserving detailed Digital Twin workflows for eligible assets and interventions.
-          </span>
-        </div>
-
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 12 }}>
-            <thead>
-              <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#475569', fontWeight: 600 }}>
-                <th style={{ padding: '10px 12px' }}>Capability</th>
-                <th style={{ padding: '10px 12px' }}>Eligible Assets</th>
-                <th style={{ padding: '10px 12px' }}>Processed</th>
-                <th style={{ padding: '10px 12px' }}>Fleet Coverage</th>
-                <th style={{ padding: '10px 12px' }}>Underlying Model Architecture</th>
-                <th style={{ padding: '10px 12px' }}>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {coverage?.capabilities.map(cap => (
-                <tr key={cap.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                  <td style={{ padding: '10px 12px', fontWeight: 600, color: '#1E293B' }}>
-                    {cap.capability}
-                    <div style={{ fontSize: 11, color: '#64748B', fontWeight: 400 }}>{cap.description}</div>
-                  </td>
-                  <td style={{ padding: '10px 12px', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
-                    {cap.eligible_assets} / 50
-                  </td>
-                  <td style={{ padding: '10px 12px', fontFamily: 'var(--font-mono)', fontWeight: 600, color: '#059669' }}>
-                    {cap.processed_assets}
-                  </td>
-                  <td style={{ padding: '10px 12px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <div style={{ width: 60, height: 6, background: '#E2E8F0', borderRadius: 3, overflow: 'hidden' }}>
-                        <div style={{ width: `${cap.coverage_pct}%`, height: '100%', background: cap.id === 'digital_twin' ? '#F59E0B' : '#10B981' }} />
-                      </div>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: cap.id === 'digital_twin' ? '#D97706' : '#059669' }}>
-                        {cap.coverage_pct}%
-                      </span>
-                    </div>
-                  </td>
-                  <td style={{ padding: '10px 12px', color: '#475569' }}>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11 }}>{cap.model_type}</span>
-                    {cap.limitation_note && (
-                      <div style={{ fontSize: 10, color: '#B45309', marginTop: 2 }}>{cap.limitation_note}</div>
-                    )}
-                  </td>
-                  <td style={{ padding: '10px 12px' }}>
-                    <span
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 4,
-                        padding: '2px 8px',
-                        borderRadius: 10,
-                        fontSize: 10,
-                        fontWeight: 700,
-                        background: cap.id === 'digital_twin' ? '#FEF3C7' : '#DCFCE7',
-                        color: cap.id === 'digital_twin' ? '#92400E' : '#166534',
-                      }}
-                    >
-                      <Check size={10} /> {cap.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* ─── 6. Plant-Wide Configured Machinery Inventory Table ────────────────── */}
-      <div style={{ background: '#FFFFFF', border: '1px solid #EAE6DF', borderRadius: 12, padding: '18px 22px', boxShadow: '0 1px 4px rgba(0,0,0,0.02)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 10 }}>
-          <div>
-            <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: '#111827' }}>
-              Configured Machinery Inventory ({filteredAssets.length} of {assets.length})
-            </h2>
-            <p style={{ margin: '2px 0 0', fontSize: 12, color: '#6B7280' }}>
-              Searchable, filterable fleet table with Modbus registers, operational metrics, and digital twin support indicators.
+              Searchable, filterable plant-wide registry across 6 utility cells with Modbus registers, operational metrics, and digital twin simulation triggers.
             </p>
           </div>
 
@@ -969,6 +600,61 @@ export function PlantWideFleetDashboard({
               <option value={50}>50 (All)</option>
             </select>
           </div>
+        </div>
+
+        {/* Quick Utility Cell Category Filter Tabs / Pills */}
+        <div style={{
+          display: 'flex',
+          gap: 8,
+          overflowX: 'auto',
+          paddingBottom: 4,
+          marginBottom: 14,
+          alignItems: 'center',
+          flexWrap: 'wrap',
+        }}>
+          <span style={{ fontSize: 11, fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em', marginRight: 2, whiteSpace: 'nowrap' }}>
+            Quick Cell:
+          </span>
+          {CELL_CATEGORIES.map((c) => {
+            const isSelected = selectedCell === c.id;
+            return (
+              <button
+                key={c.id}
+                onClick={() => {
+                  setSelectedCell(c.id);
+                  setCurrentPage(1);
+                }}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '5px 11px',
+                  borderRadius: 16,
+                  fontSize: 12,
+                  fontWeight: isSelected ? 600 : 500,
+                  border: isSelected ? '1px solid #1E293B' : '1px solid #E2E8F0',
+                  background: isSelected ? '#1E293B' : '#F8FAFC',
+                  color: isSelected ? '#FFFFFF' : '#475569',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  transition: 'all 0.15s ease',
+                  boxShadow: isSelected ? '0 1px 3px rgba(0,0,0,0.12)' : 'none',
+                }}
+              >
+                <span>{c.label}</span>
+                <span style={{
+                  fontSize: 10,
+                  padding: '1px 6px',
+                  borderRadius: 10,
+                  background: isSelected ? '#334155' : '#E2E8F0',
+                  color: isSelected ? '#93C5FD' : '#64748B',
+                  fontWeight: 600,
+                }}>
+                  {c.count}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Filter Controls Bar */}
@@ -1262,6 +948,399 @@ export function PlantWideFleetDashboard({
         </div>
       </div>
 
+      {/* ─── 3. Attention Queue Strip ─────────────────────────────────────────── */}
+      <div style={{ background: '#FFFFFF', border: '1px solid #EAE6DF', borderRadius: 12, padding: '18px 22px', marginBottom: 24, boxShadow: '0 1px 4px rgba(0,0,0,0.02)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+          <div>
+            <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: '#111827' }}>
+              Assets Requiring Attention
+            </h2>
+            <p style={{ margin: '2px 0 0', fontSize: 12, color: '#6B7280' }}>
+              Prioritized operational interventions ranked by estimated energy waste, economic cost, and carbon impact.
+            </p>
+          </div>
+          <span style={{ fontSize: 12, fontWeight: 600, color: '#D97706', background: '#FFFBEB', padding: '4px 10px', borderRadius: 12, border: '1px solid #FDE68A' }}>
+            {attentionQueue?.queue_count || 4} Urgent Operational Findings
+          </span>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14 }}>
+          {attentionQueue?.queue.map(item => (
+            <div
+              key={item.asset_id}
+              style={{
+                border: '1px solid #E5E7EB',
+                borderRadius: 10,
+                padding: '14px 16px',
+                background: '#FDFBF7',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+              }}
+            >
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+                  <div>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: '#2563EB', fontFamily: 'var(--font-mono)' }}>
+                      {item.asset_id}
+                    </span>
+                    <h3 style={{ fontSize: 14, fontWeight: 700, margin: '2px 0 0', color: '#111827' }}>
+                      {item.asset_name}
+                    </h3>
+                  </div>
+                  <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 8, background: '#FFFBEB', color: '#B45309', border: '1px solid #FDE68A' }}>
+                    {item.severity}
+                  </span>
+                </div>
+
+                <div style={{ fontSize: 12, color: '#4B5563', marginBottom: 10, lineHeight: 1.4 }}>
+                  {item.detected_issue}
+                </div>
+
+                <div style={{ background: '#FFFFFF', border: '1px solid #EAE6DF', borderRadius: 8, padding: '8px 10px', marginBottom: 12 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#6B7280', marginBottom: 2 }}>
+                    <span>Estimated Daily Waste:</span>
+                    <span style={{ fontWeight: 700, color: '#D97706' }}>{item.estimated_impact.waste_kwh_per_day} kWh / day</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#6B7280' }}>
+                    <span>Economic Impact:</span>
+                    <span style={{ fontWeight: 700, color: '#111827' }}>₹{item.estimated_impact.cost_inr_per_day.toLocaleString()} / day</span>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <div style={{ fontSize: 11, color: '#6B7280', marginBottom: 8 }}>
+                  <strong>Action:</strong> {item.recommended_action}
+                </div>
+
+                {item.digital_twin_supported && item.digital_twin_machine_id ? (
+                  <button
+                    onClick={() => {
+                      const matched = assets.find(a => a.id === item.asset_id) || ({
+                        id: item.asset_id,
+                        name: item.asset_name,
+                        cell: item.cell,
+                        cellId: 'utility_1',
+                        energyVector: 'Electricity',
+                        ratedPowerKw: item.rated_power_kw || 30,
+                        nominalLoadKw: item.current_power_kw || 28,
+                        standbyDrawKw: 8.0,
+                        secMetric: '0.12 kWh/Nm3',
+                        fuelType: null,
+                        modbusRegisters: { 'Active Power': 30001 },
+                        safetyConstraints: 'Standard Interlocks',
+                        operationalStatus: 'WARNING' as const,
+                        description: item.detected_issue,
+                        currentPowerKw: item.current_power_kw || 28,
+                        energy24hKwh: (item.current_power_kw || 28) * 18,
+                        anomalyStatus: 'Warning' as const,
+                        forecastAvailable: true,
+                        forecastHorizons: ['1h', '6h', '24h'],
+                        digitalTwinEligible: true,
+                        digitalTwinMachineId: item.digital_twin_machine_id,
+                        telemetryMode: 'real_time',
+                        lastTelemetryTimestamp: new Date().toISOString(),
+                      } as unknown as FleetAsset);
+                      openDigitalTwinSandbox(matched);
+                    }}
+                    style={{
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                      padding: '8px 12px',
+                      borderRadius: 6,
+                      border: '1px solid #2563EB',
+                      background: '#EFF6FF',
+                      color: '#1D4ED8',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <Sliders size={13} />
+                    Simulate in Digital Twin ({item.digital_twin_machine_id})
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      const matched = assets.find(a => a.id === item.asset_id);
+                      if (matched) handleOpenAssetDrawer(matched);
+                    }}
+                    style={{
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                      padding: '8px 12px',
+                      borderRadius: 6,
+                      border: '1px solid #D1D5DB',
+                      background: '#FFFFFF',
+                      color: '#374151',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <Activity size={13} />
+                    View Diagnostics & Modbus Registers
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ─── 4. Fleet Processing & Scalability Engine ─────────────────────────── */}
+      <div style={{ background: '#FFFFFF', border: '1px solid #EAE6DF', borderRadius: 12, padding: '18px 22px', marginBottom: 24, boxShadow: '0 1px 4px rgba(0,0,0,0.02)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14 }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: '#111827' }}>
+                Fleet Processing & Scalability Engine
+              </h2>
+              <span style={{ background: '#F1F5F9', color: '#475569', fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 10 }}>
+                High-Throughput Orchestrator
+              </span>
+            </div>
+            <p style={{ margin: '4px 0 0', fontSize: 12, color: '#6B7280' }}>
+              Triggers synchronous backend orchestration across all 50 assets. Evaluates machine-level energy forecasts, residual anomaly thresholds, and carbon accounting.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {latestRun && (
+              <div style={{ textAlign: 'right', marginRight: 4 }}>
+                <div style={{ fontSize: 11, color: '#6B7280' }}>
+                  Execution ID: <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, color: '#111827' }}>{latestRun.execution_id}</span>
+                </div>
+                <div style={{ fontSize: 11, color: '#10B981', fontWeight: 600 }}>
+                  Processed 50 in {latestRun.duration_ms} ms
+                </div>
+              </div>
+            )}
+
+            <button
+              onClick={handleRunFleetAnalytics}
+              disabled={isRunningAnalytics}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '10px 18px',
+                borderRadius: 8,
+                border: 'none',
+                background: isRunningAnalytics ? '#93C5FD' : '#2563EB',
+                color: '#FFFFFF',
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: isRunningAnalytics ? 'not-allowed' : 'pointer',
+                boxShadow: '0 1px 3px rgba(37,99,235,0.2)',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              {isRunningAnalytics ? (
+                <>
+                  <RotateCcw size={15} className="animate-spin" />
+                  Running Pipeline...
+                </>
+              ) : (
+                <>
+                  <Play size={15} fill="#FFFFFF" />
+                  Run Fleet Analytics (50 Assets)
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Success feedback and summary pill */}
+        {runSuccessMessage && (
+          <div style={{ marginTop: 14, padding: '10px 14px', background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: 8, fontSize: 12, color: '#065F46', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <CheckCircle2 size={16} color="#10B981" />
+            <span>{runSuccessMessage}</span>
+          </div>
+        )}
+      </div>
+
+      {/* ─── 5. Fleet Energy Overview & Charts ─────────────────────────────────── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: 20, marginBottom: 24 }}>
+        {/* Historical 24h Demand Trend */}
+        <div style={{ background: '#FFFFFF', border: '1px solid #EAE6DF', borderRadius: 12, padding: '18px 20px', boxShadow: '0 1px 4px rgba(0,0,0,0.02)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <div>
+              <h3 style={{ fontSize: 15, fontWeight: 700, margin: 0, color: '#111827' }}>
+                Fleet Aggregate Demand Profile (24 Hours)
+              </h3>
+              <p style={{ margin: '2px 0 0', fontSize: 11, color: '#6B7280' }}>
+                Synchronized instantaneous kW load curve across all 50 assets against plant contract limit (1,250 kW).
+              </p>
+            </div>
+            <span style={{ fontSize: 10, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: '#F1F5F9', color: '#475569' }}>
+              Simulated Demonstration Profile
+            </span>
+          </div>
+
+          <div style={{ height: 220, width: '100%' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={overview?.historical_demand_trend || []} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="fleetDemandGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#2563EB" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#2563EB" stopOpacity={0.0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                <XAxis dataKey="hour" tick={{ fontSize: 10, fill: '#64748B' }} />
+                <YAxis unit=" kW" domain={[0, 1400]} tick={{ fontSize: 10, fill: '#64748B' }} width={55} />
+                <Tooltip
+                  formatter={(val: any) => [`${val} kW`, 'Demand']}
+                  labelFormatter={(lbl) => `Time: ${lbl}`}
+                  contentStyle={{ background: '#FFFFFF', border: '1px solid #CBD5E1', borderRadius: 8, fontSize: 12 }}
+                />
+                <ReferenceLine y={1250} stroke="#EF4444" strokeDasharray="4 4" label={{ value: 'Contract 1250 kW', fill: '#EF4444', fontSize: 10, position: 'top' }} />
+                <Area type="monotone" dataKey="demand_kw" stroke="#2563EB" strokeWidth={2} fillOpacity={1} fill="url(#fleetDemandGrad)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Utility Cell Energy Distribution */}
+        <div style={{ background: '#FFFFFF', border: '1px solid #EAE6DF', borderRadius: 12, padding: '18px 20px', boxShadow: '0 1px 4px rgba(0,0,0,0.02)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <div>
+              <h3 style={{ fontSize: 15, fontWeight: 700, margin: 0, color: '#111827' }}>
+                Energy Distribution by Utility Cell (6 Cells)
+              </h3>
+              <p style={{ margin: '2px 0 0', fontSize: 11, color: '#6B7280' }}>
+                Total 24-hour kilowatt-hour consumption aggregated without double counting.
+              </p>
+            </div>
+            <span style={{ fontSize: 10, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: '#F1F5F9', color: '#475569' }}>
+              6 Cells / 50 Assets
+            </span>
+          </div>
+
+          <div style={{ height: 220, width: '100%' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={overview?.category_breakdown || []}
+                layout="vertical"
+                margin={{ top: 5, right: 30, left: 30, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#F1F5F9" />
+                <XAxis type="number" unit=" kWh" tick={{ fontSize: 10, fill: '#64748B' }} />
+                <YAxis
+                  dataKey="cell_name"
+                  type="category"
+                  width={140}
+                  tick={{ fontSize: 10, fill: '#334155' }}
+                  tickFormatter={(val) => val.split(',')[0]}
+                />
+                <Tooltip
+                  formatter={(val: any) => [`${val} kWh`, '24h Energy']}
+                  contentStyle={{ background: '#FFFFFF', border: '1px solid #CBD5E1', borderRadius: 8, fontSize: 12 }}
+                />
+                <Bar dataKey="energy_24h_kwh" fill="#0284C7" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── 6. AI Analytics & Fleet Coverage Matrix ──────────────────────────── */}
+      <div style={{ background: '#FFFFFF', border: '1px solid #EAE6DF', borderRadius: 12, padding: '18px 22px', marginBottom: 24, boxShadow: '0 1px 4px rgba(0,0,0,0.02)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+          <div>
+            <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: '#111827' }}>
+              AI Analytics & Fleet Coverage Matrix
+            </h2>
+            <p style={{ margin: '2px 0 0', fontSize: 12, color: '#6B7280' }}>
+              Capability map establishing what services run fleet-wide vs. what requires detailed Digital Twin physical modeling.
+            </p>
+          </div>
+          <span style={{ fontSize: 11, fontWeight: 600, color: '#0369A1', background: '#F0F9FF', padding: '4px 10px', borderRadius: 8, border: '1px solid #BAE6FD' }}>
+            Auditable Platform Boundary
+          </span>
+        </div>
+
+        {/* Hackathon Alignment Banner */}
+        <div style={{ background: '#FAF5FF', border: '1px solid #E9D5FF', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 12, color: '#6B21A8', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Sparkles size={16} color="#9333EA" />
+          <span>
+            <strong>Architectural Principle:</strong> WattWise AI separates fleet-wide monitoring and AI analytics from detailed physics- and constraint-aware operational simulation. The platform can analyze a larger fleet while reserving detailed Digital Twin workflows for eligible assets and interventions.
+          </span>
+        </div>
+
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 12 }}>
+            <thead>
+              <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#475569', fontWeight: 600 }}>
+                <th style={{ padding: '10px 12px' }}>Capability</th>
+                <th style={{ padding: '10px 12px' }}>Eligible Assets</th>
+                <th style={{ padding: '10px 12px' }}>Processed</th>
+                <th style={{ padding: '10px 12px' }}>Fleet Coverage</th>
+                <th style={{ padding: '10px 12px' }}>Underlying Model Architecture</th>
+                <th style={{ padding: '10px 12px' }}>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {coverage?.capabilities.map(cap => (
+                <tr key={cap.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                  <td style={{ padding: '10px 12px', fontWeight: 600, color: '#1E293B' }}>
+                    {cap.capability}
+                    <div style={{ fontSize: 11, color: '#64748B', fontWeight: 400 }}>{cap.description}</div>
+                  </td>
+                  <td style={{ padding: '10px 12px', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
+                    {cap.eligible_assets} / 50
+                  </td>
+                  <td style={{ padding: '10px 12px', fontFamily: 'var(--font-mono)', fontWeight: 600, color: '#059669' }}>
+                    {cap.processed_assets}
+                  </td>
+                  <td style={{ padding: '10px 12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <div style={{ width: 60, height: 6, background: '#E2E8F0', borderRadius: 3, overflow: 'hidden' }}>
+                        <div style={{ width: `${cap.coverage_pct}%`, height: '100%', background: cap.id === 'digital_twin' ? '#F59E0B' : '#10B981' }} />
+                      </div>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: cap.id === 'digital_twin' ? '#D97706' : '#059669' }}>
+                        {cap.coverage_pct}%
+                      </span>
+                    </div>
+                  </td>
+                  <td style={{ padding: '10px 12px', color: '#475569' }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11 }}>{cap.model_type}</span>
+                    {cap.limitation_note && (
+                      <div style={{ fontSize: 10, color: '#B45309', marginTop: 2 }}>{cap.limitation_note}</div>
+                    )}
+                  </td>
+                  <td style={{ padding: '10px 12px' }}>
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        padding: '2px 8px',
+                        borderRadius: 10,
+                        fontSize: 10,
+                        fontWeight: 700,
+                        background: cap.id === 'digital_twin' ? '#FEF3C7' : '#DCFCE7',
+                        color: cap.id === 'digital_twin' ? '#92400E' : '#166534',
+                      }}
+                    >
+                      <Check size={10} /> {cap.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       {/* ─── 7. Compact Asset Detail Drawer ───────────────────────────────────── */}
       {isDrawerOpen && selectedAsset && (
         <div
@@ -1439,7 +1518,7 @@ export function PlantWideFleetDashboard({
         </div>
       )}
 
-      {/* ─── 6. Digital Twin Operational Simulation Sandbox Modal ──────────────── */}
+      {/* ─── 8. Digital Twin Operational Simulation Sandbox Modal ──────────────── */}
       {isSimModalOpen && simAsset && simResult && (
         <div
           style={{

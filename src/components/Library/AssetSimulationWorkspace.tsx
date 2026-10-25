@@ -1786,13 +1786,14 @@ export function AssetSimulationWorkspace({
       <div style={{
         display: 'flex',
         alignItems: 'center',
-        background: '#FFFFFF',
+        background: '#FAF7F2',
         border: '1px solid #EAE3D7',
         borderRadius: 12,
-        padding: '6px',
+        padding: '5px',
         marginBottom: 24,
-        boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+        boxShadow: '0 1px 3px rgba(60, 45, 25, 0.04)',
       }}>
+        {/* Step 1: Select Asset */}
         <button
           onClick={() => setCurrentStep(1)}
           style={{
@@ -1803,12 +1804,13 @@ export function AssetSimulationWorkspace({
             gap: 10,
             padding: '10px 16px',
             borderRadius: 8,
-            border: 'none',
-            background: currentStep === 1 ? '#1E252D' : 'transparent',
-            color: currentStep === 1 ? '#FFFFFF' : '#475569',
+            border: currentStep === 1 ? '1px solid #BAE6FD' : '1px solid transparent',
+            background: currentStep === 1 ? '#FFFFFF' : 'transparent',
+            color: currentStep === 1 ? '#0284C7' : '#475569',
             fontSize: 13,
-            fontWeight: 600,
+            fontWeight: currentStep === 1 ? 700 : 600,
             cursor: 'pointer',
+            boxShadow: currentStep === 1 ? '0 1px 4px rgba(2, 132, 199, 0.12), 0 1px 2px rgba(60, 45, 25, 0.04)' : 'none',
             transition: 'all 0.15s ease',
           }}
         >
@@ -1819,16 +1821,25 @@ export function AssetSimulationWorkspace({
             width: 22,
             height: 22,
             borderRadius: '50%',
-            background: currentStep === 1 ? '#0284C7' : '#EAE3D7',
-            color: currentStep === 1 ? '#FFFFFF' : '#64748B',
+            background: selectedAsset && currentStep !== 1 ? '#10B981' : currentStep === 1 ? '#0284C7' : '#EAE3D7',
+            color: selectedAsset || currentStep === 1 ? '#FFFFFF' : '#64748B',
             fontSize: 11,
             fontWeight: 700,
+            boxShadow: currentStep === 1 ? '0 1px 3px rgba(2, 132, 199, 0.3)' : 'none',
           }}>
             {selectedAsset ? <Check size={13} strokeWidth={3} /> : '1'}
           </span>
           <span>1. Select Asset</span>
           {selectedAsset && (
-            <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 10, background: currentStep === 1 ? '#334155' : '#FAF7F2', color: currentStep === 1 ? '#BAE6FD' : '#0284C7', border: currentStep === 1 ? 'none' : '1px solid #EAE3D7' }}>
+            <span style={{
+              fontSize: 11,
+              padding: '2px 8px',
+              borderRadius: 10,
+              background: currentStep === 1 ? '#F0F9FF' : '#FAF7F2',
+              color: currentStep === 1 ? '#0284C7' : '#64748B',
+              border: currentStep === 1 ? '1px solid #BAE6FD' : '1px solid #EAE3D7',
+              fontWeight: 600,
+            }}>
               {selectedAsset.id}
             </span>
           )}
@@ -1836,6 +1847,7 @@ export function AssetSimulationWorkspace({
 
         <ChevronRight size={16} color="#D9D0C1" style={{ margin: '0 4px' }} />
 
+        {/* Step 2: Configure Sensors */}
         <button
           onClick={() => {
             if (selectedAsset) setCurrentStep(2);
@@ -1849,12 +1861,13 @@ export function AssetSimulationWorkspace({
             gap: 10,
             padding: '10px 16px',
             borderRadius: 8,
-            border: 'none',
-            background: currentStep === 2 ? '#1E252D' : 'transparent',
-            color: currentStep === 2 ? '#FFFFFF' : selectedAsset ? '#475569' : '#94A3B8',
+            border: currentStep === 2 ? '1px solid #BAE6FD' : '1px solid transparent',
+            background: currentStep === 2 ? '#FFFFFF' : 'transparent',
+            color: currentStep === 2 ? '#0284C7' : selectedAsset ? '#475569' : '#94A3B8',
             fontSize: 13,
-            fontWeight: 600,
+            fontWeight: currentStep === 2 ? 700 : 600,
             cursor: selectedAsset ? 'pointer' : 'not-allowed',
+            boxShadow: currentStep === 2 ? '0 1px 4px rgba(2, 132, 199, 0.12), 0 1px 2px rgba(60, 45, 25, 0.04)' : 'none',
             transition: 'all 0.15s ease',
           }}
         >
@@ -1865,21 +1878,31 @@ export function AssetSimulationWorkspace({
             width: 22,
             height: 22,
             borderRadius: '50%',
-            background: currentStep === 2 ? '#0284C7' : '#EAE3D7',
-            color: currentStep === 2 ? '#FFFFFF' : '#64748B',
+            background: currentStep === 2 ? '#0284C7' : selectedAsset ? '#BAE6FD' : '#EAE3D7',
+            color: currentStep === 2 ? '#FFFFFF' : selectedAsset ? '#0284C7' : '#64748B',
             fontSize: 11,
             fontWeight: 700,
+            boxShadow: currentStep === 2 ? '0 1px 3px rgba(2, 132, 199, 0.3)' : 'none',
           }}>
             2
           </span>
           <span>2. Configure Sensors</span>
-          <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 10, background: currentStep === 2 ? '#334155' : '#FAF7F2', color: currentStep === 2 ? '#BAE6FD' : '#64748B', border: currentStep === 2 ? 'none' : '1px solid #EAE3D7' }}>
+          <span style={{
+            fontSize: 11,
+            padding: '2px 8px',
+            borderRadius: 10,
+            background: currentStep === 2 ? '#F0F9FF' : '#FAF7F2',
+            color: currentStep === 2 ? '#0284C7' : '#64748B',
+            border: currentStep === 2 ? '1px solid #BAE6FD' : '1px solid #EAE3D7',
+            fontWeight: 600,
+          }}>
             {sensors.length} Inputs
           </span>
         </button>
 
         <ChevronRight size={16} color="#D9D0C1" style={{ margin: '0 4px' }} />
 
+        {/* Step 3: Run & Review Simulation */}
         <button
           onClick={() => {
             if (simulationResult) setCurrentStep(3);
@@ -1893,12 +1916,13 @@ export function AssetSimulationWorkspace({
             gap: 10,
             padding: '10px 16px',
             borderRadius: 8,
-            border: 'none',
-            background: currentStep === 3 ? '#1E252D' : 'transparent',
-            color: currentStep === 3 ? '#FFFFFF' : simulationResult ? '#475569' : '#94A3B8',
+            border: currentStep === 3 ? '1px solid #A7F3D0' : '1px solid transparent',
+            background: currentStep === 3 ? '#FFFFFF' : 'transparent',
+            color: currentStep === 3 ? '#059669' : simulationResult ? '#475569' : '#94A3B8',
             fontSize: 13,
-            fontWeight: 600,
+            fontWeight: currentStep === 3 ? 700 : 600,
             cursor: simulationResult ? 'pointer' : 'not-allowed',
+            boxShadow: currentStep === 3 ? '0 1px 4px rgba(16, 185, 129, 0.12), 0 1px 2px rgba(60, 45, 25, 0.04)' : 'none',
             transition: 'all 0.15s ease',
           }}
         >
@@ -1909,16 +1933,25 @@ export function AssetSimulationWorkspace({
             width: 22,
             height: 22,
             borderRadius: '50%',
-            background: currentStep === 3 ? '#10B981' : '#EAE3D7',
-            color: currentStep === 3 ? '#FFFFFF' : '#64748B',
+            background: currentStep === 3 ? '#10B981' : simulationResult ? '#A7F3D0' : '#EAE3D7',
+            color: currentStep === 3 ? '#FFFFFF' : simulationResult ? '#065F46' : '#64748B',
             fontSize: 11,
             fontWeight: 700,
+            boxShadow: currentStep === 3 ? '0 1px 3px rgba(16, 185, 129, 0.3)' : 'none',
           }}>
             3
           </span>
           <span>3. Run & Review Simulation</span>
           {simulationResult && (
-            <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 10, background: currentStep === 3 ? '#065F46' : '#ECFDF5', color: currentStep === 3 ? '#A7F3D0' : '#059669', fontWeight: 700 }}>
+            <span style={{
+              fontSize: 11,
+              padding: '2px 8px',
+              borderRadius: 10,
+              background: currentStep === 3 ? '#ECFDF5' : '#FAF7F2',
+              color: '#059669',
+              border: '1px solid #A7F3D0',
+              fontWeight: 700,
+            }}>
               Results Ready
             </span>
           )}
@@ -1975,7 +2008,7 @@ export function AssetSimulationWorkspace({
                   setCompatFilter(e.target.value as any);
                   setCurrentPage(1);
                 }}
-                style={{ padding: '5px 10px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12, background: '#FFFFFF', color: '#1E293B' }}
+                style={{ padding: '5px 10px', borderRadius: 6, border: '1px solid #EAE3D7', fontSize: 12, background: '#FAF7F2', color: '#1E252D' }}
               >
                 <option value="all">All Assets (50)</option>
                 <option value="compatible_only">Compatible with Engine (46)</option>
@@ -2002,14 +2035,15 @@ export function AssetSimulationWorkspace({
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: 6,
-                    padding: '5px 11px',
+                    padding: '5px 12px',
                     borderRadius: 16,
                     fontSize: 12,
                     fontWeight: isSelected ? 600 : 500,
-                    border: isSelected ? '1px solid #1E252D' : '1px solid #EAE3D7',
-                    background: isSelected ? '#1E252D' : '#FFFFFF',
-                    color: isSelected ? '#FFFFFF' : '#475569',
+                    border: isSelected ? '1px solid #BAE6FD' : '1px solid #EAE3D7',
+                    background: isSelected ? '#E0F2FE' : '#FFFFFF',
+                    color: isSelected ? '#0284C7' : '#475569',
                     cursor: 'pointer',
+                    boxShadow: isSelected ? '0 1px 2px rgba(2, 132, 199, 0.1)' : 'none',
                     transition: 'all 0.15s ease',
                   }}
                 >
@@ -2018,8 +2052,8 @@ export function AssetSimulationWorkspace({
                     fontSize: 10,
                     padding: '1px 6px',
                     borderRadius: 10,
-                    background: isSelected ? '#334155' : '#FAF7F2',
-                    color: isSelected ? '#BAE6FD' : '#64748B',
+                    background: isSelected ? '#0284C7' : '#FAF7F2',
+                    color: isSelected ? '#FFFFFF' : '#64748B',
                     fontWeight: 600,
                   }}>
                     {c.count}
@@ -2181,12 +2215,13 @@ export function AssetSimulationWorkspace({
                               gap: 4,
                               padding: '5px 12px',
                               borderRadius: 6,
-                              border: isSelected ? '1px solid #1E252D' : '1px solid #D9D0C1',
-                              background: isSelected ? '#1E252D' : '#FAF7F2',
+                              border: isSelected ? '1px solid #0284C7' : '1px solid #D9D0C1',
+                              background: isSelected ? '#0284C7' : '#FAF7F2',
                               color: isSelected ? '#FFFFFF' : '#1E252D',
                               fontSize: 11,
                               fontWeight: 600,
                               cursor: 'pointer',
+                              boxShadow: isSelected ? '0 1px 3px rgba(2, 132, 199, 0.25)' : 'none',
                               transition: 'all 0.15s ease',
                             }}
                           >

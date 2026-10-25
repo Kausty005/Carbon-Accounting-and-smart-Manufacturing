@@ -17,13 +17,11 @@ import { CarbonCalculateResponse } from '../../services/carbonApi';
 
 interface ExecutivePresentationViewProps {
   carbonData: CarbonCalculateResponse | null;
-  onNavigateToDiagnostics?: () => void;
   onNavigateToConfigurator?: () => void;
 }
 
 export function ExecutivePresentationView({
   carbonData,
-  onNavigateToDiagnostics,
   onNavigateToConfigurator
 }: ExecutivePresentationViewProps) {
   const [downloading, setDownloading] = useState(false);
@@ -80,22 +78,6 @@ export function ExecutivePresentationView({
 
         {/* Action Buttons */}
         <div style={{ display: 'flex', gap: 12 }}>
-          <button
-            type="button"
-            onClick={onNavigateToDiagnostics}
-            style={{
-              padding: '10px 16px',
-              borderRadius: 8,
-              border: '1px solid #D1D5DB',
-              background: '#FFFFFF',
-              color: '#374151',
-              fontWeight: 600,
-              fontSize: 13,
-              cursor: 'pointer'
-            }}
-          >
-            Switch to Engineering Diagnostics
-          </button>
 
           <button
             type="button"

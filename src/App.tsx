@@ -32,7 +32,6 @@ import EnergyForecastDashboard from './components/ForecastDashboard/EnergyForeca
 import { AssetLibraryConfigurator } from './components/Library/AssetLibraryConfigurator';
 import { CarbonQuotaInterlock } from './components/Carbon/CarbonQuotaInterlock';
 import { ExecutivePresentationView } from './components/Executive/ExecutivePresentationView';
-import { EngineeringDiagnosticView } from './components/Diagnostics/EngineeringDiagnosticView';
 import { CarbonAuditReportView } from './components/Carbon/CarbonAuditReportView';
 import { EvidenceVaultView } from './components/Carbon/EvidenceVaultView';
 
@@ -84,7 +83,6 @@ const PAGE_VARIANTS = {
 type View =
   | 'overview'
   | 'executive'
-  | 'diagnostics'
   | 'scada'
   | 'simulator'
   | 'configurator'
@@ -98,7 +96,6 @@ type View =
 const NAV: { id: View; icon: React.ReactNode; label: string }[] = [
   { id: 'overview',     icon: <LayoutGrid size={14} />,   label: 'Overview' },
   { id: 'executive',    icon: <Award size={14} />,        label: 'Executive View' },
-  { id: 'diagnostics',  icon: <Terminal size={14} />,     label: 'Diagnostics Cockpit' },
   { id: 'scada',        icon: <Box size={14} />,          label: '3D Factory Twin' },
   { id: 'simulator',    icon: <Sliders size={14} />,      label: 'Digital Twin' },
   { id: 'configurator', icon: <Database size={14} />,     label: 'Plant-Wide Fleet (50 Assets)' },
@@ -3479,26 +3476,6 @@ export default function App() {
             >
               <Award size={12} color={view === 'executive' ? '#2563EB' : '#6B7280'} /> Executive
             </button>
-            <button
-              type="button"
-              onClick={() => setView('diagnostics')}
-              style={{
-                border: 'none',
-                padding: '4px 10px',
-                borderRadius: 6,
-                fontSize: 11,
-                fontWeight: 600,
-                cursor: 'pointer',
-                background: view === 'diagnostics' ? '#111827' : 'transparent',
-                color: view === 'diagnostics' ? '#38BDF8' : '#6B7280',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-                boxShadow: view === 'diagnostics' ? '0 1px 2px rgba(0,0,0,0.15)' : 'none'
-              }}
-            >
-              <Terminal size={12} color={view === 'diagnostics' ? '#38BDF8' : '#6B7280'} /> Diagnostics
-            </button>
           </div>
 
           {/* Priority Alert Bell with Red Notification Dot */}
@@ -3935,15 +3912,7 @@ export default function App() {
                 <motion.div key="executive" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
                   <ExecutivePresentationView
                     carbonData={carbonData}
-                    onNavigateToDiagnostics={() => setView('diagnostics')}
                     onNavigateToConfigurator={() => setView('configurator')}
-                  />
-                </motion.div>
-              )}
-              {view === 'diagnostics' && (
-                <motion.div key="diagnostics" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
-                  <EngineeringDiagnosticView
-                    onNavigateToExecutive={() => setView('executive')}
                   />
                 </motion.div>
               )}
@@ -4060,7 +4029,7 @@ export default function App() {
       </main>
 
       {/* Inspector (Shown on SCADA / Digital Twin workbench views) */}
-      {view !== 'overview' && view !== 'forecast' && view !== 'executive' && view !== 'diagnostics' && view !== 'configurator' && view !== 'quota' && view !== 'evidence' && view !== 'reports' && showInspector && (
+      {view !== 'overview' && view !== 'forecast' && view !== 'executive' && view !== 'configurator' && view !== 'quota' && view !== 'evidence' && view !== 'reports' && showInspector && (
         <InspectorPanel
           selectedId={selectedAsset}
           selectedSensorId={selectedSensor}

@@ -29,7 +29,7 @@ export const DEMO_USERS: Record<RoleId, UserProfile> = {
     department: 'Shop Floor & Pneumatics Operations',
     initials: 'VM',
     avatarColor: '#10B981',
-    allowedViews: ['overview', 'scada', 'simulator', 'diagnostics', 'anomalies'],
+    allowedViews: ['overview', 'scada', 'simulator', 'anomalies'],
     description: 'Direct operational telemetry, machine diagnostics, sensor anomaly triage, and physics interlocks.',
     badge: {
       label: 'SCADA OPERATOR',
@@ -47,7 +47,7 @@ export const DEMO_USERS: Record<RoleId, UserProfile> = {
     department: 'Energy Auditing & ISO 50001 Advisory',
     initials: 'AS',
     avatarColor: '#8B5CF6',
-    allowedViews: ['overview', 'simulator', 'forecast', 'carbon', 'evidence', 'reports', 'configurator', 'diagnostics'],
+    allowedViews: ['overview', 'simulator', 'forecast', 'carbon', 'evidence', 'reports', 'configurator'],
     description: 'Time-of-Day tariff arbitrage, Specific Energy Consumption (SEC), ISO 50001 audits, and peak shaving.',
     badge: {
       label: 'ENERGY AUDITOR',
@@ -86,7 +86,6 @@ export const DEMO_USERS: Record<RoleId, UserProfile> = {
     allowedViews: [
       'overview',
       'executive',
-      'diagnostics',
       'scada',
       'simulator',
       'configurator',
@@ -124,11 +123,6 @@ export const VIEW_SECURITY_METADATA: Record<
     title: 'Executive Presentation View',
     requiredRoles: ['esg_officer', 'manager'],
     category: 'Executive',
-  },
-  diagnostics: {
-    title: 'Engineering Diagnostics Cockpit',
-    requiredRoles: ['operator', 'auditor', 'manager'],
-    category: 'Operations',
   },
   scada: {
     title: '3D SCADA Factory Twin',

@@ -1,6 +1,6 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, Html } from '@react-three/drei';
+import { OrbitControls } from '@react-three/drei';
 import { motion } from 'framer-motion';
 import * as THREE from 'three';
 import {
@@ -15,18 +15,184 @@ import FactoryEnvironment, { ASSET_POSITIONS } from './FactoryEnvironment';
 import EnergyConduits from './EnergyConduits';
 import type { Asset } from '../../data/mockData';
 import {
-  Maximize2, Eye, Zap, Shield, Tag, Compass,
-  Layers, ChevronRight, Activity, AlertTriangle, X,
+  Zap,
+  Shield,
+  Radio,
+  FileCheck2,
+  HardDrive,
+  WifiOff,
+  Cpu,
+  Play,
+  Pause,
+  RotateCcw,
+  ChevronRight,
+  ChevronLeft,
+  CheckCircle2,
+  Sparkles,
+  Sliders,
+  X,
 } from 'lucide-react';
+import {
+  ModbusEnergyMeter3D,
+  CoriolisFlowMeter3D,
+  FlueGasAnalyzer3D,
+  OpticalCODProbe3D,
+  EdgeGatewayCabinet3D,
+} from './Sensor3DModels';
+import SensorDataConduits from './SensorDataConduits';
+import type { SensorMetadata } from './SensorHudPopup';
+import AuditLedgerModal from './AuditLedgerModal';
+
+export interface PipelineStep {
+  stepNum: number;
+  label: string;
+  tag: string;
+  standard: string;
+  targetComponent: 'compressor' | 'gateway' | 'anomaly' | 'simulator' | 'ledger';
+  description: string;
+  pitchScript: string;
+}
+
+export const END_TO_END_PIPELINE: PipelineStep[] = [
+  {
+    stepNum: 1,
+    label: '1. Physical Sensor',
+    tag: 'Shopfloor Hardware',
+    standard: 'IEC 62053-22 Class 0.5S',
+    targetComponent: 'compressor',
+    description: 'Yokogawa Class 0.5S Multi-Function Meter (EM-102) & Coriolis Flow (FM-201)',
+    pitchScript: 'Judges, look at the compressor feed: Yokogawa Class 0.5S meter EM-102 measures live line current, 37.0 kW active power, and 7.2 bar discharge pressure directly on the shop floor via physical CT clamps.',
+  },
+  {
+    stepNum: 2,
+    label: '2. Edge Gateway & Buffer',
+    tag: '72h Outage Resilience',
+    standard: 'IEC 61000-6-2/4 Heavy Industrial',
+    targetComponent: 'gateway',
+    description: 'Moxa UC-8100-LX with 72h Circular NVRAM & SHA-256 Chaining',
+    pitchScript: 'Physical telemetry flows over RS-485 Modbus to our IP66 Edge Gateway. If factory internet cuts out, an on-chip 72-hour circular buffer queues every packet locally with zero data loss.',
+  },
+  {
+    stepNum: 3,
+    label: '3. SCADA & AI Anomaly',
+    tag: 'Anomaly Intelligence',
+    standard: 'Isolation Forest + CUSUM',
+    targetComponent: 'anomaly',
+    description: 'Isolation Forest detects 18 kW unloaded idle waste during break hours',
+    pitchScript: 'Our AI engine processes the stream in real time and flags COMP-01 drawing 18 kW unloaded power while factory machines are paused for lunch. That is pure energy waste.',
+  },
+  {
+    stepNum: 4,
+    label: '4. Digital Twin Simulation',
+    tag: 'Physics & Safety Interlocks',
+    standard: 'IPMVP Option B / ISO 50001',
+    targetComponent: 'simulator',
+    description: 'Virtual what-if test: Auto-Idle Cutoff passes pneumatic pressure limits',
+    pitchScript: 'Instead of blind automation, our Digital Twin tests the Auto-Idle Cutoff in software first, verifying line pressure never dips below 6.8 bar. Applying it cuts compressor power to 0 kW, saving 998 kWh daily.',
+  },
+  {
+    stepNum: 5,
+    label: '5. Cryptographic ESG Audit',
+    tag: 'SEBI BRSR & CBAM Proof',
+    standard: 'ISO 14064-1/3 Reasonable Assurance',
+    targetComponent: 'ledger',
+    description: 'Avoided Scope 2 emissions (727.7 kg CO₂e) cryptographically verified',
+    pitchScript: 'Statutory auditors reject manual utility spreadsheets. Our system mathematically seals every baseline reduction into an unbroken SHA-256 Merkle chain compliant with SEBI BRSR Core and EU CBAM.',
+  },
+];
 
 interface Factory3DSceneProps {
   assets: Asset[];
   selectedId: string | null;
+  selectedSensorId?: string | null;
   onSelect: (id: string | null) => void;
+  onSelectSensor?: (sensorId: string | null) => void;
   onSimulate?: (id: string) => void;
+  onOpenLedger?: () => void;
+  isBuffering?: boolean;
+  onToggleOutage?: (isOffline: boolean) => void;
+  simMode?: boolean;
+  onToggleSimMode?: () => void;
+  onResetBaseline?: () => void;
 }
 
-// ─── Camera Controller with Smooth Transitions (Releases to OrbitControls on drag) ─
+// ─── Physical Sensor Fleet Metadata ──────────────────────────────────────────
+export const PHYSICAL_SENSORS: SensorMetadata[] = [
+  {
+    sensor_id: 'EM-101',
+    tag: 'SUBSTATION-MAIN-METER',
+    instrument_type: 'Class 0.5S Multi-Function Power Meter',
+    manufacturer: 'Schneider Electric / PM8000',
+    standard: 'IEC 62053-22 (Class 0.5S)',
+    monitored_asset: 'Main Plant Substation (Incomer-1)',
+    protocol: 'Modbus RTU over RS-485',
+    calibration_cert_id: 'NABL/CAL/EM/2026/0412',
+    calibration_valid_until: 'Nov 2027',
+    position_3d: [0.9, 1.4, -6.3],
+  },
+  {
+    sensor_id: 'EM-102',
+    tag: 'COMPRESSOR-FEEDER-METER',
+    instrument_type: 'Class 0.5S Multi-Function Power Meter',
+    manufacturer: 'Yokogawa / PR300',
+    standard: 'IEC 62053-22 (Class 0.5S)',
+    monitored_asset: 'ELGi Air Compressor (Bay 1)',
+    protocol: 'Modbus RTU over RS-485',
+    calibration_cert_id: 'NABL/CAL/EM/2026/0588',
+    calibration_valid_until: 'Dec 2027',
+    position_3d: [-3.6, 1.2, -2.5],
+  },
+  {
+    sensor_id: 'FM-201',
+    tag: 'FURNACE-FUEL-CORIOLIS',
+    instrument_type: 'Dual U-Tube Coriolis Mass Flow Meter',
+    manufacturer: 'Emerson Micro Motion / ELITE CMF100',
+    standard: 'API MPMS Ch. 5.6 (0.05% Accuracy)',
+    monitored_asset: 'Furnace PNG Fuel Burner Train',
+    protocol: '4-20mA HART & Modbus RTU',
+    calibration_cert_id: 'NABL/CAL/FM/2025/1198',
+    calibration_valid_until: 'Apr 2027',
+    position_3d: [3.3, 0.7, -2.5],
+  },
+  {
+    sensor_id: 'GA-301',
+    tag: 'STACK-NDIR-CEMS',
+    instrument_type: 'Continuous Flue Gas NDIR Analyzer',
+    manufacturer: 'SICK / GM32 Optical Spectrometry',
+    standard: 'ISO 12039 / EPA 40 CFR 60 App B',
+    monitored_asset: 'Furnace Exhaust Chimney Stack',
+    protocol: 'Modbus TCP / Industrial Ethernet',
+    calibration_cert_id: 'CPCB/CEMS/2026/0921',
+    calibration_valid_until: 'Aug 2027',
+    position_3d: [4.5, 3.8, -2.5],
+  },
+  {
+    sensor_id: 'WQ-401',
+    tag: 'EFFLUENT-OPTICAL-COD',
+    instrument_type: 'UV-Vis Submersible COD / TSS Spectrometer',
+    manufacturer: 'Endress+Hauser / Viomax CAS51D',
+    standard: 'ISO 15839 (Continuous Water Quality)',
+    monitored_asset: 'Process Cooling Loop Header',
+    protocol: 'RS-485 Modbus ASCII',
+    calibration_cert_id: 'SPCB/ENV/2026/0334',
+    calibration_valid_until: 'Jun 2027',
+    position_3d: [5.3, 0.6, 3.0],
+  },
+  {
+    sensor_id: 'GW-EDGE-01',
+    tag: 'SHOPFLOOR-EDGE-GATEWAY',
+    instrument_type: 'Ruggedized Industrial IoT Edge Gateway',
+    manufacturer: 'Moxa UC-8100-LX / Advantech',
+    standard: 'IEC 61000-6-2/4 Heavy Industrial',
+    monitored_asset: 'Plant SCADA & Physical Sensor Concentrator',
+    protocol: 'Dual RS-485 + Dual GbE + TLS 1.3',
+    calibration_cert_id: 'TPM-2.0-SECURE',
+    calibration_valid_until: 'Jan 2030',
+    position_3d: [-7.0, 1.8, -1.5],
+  },
+];
+
+// ─── Camera Controller with Smooth Transitions ───────────────────────────────
 function CameraController({
   targetPos,
   targetLookAt,
@@ -38,7 +204,6 @@ function CameraController({
   const isTransitioning = useRef(true);
   const lastTarget = useRef<string>('');
 
-  // Trigger smooth flight only when a new preset or machine is selected
   useEffect(() => {
     const key = `${targetPos.x.toFixed(1)},${targetPos.y.toFixed(1)},${targetPos.z.toFixed(1)}`;
     if (key !== lastTarget.current) {
@@ -47,7 +212,6 @@ function CameraController({
     }
   }, [targetPos]);
 
-  // When user begins dragging or zooming, immediately yield 100% control to OrbitControls
   useEffect(() => {
     const ctrl = controls as any;
     if (!ctrl) return;
@@ -70,7 +234,6 @@ function CameraController({
     } else {
       camera.lookAt(targetLookAt);
     }
-    // Complete transition when close enough so user has totally free control
     if (camera.position.distanceTo(targetPos) < 0.1) {
       isTransitioning.current = false;
     }
@@ -79,305 +242,15 @@ function CameraController({
   return null;
 }
 
-// ─── Floating 3D Machine Inspection Card (Compact ~25% Smaller) ─────────────
-function MachineHudBadge({
-  asset,
-  isSelected,
-  onSelect,
-}: {
-  asset: Asset;
-  isSelected: boolean;
-  onSelect: () => void;
-}) {
-  const statusColors: Record<string, string> = {
-    OPTIMAL: '#10b981',
-    WARNING: '#f59e0b',
-    PEAK:    '#ef4444',
-    IDLE:    '#64748b',
-  };
-  const statusColor = statusColors[asset.status] || '#10b981';
-
-  const machineAccents: Record<string, string> = {
-    compressor: '#d97706',
-    cnc:        '#0284c7',
-    furnace:    '#dc2626',
-    cooling:    '#059669',
-  };
-  const accent = machineAccents[asset.id] || '#0284c7';
-
-  const bayLabels: Record<string, string> = {
-    compressor: 'BAY 01 · COMP-01',
-    cnc:        'BAY 02 · CNC-01',
-    furnace:    'BAY 03 · FURN-01',
-    cooling:    'BAY 04 · CHILL-01',
-  };
-
-  const rowStyle: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '1.5px 0',
-    fontSize: 8.5,
-    fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
-    lineHeight: 1.25,
-  };
-
-  const labelStyle: React.CSSProperties = {
-    color: '#64748b',
-    fontWeight: 500,
-    whiteSpace: 'nowrap',
-  };
-
-  const valueStyle: React.CSSProperties = {
-    fontWeight: 700,
-    color: '#0f172a',
-    textAlign: 'right',
-    whiteSpace: 'nowrap',
-  };
-
-  const renderMetrics = () => {
-    const pfNum = Number(asset.pf ?? 0.78);
-    const currKw = Number(asset.currentKw ?? 0);
-
-    switch (asset.id) {
-      case 'compressor':
-        return (
-          <>
-            <div style={rowStyle}>
-              <span style={labelStyle}>Power Draw</span>
-              <span style={valueStyle}>
-                <span style={{ color: accent }}>{asset.currentKw != null ? `${currKw.toFixed(1)} kW` : '—'}</span>
-                {' '}<span style={{ fontSize: 7.5, color: '#94a3b8', fontWeight: 400 }}>({Math.round((currKw / (asset.ratedKw || 45)) * 100)}%)</span>
-              </span>
-            </div>
-            <div style={rowStyle}>
-              <span style={labelStyle}>Discharge</span>
-              <span style={valueStyle}>
-                {asset.dischargePressureBar != null ? `${Number(asset.dischargePressureBar).toFixed(1)} bar` : '7.2 bar'}
-              </span>
-            </div>
-            <div style={rowStyle}>
-              <span style={labelStyle}>Operating State</span>
-              <span style={{ ...valueStyle, color: statusColor }}>
-                {asset.status || 'OPTIMAL'}
-              </span>
-            </div>
-            <div style={rowStyle}>
-              <span style={labelStyle}>Power Factor</span>
-              <span style={{ ...valueStyle, color: pfNum < 0.85 ? '#f59e0b' : '#10b981' }}>
-                {pfNum.toFixed(2)}
-              </span>
-            </div>
-          </>
-        );
-      case 'cnc':
-        return (
-          <>
-            <div style={rowStyle}>
-              <span style={labelStyle}>Machining Load</span>
-              <span style={valueStyle}>
-                <span style={{ color: accent }}>{asset.currentKw != null ? `${currKw.toFixed(1)} kW` : '—'}</span>
-                {' '}<span style={{ fontSize: 7.5, color: '#94a3b8', fontWeight: 400 }}>({Math.round((currKw / (asset.ratedKw || 32)) * 100)}%)</span>
-              </span>
-            </div>
-            <div style={rowStyle}>
-              <span style={labelStyle}>Specific Energy</span>
-              <span style={valueStyle}>
-                {asset.secKwhPerPart != null ? `${asset.secKwhPerPart} kWh/p` : '1.80 kWh/p'}
-              </span>
-            </div>
-            <div style={rowStyle}>
-              <span style={labelStyle}>Operating State</span>
-              <span style={{ ...valueStyle, color: statusColor }}>
-                {asset.status}
-              </span>
-            </div>
-            <div style={rowStyle}>
-              <span style={labelStyle}>Power Factor</span>
-              <span style={{ ...valueStyle, color: pfNum < 0.85 ? '#f59e0b' : '#10b981' }}>
-                {pfNum.toFixed(2)}
-              </span>
-            </div>
-          </>
-        );
-      case 'furnace':
-        return (
-          <>
-            <div style={rowStyle}>
-              <span style={labelStyle}>Thermal Draw</span>
-              <span style={valueStyle}>
-                <span style={{ color: accent }}>{asset.currentKw != null ? `${currKw.toFixed(1)} kW` : '—'}</span>
-                {' '}<span style={{ fontSize: 7.5, color: '#94a3b8', fontWeight: 400 }}>({Math.round((currKw / (asset.ratedKw || 85)) * 100)}%)</span>
-              </span>
-            </div>
-            <div style={rowStyle}>
-              <span style={labelStyle}>Chamber Temp</span>
-              <span style={{ ...valueStyle, color: '#dc2626' }}>
-                {asset.tempC != null ? `${asset.tempC} °C` : '840 °C'}
-              </span>
-            </div>
-            <div style={rowStyle}>
-              <span style={labelStyle}>Operating State</span>
-              <span style={{ ...valueStyle, color: statusColor }}>
-                {asset.status}
-              </span>
-            </div>
-            <div style={rowStyle}>
-              <span style={labelStyle}>Power Factor</span>
-              <span style={{ ...valueStyle, color: pfNum < 0.85 ? '#f59e0b' : '#10b981' }}>
-                {pfNum.toFixed(2)}
-              </span>
-            </div>
-          </>
-        );
-      case 'cooling':
-        return (
-          <>
-            <div style={rowStyle}>
-              <span style={labelStyle}>Chiller Power</span>
-              <span style={valueStyle}>
-                <span style={{ color: accent }}>{asset.currentKw != null ? `${currKw.toFixed(1)} kW` : '—'}</span>
-                {' '}<span style={{ fontSize: 7.5, color: '#94a3b8', fontWeight: 400 }}>({Math.round((currKw / (asset.ratedKw || 28)) * 100)}%)</span>
-              </span>
-            </div>
-            <div style={rowStyle}>
-              <span style={labelStyle}>Performance</span>
-              <span style={{ ...valueStyle, color: '#059669' }}>
-                {asset.cop != null ? `COP ${asset.cop}` : 'COP 4.1'}
-              </span>
-            </div>
-            <div style={rowStyle}>
-              <span style={labelStyle}>Operating State</span>
-              <span style={{ ...valueStyle, color: statusColor }}>
-                {asset.status}
-              </span>
-            </div>
-            <div style={rowStyle}>
-              <span style={labelStyle}>Power Factor</span>
-              <span style={{ ...valueStyle, color: pfNum < 0.85 ? '#f59e0b' : '#10b981' }}>
-                {pfNum.toFixed(2)}
-              </span>
-            </div>
-          </>
-        );
-      default:
-        return (
-          <div style={{ fontSize: 8.5, color: '#64748b', padding: '2px 0' }}>
-            Telemetry offline
-          </div>
-        );
-    }
-  };
-
-  const badgeY = asset.id === 'compressor' ? 2.65 : 2.45;
-
-  return (
-    <Html
-      position={[0, badgeY, 0]}
-      center
-      distanceFactor={11}
-      style={{ pointerEvents: 'auto', userSelect: 'none' }}
-    >
-      <div
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={(e) => {
-          e.stopPropagation();
-          onSelect();
-        }}
-        onDoubleClick={(e) => e.stopPropagation()}
-        onWheel={(e) => e.stopPropagation()}
-        style={{
-          background: isSelected ? 'rgba(255, 255, 255, 0.98)' : 'rgba(255, 255, 255, 0.91)',
-          backdropFilter: 'blur(10px)',
-          WebkitBackdropFilter: 'blur(10px)',
-          border: isSelected ? `1.5px solid ${accent}` : `1px solid rgba(0, 0, 0, 0.12)`,
-          boxShadow: isSelected
-            ? `0 0 16px ${accent}40, 0 6px 18px rgba(0, 0, 0, 0.12)`
-            : `0 2px 10px rgba(0, 0, 0, 0.06)`,
-          borderRadius: 6,
-          padding: '6px 9px',
-          fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
-          cursor: 'pointer',
-          width: 172,
-          transition: 'all 0.18s ease',
-          transform: isSelected ? 'scale(1.03)' : 'scale(1)',
-        }}
-      >
-        {/* Header: Machine Name & Status Badge */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4, marginBottom: 2 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, overflow: 'hidden' }}>
-            <span
-              style={{
-                width: 6,
-                height: 6,
-                borderRadius: '50%',
-                background: statusColor,
-                boxShadow: isSelected ? `0 0 8px ${statusColor}` : `0 0 4px ${statusColor}`,
-                display: 'inline-block',
-                flexShrink: 0,
-              }}
-            />
-            <span
-              style={{
-                fontSize: 9.5,
-                fontWeight: isSelected ? 800 : 700,
-                color: isSelected ? '#0f172a' : '#1e293b',
-                letterSpacing: 0.2,
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-              }}
-              title={asset.name}
-            >
-              {asset.name}
-            </span>
-          </div>
-
-          <span
-            style={{
-              fontSize: 7.5,
-              padding: '1px 4px',
-              borderRadius: 2.5,
-              background: `${statusColor}18`,
-              color: statusColor,
-              border: `1px solid ${statusColor}33`,
-              fontWeight: 700,
-              lineHeight: 1,
-              flexShrink: 0,
-            }}
-          >
-            {asset.status}
-          </span>
-        </div>
-
-        {/* Subtitle / Bay ID */}
-        <div style={{ fontSize: 7.5, color: '#64748b', paddingLeft: 10, marginBottom: 4, letterSpacing: 0.2 }}>
-          {bayLabels[asset.id] || asset.id.toUpperCase()}
-        </div>
-
-        {/* Divider */}
-        <div style={{ height: 1, background: 'rgba(0, 0, 0, 0.06)', margin: '3px 0 4px' }} />
-
-        {/* Machine-Specific Live Telemetry Rows */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-          {renderMetrics()}
-        </div>
-      </div>
-    </Html>
-  );
-}
-
-// ─── Machine Node Component ──────────────────────────────────────────────────
+// ─── Machine Node Component (No floating HTML white boxes) ───────────────────
 function MachineNode({
   asset,
   isSelected,
   onSelect,
-  showHud,
 }: {
   asset: Asset;
   isSelected: boolean;
-  onSelect: (id: string | null) => void;
-  showHud: boolean;
+  onSelect: (id: string) => void;
 }) {
   const [hovered, setHovered] = useState(false);
   const pos = ASSET_POSITIONS[asset.id] || [0, 0, 0];
@@ -410,21 +283,7 @@ function MachineNode({
       {/* 3D Mechanical Model */}
       {renderModel()}
 
-      {/* Invisible Interactive Hit Box to guarantee 100% reliable click/hover detection */}
-      <mesh
-        position={[0, 1.1, 0]}
-        onClick={(e) => {
-          e.stopPropagation();
-          onSelect(asset.id);
-        }}
-        onPointerOver={() => setHovered(true)}
-        onPointerOut={() => setHovered(false)}
-      >
-        <boxGeometry args={[3.2, 2.6, 2.6]} />
-        <meshBasicMaterial visible={false} />
-      </mesh>
-
-      {/* Holographic Wireframe Selection Box */}
+      {/* Holographic Wireframe Selection Box (Clean 3D Highlight) */}
       {(isSelected || hovered) && (
         <mesh position={[0, 1.0, 0]}>
           <boxGeometry args={[2.8, 2.2, 2.2]} />
@@ -432,19 +291,9 @@ function MachineNode({
             color={isSelected ? '#38bdf8' : '#0ea5e9'}
             wireframe
             transparent
-            opacity={isSelected ? 0.35 : 0.15}
+            opacity={isSelected ? 0.45 : 0.2}
           />
         </mesh>
-      )}
-
-      {/* Floating HUD Inspection Card - Visible all the time */}
-      {showHud && (
-        <MachineHudBadge
-          key={`hud-${asset.id}`}
-          asset={asset}
-          isSelected={isSelected}
-          onSelect={() => onSelect(asset.id)}
-        />
       )}
     </group>
   );
@@ -454,13 +303,27 @@ function MachineNode({
 export default function Factory3DScene({
   assets,
   selectedId,
+  selectedSensorId,
   onSelect,
+  onSelectSensor,
   onSimulate,
+  onOpenLedger,
+  isBuffering = false,
+  onToggleOutage,
+  simMode = false,
+  onToggleSimMode,
+  onResetBaseline,
 }: Factory3DSceneProps) {
   // Visual layers toggles
   const [showConduits, setShowConduits] = useState(true);
   const [showSafetyZones, setShowSafetyZones] = useState(true);
-  const [showHud, setShowHud] = useState(true);
+  const [showSensors, setShowSensors] = useState(true);
+  const [internalLedgerOpen, setInternalLedgerOpen] = useState(false);
+
+  // Guided 5-Step End-to-End Pipeline Walkthrough State
+  const [activePipelineStep, setActivePipelineStep] = useState<number | null>(1);
+  const [isAutoDemoRunning, setIsAutoDemoRunning] = useState<boolean>(false);
+  const [showPipelineGuide, setShowPipelineGuide] = useState<boolean>(true);
 
   // Camera presets
   const [camTarget, setCamTarget] = useState({
@@ -468,24 +331,7 @@ export default function Factory3DScene({
     look: new THREE.Vector3(0, 0.5, 0),
   });
 
-  const selectedAsset = assets.find((a) => a.id === selectedId) || null;
-
-  // Jump to specific machine view when selected
-  const handleSelect = useCallback(
-    (id: string | null) => {
-      onSelect(id);
-      if (id && ASSET_POSITIONS[id]) {
-        const p = ASSET_POSITIONS[id];
-        setCamTarget({
-          pos: new THREE.Vector3(p[0] + 3.8, 3.2, p[2] + 4.5),
-          look: new THREE.Vector3(p[0], 0.8, p[2]),
-        });
-      }
-    },
-    [onSelect]
-  );
-
-  // Sync camera target when selectedId changes externally (e.g. from left sidebar asset list)
+  // Smoothly fly camera when selected asset changes
   useEffect(() => {
     if (selectedId && ASSET_POSITIONS[selectedId]) {
       const p = ASSET_POSITIONS[selectedId];
@@ -496,40 +342,135 @@ export default function Factory3DScene({
     }
   }, [selectedId]);
 
+  // Smoothly fly camera when selected sensor changes
+  useEffect(() => {
+    if (selectedSensorId) {
+      const sensor = PHYSICAL_SENSORS.find((s) => s.sensor_id === selectedSensorId);
+      if (sensor) {
+        const p = sensor.position_3d;
+        setCamTarget({
+          pos: new THREE.Vector3(p[0] + (p[0] >= 0 ? 2.4 : -2.4), p[1] + 1.2, p[2] + 2.6),
+          look: new THREE.Vector3(p[0], p[1], p[2]),
+        });
+      }
+    }
+  }, [selectedSensorId]);
+
+  // Jump camera and open machine details in right sidebar
+  const handleSelectMachine = useCallback(
+    (id: string | null) => {
+      onSelect(id);
+      onSelectSensor?.(null);
+    },
+    [onSelect, onSelectSensor]
+  );
+
+  // Focus camera directly on a physical sensor and open in right sidebar
+  const handleSelectSensor = useCallback(
+    (sensorId: string) => {
+      onSelectSensor?.(sensorId);
+      onSelect(null);
+    },
+    [onSelect, onSelectSensor]
+  );
+
   // Preset Views
-  const setPreset = (preset: 'isometric' | 'topdown' | 'compressor' | 'cnc' | 'furnace' | 'cooling') => {
+  const setPreset = (preset: 'isometric' | 'topdown' | 'compressor' | 'cnc' | 'furnace' | 'cooling' | 'gateway') => {
     switch (preset) {
       case 'isometric':
         onSelect(null);
+        onSelectSensor?.(null);
         setCamTarget({ pos: new THREE.Vector3(12, 11, 15), look: new THREE.Vector3(0, 0.5, 0) });
         break;
       case 'topdown':
         onSelect(null);
+        onSelectSensor?.(null);
         setCamTarget({ pos: new THREE.Vector3(0, 22, 0.01), look: new THREE.Vector3(0, 0, 0) });
         break;
       case 'compressor':
-        handleSelect('compressor');
+        handleSelectMachine('compressor');
         break;
       case 'cnc':
-        handleSelect('cnc');
+        handleSelectMachine('cnc');
         break;
       case 'furnace':
-        handleSelect('furnace');
+        handleSelectMachine('furnace');
         break;
       case 'cooling':
-        handleSelect('cooling');
+        handleSelectMachine('cooling');
         break;
+      case 'gateway':
+        handleSelectSensor('GW-EDGE-01');
+        break;
+    }
+  };
+
+  // Handle Guided Pipeline Step Click
+  const handlePipelineStepClick = useCallback(
+    (stepNum: number) => {
+      setActivePipelineStep(stepNum);
+      const step = END_TO_END_PIPELINE.find((s) => s.stepNum === stepNum);
+      if (!step) return;
+
+      switch (step.targetComponent) {
+        case 'compressor':
+          handleSelectMachine('compressor');
+          onSelectSensor?.('EM-102');
+          break;
+        case 'gateway':
+          handleSelectSensor('GW-EDGE-01');
+          break;
+        case 'anomaly':
+          handleSelectMachine('compressor');
+          break;
+        case 'simulator':
+          if (!simMode && onToggleSimMode) {
+            onToggleSimMode();
+          }
+          handleSelectMachine('compressor');
+          break;
+        case 'ledger':
+          handleOpenLedgerClick();
+          break;
+      }
+    },
+    [handleSelectMachine, handleSelectSensor, onSelectSensor, simMode, onToggleSimMode]
+  );
+
+  // Auto-Demo Player: Walks through 1 -> 2 -> 3 -> 4 -> 5 smoothly
+  useEffect(() => {
+    if (!isAutoDemoRunning) return;
+
+    const timer = setInterval(() => {
+      setActivePipelineStep((prev) => {
+        const nextStep = prev === null || prev >= 5 ? 1 : prev + 1;
+        handlePipelineStepClick(nextStep);
+        return nextStep;
+      });
+    }, 6500);
+
+    return () => clearInterval(timer);
+  }, [isAutoDemoRunning, handlePipelineStepClick]);
+
+  const handleOpenLedgerClick = () => {
+    if (onOpenLedger) {
+      onOpenLedger();
+    } else {
+      setInternalLedgerOpen(true);
     }
   };
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%', background: '#E4D9C8', overflow: 'hidden' }}>
-      {/* 3D WebGL Canvas */}
+      {/* ─── 3D WebGL Canvas (100% Clean Unobstructed Scene) ───────────────── */}
       <Canvas
         shadows
         camera={{ position: [12, 11, 15], fov: 38, near: 0.1, far: 350 }}
         gl={{ antialias: true, alpha: false, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.05 }}
-        onPointerMissed={() => onSelect(null)}
+        onPointerMissed={() => {
+          onSelect(null);
+          onSelectSensor?.(null);
+        }}
         style={{ width: '100%', height: '100%', background: '#E4D9C8' }}
         onCreated={({ scene }) => {
           scene.background = new THREE.Color('#E4D9C8');
@@ -570,7 +511,7 @@ export default function Factory3DScene({
         {/* Dynamic Conveyor System */}
         <FactoryConveyor />
 
-        {/* Animated Energy Flow Conduits */}
+        {/* Animated Energy Flow Conduits (Floor Cable Trays) */}
         <EnergyConduits assets={assets} showConduits={showConduits} />
 
         {/* Industrial Machines */}
@@ -579,12 +520,76 @@ export default function Factory3DScene({
             key={asset.id}
             asset={asset}
             isSelected={selectedId === asset.id}
-            onSelect={handleSelect}
-            showHud={showHud}
+            onSelect={handleSelectMachine}
           />
         ))}
 
-        {/* Free Orbit Controls - no restrictions */}
+        {/* Animated Physical Sensor Telemetry Conduits & Cloud Uplink */}
+        <SensorDataConduits
+          showTelemetryConduits={showSensors}
+          isBuffering={isBuffering}
+        />
+
+        {/* Physical Shop-Floor Sensors Mounted on Machines & Walls */}
+        {showSensors && (
+          <group>
+            {/* EM-101: Substation Class 0.5S Modbus Meter */}
+            <ModbusEnergyMeter3D
+              position={[0.9, 1.4, -6.3]}
+              rotation={[0, 0, 0]}
+              isSelected={selectedSensorId === 'EM-101'}
+              isBuffering={isBuffering}
+              onClick={() => handleSelectSensor('EM-101')}
+            />
+
+            {/* EM-102: Air Compressor Feeder Class 0.5S Meter */}
+            <ModbusEnergyMeter3D
+              position={[-3.6, 1.2, -2.5]}
+              rotation={[0, Math.PI / 2, 0]}
+              isSelected={selectedSensorId === 'EM-102'}
+              isBuffering={isBuffering}
+              onClick={() => handleSelectSensor('EM-102')}
+            />
+
+            {/* FM-201: Coriolis Mass Flow Meter (Furnace PNG Fuel Line) */}
+            <CoriolisFlowMeter3D
+              position={[3.3, 0.7, -2.5]}
+              rotation={[0, 0, 0]}
+              isSelected={selectedSensorId === 'FM-201'}
+              isBuffering={isBuffering}
+              onClick={() => handleSelectSensor('FM-201')}
+            />
+
+            {/* GA-301: Continuous NDIR Flue Gas Stack Analyzer (Chimney) */}
+            <FlueGasAnalyzer3D
+              position={[4.5, 3.8, -2.5]}
+              rotation={[0, 0, 0]}
+              isSelected={selectedSensorId === 'GA-301'}
+              isBuffering={isBuffering}
+              onClick={() => handleSelectSensor('GA-301')}
+            />
+
+            {/* WQ-401: Optical COD / Effluent Probe (Cooling Loop Header) */}
+            <OpticalCODProbe3D
+              position={[5.3, 0.6, 3.0]}
+              rotation={[0, 0, 0]}
+              isSelected={selectedSensorId === 'WQ-401'}
+              isBuffering={isBuffering}
+              onClick={() => handleSelectSensor('WQ-401')}
+            />
+
+            {/* GW-EDGE-01: Shop-Floor Edge IoT Gateway (IP66 Wall Enclosure) */}
+            <EdgeGatewayCabinet3D
+              position={[-7.0, 1.8, -1.5]}
+              rotation={[0, Math.PI / 2, 0]}
+              isSelected={selectedSensorId === 'GW-EDGE-01'}
+              isBuffering={isBuffering}
+              onClick={() => handleSelectSensor('GW-EDGE-01')}
+            />
+          </group>
+        )}
+
+        {/* Free Orbit Controls */}
         <OrbitControls
           makeDefault
           enableDamping
@@ -745,9 +750,32 @@ export default function Factory3DScene({
           >
             Cooling
           </motion.button>
+          <span style={{ color: 'rgba(90, 75, 55, 0.2)' }}>|</span>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="cam-btn"
+            onClick={() => setPreset('gateway')}
+            style={{
+              background: selectedSensorId === 'GW-EDGE-01' ? 'rgba(2, 132, 199, 0.2)' : 'transparent',
+              border: 'none',
+              color: '#0284c7',
+              fontSize: 11,
+              fontFamily: 'var(--font-mono)',
+              fontWeight: 700,
+              padding: '3px 8px',
+              borderRadius: 4,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+            }}
+          >
+            <HardDrive size={11} /> Edge Gateway
+          </motion.button>
         </div>
 
-        {/* Right: Layer Toggles */}
+        {/* Right: Layer Toggles & Audit Ledger */}
         <div
           style={{
             display: 'flex',
@@ -762,6 +790,73 @@ export default function Factory3DScene({
             boxShadow: '4px 4px 14px rgba(188, 176, 158, 0.35)',
           }}
         >
+          {/* Edge Buffer Active Indicator */}
+          {isBuffering && (
+            <motion.div
+              animate={{ opacity: [1, 0.6, 1] }}
+              transition={{ repeat: Infinity, duration: 1.2 }}
+              style={{
+                background: '#f59e0b',
+                color: '#000',
+                padding: '2px 8px',
+                borderRadius: 4,
+                fontWeight: 800,
+                fontSize: 10,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                fontFamily: 'var(--font-mono)',
+              }}
+            >
+              <WifiOff size={11} /> 72H EDGE BUFFERING
+            </motion.div>
+          )}
+
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setShowSensors(!showSensors)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              background: showSensors ? 'rgba(234, 88, 12, 0.15)' : 'transparent',
+              border: `1px solid ${showSensors ? '#ea580c' : 'transparent'}`,
+              color: showSensors ? '#ea580c' : 'var(--slate-500)',
+              fontSize: 11,
+              fontFamily: 'var(--font-mono)',
+              fontWeight: 600,
+              padding: '3px 8px',
+              borderRadius: 4,
+              cursor: 'pointer',
+            }}
+          >
+            <Radio size={11} /> Physical Sensors
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleOpenLedgerClick}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              background: '#0284c7',
+              border: 'none',
+              color: '#ffffff',
+              fontSize: 11,
+              fontFamily: 'var(--font-mono)',
+              fontWeight: 700,
+              padding: '4px 10px',
+              borderRadius: 5,
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(2, 132, 199, 0.35)',
+            }}
+          >
+            <FileCheck2 size={12} /> Audit Ledger (SEBI/CBAM)
+          </motion.button>
+
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -783,6 +878,7 @@ export default function Factory3DScene({
           >
             <Zap size={11} /> Power Grid
           </motion.button>
+
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -804,29 +900,265 @@ export default function Factory3DScene({
           >
             <Shield size={11} /> Safety Bays
           </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setShowHud(!showHud)}
+        </div>
+      </div>
+
+      {/* ─── End-to-End Sensor-to-Twin Pipeline Bar (Judging Walkthrough) ── */}
+      {showPipelineGuide ? (
+        <div
+          style={{
+            position: 'absolute',
+            top: 54,
+            left: 12,
+            right: 12,
+            background: 'rgba(248, 245, 238, 0.96)',
+            backdropFilter: 'blur(16px)',
+            border: '1px solid rgba(255, 255, 255, 0.9)',
+            borderRadius: 10,
+            padding: '8px 12px',
+            boxShadow: '0 4px 20px rgba(60, 45, 25, 0.12)',
+            zIndex: 30,
+            pointerEvents: 'auto',
+          }}
+        >
+          {/* Bar Header */}
+          <div
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 4,
-              background: showHud ? 'rgba(5, 150, 105, 0.15)' : 'transparent',
-              border: `1px solid ${showHud ? '#059669' : 'transparent'}`,
-              color: showHud ? '#059669' : 'var(--slate-500)',
-              fontSize: 11,
-              fontFamily: 'var(--font-mono)',
-              fontWeight: 600,
-              padding: '3px 8px',
-              borderRadius: 4,
-              cursor: 'pointer',
+              justifyContent: 'space-between',
+              marginBottom: 6,
             }}
           >
-            <Tag size={11} /> 3D HUD
-          </motion.button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 10,
+                  fontWeight: 800,
+                  letterSpacing: 1,
+                  textTransform: 'uppercase',
+                  color: '#1C1917',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 5,
+                }}
+              >
+                <Sparkles size={12} style={{ color: '#D97706' }} /> End-to-End Physical Sensor &amp; Digital Twin Pipeline
+              </span>
+              <span
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 8.5,
+                  fontWeight: 700,
+                  padding: '1px 6px',
+                  borderRadius: 4,
+                  background: 'rgba(2, 132, 199, 0.12)',
+                  color: '#0284C7',
+                }}
+              >
+                LIVE CLOSED-LOOP
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              {/* Auto-Demo Walkthrough Button */}
+              <button
+                onClick={() => setIsAutoDemoRunning(!isAutoDemoRunning)}
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 10,
+                  fontWeight: 700,
+                  padding: '3px 9px',
+                  borderRadius: 5,
+                  border: isAutoDemoRunning ? '1px solid #16A34A' : '1px solid #CBD5E1',
+                  background: isAutoDemoRunning ? '#16A34A' : '#FFFFFF',
+                  color: isAutoDemoRunning ? '#FFFFFF' : '#334155',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                }}
+              >
+                {isAutoDemoRunning ? <Pause size={10} /> : <Play size={10} />}
+                {isAutoDemoRunning ? 'Pause Auto-Demo' : '▶ 2-Min Judging Auto-Walkthrough'}
+              </button>
+
+              {/* Quick Closed-Loop Simulation Toggle */}
+              {onToggleSimMode && (
+                <button
+                  onClick={onToggleSimMode}
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 10,
+                    fontWeight: 700,
+                    padding: '3px 9px',
+                    borderRadius: 5,
+                    border: 'none',
+                    background: simMode ? '#16A34A' : '#D97706',
+                    color: '#FFFFFF',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                  }}
+                >
+                  {simMode ? <CheckCircle2 size={10} /> : <Zap size={10} />}
+                  {simMode ? 'Simulated Fix: 0 kW (-998 kWh)' : 'Simulate Auto-Idle Fix'}
+                </button>
+              )}
+
+              {/* Hide bar toggle */}
+              <button
+                onClick={() => setShowPipelineGuide(false)}
+                style={{
+                  border: 'none',
+                  background: 'transparent',
+                  color: '#94A3B8',
+                  cursor: 'pointer',
+                  padding: 2,
+                }}
+                title="Hide Pipeline Guide"
+              >
+                <X size={13} />
+              </button>
+            </div>
+          </div>
+
+          {/* Stepper Pills Navigation */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(5, 1fr)',
+              gap: 6,
+            }}
+          >
+            {END_TO_END_PIPELINE.map((step) => {
+              const isStepActive = activePipelineStep === step.stepNum;
+              return (
+                <button
+                  key={step.stepNum}
+                  onClick={() => handlePipelineStepClick(step.stepNum)}
+                  style={{
+                    background: isStepActive ? '#FFFFFF' : 'rgba(255, 255, 255, 0.45)',
+                    border: isStepActive ? '1.5px solid #0284C7' : '1px solid rgba(226, 232, 240, 0.8)',
+                    borderRadius: 6,
+                    padding: '6px 8px',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    boxShadow: isStepActive ? '0 2px 8px rgba(2, 132, 199, 0.18)' : 'none',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, fontWeight: 800, color: isStepActive ? '#0284C7' : '#1C1917' }}>
+                      {step.label}
+                    </span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: '#64748B' }}>
+                      Step {step.stepNum}/5
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 9, color: isStepActive ? '#334155' : '#64748B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 2 }}>
+                    {step.tag}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Pitch Callout Banner for Active Step */}
+          {activePipelineStep !== null && (
+            <div
+              style={{
+                marginTop: 8,
+                background: '#FFFFFF',
+                border: '1px solid #E2E8F0',
+                borderRadius: 6,
+                padding: '8px 12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 12,
+              }}
+            >
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 800, color: '#0F172A' }}>
+                    {END_TO_END_PIPELINE[activePipelineStep - 1]?.label} — {END_TO_END_PIPELINE[activePipelineStep - 1]?.description}
+                  </span>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8.5, fontWeight: 700, padding: '1px 5px', borderRadius: 3, background: 'rgba(217, 119, 6, 0.12)', color: '#D97706' }}>
+                    {END_TO_END_PIPELINE[activePipelineStep - 1]?.standard}
+                  </span>
+                </div>
+                <div style={{ fontSize: 10, color: '#334155', lineHeight: 1.45 }}>
+                  <strong style={{ color: '#0284C7' }}>Pitch Script for Judges: </strong>
+                  {END_TO_END_PIPELINE[activePipelineStep - 1]?.pitchScript}
+                </div>
+              </div>
+
+              {/* Step Navigation Controls */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+                <button
+                  disabled={activePipelineStep <= 1}
+                  onClick={() => handlePipelineStepClick(activePipelineStep - 1)}
+                  style={{
+                    border: '1px solid #CBD5E1',
+                    background: '#F8FAFC',
+                    borderRadius: 4,
+                    padding: '4px 6px',
+                    cursor: activePipelineStep <= 1 ? 'not-allowed' : 'pointer',
+                    opacity: activePipelineStep <= 1 ? 0.4 : 1,
+                  }}
+                  title="Previous Step"
+                >
+                  <ChevronLeft size={12} />
+                </button>
+                <button
+                  disabled={activePipelineStep >= 5}
+                  onClick={() => handlePipelineStepClick(activePipelineStep + 1)}
+                  style={{
+                    border: '1px solid #CBD5E1',
+                    background: '#F8FAFC',
+                    borderRadius: 4,
+                    padding: '4px 6px',
+                    cursor: activePipelineStep >= 5 ? 'not-allowed' : 'pointer',
+                    opacity: activePipelineStep >= 5 ? 0.4 : 1,
+                  }}
+                  title="Next Step"
+                >
+                  <ChevronRight size={12} />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
-      </div>
+      ) : (
+        <button
+          onClick={() => setShowPipelineGuide(true)}
+          style={{
+            position: 'absolute',
+            top: 54,
+            right: 12,
+            background: 'rgba(235, 226, 212, 0.94)',
+            backdropFilter: 'blur(12px)',
+            border: '1px solid rgba(255, 255, 255, 0.85)',
+            borderRadius: 6,
+            padding: '4px 10px',
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            fontWeight: 700,
+            color: '#0284C7',
+            cursor: 'pointer',
+            zIndex: 30,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+          }}
+        >
+          <Sparkles size={11} /> Show Demo Pipeline Guide
+        </button>
+      )}
 
       {/* ─── Bottom Status Legend ────────────────────────────────────────── */}
       <div
@@ -851,10 +1183,18 @@ export default function Factory3DScene({
       >
         <span style={{ fontWeight: 800, color: '#1C1917' }}>PRECISIONWORKS DIGITAL TWIN</span>
         <span style={{ color: 'rgba(90, 75, 55, 0.2)' }}>|</span>
-        <span>DRAG TO ROTATE · SCROLL TO ZOOM · CLICK ASSET TO INSPECT</span>
+        <span>CLICK ANY MACHINE OR SENSOR TO INSPECT IN RIGHT SIDEBAR</span>
         <span style={{ color: 'rgba(90, 75, 55, 0.2)' }}>|</span>
         <span style={{ color: '#059669', fontWeight: 700 }}>● 60 FPS WEBGL</span>
       </div>
+
+      {/* ─── Statutory Audit Ledger & Buffer Outage Modal ─────────────────── */}
+      <AuditLedgerModal
+        isOpen={internalLedgerOpen}
+        onClose={() => setInternalLedgerOpen(false)}
+        isBuffering={isBuffering}
+        onToggleOutage={onToggleOutage || (() => {})}
+      />
     </div>
   );
 }

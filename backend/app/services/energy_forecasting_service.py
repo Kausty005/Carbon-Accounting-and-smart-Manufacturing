@@ -16,6 +16,13 @@ from typing import Any, Dict, List, Optional
 import joblib
 import numpy as np
 import pandas as pd
+import sklearn.compose._column_transformer
+
+# Backwards-compatibility for models serialized with scikit-learn <= 1.6
+if not hasattr(sklearn.compose._column_transformer, '_RemainderColsList'):
+    class _RemainderColsList(list):
+        pass
+    sklearn.compose._column_transformer._RemainderColsList = _RemainderColsList
 
 # Ensure repository root is on sys.path dynamically
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
@@ -86,6 +93,24 @@ class EnergyForecastingService:
         except Exception:
             pass
 
+        def _patch_imputer(model_obj):
+            if model_obj is None:
+                return
+            try:
+                from sklearn.impute import SimpleImputer
+                if hasattr(model_obj, 'named_steps'):
+                    for step_name, step in model_obj.named_steps.items():
+                        if hasattr(step, 'transformers_'):
+                            for name, trans, cols in step.transformers_:
+                                if hasattr(trans, 'named_steps'):
+                                    for s_name, s in trans.named_steps.items():
+                                        if isinstance(s, SimpleImputer) and not hasattr(s, '_fill_dtype'):
+                                            s._fill_dtype = object if any(isinstance(x, str) for x in getattr(s, 'statistics_', [])) else float
+                                elif isinstance(trans, SimpleImputer) and not hasattr(trans, '_fill_dtype'):
+                                    trans._fill_dtype = object if any(isinstance(x, str) for x in getattr(trans, 'statistics_', [])) else float
+            except Exception as patch_err:
+                print(f"[WARN] Imputer compatibility patch skipped: {patch_err}")
+
         errors = []
 
         # 1. 15-Minute Model
@@ -95,6 +120,9 @@ class EnergyForecastingService:
                 if isinstance(art_15m, dict) and "model" in art_15m:
                     self._artifact_15m = art_15m
                     self._model_15m = art_15m["model"]
+                    _patch_imputer(self._model_15m)
+                    self._artifact = self._artifact_15m
+                    self._model = self._model_15m
             except Exception as e:
                 errors.append(f"15m model: {e}")
         else:
@@ -107,6 +135,7 @@ class EnergyForecastingService:
                 if isinstance(art_h, dict) and "model" in art_h:
                     self._artifact_hourly = art_h
                     self._model_hourly = art_h["model"]
+                    _patch_imputer(self._model_hourly)
             except Exception as e:
                 errors.append(f"Hourly model: {e}")
         else:
@@ -119,6 +148,7 @@ class EnergyForecastingService:
                 if isinstance(art_d, dict) and "model" in art_d:
                     self._artifact_daily = art_d
                     self._model_daily = art_d["model"]
+                    _patch_imputer(self._model_daily)
             except Exception as e:
                 errors.append(f"Daily model: {e}")
         else:

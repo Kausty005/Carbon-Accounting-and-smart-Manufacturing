@@ -4,39 +4,40 @@ import { ExplainContext } from '../../services/aiApi';
 import { useAIExplain } from './AIExplainContext';
 
 interface ExplainableProps {
-  context: ExplainContext;
+  context?: ExplainContext | Record<string, any>;
+  title?: string;
+  explanationType?: string;
+  metric?: string;
   children: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
   showBadge?: boolean;
-  title?: string;
-  explanationType?: string;
-  metric?: string;
 }
 
 export function Explainable({
-  context,
+  context = {},
+  title,
+  explanationType,
+  metric,
   children,
   className = '',
   style = {},
   showBadge = true,
-  title,
-  explanationType,
-  metric,
 }: ExplainableProps) {
-  const effectiveContext = {
-    title,
-    component_type: explanationType,
-    metric,
+  const mergedContext: ExplainContext = {
+    title: title || (context as ExplainContext).title || 'Metric',
+    component_type: explanationType || (context as ExplainContext).component_type || 'metric',
+    value: metric !== undefined ? metric : (context as ExplainContext).value,
     ...context,
   };
+
   const { explain, activeContext, popoverStatus } = useAIExplain();
   const containerRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
 
   const isCurrentActive =
-    activeContext?.identifier === effectiveContext.identifier &&
-    activeContext?.title === effectiveContext.title;
+    activeContext?.identifier === mergedContext.identifier &&
+    activeContext?.title === mergedContext.title;
 
   const handleClick = (e: React.MouseEvent) => {
     // If the click is on an interactive button or link inside, don't hijack unless direct
@@ -46,7 +47,7 @@ export function Explainable({
     }
 
     if (containerRef.current) {
-      explain(effectiveContext, containerRef.current);
+      explain(mergedContext, containerRef.current);
     }
   };
 
@@ -54,7 +55,7 @@ export function Explainable({
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       if (containerRef.current) {
-        explain(effectiveContext, containerRef.current);
+        explain(mergedContext, containerRef.current);
       }
     }
   };
@@ -68,7 +69,7 @@ export function Explainable({
       onMouseLeave={() => setIsHovered(false)}
       tabIndex={0}
       role="button"
-      aria-label={`Explain ${context.title} with AI`}
+      aria-label={`Explain ${context.title || 'metric'} with AI`}
       className={`explainable-element ${className}`}
       style={{
         position: 'relative',

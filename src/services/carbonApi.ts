@@ -468,11 +468,52 @@ export function getOfflineFallbackCalculation(
   };
 }
 
+function normalizeQuotaResponse(data: any): CarbonQuotaResponse {
+  const quota = data.statutory_monthly_quota_t ?? data.permitted_budget_tco2e ?? 18.0;
+  const current = data.cumulative_emissions_t ?? data.actual_emissions_tco2e ?? 14.47;
+  const bri = data.burn_rate_index ?? 0.998;
+  const util = data.quota_utilization_pct ?? +((current / (quota || 1)) * 100).toFixed(2);
+  const proRata = data.pro_rata_expected_emissions_t ?? +(quota * 0.75).toFixed(2);
+  const status = data.burn_rate_status ?? (bri >= 1.05 ? 'CRITICAL' : bri >= 0.95 ? 'ADVISORY' : 'NORMAL');
+  const interlock = data.interlock_state ?? (bri >= 1.05 ? 'ACTIVE_LOCKOUT' : bri >= 0.95 ? 'WARNING' : 'DISENGAGED');
+  return {
+    statutory_monthly_quota_t: quota,
+    cumulative_emissions_t: current,
+    quota_utilization_pct: util,
+    pro_rata_expected_emissions_t: proRata,
+    burn_rate_index: bri,
+    burn_rate_status: status,
+    hours_to_quota_breach: data.hours_to_quota_breach ?? data.countdown_hours_to_breach ?? null,
+    interlock_state: interlock,
+    active_interlocks: data.active_interlocks || [],
+    recommended_fuel_switching: data.recommended_fuel_switching || {
+      recommended_action: bri >= 1.05 ? 'IMMEDIATE_FUEL_SWITCH_AND_DG_LOCKOUT' : 'READY_PNG_TO_BIOMASS_STANDBY',
+      target_asset: 'BOIL-PNG-01',
+      primary_fuel: 'png',
+      alternate_fuel: 'biomass',
+      emission_reduction_pct: 84.5,
+      hourly_saving_t_co2e: 0.062,
+      dg_lockout_armed: bri >= 1.05
+    },
+    note: data.message || data.note || 'Dynamic burn rate evaluated.'
+  };
+}
+
 export async function fetchAuditBlocks(limit = 20): Promise<AuditBlock[]> {
   try {
     const res = await fetchWithTimeout(`${API_BASE_URL}/api/v1/carbon/ledger/blocks?limit=${limit}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return await res.json();
+    const data = await res.json();
+    return (data || []).map((b: any) => ({
+      block_height: b.block_height ?? 0,
+      timestamp_iso: b.timestamp_iso || b.timestamp || new Date().toISOString(),
+      previous_block_hash: b.previous_block_hash || b.prev_hash || '0'.repeat(64),
+      merkle_root: b.merkle_root || '0'.repeat(64),
+      transaction_count: b.transaction_count ?? (b.telemetry_summary ? Object.keys(b.telemetry_summary).length : 6),
+      transactions: b.transactions ?? (b.telemetry_summary ? Object.entries(b.telemetry_summary).map(([k, v]) => ({ metric: k, value: v })) : []),
+      block_hash: b.block_hash || b.audit_signature || '0'.repeat(64),
+      verified_valid: b.verified_valid ?? true
+    }));
   } catch {
     // Generate deterministic simulated blocks for offline mode
     const now = Date.now();
@@ -497,7 +538,18 @@ export async function verifyAuditLedger(): Promise<LedgerVerifyResponse> {
   try {
     const res = await fetchWithTimeout(`${API_BASE_URL}/api/v1/carbon/ledger/verify`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return await res.json();
+    const data = await res.json();
+    return {
+      status: data.status || (data.valid ? 'VERIFIED_CRYPTOGRAPHICALLY_SOUND' : 'TAMPERING_DETECTED'),
+      total_blocks: data.total_blocks ?? 0,
+      genesis_hash: data.genesis_hash || '0'.repeat(64),
+      latest_block_hash: data.latest_block_hash || '0'.repeat(64),
+      verified_chain_intact: data.verified_chain_intact ?? data.valid ?? true,
+      tampered_blocks: data.tampered_blocks ?? (data.tampered_block_height !== undefined && data.tampered_block_height !== null ? [data.tampered_block_height] : []),
+      merkle_roots_valid: data.merkle_roots_valid ?? data.valid ?? true,
+      verification_timestamp: data.verification_timestamp || new Date().toISOString(),
+      details: data.details || data.message || 'All blocks verified.'
+    };
   } catch {
     return {
       status: 'VERIFIED_CRYPTOGRAPHICALLY_SOUND',
@@ -517,7 +569,8 @@ export async function fetchQuotaStatus(): Promise<CarbonQuotaResponse> {
   try {
     const res = await fetchWithTimeout(`${API_BASE_URL}/api/v1/carbon/quota/status`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return await res.json();
+    const data = await res.json();
+    return normalizeQuotaResponse(data);
   } catch {
     return {
       statutory_monthly_quota_t: 18.00,
@@ -545,13 +598,22 @@ export async function fetchQuotaStatus(): Promise<CarbonQuotaResponse> {
 
 export async function checkCarbonQuota(req: CarbonQuotaRequest): Promise<CarbonQuotaResponse> {
   try {
+    const payload = {
+      ...req,
+      permitted_budget_tco2e: req.quota_limit_t_co2e ?? 18.0,
+      actual_emissions_tco2e: req.current_emissions_t_co2e ?? 14.47,
+      elapsed_fraction: req.current_hour_of_month && req.total_hours_in_month 
+        ? req.current_hour_of_month / req.total_hours_in_month 
+        : 0.75
+    };
     const res = await fetchWithTimeout(`${API_BASE_URL}/api/v1/carbon/quota/check`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(req)
+      body: JSON.stringify(payload)
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return await res.json();
+    const data = await res.json();
+    return normalizeQuotaResponse(data);
   } catch {
     const quota = req.quota_limit_t_co2e ?? 18.0;
     const current = req.current_emissions_t_co2e ?? 14.47;

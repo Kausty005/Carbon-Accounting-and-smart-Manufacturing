@@ -71,6 +71,19 @@ class AuditLedgerService:
                     raw_list = json.load(f)
                     self.blocks = [AuditBlock(**b) for b in raw_list]
                     if self.blocks:
+                        for b in self.blocks:
+                            if not b.block_hash:
+                                b.block_hash = b.audit_signature
+                            if not b.previous_block_hash:
+                                b.previous_block_hash = b.prev_hash
+                            if not b.timestamp_iso:
+                                b.timestamp_iso = b.timestamp
+                            if not b.transaction_count:
+                                b.transaction_count = len(b.telemetry_summary) if b.telemetry_summary else 6
+                            if not b.transactions:
+                                b.transactions = [{"metric": k, "value": v} for k, v in (b.telemetry_summary or {}).items()]
+                            if b.verified_valid is None:
+                                b.verified_valid = True
                         return
             except Exception as e:
                 print(f"[WARN] Failed loading audit ledger: {e}. Reinitializing bootstrap ledger.")
@@ -132,6 +145,12 @@ class AuditLedgerService:
                 telemetry_summary=telemetry,
                 gross_carbon_tco2e=gross_carbon,
                 audit_signature=sig,
+                block_hash=sig,
+                previous_block_hash=prev_hash,
+                timestamp_iso=ts,
+                transaction_count=len(telemetry),
+                transactions=[{"metric": k, "value": v} for k, v in telemetry.items()],
+                verified_valid=True,
             )
             chain.append(block)
             prev_hash = sig
@@ -168,6 +187,12 @@ class AuditLedgerService:
             telemetry_summary=telemetry_summary,
             gross_carbon_tco2e=gross_carbon_tco2e,
             audit_signature=sig,
+            block_hash=sig,
+            previous_block_hash=prev_hash,
+            timestamp_iso=ts,
+            transaction_count=len(telemetry_summary),
+            transactions=[{"metric": k, "value": v} for k, v in telemetry_summary.items()],
+            verified_valid=True,
         )
         self.blocks.append(new_block)
         self._save()
@@ -183,7 +208,19 @@ class AuditLedgerService:
         Returns validation status or pinpoints the exact block height of tampering.
         """
         if not self.blocks:
-            return LedgerVerifyResponse(valid=True, total_blocks=0, message="Ledger is empty.")
+            return LedgerVerifyResponse(
+                valid=True,
+                total_blocks=0,
+                message="Ledger is empty.",
+                status="EMPTY_LEDGER",
+                genesis_hash="0" * 64,
+                latest_block_hash="0" * 64,
+                verified_chain_intact=True,
+                tampered_blocks=[],
+                merkle_roots_valid=True,
+                verification_timestamp=datetime.now(timezone.utc).isoformat(),
+                details="No blocks currently loaded."
+            )
 
         expected_prev = "0" * 64
 
@@ -194,7 +231,15 @@ class AuditLedgerService:
                     valid=False,
                     total_blocks=len(self.blocks),
                     tampered_block_height=b.block_height,
-                    message=f"Hash chain broken at Block #{b.block_height}: prev_hash mismatch. Tampering detected."
+                    message=f"Hash chain broken at Block #{b.block_height}: prev_hash mismatch. Tampering detected.",
+                    status="TAMPERING_DETECTED",
+                    genesis_hash=self.blocks[0].prev_hash if self.blocks else "0" * 64,
+                    latest_block_hash=self.blocks[-1].audit_signature if self.blocks else "0" * 64,
+                    verified_chain_intact=False,
+                    tampered_blocks=[b.block_height],
+                    merkle_roots_valid=False,
+                    verification_timestamp=datetime.now(timezone.utc).isoformat(),
+                    details=f"Hash chain broken at Block #{b.block_height}: prev_hash mismatch."
                 )
 
             # 2. Verify Merkle root matches telemetry
@@ -204,7 +249,15 @@ class AuditLedgerService:
                     valid=False,
                     total_blocks=len(self.blocks),
                     tampered_block_height=b.block_height,
-                    message=f"Telemetry payload tampered at Block #{b.block_height}: Merkle root mismatch."
+                    message=f"Telemetry payload tampered at Block #{b.block_height}: Merkle root mismatch.",
+                    status="TAMPERING_DETECTED",
+                    genesis_hash=self.blocks[0].prev_hash if self.blocks else "0" * 64,
+                    latest_block_hash=self.blocks[-1].audit_signature if self.blocks else "0" * 64,
+                    verified_chain_intact=False,
+                    tampered_blocks=[b.block_height],
+                    merkle_roots_valid=False,
+                    verification_timestamp=datetime.now(timezone.utc).isoformat(),
+                    details=f"Telemetry payload tampered at Block #{b.block_height}: Merkle root mismatch."
                 )
 
             # 3. Verify cryptographic block signature
@@ -216,16 +269,35 @@ class AuditLedgerService:
                     valid=False,
                     total_blocks=len(self.blocks),
                     tampered_block_height=b.block_height,
-                    message=f"Signature invalid at Block #{b.block_height}. Cryptographic block header modified."
+                    message=f"Signature invalid at Block #{b.block_height}. Cryptographic block header modified.",
+                    status="TAMPERING_DETECTED",
+                    genesis_hash=self.blocks[0].prev_hash if self.blocks else "0" * 64,
+                    latest_block_hash=self.blocks[-1].audit_signature if self.blocks else "0" * 64,
+                    verified_chain_intact=False,
+                    tampered_blocks=[b.block_height],
+                    merkle_roots_valid=False,
+                    verification_timestamp=datetime.now(timezone.utc).isoformat(),
+                    details=f"Signature invalid at Block #{b.block_height}."
                 )
 
             expected_prev = b.audit_signature
+
+        latest_hash = self.blocks[-1].audit_signature if self.blocks else ("0" * 64)
+        genesis_hash = self.blocks[0].prev_hash if self.blocks else ("0" * 64)
 
         return LedgerVerifyResponse(
             valid=True,
             total_blocks=len(self.blocks),
             tampered_block_height=None,
-            message=f"All {len(self.blocks)} blocks cryptographically verified. Hash chain is unbroken and mathematically tamper-proof."
+            message=f"All {len(self.blocks)} blocks cryptographically verified. Hash chain is unbroken and mathematically tamper-proof.",
+            status="VERIFIED_CRYPTOGRAPHICALLY_SOUND",
+            genesis_hash=genesis_hash,
+            latest_block_hash=latest_hash,
+            verified_chain_intact=True,
+            tampered_blocks=[],
+            merkle_roots_valid=True,
+            verification_timestamp=datetime.now(timezone.utc).isoformat(),
+            details=f"All {len(self.blocks)} consecutive 15-min interval SHA-256 links and Merkle roots verified cryptographically intact."
         )
 
 

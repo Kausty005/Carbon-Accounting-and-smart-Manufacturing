@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts';
 import { PLANT, SimParams, calcSimResult } from '../../data/mockData';
+import { UserProfile } from '../../auth/authTypes';
 
 // ─── WARM EDITORIAL BEIGE PALETTE (Exact Match to Reference Aesthetic) ─────────
 const BG_COLOR = '#E4D9C8'; // Rich, unmistakable warm architectural beige
@@ -60,10 +61,10 @@ export const STATIONS: MachineStation[] = [
     name: 'AIR COMPRESSOR (ELGi EG-55)',
     shortName: '01 / Compressor',
     subTitle: 'Pneumatics Telemetry & Leak Shield',
-    adEyebrow: 'INTELLIGENT PNEUMATIC OPTIMIZATION // UNLOADED LEAK DETECTION',
-    adHeadline: ['STOP LEAKING POWER.', 'RECLAIM LOST ENERGY.'],
+    adEyebrow: 'INTELLIGENT ENERGY MANAGEMENT // KPCL HACKATHON 2026',
+    adHeadline: ['STOP LEAKING POWER.', 'RECLAIM ₹7,987 / PERIOD.'],
     adHook:
-      'WattWise AI detects idle energy waste, identifies equipment inefficiencies, and helps manufacturing plants reduce operating costs without compromising production.',
+      'Standard factory meters only report bulk kilowatt-hours. WattWise AI isolates unloaded idle waste in real-time, enforcing smart auto-cutoffs and optimizing industrial power efficiency without production loss.',
     benefits: [
       { icon: 'zap', title: 'ENERGY MONITORING', desc: 'Identify unnecessary power consumption.' },
       { icon: 'activity', title: 'WASTE DETECTION', desc: 'Spot inefficient operating patterns.' },
@@ -867,9 +868,10 @@ function StationLabelSynchronizer({
 interface HomePageProps {
   onLaunchPlatform: () => void;
   onOpenLogin: () => void;
+  currentUser?: UserProfile | null;
 }
 
-export default function HomePage({ onLaunchPlatform, onOpenLogin }: HomePageProps) {
+export default function HomePage({ onLaunchPlatform, onOpenLogin, currentUser }: HomePageProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isWhatIfOpen, setIsWhatIfOpen] = useState(false);
   const [isReportsOpen, setIsReportsOpen] = useState(false);
@@ -1231,9 +1233,40 @@ export default function HomePage({ onLaunchPlatform, onOpenLogin }: HomePageProp
               boxShadow: PILL_SHADOW,
               cursor: 'pointer',
               transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '7px',
             }}
           >
-            Sign In
+            {currentUser ? (
+              <>
+                <span
+                  style={{
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    backgroundColor: currentUser.avatarColor,
+                    boxShadow: `0 0 6px ${currentUser.avatarColor}`,
+                  }}
+                />
+                <span>{currentUser.name}</span>
+                <span
+                  style={{
+                    fontSize: '9.5px',
+                    padding: '2px 7px',
+                    borderRadius: '9999px',
+                    backgroundColor: currentUser.badge.bg,
+                    color: currentUser.badge.color,
+                    fontWeight: 700,
+                    letterSpacing: '0.04em',
+                  }}
+                >
+                  {currentUser.badge.label.split(' ')[0]}
+                </span>
+              </>
+            ) : (
+              <span>Sign In</span>
+            )}
           </button>
 
           <button
@@ -1503,7 +1536,7 @@ export default function HomePage({ onLaunchPlatform, onOpenLogin }: HomePageProp
                     color: '#18191B',
                   }}
                 >
-                  {currentStation.code} / {currentStation.shortName.split('/')[1] || currentStation.name}
+                  {currentStation.shortName}
                 </h3>
                 <p
                   style={{

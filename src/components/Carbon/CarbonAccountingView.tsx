@@ -4,7 +4,7 @@ import {
   Leaf, Flame, Zap, BarChart3, TrendingDown, RefreshCw,
   ChevronDown, ChevronRight, Info, AlertTriangle, CheckCircle2,
   Database, ArrowRight, Sliders, Download, Activity, ShieldCheck,
-  FileText, Check, Layers
+  FileText, Check, Layers, Award, Coins
 } from 'lucide-react';
 import {
   PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis,
@@ -12,6 +12,8 @@ import {
 } from 'recharts';
 import { PLANT, type SimParams, calcSimResult } from '../../data/mockData';
 import type { CarbonCalculateResponse, CeaMethodology } from '../../services/carbonApi';
+import { CarbonCreditsEngine } from './CarbonCreditsEngine';
+import { CarbonComplianceFilingPortal } from './CarbonComplianceFilingPortal';
 
 export interface CarbonAccountingViewProps {
   params: SimParams;
@@ -52,6 +54,9 @@ export default function CarbonAccountingView({
   setCeaMethodology,
   availableYears,
 }: CarbonAccountingViewProps) {
+  // Sub-tab navigation state
+  const [activeTab, setActiveTab] = useState<'accounting' | 'credits' | 'filing'>('accounting');
+
   // Collapsible accordion states
   const [isMethodologyOpen, setIsMethodologyOpen] = useState(false);
   const [isDataQualityOpen, setIsDataQualityOpen] = useState(false);
@@ -372,7 +377,97 @@ export default function CarbonAccountingView({
           </div>
         </div>
 
-        {/* ─── Error Alert Banner (if applicable) ─────────────────────────────────── */}
+        {/* ─── Top Sub-Tab Navigation Bar ─────────────────────────────────────────── */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          background: '#FAF7F2',
+          padding: '6px',
+          borderRadius: 10,
+          border: '1px solid #EAE3D7',
+          width: 'fit-content',
+          flexWrap: 'wrap'
+        }}>
+          <button
+            onClick={() => setActiveTab('accounting')}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '8px 16px',
+              borderRadius: 8,
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: 13,
+              fontWeight: 600,
+              background: activeTab === 'accounting' ? '#1C1917' : 'transparent',
+              color: activeTab === 'accounting' ? '#FFFFFF' : '#78716C',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <Leaf size={14} color={activeTab === 'accounting' ? '#10B981' : '#78716C'} />
+            <span>GHG Accounting & Inventory</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('credits')}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '8px 16px',
+              borderRadius: 8,
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: 13,
+              fontWeight: 600,
+              background: activeTab === 'credits' ? '#1C1917' : 'transparent',
+              color: activeTab === 'credits' ? '#FFFFFF' : '#78716C',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <Award size={14} color={activeTab === 'credits' ? '#F59E0B' : '#78716C'} />
+            <span>Carbon Credits & CCTS Marketplace</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('filing')}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '8px 16px',
+              borderRadius: 8,
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: 13,
+              fontWeight: 600,
+              background: activeTab === 'filing' ? '#1C1917' : 'transparent',
+              color: activeTab === 'filing' ? '#FFFFFF' : '#78716C',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <FileText size={14} color={activeTab === 'filing' ? '#3B82F6' : '#78716C'} />
+            <span>Statutory Compliance & Filings</span>
+          </button>
+        </div>
+
+        {activeTab === 'credits' && (
+          <div style={{ marginTop: 8 }}>
+            <CarbonCreditsEngine />
+          </div>
+        )}
+
+        {activeTab === 'filing' && (
+          <div style={{ marginTop: 8 }}>
+            <CarbonComplianceFilingPortal />
+          </div>
+        )}
+
+        {activeTab === 'accounting' && (
+          <>
+            {/* ─── Error Alert Banner (if applicable) ─────────────────────────────────── */}
         {carbonError && (
           <div style={{
             background: 'rgba(239, 68, 68, 0.08)',
@@ -1314,6 +1409,8 @@ export default function CarbonAccountingView({
             )}
           </AnimatePresence>
         </div>
+        </>
+        )}
 
       </div>
     </div>

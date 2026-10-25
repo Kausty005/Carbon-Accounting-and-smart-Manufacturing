@@ -15,6 +15,7 @@ from backend.app.routers.anomalies import router as anomalies_router, get_incide
 from backend.app.routers.forecast import router as forecast_router
 from backend.app.routers.ai import router as ai_router, legacy_router as ai_legacy_router
 from backend.app.routers.fleet import router as fleet_router
+from backend.app.routers.sensors import router as sensors_router
 from backend.app.services.energy_forecasting_service import energy_forecasting_service
 from backend.app.services.reference_data import reference_data_service
 
@@ -94,6 +95,7 @@ def health_check():
             "carbon_accounting": "ready",
             "ai_energy_intelligence": "ready" if models_loaded else "initialization",
             "digital_twin_simulation": "ready",
+            "sensor_simulation": "ready",
             "energy_forecasting": "ready" if getattr(energy_forecasting_service, "_model", None) is not None else "initialization",
             "fleet_scalability": "ready",
         },
@@ -109,6 +111,7 @@ app.include_router(forecast_router)
 app.include_router(ai_router)
 app.include_router(ai_legacy_router)
 app.include_router(fleet_router)
+app.include_router(sensors_router)
 
 # Mount Digital Twin Simulation Engine
 try:

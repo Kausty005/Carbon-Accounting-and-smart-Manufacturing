@@ -7,7 +7,8 @@ import {
   Flame, Fan, Server, Box, Compass, LogOut, User, RotateCcw,
   PanelRightClose, PanelRightOpen, Activity, ArrowRight,
   Shield, Gauge, Printer, Download, ShieldAlert,
-  Award, Terminal, Database, ShieldCheck, AlertCircle
+  Award, Terminal, Database, ShieldCheck, Lock, UserCheck, AlertCircle,
+  Radio, FileCheck2, Wifi, WifiOff
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -17,9 +18,13 @@ import {
 } from 'recharts';
 import factoryHeroImg from './assets/hero.png';
 import ScadaFloorMap from './components/ScadaFloorMap';
-import Factory3DScene from './components/Factory3D/Factory3DScene';
+import Factory3DScene, { PHYSICAL_SENSORS } from './components/Factory3D/Factory3DScene';
+import AuditLedgerModal from './components/Factory3D/AuditLedgerModal';
+import type { SensorMetadata } from './components/Factory3D/SensorHudPopup';
 import HomePage from './components/HomePage/HomePage';
 import LoginModal from './components/Auth/LoginModal';
+import { AccessDeniedView } from './components/Auth/AccessDeniedView';
+import { RoleId, UserProfile, DEMO_USERS, hasViewAccess, VIEW_SECURITY_METADATA } from './auth/authTypes';
 import DigitalTwinView from './components/DigitalTwin/DigitalTwinView';
 import CarbonAccountingView from './components/Carbon/CarbonAccountingView';
 import AIAnomalyIntelligence from './components/AIAnomaly/AIAnomalyIntelligence';
@@ -1439,86 +1444,113 @@ function OverviewView({
 function ScadaView({
   assets,
   selectedId,
+  selectedSensorId,
   onSelect,
+  onSelectSensor,
   onSimulate,
   mapMode,
   setMapMode,
+  isBuffering = false,
+  onToggleOutage,
+  onOpenLedger,
+  simMode = false,
+  onToggleSimMode,
+  onResetBaseline,
 }: {
   assets: Asset[];
   selectedId: string | null;
+  selectedSensorId?: string | null;
   onSelect: (id: string | null) => void;
+  onSelectSensor?: (sensorId: string | null) => void;
   onSimulate: (id: string) => void;
   mapMode: '3d' | '2d';
   setMapMode: (m: '3d' | '2d') => void;
+  isBuffering?: boolean;
+  onToggleOutage?: (isOffline: boolean) => void;
+  onOpenLedger?: () => void;
+  simMode?: boolean;
+  onToggleSimMode?: () => void;
+  onResetBaseline?: () => void;
 }) {
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
-      {/* Mode Switcher Toggle Bar */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 14,
-          right: 20,
-          zIndex: 40,
-          display: 'flex',
-          background: 'rgba(235, 226, 212, 0.94)',
-          border: '1px solid rgba(255, 255, 255, 0.85)',
-          borderRadius: 8,
-          padding: 3,
-          backdropFilter: 'blur(12px)',
-          boxShadow: '4px 4px 14px rgba(188, 176, 158, 0.35)',
-        }}
-      >
-        <button
-          onClick={() => setMapMode('3d')}
+      {/* Mode Switcher Toggle Bar (Active in 2.5D Mimic mode; 3D view integrates switcher into unified top control bar) */}
+      {mapMode === '2d' && (
+        <div
           style={{
-            background: mapMode === '3d' ? '#1C1917' : 'transparent',
-            color: mapMode === '3d' ? '#F5EFE6' : 'var(--slate-400)',
-            border: 'none',
-            borderRadius: 6,
-            padding: '5px 12px',
-            fontSize: 11,
-            fontWeight: 700,
-            fontFamily: 'var(--font-mono)',
-            cursor: 'pointer',
+            position: 'absolute',
+            top: 14,
+            right: 20,
+            zIndex: 40,
             display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            transition: 'all 0.15s ease',
-            boxShadow: mapMode === '3d' ? '0 2px 6px rgba(0,0,0,0.12)' : 'none',
+            background: 'rgba(235, 226, 212, 0.94)',
+            border: '1px solid rgba(255, 255, 255, 0.85)',
+            borderRadius: 8,
+            padding: 3,
+            backdropFilter: 'blur(12px)',
+            boxShadow: '4px 4px 14px rgba(188, 176, 158, 0.35)',
           }}
         >
-          <Box size={13} style={{ color: mapMode === '3d' ? '#F59E0B' : 'inherit' }} /> 3D Digital Twin
-        </button>
-        <button
-          onClick={() => setMapMode('2d')}
-          style={{
-            background: mapMode === '2d' ? '#1C1917' : 'transparent',
-            color: mapMode === '2d' ? '#F5EFE6' : 'var(--slate-400)',
-            border: 'none',
-            borderRadius: 6,
-            padding: '5px 12px',
-            fontSize: 11,
-            fontWeight: 700,
-            fontFamily: 'var(--font-mono)',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            transition: 'all 0.15s ease',
-            boxShadow: mapMode === '2d' ? '0 2px 6px rgba(0,0,0,0.12)' : 'none',
-          }}
-        >
-          <Cpu size={13} style={{ color: mapMode === '2d' ? '#06B6D4' : 'inherit' }} /> 2.5D SCADA Mimic
-        </button>
-      </div>
+          <button
+            onClick={() => setMapMode('3d')}
+            style={{
+              background: 'transparent',
+              color: 'var(--slate-400)',
+              border: 'none',
+              borderRadius: 6,
+              padding: '5px 12px',
+              fontSize: 11,
+              fontWeight: 700,
+              fontFamily: 'var(--font-mono)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <Box size={13} style={{ color: 'inherit' }} /> 3D Digital Twin
+          </button>
+          <button
+            onClick={() => setMapMode('2d')}
+            style={{
+              background: '#1C1917',
+              color: '#F5EFE6',
+              border: 'none',
+              borderRadius: 6,
+              padding: '5px 12px',
+              fontSize: 11,
+              fontWeight: 700,
+              fontFamily: 'var(--font-mono)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              transition: 'all 0.15s ease',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.12)',
+            }}
+          >
+            <Cpu size={13} style={{ color: '#06B6D4' }} /> 2.5D SCADA Mimic
+          </button>
+        </div>
+      )}
 
       {mapMode === '3d' ? (
         <Factory3DScene
           assets={assets}
           selectedId={selectedId}
+          selectedSensorId={selectedSensorId}
           onSelect={onSelect}
+          onSelectSensor={onSelectSensor}
           onSimulate={onSimulate}
+          onOpenLedger={onOpenLedger}
+          isBuffering={isBuffering}
+          onToggleOutage={onToggleOutage}
+          simMode={simMode}
+          onToggleSimMode={onToggleSimMode}
+          onResetBaseline={onResetBaseline}
+          mapMode={mapMode}
+          setMapMode={setMapMode}
         />
       ) : (
         <ScadaFloorMap
@@ -2212,41 +2244,129 @@ Governance:         Simulation Only. Plant Energy Manager approval required prio
 
 function InspectorPanel({
   selectedId,
+  selectedSensorId,
+  assets,
   setView,
   params,
   carbonData,
   gridEF,
   onResetBaseline,
+  onSelectSensor,
+  onSelectAsset,
+  isBuffering = false,
+  onToggleOutage,
+  onOpenLedger,
+  simMode = false,
+  onToggleSimMode,
 }: {
   selectedId: string | null;
+  selectedSensorId?: string | null;
+  assets?: Asset[];
   setView: (v: View) => void;
   params: SimParams;
   carbonData: CarbonCalculateResponse | null;
   gridEF: number;
   onResetBaseline?: () => void;
+  onSelectSensor?: (sensorId: string | null) => void;
+  onSelectAsset?: (assetId: string | null) => void;
+  isBuffering?: boolean;
+  onToggleOutage?: (isOffline: boolean) => void;
+  onOpenLedger?: () => void;
+  simMode?: boolean;
+  onToggleSimMode?: () => void;
 }) {
-  const [tab, setTab] = useState<'asset' | 'alerts' | 'kpis'>('alerts');
-  const asset = ASSETS.find(a => a.id === selectedId);
+  const [tab, setTab] = useState<'asset' | 'alerts' | 'sensors' | 'kpis'>('alerts');
+  const [activeSensorId, setActiveSensorId] = useState<string>('EM-102');
 
+  const currentAssets = assets || ASSETS;
+  const asset = currentAssets.find(a => a.id === selectedId);
+
+  // Synchronize tabs with selected asset or sensor
   useEffect(() => {
-    if (selectedId) setTab('asset');
-  }, [selectedId]);
+    if (selectedSensorId) {
+      setActiveSensorId(selectedSensorId);
+      setTab('sensors');
+    } else if (selectedId) {
+      setTab('asset');
+    }
+  }, [selectedId, selectedSensorId]);
+
+  // Derived live SCADA values for physical sensor synchronization
+  const totalPlantKw = currentAssets.reduce((acc, a) => acc + (a.currentKw || 0), 0);
+  const compAsset = currentAssets.find(a => a.id === 'compressor');
+  const furnAsset = currentAssets.find(a => a.id === 'furnace');
+  const chillAsset = currentAssets.find(a => a.id === 'cooling');
+  const cncAsset = currentAssets.find(a => a.id === 'cnc');
+
+  const compKw = compAsset?.currentKw ?? 37.0;
+  const furnKw = furnAsset?.currentKw ?? 85.0;
+  const chillKw = chillAsset?.currentKw ?? 12.0;
+
+  // Real physical quantities calculated directly from active SCADA machinery
+  const liveSensorReadings: Record<string, any> = {
+    'EM-101': {
+      active_power_kw: totalPlantKw.toFixed(1),
+      voltage_v_ll: '414.8',
+      current_a: (totalPlantKw * 1000 / (1.732 * 415 * 0.91)).toFixed(1),
+      power_factor: '0.913',
+      grid_frequency_hz: '50.02',
+      accuracy_class: 'IEC 62053-22 Class 0.5S (±0.5%)',
+      modbus_registers: { '40001 (V_LL)': '4148', '40003 (I_A)': (totalPlantKw * 1.5).toFixed(0), '40004 (P_kW)': (totalPlantKw * 10).toFixed(0) },
+    },
+    'EM-102': {
+      active_power_kw: compKw.toFixed(1),
+      voltage_v_ll: '414.8',
+      current_a: (compKw * 1.55).toFixed(1),
+      discharge_pressure_bar: (compAsset?.dischargePressureBar ?? 7.2).toFixed(1),
+      power_factor: (compAsset?.pf ?? 0.78).toFixed(2),
+      accuracy_class: 'IEC 62053-22 Class 0.5S (±0.5%)',
+      modbus_registers: { '40021 (V_LL)': '4148', '40022 (I_A)': (compKw * 15.5).toFixed(0), '40023 (P_kW)': (compKw * 10).toFixed(0), '40025 (P_Bar)': ((compAsset?.dischargePressureBar ?? 7.2) * 10).toFixed(0) },
+    },
+    'FM-201': {
+      mass_flow_rate_kg_h: Math.max(0.5, furnKw * 0.1747).toFixed(2),
+      gas_density_kg_m3: '0.782',
+      fuel_temperature_c: '28.4',
+      daily_mass_kg: (Math.max(0.5, furnKw * 0.1747) * 24).toFixed(1),
+      volumetric_flow_nm3_h: (Math.max(0.5, furnKw * 0.1747) / 0.782).toFixed(2),
+      accuracy_class: 'API MPMS Ch. 5.6 (±0.05%)',
+      modbus_registers: { '40101 (Flow)': (furnKw * 1.747).toFixed(0), '40102 (Dens)': '782', '40103 (Temp)': '284' },
+    },
+    'GA-301': {
+      co2_concentration_vol_pct: Math.min(18.0, 8.5 + (furnKw / 85.0) * 1.35).toFixed(2),
+      stack_gas_temp_c: (140.0 + (furnKw / 85.0) * 44.5).toFixed(1),
+      excess_o2_vol_pct: '3.56',
+      nox_concentration_ppm: '84.6',
+      combustion_efficiency_pct: '89.1',
+      accuracy_class: 'ISO 12039 / EPA 40 CFR 60 App B',
+      modbus_registers: { '40201 (CO2%)': ((8.5 + (furnKw / 85.0) * 1.35) * 100).toFixed(0), '40202 (StackT)': ((140.0 + (furnKw / 85.0) * 44.5) * 10).toFixed(0) },
+    },
+    'WQ-401': {
+      cod_mg_l: (35.0 + (chillKw / 12.0) * 19.2).toFixed(1),
+      tss_mg_l: '14.2',
+      water_ph: '7.41',
+      cooling_temp_c: '24.8',
+      effluent_standard: 'SPCB Discharge Limit < 250 mg/L (PASS)',
+      accuracy_class: 'ISO 15839 (Continuous Optical)',
+      modbus_registers: { '40301 (COD)': ((35.0 + (chillKw / 12.0) * 19.2) * 10).toFixed(0), '40302 (TSS)': '142', '40303 (pH)': '741' },
+    },
+    'GW-EDGE-01': {
+      gateway_status: isBuffering ? 'OFFLINE (72H RING BUFFERING)' : 'ONLINE (TLS 1.3 STREAMING)',
+      buffer_capacity: '72 Hours Circular NVRAM (259,200 samples)',
+      buffer_queued: isBuffering ? '142 packets queued locally' : '0 pending (Fully Reconciled with Cloud)',
+      crypto_provenance: 'Hardware TPM 2.0 SHA-256 Merkle Provenance',
+      accuracy_class: 'IEC 61000-6-2/4 Heavy Industrial',
+      modbus_registers: { '40401 (BufStatus)': isBuffering ? '2' : '1', '40402 (Queue)': isBuffering ? '142' : '0' },
+    },
+  };
+
+  const selectedSensorMeta = PHYSICAL_SENSORS.find(s => s.sensor_id === activeSensorId) || PHYSICAL_SENSORS[0];
+  const activeReading = liveSensorReadings[selectedSensorMeta.sensor_id] || {};
 
   const s2Total = (carbonData?.gross_footprint.scope2?.emissions_total_co2e_t ?? 9.096).toFixed(2);
   const s1Total = (carbonData?.gross_footprint.scope1?.emissions_total_co2e_t ?? 5.377).toFixed(2);
   const anyFix = params.autoIdleCutoff || params.pressureSetpoint < 7.5 || params.staggerFurnace;
   const avoidedCarbon = (carbonData?.avoided_emissions?.avoided_co2e_t ?? (anyFix ? 0.728 : 0.0)).toFixed(3);
   const factorVal = (carbonData?.gross_footprint.scope2?.factor_metadata.selected_factor ?? gridEF).toFixed(3);
-
-  const [expandedAlerts, setExpandedAlerts] = useState<Record<string, boolean>>({
-    compressor: false,
-    furnace: false,
-    cnc: false,
-  });
-
-  const toggleAlertExpand = (id: string) => {
-    setExpandedAlerts(prev => ({ ...prev, [id]: !prev[id] }));
-  };
 
   return (
     <aside className="inspector-panel">
@@ -2257,184 +2377,86 @@ function InspectorPanel({
         <button className={`inspector-tab ${tab === 'asset' ? 'active' : ''}`} onClick={() => setTab('asset')}>
           Asset
         </button>
+        <button className={`inspector-tab ${tab === 'sensors' ? 'active' : ''}`} onClick={() => setTab('sensors')}>
+          Sensors {isBuffering && <span style={{ color: '#d97706', marginLeft: 3 }}>●</span>}
+        </button>
         <button className={`inspector-tab ${tab === 'kpis' ? 'active' : ''}`} onClick={() => setTab('kpis')}>
           Plant KPIs
         </button>
       </div>
 
       <div className="inspector-body">
+        {/* Closed-Loop Sensor & Digital Twin Pipeline Quick Toggle */}
+        <div
+          style={{
+            marginBottom: 12,
+            background: simMode ? 'rgba(22, 163, 74, 0.08)' : 'rgba(217, 119, 6, 0.08)',
+            border: `1px solid ${simMode ? '#16A34A' : '#D97706'}`,
+            borderRadius: 8,
+            padding: '10px',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, fontWeight: 800, color: simMode ? '#16A34A' : '#D97706', letterSpacing: 0.5 }}>
+              {simMode ? '● DIGITAL TWIN CLOSED-LOOP: ACTIVE' : '● PHYSICAL BASELINE: UNOPTIMIZED'}
+            </span>
+            <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: '#64748B' }}>
+              {simMode ? 'Auto-Idle Applied' : '18 kW Idle Draw'}
+            </span>
+          </div>
+
+          <button
+            className={`btn btn-sm btn-full ${simMode ? 'btn-outline' : 'btn-emerald'}`}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontWeight: 700 }}
+            onClick={onToggleSimMode}
+          >
+            {simMode ? <RotateCcw size={11} /> : <Zap size={11} />}
+            {simMode ? 'Reset to Physical Baseline' : 'Simulate Digital Twin Optimization'}
+          </button>
+
+          <div style={{ marginTop: 6, fontSize: 9, color: '#475569', lineHeight: 1.45, fontFamily: 'var(--font-mono)' }}>
+            {simMode ? (
+              <span>✓ Sensor EM-102 register 40023 dropped to 0 kW (-998 kWh/day, -727.7 kg CO₂e).</span>
+            ) : (
+              <span>⚠ Physical sensor EM-102 reads 18 kW unloaded idle draw during lunch break.</span>
+            )}
+          </div>
+        </div>
         {/* Alerts tab */}
         {tab === 'alerts' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div className="section-title">Active Plant Alerts</div>
-
-            {/* Alert 1: Compressor Warning */}
-            <div style={{
-              background: '#FFFFFF',
-              border: '1px solid #EAE3D7',
-              borderLeft: '3px solid #F59E0B',
-              borderRadius: 8,
-              padding: '11px 13px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <AlertTriangle size={13} color="#D97706" />
-                  <span style={{ fontSize: 11.5, fontWeight: 700, color: '#1C1917' }}>Air Compressor (ELGi)</span>
-                </div>
-                <span style={{
-                  fontSize: 9.5, fontWeight: 700, padding: '1px 6px', borderRadius: 4,
-                  background: 'rgba(245,158,11,0.12)', color: '#D97706', fontFamily: 'var(--font-mono)'
-                }}>
-                  WARNING
-                </span>
+          <>
+            <div className="section-title">Active Alerts</div>
+            <div className="alert-banner warn">
+              <div className="alert-title">
+                <AlertTriangle size={10} style={{ display: 'inline', marginRight: 4 }} />
+                ANOMALY — AIR COMPRESSOR
               </div>
-              <div style={{ fontSize: 11, color: '#475569', lineHeight: 1.4, wordBreak: 'break-word' }}>
-                18 kW idle draw during 3.2 hrs/day shift and lunch breaks.
+              <div className="alert-body">
+                18 kW idle draw during 3.2 hrs/day break periods. Discharge pressure 7.2 bar (set: 7.5, optimal: 6.8).
+                Power Factor 0.78.
               </div>
-
-              {expandedAlerts.compressor && (
-                <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px dashed #EAE3D7', fontSize: 10.5, color: '#64748B', lineHeight: 1.45 }}>
-                  <div><strong>Diagnostics:</strong> Discharge pressure 7.2 bar (setpoint: 7.5 bar, optimal floor: 6.8 bar). Power Factor: 0.78 unloader drop.</div>
-                  <div style={{ color: '#059669', marginTop: 4, fontWeight: 600 }}>
-                    Auto-Idle Cutoff: saves 998.4 kWh/mo · ₹7,987/mo · 728 kg CO₂e avoided.
-                  </div>
-                </div>
-              )}
-
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, gap: 6 }}>
-                <button
-                  type="button"
-                  onClick={() => toggleAlertExpand('compressor')}
-                  style={{
-                    background: 'transparent', border: 'none', padding: 0,
-                    fontSize: 10.5, color: '#0284C7', cursor: 'pointer', fontWeight: 500
-                  }}
-                >
-                  {expandedAlerts.compressor ? 'Hide details ▲' : 'Show details ▼'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setView('simulator')}
-                  style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 4,
-                    background: '#0284C7', color: '#FFFFFF', border: 'none',
-                    borderRadius: 5, padding: '4px 9px', fontSize: 10.5, fontWeight: 600,
-                    cursor: 'pointer'
-                  }}
-                >
-                  <span>Simulate in Twin</span>
-                  <ChevronRight size={10} />
-                </button>
+              <div className="alert-rec">
+                Auto-Idle Cutoff: saves 998.4 kWh / ₹7,987 / 727.7 kg CO₂e avoided
+              </div>
+              <button className="btn btn-amber btn-sm btn-full" style={{ marginTop: 8 }}
+                onClick={() => setView('simulator')}
+              >
+                <ChevronRight size={10} />
+                Simulate Fix in Digital Twin
+              </button>
+            </div>
+            <div className="alert-banner ok">
+              <div className="alert-title">CNC MACHINING CENTER — OPTIMAL</div>
+              <div className="alert-body">SEC: 1.8 kWh/part. P.F. 0.94. No anomalies detected.</div>
+            </div>
+            <div className="alert-banner crit">
+              <div className="alert-title">FURNACE — HIGH PEAK DEMAND</div>
+              <div className="alert-body">
+                85 kW concurrent with compressor peak 09:00–12:00.
+                Staggering preheat by 45 min reduces peak demand 18%.
               </div>
             </div>
-
-            {/* Alert 2: Furnace Critical */}
-            <div style={{
-              background: '#FFFFFF',
-              border: '1px solid #EAE3D7',
-              borderLeft: '3px solid #DC2626',
-              borderRadius: 8,
-              padding: '11px 13px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <AlertCircle size={13} color="#DC2626" />
-                  <span style={{ fontSize: 11.5, fontWeight: 700, color: '#1C1917' }}>Heat Furnace (IF-85)</span>
-                </div>
-                <span style={{
-                  fontSize: 9.5, fontWeight: 700, padding: '1px 6px', borderRadius: 4,
-                  background: 'rgba(239,68,68,0.12)', color: '#DC2626', fontFamily: 'var(--font-mono)'
-                }}>
-                  CRITICAL
-                </span>
-              </div>
-              <div style={{ fontSize: 11, color: '#475569', lineHeight: 1.4, wordBreak: 'break-word' }}>
-                85 kW concurrent draw with compressor peak (09:00–12:00) risks demand penalty.
-              </div>
-
-              {expandedAlerts.furnace && (
-                <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px dashed #EAE3D7', fontSize: 10.5, color: '#64748B', lineHeight: 1.45 }}>
-                  <div><strong>Diagnostics:</strong> Concurrent draw reaches 147.2 kVA near the 160 kVA contract limit.</div>
-                  <div style={{ color: '#059669', marginTop: 4, fontWeight: 600 }}>
-                    Staggering pre-heat by 45 min into solar window reduces concurrent peak demand by 18%.
-                  </div>
-                </div>
-              )}
-
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, gap: 6 }}>
-                <button
-                  type="button"
-                  onClick={() => toggleAlertExpand('furnace')}
-                  style={{
-                    background: 'transparent', border: 'none', padding: 0,
-                    fontSize: 10.5, color: '#0284C7', cursor: 'pointer', fontWeight: 500
-                  }}
-                >
-                  {expandedAlerts.furnace ? 'Hide details ▲' : 'Show details ▼'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setView('simulator')}
-                  style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 4,
-                    background: '#DC2626', color: '#FFFFFF', border: 'none',
-                    borderRadius: 5, padding: '4px 9px', fontSize: 10.5, fontWeight: 600,
-                    cursor: 'pointer'
-                  }}
-                >
-                  <span>Simulate in Twin</span>
-                  <ChevronRight size={10} />
-                </button>
-              </div>
-            </div>
-
-            {/* Alert 3: CNC Machining Optimal */}
-            <div style={{
-              background: '#FFFFFF',
-              border: '1px solid #EAE3D7',
-              borderLeft: '3px solid #10B981',
-              borderRadius: 8,
-              padding: '11px 13px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <CheckCircle2 size={13} color="#059669" />
-                  <span style={{ fontSize: 11.5, fontWeight: 700, color: '#1C1917' }}>CNC Machining Center</span>
-                </div>
-                <span style={{
-                  fontSize: 9.5, fontWeight: 700, padding: '1px 6px', borderRadius: 4,
-                  background: 'rgba(16,185,129,0.12)', color: '#059669', fontFamily: 'var(--font-mono)'
-                }}>
-                  OPTIMAL
-                </span>
-              </div>
-              <div style={{ fontSize: 11, color: '#475569', lineHeight: 1.4, wordBreak: 'break-word' }}>
-                Specific Energy: 1.8 kWh/part. Power Factor: 0.94. Nominal operation.
-              </div>
-
-              {expandedAlerts.cnc && (
-                <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px dashed #EAE3D7', fontSize: 10.5, color: '#64748B', lineHeight: 1.45 }}>
-                  <div><strong>Diagnostics:</strong> Active cycle monitoring shows zero vibration or thermal variance across 5 axes.</div>
-                </div>
-              )}
-
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, gap: 6 }}>
-                <button
-                  type="button"
-                  onClick={() => toggleAlertExpand('cnc')}
-                  style={{
-                    background: 'transparent', border: 'none', padding: 0,
-                    fontSize: 10.5, color: '#0284C7', cursor: 'pointer', fontWeight: 500
-                  }}
-                >
-                  {expandedAlerts.cnc ? 'Hide details ▲' : 'Show details ▼'}
-                </button>
-              </div>
-            </div>
-          </div>
+          </>
         )}
 
         {/* Asset tab */}
@@ -2453,7 +2475,7 @@ function InspectorPanel({
                   <StatRow label="Power Factor" value={String(asset.pf)} color={asset.pf < 0.85 ? 'amber' : 'emerald'} />
                   <StatRow label="Load %" value={`${Math.round((asset.currentKw / asset.ratedKw) * 100)}%`} />
                   {asset.dischargePressureBar && <StatRow label="Discharge Pressure" value={`${asset.dischargePressureBar} bar`} color="amber" />}
-                  {asset.tempC && <StatRow label="Temperature" value={`${asset.tempC}Â°C`} color="red" />}
+                  {asset.tempC && <StatRow label="Temperature" value={`${asset.tempC}°C`} color="red" />}
                   {asset.cop && <StatRow label="COP" value={String(asset.cop)} color="emerald" />}
                   {asset.secKwhPerPart && <StatRow label="SEC" value={`${asset.secKwhPerPart} kWh/part`} />}
                   {asset.idleKw && <StatRow label="Idle Waste" value={`${asset.idleKw} kW × ${asset.idleHrsPerDay}h`} color="amber" />}
@@ -2480,13 +2502,539 @@ function InspectorPanel({
                     Simulate Fix in Digital Twin
                   </button>
                 )}
+
+                {/* Attached Physical Sensors Section (Seamless white industrial card in right sidebar) */}
+                <div
+                  style={{
+                    marginTop: 14,
+                    background: 'rgba(255, 255, 255, 0.88)',
+                    border: '1px solid rgba(226, 232, 240, 0.95)',
+                    borderRadius: 8,
+                    padding: '12px 10px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      marginBottom: 8,
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: 9.5,
+                        fontWeight: 700,
+                        letterSpacing: 1,
+                        textTransform: 'uppercase',
+                        color: '#0F172A',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 5,
+                      }}
+                    >
+                      <Radio size={11} style={{ color: '#0284C7' }} /> Attached Physical Sensors
+                    </span>
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: 8.5,
+                        fontWeight: 700,
+                        color: '#16A34A',
+                        background: 'rgba(22, 163, 74, 0.1)',
+                        padding: '2px 5px',
+                        borderRadius: 4,
+                      }}
+                    >
+                      SEBI / CBAM
+                    </span>
+                  </div>
+
+                  {asset.id === 'compressor' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <div
+                        style={{
+                          background: '#F8FAFC',
+                          border: '1px solid #E2E8F0',
+                          borderRadius: 6,
+                          padding: 8,
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, color: '#0F172A' }}>
+                            EM-102 (Class 0.5S Meter)
+                          </span>
+                          <button
+                            className="btn btn-outline btn-xs"
+                            style={{ fontSize: 9, padding: '2px 6px' }}
+                            onClick={() => {
+                              onSelectSensor?.('EM-102');
+                              setActiveSensorId('EM-102');
+                              setTab('sensors');
+                            }}
+                          >
+                            Inspect Sensor
+                          </button>
+                        </div>
+                        <div style={{ fontSize: 9.5, color: '#64748B', marginTop: 2 }}>Yokogawa PR300 / IEC 62053-22</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginTop: 6 }}>
+                          <div style={{ fontSize: 9, fontFamily: 'var(--font-mono)' }}>
+                            <span style={{ color: '#64748B' }}>P: </span>
+                            <strong style={{ color: '#0284C7' }}>{asset.currentKw} kW</strong>
+                          </div>
+                          <div style={{ fontSize: 9, fontFamily: 'var(--font-mono)' }}>
+                            <span style={{ color: '#64748B' }}>Disch: </span>
+                            <strong style={{ color: '#D97706' }}>{asset.dischargePressureBar || 7.2} bar</strong>
+                          </div>
+                          <div style={{ fontSize: 9, fontFamily: 'var(--font-mono)' }}>
+                            <span style={{ color: '#64748B' }}>PF: </span>
+                            <strong style={{ color: asset.pf < 0.85 ? '#D97706' : '#16A34A' }}>{asset.pf}</strong>
+                          </div>
+                          <div style={{ fontSize: 9, fontFamily: 'var(--font-mono)' }}>
+                            <span style={{ color: '#64748B' }}>Bus: </span>
+                            <strong style={{ color: '#334155' }}>RS-485 Modbus</strong>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {asset.id === 'furnace' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <div
+                        style={{
+                          background: '#F8FAFC',
+                          border: '1px solid #E2E8F0',
+                          borderRadius: 6,
+                          padding: 8,
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, color: '#0F172A' }}>
+                            FM-201 (Coriolis Mass Flow)
+                          </span>
+                          <button
+                            className="btn btn-outline btn-xs"
+                            style={{ fontSize: 9, padding: '2px 6px' }}
+                            onClick={() => {
+                              onSelectSensor?.('FM-201');
+                              setActiveSensorId('FM-201');
+                              setTab('sensors');
+                            }}
+                          >
+                            Inspect
+                          </button>
+                        </div>
+                        <div style={{ fontSize: 9.5, color: '#64748B', marginTop: 2 }}>Emerson Micro Motion / API MPMS 5.6</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginTop: 6 }}>
+                          <div style={{ fontSize: 9, fontFamily: 'var(--font-mono)' }}>
+                            <span style={{ color: '#64748B' }}>Fuel: </span>
+                            <strong style={{ color: '#EA580C' }}>{(asset.currentKw * 0.1747).toFixed(2)} kg/h</strong>
+                          </div>
+                          <div style={{ fontSize: 9, fontFamily: 'var(--font-mono)' }}>
+                            <span style={{ color: '#64748B' }}>Density: </span>
+                            <strong style={{ color: '#334155' }}>0.782 kg/m³</strong>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div
+                        style={{
+                          background: '#F8FAFC',
+                          border: '1px solid #E2E8F0',
+                          borderRadius: 6,
+                          padding: 8,
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, color: '#0F172A' }}>
+                            GA-301 (Stack NDIR CEMS)
+                          </span>
+                          <button
+                            className="btn btn-outline btn-xs"
+                            style={{ fontSize: 9, padding: '2px 6px' }}
+                            onClick={() => {
+                              onSelectSensor?.('GA-301');
+                              setActiveSensorId('GA-301');
+                              setTab('sensors');
+                            }}
+                          >
+                            Inspect
+                          </button>
+                        </div>
+                        <div style={{ fontSize: 9.5, color: '#64748B', marginTop: 2 }}>SICK GM32 Optical / ISO 12039</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginTop: 6 }}>
+                          <div style={{ fontSize: 9, fontFamily: 'var(--font-mono)' }}>
+                            <span style={{ color: '#64748B' }}>CO₂ Stack: </span>
+                            <strong style={{ color: '#7C3AED' }}>{(8.5 + (asset.currentKw / 85.0) * 1.35).toFixed(2)}%</strong>
+                          </div>
+                          <div style={{ fontSize: 9, fontFamily: 'var(--font-mono)' }}>
+                            <span style={{ color: '#64748B' }}>Stack T: </span>
+                            <strong style={{ color: '#DC2626' }}>{(140.0 + (asset.currentKw / 85.0) * 44.5).toFixed(1)}°C</strong>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {asset.id === 'cooling' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <div
+                        style={{
+                          background: '#F8FAFC',
+                          border: '1px solid #E2E8F0',
+                          borderRadius: 6,
+                          padding: 8,
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, color: '#0F172A' }}>
+                            WQ-401 (Optical COD Probe)
+                          </span>
+                          <button
+                            className="btn btn-outline btn-xs"
+                            style={{ fontSize: 9, padding: '2px 6px' }}
+                            onClick={() => {
+                              onSelectSensor?.('WQ-401');
+                              setActiveSensorId('WQ-401');
+                              setTab('sensors');
+                            }}
+                          >
+                            Inspect
+                          </button>
+                        </div>
+                        <div style={{ fontSize: 9.5, color: '#64748B', marginTop: 2 }}>Endress+Hauser CAS51D / ISO 15839</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginTop: 6 }}>
+                          <div style={{ fontSize: 9, fontFamily: 'var(--font-mono)' }}>
+                            <span style={{ color: '#64748B' }}>COD: </span>
+                            <strong style={{ color: '#0284C7' }}>{(35.0 + (asset.currentKw / 12.0) * 19.2).toFixed(1)} mg/L</strong>
+                          </div>
+                          <div style={{ fontSize: 9, fontFamily: 'var(--font-mono)' }}>
+                            <span style={{ color: '#64748B' }}>TSS: </span>
+                            <strong style={{ color: '#334155' }}>14.2 mg/L</strong>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {asset.id === 'cnc' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 6, padding: 8 }}>
+                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, color: '#0F172A' }}>
+                          Feeder Submeter & Spindle Telemetry
+                        </div>
+                        <div style={{ fontSize: 9.5, color: '#64748B', marginTop: 2 }}>Class 0.5S Submetered Feeder</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginTop: 6 }}>
+                          <div style={{ fontSize: 9, fontFamily: 'var(--font-mono)' }}>
+                            <span style={{ color: '#64748B' }}>SEC: </span>
+                            <strong style={{ color: '#16A34A' }}>{asset.secKwhPerPart || 1.8} kWh/part</strong>
+                          </div>
+                          <div style={{ fontSize: 9, fontFamily: 'var(--font-mono)' }}>
+                            <span style={{ color: '#64748B' }}>Power Factor: </span>
+                            <strong style={{ color: '#16A34A' }}>{asset.pf}</strong>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Cryptographic Ledger & Metrology Row */}
+                  <div
+                    style={{
+                      marginTop: 10,
+                      paddingTop: 8,
+                      borderTop: '1px solid #E2E8F0',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      fontSize: 9,
+                      fontFamily: 'var(--font-mono)',
+                      color: '#64748B',
+                    }}
+                  >
+                    <span>SHA-256 Provenance: <strong style={{ color: '#16A34A' }}>VERIFIED</strong></span>
+                    <button
+                      className="btn btn-outline btn-xs"
+                      style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 9, padding: '3px 8px' }}
+                      onClick={onOpenLedger}
+                    >
+                      <FileCheck2 size={10} style={{ color: '#0284C7' }} /> Audit Ledger
+                    </button>
+                  </div>
+                </div>
               </>
             ) : (
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--slate-500)', lineHeight: 1.8, marginTop: 20 }}>
                 Click any asset node on the SCADA Floor Map to inspect its live telemetry, load profile, and AI diagnostic.
-                {'\n\n'}Assets: {ASSETS.map(a => a.name).join(', ')}.
+                {'\n\n'}Assets: {currentAssets.map(a => a.name).join(', ')}.
               </div>
             )}
+          </>
+        )}
+
+        {/* Physical Sensors Tab */}
+        {tab === 'sensors' && (
+          <>
+            <div className="section-title">Physical Instrumentation Fleet</div>
+
+            {/* Quick Instrument Selector Pills */}
+            <div
+              style={{
+                display: 'flex',
+                gap: 5,
+                flexWrap: 'wrap',
+                marginBottom: 12,
+              }}
+            >
+              {PHYSICAL_SENSORS.map((s) => {
+                const isActive = s.sensor_id === selectedSensorMeta.sensor_id;
+                return (
+                  <button
+                    key={s.sensor_id}
+                    onClick={() => {
+                      setActiveSensorId(s.sensor_id);
+                      onSelectSensor?.(s.sensor_id);
+                    }}
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 9.5,
+                      fontWeight: 700,
+                      padding: '4px 8px',
+                      borderRadius: 5,
+                      border: isActive ? '1px solid #0284C7' : '1px solid #CBD5E1',
+                      background: isActive ? '#0284C7' : '#FFFFFF',
+                      color: isActive ? '#FFFFFF' : '#334155',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                      boxShadow: isActive ? '0 2px 6px rgba(2, 132, 199, 0.25)' : 'none',
+                    }}
+                  >
+                    {s.sensor_id}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Selected Sensor Faceplate Card */}
+            <div className="panel" style={{ marginBottom: 12 }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                  marginBottom: 8,
+                }}
+              >
+                <div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 800, color: '#0F172A' }}>
+                    {selectedSensorMeta.sensor_id} — {selectedSensorMeta.tag}
+                  </div>
+                  <div style={{ fontSize: 10, color: '#64748B', marginTop: 2 }}>
+                    {selectedSensorMeta.instrument_type}
+                  </div>
+                </div>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 8.5,
+                    fontWeight: 700,
+                    padding: '2px 6px',
+                    borderRadius: 4,
+                    background: isBuffering && selectedSensorMeta.sensor_id === 'GW-EDGE-01' ? 'rgba(217, 119, 6, 0.15)' : 'rgba(22, 163, 74, 0.12)',
+                    color: isBuffering && selectedSensorMeta.sensor_id === 'GW-EDGE-01' ? '#D97706' : '#16A34A',
+                  }}
+                >
+                  {isBuffering && selectedSensorMeta.sensor_id === 'GW-EDGE-01' ? 'BUFFERING' : 'ONLINE'}
+                </span>
+              </div>
+
+              {/* Monitored Asset Row */}
+              <div
+                style={{
+                  fontSize: 10,
+                  fontFamily: 'var(--font-mono)',
+                  color: '#475569',
+                  background: '#F1F5F9',
+                  padding: '5px 8px',
+                  borderRadius: 5,
+                  marginBottom: 10,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
+              >
+                <span>Monitors: <strong>{selectedSensorMeta.monitored_asset}</strong></span>
+                {selectedSensorMeta.sensor_id === 'EM-102' && (
+                  <button
+                    className="btn btn-outline btn-xs"
+                    style={{ fontSize: 8.5, padding: '2px 5px' }}
+                    onClick={() => {
+                      onSelectAsset?.('compressor');
+                      setTab('asset');
+                    }}
+                  >
+                    View Asset
+                  </button>
+                )}
+                {(selectedSensorMeta.sensor_id === 'FM-201' || selectedSensorMeta.sensor_id === 'GA-301') && (
+                  <button
+                    className="btn btn-outline btn-xs"
+                    style={{ fontSize: 8.5, padding: '2px 5px' }}
+                    onClick={() => {
+                      onSelectAsset?.('furnace');
+                      setTab('asset');
+                    }}
+                  >
+                    View Asset
+                  </button>
+                )}
+                {selectedSensorMeta.sensor_id === 'WQ-401' && (
+                  <button
+                    className="btn btn-outline btn-xs"
+                    style={{ fontSize: 8.5, padding: '2px 5px' }}
+                    onClick={() => {
+                      onSelectAsset?.('cooling');
+                      setTab('asset');
+                    }}
+                  >
+                    View Asset
+                  </button>
+                )}
+              </div>
+
+              {/* Dynamic Live Engineering Values */}
+              {selectedSensorMeta.sensor_id === 'EM-101' && (
+                <>
+                  <StatRow label="Active Power (Total Plant)" value={`${activeReading.active_power_kw} kW`} color="cyan" />
+                  <StatRow label="Voltage (L-L)" value={`${activeReading.voltage_v_ll} V`} />
+                  <StatRow label="Incomer Current" value={`${activeReading.current_a} A`} />
+                  <StatRow label="Plant Power Factor" value={activeReading.power_factor} color="emerald" />
+                  <StatRow label="Grid Frequency" value={`${activeReading.grid_frequency_hz} Hz`} />
+                  <StatRow label="Metrology Standard" value={activeReading.accuracy_class} />
+                </>
+              )}
+
+              {selectedSensorMeta.sensor_id === 'EM-102' && (
+                <>
+                  <StatRow label="Compressor Draw" value={`${activeReading.active_power_kw} kW`} color="cyan" />
+                  <StatRow label="Line Voltage" value={`${activeReading.voltage_v_ll} V`} />
+                  <StatRow label="Phase Current" value={`${activeReading.current_a} A`} />
+                  <StatRow label="Discharge Pressure" value={`${activeReading.discharge_pressure_bar} bar`} color="amber" />
+                  <StatRow label="Power Factor" value={activeReading.power_factor} color={+activeReading.power_factor < 0.85 ? 'amber' : 'emerald'} />
+                  <StatRow label="Metrology Standard" value={activeReading.accuracy_class} />
+                </>
+              )}
+
+              {selectedSensorMeta.sensor_id === 'FM-201' && (
+                <>
+                  <StatRow label="PNG Fuel Mass Flow" value={`${activeReading.mass_flow_rate_kg_h} kg/h`} color="amber" />
+                  <StatRow label="Fuel Gas Density" value={`${activeReading.gas_density_kg_m3} kg/m³`} />
+                  <StatRow label="Fuel Temperature" value={`${activeReading.fuel_temperature_c} °C`} />
+                  <StatRow label="Volumetric Rate" value={`${activeReading.volumetric_flow_nm3_h} Nm³/h`} />
+                  <StatRow label="Daily Consumption" value={`${activeReading.daily_mass_kg} kg/day`} color="emerald" />
+                  <StatRow label="Metrology Standard" value={activeReading.accuracy_class} />
+                </>
+              )}
+
+              {selectedSensorMeta.sensor_id === 'GA-301' && (
+                <>
+                  <StatRow label="Flue Gas CO₂" value={`${activeReading.co2_concentration_vol_pct} % vol`} color="violet" />
+                  <StatRow label="Stack Gas Temp" value={`${activeReading.stack_gas_temp_c} °C`} color="red" />
+                  <StatRow label="Excess O₂" value={`${activeReading.excess_o2_vol_pct} % vol`} />
+                  <StatRow label="NOx Concentration" value={`${activeReading.nox_concentration_ppm} ppm`} />
+                  <StatRow label="Combustion Efficiency" value={`${activeReading.combustion_efficiency_pct} %`} color="emerald" />
+                  <StatRow label="Compliance Standard" value={activeReading.accuracy_class} />
+                </>
+              )}
+
+              {selectedSensorMeta.sensor_id === 'WQ-401' && (
+                <>
+                  <StatRow label="Chemical Oxygen Demand" value={`${activeReading.cod_mg_l} mg/L`} color="cyan" />
+                  <StatRow label="Total Suspended Solids" value={`${activeReading.tss_mg_l} mg/L`} />
+                  <StatRow label="Cooling Water pH" value={`${activeReading.water_ph} pH`} color="emerald" />
+                  <StatRow label="Loop Temperature" value={`${activeReading.cooling_temp_c} °C`} />
+                  <StatRow label="Effluent Standard" value={activeReading.effluent_standard} color="emerald" />
+                </>
+              )}
+
+              {selectedSensorMeta.sensor_id === 'GW-EDGE-01' && (
+                <>
+                  <StatRow label="Gateway Telemetry Status" value={activeReading.gateway_status} color={isBuffering ? 'amber' : 'emerald'} />
+                  <StatRow label="Edge Retention Buffer" value={activeReading.buffer_capacity} />
+                  <StatRow label="Queued Edge Records" value={activeReading.buffer_queued} color={isBuffering ? 'amber' : 'emerald'} />
+                  <StatRow label="Security Enclave" value={activeReading.crypto_provenance} color="cyan" />
+                  
+                  {/* Gateway 72-Hour Outage Simulator Button */}
+                  <div style={{ marginTop: 10 }}>
+                    <button
+                      className={`btn btn-sm btn-full ${isBuffering ? 'btn-emerald' : 'btn-amber'}`}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                      onClick={() => onToggleOutage?.(!isBuffering)}
+                    >
+                      {isBuffering ? <Wifi size={12} /> : <WifiOff size={12} />}
+                      {isBuffering ? 'Reconnect Gateway & Replay Buffer' : 'Simulate 72h Gateway Outage'}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Modbus Register Dump & Provenance Card */}
+            <div
+              style={{
+                background: 'rgba(255, 255, 255, 0.88)',
+                border: '1px solid rgba(226, 232, 240, 0.95)',
+                borderRadius: 8,
+                padding: '12px 10px',
+                marginBottom: 12,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+              }}
+            >
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>
+                MODBUS RTU / FIELDBUS REGISTERS
+              </div>
+              <div
+                style={{
+                  background: '#0F172A',
+                  color: '#38BDF8',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 9.5,
+                  padding: '8px 10px',
+                  borderRadius: 6,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 3,
+                }}
+              >
+                {Object.entries(activeReading.modbus_registers || {}).map(([reg, val]) => (
+                  <div key={reg} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: '#94A3B8' }}>{reg}:</span>
+                    <span style={{ color: '#4ADE80', fontWeight: 700 }}>{String(val)}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Calibration & Traceability */}
+              <div style={{ marginTop: 10, fontSize: 9.5, color: '#475569', lineHeight: 1.6 }}>
+                <div><strong>Manufacturer:</strong> {selectedSensorMeta.manufacturer}</div>
+                <div><strong>Calibration Cert:</strong> {selectedSensorMeta.calibration_cert_id}</div>
+                <div><strong>Calibration Valid:</strong> {selectedSensorMeta.calibration_valid_until}</div>
+                <div><strong>Ingestion Protocol:</strong> {selectedSensorMeta.protocol}</div>
+              </div>
+
+              {/* View Ledger Button */}
+              <button
+                className="btn btn-cyan btn-full"
+                style={{ marginTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                onClick={onOpenLedger}
+              >
+                <FileCheck2 size={12} />
+                Open Statutory Audit Ledger
+              </button>
+            </div>
           </>
         )}
 
@@ -2532,17 +3080,37 @@ function InspectorPanel({
   );
 }
 
-// â”€â”€â”€ Root App â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Root App ─────────────────────────────────────────────────────────────────
+
+// ─── Root App ─────────────────────────────────────────────────────────────────
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<'home' | 'login' | 'platform'>('home');
-  const [currentUser, setCurrentUser] = useState<{ email: string; role: string; name: string } | null>({
-    email: 'operator@precisionworks.mfg',
-    role: 'Plant SCADA Operator',
-    name: 'Vikram Malhotra',
-  });
+  const [currentUser, setCurrentUser] = useState<UserProfile>(() => DEMO_USERS.operator);
+  const [isRoleMenuOpen, setIsRoleMenuOpen] = useState(false);
   const [view, setView] = useState<View>('overview');
   const [selectedAsset, setSelectedAsset] = useState<string | null>(null);
+  const [selectedSensor, setSelectedSensor] = useState<string | null>(null);
+  const [isAuditLedgerOpen, setIsAuditLedgerOpen] = useState(false);
+  const [isBuffering, setIsBuffering] = useState(false);
+
+  const handleToggleOutage = useCallback(async (isOffline: boolean) => {
+    setIsBuffering(isOffline);
+    try {
+      await fetch('http://127.0.0.1:8000/api/v1/sensors/buffer/simulate-outage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_offline: isOffline }),
+      });
+    } catch (err) {
+      console.warn('Failed to toggle outage simulation:', err);
+    }
+  }, []);
+
+  const handleSelectSensor = useCallback((id: string | null) => {
+    setSelectedSensor(id);
+    if (id) setSelectedAsset(null);
+  }, []);
   const [mapMode, setMapMode] = useState<'3d' | '2d'>('3d');
   const [simMode, setSimMode] = useState(false);
   const [gridEF, setGridEF] = useState(0.72886);
@@ -2762,6 +3330,7 @@ export default function App() {
 
   const handleSelectAsset = useCallback((id: string | null) => {
     setSelectedAsset(id);
+    if (id) setSelectedSensor(null);
   }, []);
 
   const handleSimulate = useCallback((id: string) => {
@@ -2781,6 +3350,7 @@ export default function App() {
           <HomePage
             onLaunchPlatform={() => setCurrentPage('platform')}
             onOpenLogin={() => setCurrentPage('login')}
+            currentUser={currentUser}
           />
         </motion.div>
       </AnimatePresence>
@@ -2792,6 +3362,7 @@ export default function App() {
       <AnimatePresence mode="wait">
         <motion.div key="login" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ position: 'fixed', inset: 0, zIndex: 100 }}>
           <LoginModal
+            initialRole={currentUser?.roleId || 'operator'}
             onLogin={(user) => {
               setCurrentUser(user);
               setCurrentPage('platform');
@@ -2941,24 +3512,255 @@ export default function App() {
             }} />
           </div>
 
-          {/* User Profile */}
-          <div
-            onClick={() => setCurrentPage('login')}
-            style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
-            title="Switch User / Sign Out"
-          >
-            <div style={{
-              width: 30, height: 30, borderRadius: '50%',
-              background: '#E2D9CC', color: '#44403C',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 11, fontWeight: 700
-            }}>
-              VM
+          {/* User Profile & Quick Role Switcher */}
+          <div style={{ position: 'relative' }}>
+            <div
+              onClick={() => setIsRoleMenuOpen(!isRoleMenuOpen)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                cursor: 'pointer',
+                padding: '4px 8px 4px 6px',
+                borderRadius: 9999,
+                backgroundColor: isRoleMenuOpen ? '#E2D9CC' : 'transparent',
+                transition: 'background 0.15s',
+              }}
+              title="Click to Switch Industrial Role or Sign Out"
+            >
+              <div
+                style={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: '50%',
+                  background: currentUser.avatarColor,
+                  color: '#FFFFFF',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 11,
+                  fontWeight: 800,
+                  boxShadow: `0 0 8px ${currentUser.avatarColor}66`,
+                }}
+              >
+                {currentUser.initials}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: '#1E252D', lineHeight: 1.2 }}>
+                    {currentUser.name}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: '9px',
+                      fontFamily: "'IBM Plex Mono', monospace",
+                      fontWeight: 700,
+                      padding: '1px 6px',
+                      borderRadius: 9999,
+                      backgroundColor: currentUser.badge.bg,
+                      color: currentUser.badge.color,
+                      border: `1px solid ${currentUser.badge.border}`,
+                    }}
+                  >
+                    {currentUser.badge.label.split(' ')[0]}
+                  </span>
+                </div>
+                <span style={{ fontSize: 10, color: '#6B7280', lineHeight: 1.2 }}>
+                  {currentUser.roleTitle}
+                </span>
+              </div>
+              <ChevronDown
+                size={13}
+                color="#64748B"
+                style={{
+                  transform: isRoleMenuOpen ? 'rotate(180deg)' : 'none',
+                  transition: 'transform 0.2s',
+                  marginLeft: 2,
+                }}
+              />
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: 12, fontWeight: 700, color: '#1E252D', lineHeight: 1.2 }}>Vikram Malhotra</span>
-              <span style={{ fontSize: 10, color: '#6B7280', lineHeight: 1.2 }}>Plant Manager</span>
-            </div>
+
+            {/* Quick Role Switcher Dropdown Modal */}
+            {isRoleMenuOpen && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '120%',
+                  right: 0,
+                  width: '320px',
+                  backgroundColor: '#FFFFFF',
+                  borderRadius: '16px',
+                  border: '1px solid rgba(0, 0, 0, 0.1)',
+                  boxShadow: '0 16px 36px rgba(0,0,0,0.16), 0 2px 6px rgba(0,0,0,0.06)',
+                  padding: '16px',
+                  zIndex: 200,
+                  fontFamily: 'var(--font-ui, sans-serif)',
+                }}
+              >
+                {/* Active User Header */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    paddingBottom: '12px',
+                    borderBottom: '1px solid #F1F5F9',
+                    marginBottom: '12px',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: '50%',
+                      background: currentUser.avatarColor,
+                      color: '#FFFFFF',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 12,
+                      fontWeight: 800,
+                    }}
+                  >
+                    {currentUser.initials}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {currentUser.name}
+                    </div>
+                    <div style={{ fontSize: '10.5px', color: '#64748B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {currentUser.email}
+                    </div>
+                    <div style={{ fontSize: '10px', color: '#059669', fontWeight: 600, marginTop: '2px' }}>
+                      ✓ {currentUser.allowedViews.length} of 11 Modules Authorized
+                    </div>
+                  </div>
+                </div>
+
+                {/* 1-Click Role Switcher */}
+                <div
+                  style={{
+                    fontSize: '9.5px',
+                    fontFamily: "'IBM Plex Mono', monospace",
+                    fontWeight: 700,
+                    color: '#64748B',
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    marginBottom: '8px',
+                  }}
+                >
+                  SWITCH ROLE (INSTANT RBAC DEMO)
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '14px' }}>
+                  {(Object.keys(DEMO_USERS) as RoleId[]).map((rKey) => {
+                    const u = DEMO_USERS[rKey];
+                    const isSelected = currentUser.roleId === rKey;
+                    return (
+                      <button
+                        key={rKey}
+                        onClick={() => {
+                          setCurrentUser(u);
+                          setIsRoleMenuOpen(false);
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '8px 10px',
+                          borderRadius: '8px',
+                          border: isSelected ? '1px solid #0F172A' : '1px solid #E2E8F0',
+                          backgroundColor: isSelected ? '#0F172A' : '#F8FAFC',
+                          color: isSelected ? '#FFFFFF' : '#1E252D',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          transition: 'all 0.15s',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span
+                            style={{
+                              width: 8,
+                              height: 8,
+                              borderRadius: '50%',
+                              backgroundColor: u.avatarColor,
+                            }}
+                          />
+                          <div>
+                            <div style={{ fontSize: '11.5px', fontWeight: 700 }}>
+                              {u.roleTitle}
+                            </div>
+                            <div style={{ fontSize: '10px', opacity: 0.75 }}>
+                              {u.name} ({u.allowedViews.length} views)
+                            </div>
+                          </div>
+                        </div>
+                        {isSelected && <CheckCircle2 size={13} color="#22C55E" />}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Actions Footer */}
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                    borderTop: '1px solid #F1F5F9',
+                    paddingTop: '10px',
+                  }}
+                >
+                  <button
+                    onClick={() => {
+                      setIsRoleMenuOpen(false);
+                      setCurrentPage('login');
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      background: 'none',
+                      border: 'none',
+                      padding: '6px 8px',
+                      fontSize: '11.5px',
+                      color: '#334155',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      borderRadius: 6,
+                      textAlign: 'left',
+                    }}
+                  >
+                    <User size={13} />
+                    <span>Open Full Sign In Screen</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setIsRoleMenuOpen(false);
+                      setCurrentPage('home');
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      background: 'none',
+                      border: 'none',
+                      padding: '6px 8px',
+                      fontSize: '11.5px',
+                      color: '#EF4444',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      borderRadius: 6,
+                      textAlign: 'left',
+                    }}
+                  >
+                    <LogOut size={13} />
+                    <span>Sign Out to 3D Glide Home</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </header>
@@ -2995,6 +3797,8 @@ export default function App() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2, padding: '4px 6px' }}>
           {NAV.map(n => {
             const isActive = view === n.id;
+            const isPermitted = hasViewAccess(currentUser.roleId, n.id);
+            const viewMeta = VIEW_SECURITY_METADATA[n.id];
             return (
               <div
                 key={n.id}
@@ -3007,11 +3811,34 @@ export default function App() {
                   fontSize: 12.5, fontWeight: isActive ? 600 : 500,
                   background: isActive ? '#E0F2FE' : 'transparent',
                   color: isActive ? '#0284C7' : (n.id === 'anomalies' ? '#0284C7' : '#334155'),
+                  opacity: isPermitted ? 1 : 0.65,
                   transition: 'all 0.15s ease',
+                  position: 'relative',
                 }}
               >
                 {n.icon}
-                <span>{n.label}</span>
+                <span style={{ flex: 1 }}>{n.label}</span>
+                {!isPermitted && (
+                  <span
+                    style={{
+                      fontSize: '9px',
+                      fontFamily: 'var(--font-mono, monospace)',
+                      padding: '1px 5px',
+                      borderRadius: '4px',
+                      backgroundColor: '#F1F5F9',
+                      color: '#64748B',
+                      border: '1px solid #CBD5E1',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '3px',
+                      fontWeight: 600,
+                    }}
+                    title={`Restricted. Required: ${viewMeta?.requiredRoles.map(r => DEMO_USERS[r].roleTitle).join(', ')}`}
+                  >
+                    <Lock size={8} />
+                    <span>LOCKED</span>
+                  </span>
+                )}
               </div>
             );
           })}
@@ -3069,123 +3896,157 @@ export default function App() {
       {/* Main */}
       <main className="main-content">
         <AnimatePresence mode="wait">
-          {view === 'overview' && (
-            <motion.div key="overview" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%' }}>
-              <OverviewView
-                setView={setView}
-                carbonData={carbonData}
-                gridEF={gridEF}
-                onSelectAsset={handleSelectAsset}
-                assets={simulatedAssets}
-                livePlantPower={liveTick?.plant_power_kw}
-                activeAnomaly={liveTick?.active_anomaly}
-                liveTick={liveTick?.tick}
+          {!hasViewAccess(currentUser.roleId, view) ? (
+            <motion.div
+              key={`access-denied-${view}`}
+              variants={PAGE_VARIANTS}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              style={{ width: '100%', height: '100%', overflowY: 'auto' }}
+            >
+              <AccessDeniedView
+                currentRole={currentUser.roleId}
+                viewId={view}
+                onSwitchRole={(r) => setCurrentUser(DEMO_USERS[r])}
+                onGoToOverview={() => setView('overview')}
               />
             </motion.div>
-          )}
-          {view === 'scada' && (
-            <motion.div key="scada" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }}>
-              <ScadaView
-                assets={simulatedAssets}
-                selectedId={selectedAsset}
-                onSelect={handleSelectAsset}
-                onSimulate={handleSimulate}
-                mapMode={mapMode}
-                setMapMode={setMapMode}
-              />
-            </motion.div>
-          )}
-          {view === 'simulator' && (
-            <motion.div key="simulator" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%' }}>
-              <DigitalTwinView
-                baselineRecords={baselineRecords}
-                tariffConfig={DEFAULT_TARIFF_CONFIG}
-                emissionFactor={DEFAULT_EMISSION_FACTOR}
-                activeSimulation={activeSimulation}
-                onApplySimulation={handleApplySimulation}
-                initialMachineId={selectedAsset || undefined}
-                onSelectMachineIn3D={(machineId) => {
-                  setSelectedAsset(machineId);
-                  setView('scada');
-                }}
-              />
-            </motion.div>
-          )}
-          {view === 'configurator' && (
-            <motion.div key="configurator" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
-              <AssetLibraryConfigurator
-                onSelectAsset={(id) => {
-                  setSelectedAsset(id);
-                }}
-                onNavigateToTwin={(machineId) => {
-                  setSelectedAsset(machineId);
-                  setView('simulator');
-                }}
-              />
-            </motion.div>
-          )}
-          {view === 'executive' && (
-            <motion.div key="executive" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
-              <ExecutivePresentationView
-                carbonData={carbonData}
-                onNavigateToDiagnostics={() => setView('diagnostics')}
-                onNavigateToConfigurator={() => setView('configurator')}
-              />
-            </motion.div>
-          )}
-          {view === 'diagnostics' && (
-            <motion.div key="diagnostics" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
-              <EngineeringDiagnosticView
-                onNavigateToExecutive={() => setView('executive')}
-              />
-            </motion.div>
-          )}
-          {view === 'quota' && (
-            <motion.div key="quota" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
-              <CarbonQuotaInterlock />
-            </motion.div>
-          )}
-          {view === 'forecast' && (
-            <motion.div key="forecast" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
-              <EnergyForecastDashboard
-                assets={simulatedAssets}
-                params={params}
-                onNavigateToSimulator={() => setView('simulator')}
-                onSelectAsset={(id) => {
-                  setSelectedAsset(id);
-                  setView('scada');
-                }}
-              />
-            </motion.div>
-          )}
-          {view === 'carbon' && (
-            <motion.div key="carbon" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%' }}>
-              <CarbonView
-                params={params}
-                gridEF={gridEF}
-                setGridEF={setGridEF}
-                carbonData={carbonData}
-                carbonLoading={carbonLoading}
-                carbonError={carbonError}
-                backendStatus={backendStatus}
-                onRecalculate={triggerCalculation}
-                reportingYear={reportingYear}
-                setReportingYear={setReportingYear}
-                ceaMethodology={ceaMethodology}
-                setCeaMethodology={setCeaMethodology}
-                availableYears={availableYears}
-              />
-            </motion.div>
-          )}
-          {view === 'anomalies' && (
-            <motion.div key="anomalies" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%' }}>
-              <AIAnomalyIntelligence />
-            </motion.div>
-          )}
-          {view === 'reports' && (
-            <motion.div key="reports" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%' }}>
-              <CarbonAuditReportView />
-            </motion.div>
+          ) : (
+            <>
+              {view === 'overview' && (
+                <motion.div key="overview" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%' }}>
+                  <OverviewView
+                    setView={setView}
+                    carbonData={carbonData}
+                    gridEF={gridEF}
+                    onSelectAsset={handleSelectAsset}
+                    assets={simulatedAssets}
+                    livePlantPower={liveTick?.plant_power_kw}
+                    activeAnomaly={liveTick?.active_anomaly}
+                    liveTick={liveTick?.tick}
+                  />
+                </motion.div>
+              )}
+              {view === 'executive' && (
+                <motion.div key="executive" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+                  <ExecutivePresentationView
+                    carbonData={carbonData}
+                    onNavigateToDiagnostics={() => setView('diagnostics')}
+                    onNavigateToConfigurator={() => setView('configurator')}
+                  />
+                </motion.div>
+              )}
+              {view === 'diagnostics' && (
+                <motion.div key="diagnostics" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+                  <EngineeringDiagnosticView
+                    onNavigateToExecutive={() => setView('executive')}
+                  />
+                </motion.div>
+              )}
+              {view === 'scada' && (
+                <motion.div key="scada" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }}>
+                  <ScadaView
+                    assets={simulatedAssets}
+                    selectedId={selectedAsset}
+                    selectedSensorId={selectedSensor}
+                    onSelect={handleSelectAsset}
+                    onSelectSensor={handleSelectSensor}
+                    onSimulate={handleSimulate}
+                    mapMode={mapMode}
+                    setMapMode={setMapMode}
+                    isBuffering={isBuffering}
+                    onToggleOutage={handleToggleOutage}
+                    onOpenLedger={() => setIsAuditLedgerOpen(true)}
+                    simMode={simMode}
+                    onToggleSimMode={() => {
+                      if (!simMode) {
+                        handleSimulate('compressor');
+                      } else {
+                        handleResetBaseline();
+                      }
+                    }}
+                    onResetBaseline={handleResetBaseline}
+                  />
+                </motion.div>
+              )}
+              {view === 'simulator' && (
+                <motion.div key="simulator" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%' }}>
+                  <DigitalTwinView
+                    baselineRecords={baselineRecords}
+                    tariffConfig={DEFAULT_TARIFF_CONFIG}
+                    emissionFactor={DEFAULT_EMISSION_FACTOR}
+                    activeSimulation={activeSimulation}
+                    onApplySimulation={handleApplySimulation}
+                    initialMachineId={selectedAsset || undefined}
+                    onSelectMachineIn3D={(machineId) => {
+                      setSelectedAsset(machineId);
+                      setView('scada');
+                    }}
+                  />
+                </motion.div>
+              )}
+              {view === 'configurator' && (
+                <motion.div key="configurator" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+                  <AssetLibraryConfigurator
+                    onSelectAsset={(id) => {
+                      setSelectedAsset(id);
+                    }}
+                    onNavigateToTwin={(machineId) => {
+                      setSelectedAsset(machineId);
+                      setView('simulator');
+                    }}
+                  />
+                </motion.div>
+              )}
+              {view === 'quota' && (
+                <motion.div key="quota" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+                  <CarbonQuotaInterlock />
+                </motion.div>
+              )}
+              {view === 'forecast' && (
+                <motion.div key="forecast" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+                  <EnergyForecastDashboard
+                    assets={simulatedAssets}
+                    params={params}
+                    onNavigateToSimulator={() => setView('simulator')}
+                    onSelectAsset={(id) => {
+                      setSelectedAsset(id);
+                      setView('scada');
+                    }}
+                  />
+                </motion.div>
+              )}
+              {view === 'carbon' && (
+                <motion.div key="carbon" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%' }}>
+                  <CarbonView
+                    params={params}
+                    gridEF={gridEF}
+                    setGridEF={setGridEF}
+                    carbonData={carbonData}
+                    carbonLoading={carbonLoading}
+                    carbonError={carbonError}
+                    backendStatus={backendStatus}
+                    onRecalculate={triggerCalculation}
+                    reportingYear={reportingYear}
+                    setReportingYear={setReportingYear}
+                    ceaMethodology={ceaMethodology}
+                    setCeaMethodology={setCeaMethodology}
+                    availableYears={availableYears}
+                  />
+                </motion.div>
+              )}
+              {view === 'anomalies' && (
+                <motion.div key="anomalies" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%' }}>
+                  <AIAnomalyIntelligence />
+                </motion.div>
+              )}
+              {view === 'reports' && (
+                <motion.div key="reports" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%' }}>
+                  <CarbonAuditReportView />
+                </motion.div>
+              )}
+            </>
           )}
         </AnimatePresence>
       </main>
@@ -3194,11 +4055,26 @@ export default function App() {
       {view !== 'overview' && view !== 'forecast' && view !== 'executive' && view !== 'diagnostics' && view !== 'configurator' && view !== 'quota' && view !== 'reports' && showInspector && (
         <InspectorPanel
           selectedId={selectedAsset}
+          selectedSensorId={selectedSensor}
+          assets={simulatedAssets}
           setView={setView}
           params={params}
           carbonData={carbonData}
           gridEF={gridEF}
           onResetBaseline={handleResetBaseline}
+          onSelectSensor={handleSelectSensor}
+          onSelectAsset={handleSelectAsset}
+          isBuffering={isBuffering}
+          onToggleOutage={handleToggleOutage}
+          onOpenLedger={() => setIsAuditLedgerOpen(true)}
+          simMode={simMode}
+          onToggleSimMode={() => {
+            if (!simMode) {
+              handleSimulate('compressor');
+            } else {
+              handleResetBaseline();
+            }
+          }}
         />
       )}
 
@@ -3207,6 +4083,14 @@ export default function App() {
 
       {/* Persistent Floating AI Assistant Chatbot */}
       <FloatingChatbot />
+
+      {/* Statutory Audit Ledger & Buffer Outage Modal */}
+      <AuditLedgerModal
+        isOpen={isAuditLedgerOpen}
+        onClose={() => setIsAuditLedgerOpen(false)}
+        isBuffering={isBuffering}
+        onToggleOutage={handleToggleOutage}
+      />
     </div>
   </AIExplainProvider>
   );

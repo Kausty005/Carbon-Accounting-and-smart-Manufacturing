@@ -427,6 +427,8 @@ _simulation_state: Dict[str, Any] = {
     "last_timestamp": None,
     "injected_anomaly": None,
     "history": [],
+    "last_machines": [],
+    "total_plant_kw": 152.0,
 }
 
 _csv_telemetry_df: Optional[pd.DataFrame] = None
@@ -761,6 +763,8 @@ def get_live_simulation_tick():
 
     # Store rolling history
     _simulation_state["last_timestamp"] = now_iso
+    _simulation_state["last_machines"] = machine_readings
+    _simulation_state["total_plant_kw"] = round(total_plant_kw, 2)
     history_entry = {
         "tick": t,
         "timestamp": now_iso,
@@ -803,6 +807,14 @@ def reset_live_simulation():
     _simulation_state["injected_anomaly"] = None
     _csv_stream_pointer = 980
     return {"status": "reset", "tick": 0}
+
+
+def get_latest_live_machines() -> Dict[str, Any]:
+    """Retrieve latest SCADA stream machine readings for unified sensor synchronization."""
+    return {
+        "plant_power_kw": _simulation_state.get("total_plant_kw", 152.0),
+        "machines": _simulation_state.get("last_machines", []),
+    }
 
 
 

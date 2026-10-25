@@ -2222,5 +2222,21 @@
       "total": 1.191
     },
     "audit_signature": "fdb59488e3005b4f773047a6a32bcdde7bf9cbe569f78d6a3373be2199bdc971"
+  },
+  {
+    "block_height": 103,
+    "timestamp": "2026-10-25T01:12:43.906030+00:00",
+    "prev_hash": "fdb59488e3005b4f773047a6a32bcdde7bf9cbe569f78d6a3373be2199bdc971",
+    "merkle_root": "9166cc6ad43b83271671e1f235f27f715fc7cbb83e5bed10311ebbd340b7890a",
+    "telemetry_summary": {
+      "grid_electricity_kwh": 1450.0,
+      "diesel_liters": 50.0
+    },
+    "gross_carbon_tco2e": {
+      "scope1_combustion": 0.134,
+      "scope2_grid": 1.057,
+      "total": 1.191
+    },
+    "audit_signature": "6aa9911dd1fd2a6ba21013e7a7337d177577a06208fcffe922e633cf749a636b"
   }
 ]

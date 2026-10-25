@@ -94,7 +94,7 @@ const NAV: { id: View; icon: React.ReactNode; label: string }[] = [
   { id: 'diagnostics',  icon: <Terminal size={14} />,     label: 'Diagnostics Cockpit' },
   { id: 'scada',        icon: <Box size={14} />,          label: '3D Factory Twin' },
   { id: 'simulator',    icon: <Sliders size={14} />,      label: 'Digital Twin' },
-  { id: 'configurator', icon: <Database size={14} />,     label: '50-Asset Catalog' },
+  { id: 'configurator', icon: <Database size={14} />,     label: 'Plant-Wide Fleet (50 Assets)' },
   { id: 'quota',        icon: <ShieldCheck size={14} />,  label: 'Carbon Quotas & Ledger' },
   { id: 'forecast',     icon: <TrendingUp size={14} />,   label: 'Energy Forecast' },
   { id: 'carbon',       icon: <Leaf size={14} />,         label: 'Carbon Accounting' },
@@ -3103,11 +3103,46 @@ export default function App() {
                 emissionFactor={DEFAULT_EMISSION_FACTOR}
                 activeSimulation={activeSimulation}
                 onApplySimulation={handleApplySimulation}
+                initialMachineId={selectedAsset || undefined}
                 onSelectMachineIn3D={(machineId) => {
                   setSelectedAsset(machineId);
                   setView('scada');
                 }}
               />
+            </motion.div>
+          )}
+          {view === 'configurator' && (
+            <motion.div key="configurator" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+              <AssetLibraryConfigurator
+                onSelectAsset={(id) => {
+                  setSelectedAsset(id);
+                }}
+                onNavigateToTwin={(machineId) => {
+                  setSelectedAsset(machineId);
+                  setView('simulator');
+                }}
+              />
+            </motion.div>
+          )}
+          {view === 'executive' && (
+            <motion.div key="executive" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+              <ExecutivePresentationView
+                carbonData={carbonData}
+                onNavigateToDiagnostics={() => setView('diagnostics')}
+                onNavigateToConfigurator={() => setView('configurator')}
+              />
+            </motion.div>
+          )}
+          {view === 'diagnostics' && (
+            <motion.div key="diagnostics" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+              <EngineeringDiagnosticView
+                onNavigateToExecutive={() => setView('executive')}
+              />
+            </motion.div>
+          )}
+          {view === 'quota' && (
+            <motion.div key="quota" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+              <CarbonQuotaInterlock />
             </motion.div>
           )}
           {view === 'forecast' && (

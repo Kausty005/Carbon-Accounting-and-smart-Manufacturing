@@ -5,7 +5,7 @@ import type {
   TariffConfig,
   EmissionFactorMetadata,
 } from './types';
-import { calculateMetrics, calculateDeltas } from './calculationEngine';
+import { calculateMetrics, calculateDeltas, extractHourFromTimestamp } from './calculationEngine';
 import { validateScenarioConstraints } from './constraintValidator';
 import { resolveMachineId } from './twinProfiles';
 import { calculateInvestmentCase } from './confidenceEngine';
@@ -48,14 +48,21 @@ export function runScenarioSimulation(
         }
       }
     } else {
-      // Apply to the documented COMP-01 anomaly window (11:00 to 13:00 / hours 11, 12, 13)
+      // Default: target idle anomaly window (hours 11-13 for COMP-01, or machine's idle records)
+      let modifiedSlots = 0;
+      const maxSlotsToModify = durationHours * (scenarioRecords.length > 96 ? Math.floor(scenarioRecords.length / 96) : 1);
       for (const r of scenarioRecords) {
         if (r.machine_id === machineId) {
-          const h = new Date(r.timestamp).getUTCHours();
-          if (h >= 11 && h <= 11 + Math.max(0, durationHours - 1)) {
+          const h = extractHourFromTimestamp(r.timestamp);
+          const isTargetSlot = machineId === 'COMP-01'
+            ? (h >= 11 && h <= 11 + Math.max(0, durationHours - 1))
+            : (r.machine_state === 'idle' || (h >= 10 && h <= 10 + Math.max(0, durationHours - 1)));
+
+          if (isTargetSlot && modifiedSlots < maxSlotsToModify) {
             r.power_kw = targetKw;
             r.energy_kwh = targetKw;
             r.machine_state = targetState;
+            modifiedSlots++;
           }
         }
       }

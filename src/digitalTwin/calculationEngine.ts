@@ -6,13 +6,23 @@ import type {
   Deltas,
 } from './types';
 
+export function extractHourFromTimestamp(timestampStr: string): number {
+  if (timestampStr.includes('T')) {
+    const timePart = timestampStr.split('T')[1];
+    const hourPart = timePart.split(':')[0];
+    const parsed = parseInt(hourPart, 10);
+    if (!isNaN(parsed)) return parsed;
+  }
+  const dt = new Date(timestampStr);
+  return !isNaN(dt.getTime()) ? dt.getHours() : 0;
+}
+
 export function getHourTariffRate(timestampStr: string, tariffConfig: TariffConfig): number {
   if (tariffConfig.tariff_type === 'flat') {
     return tariffConfig.energy_rate_inr_per_kwh;
   }
   try {
-    const dt = new Date(timestampStr);
-    const hour = dt.getUTCHours();
+    const hour = extractHourFromTimestamp(timestampStr);
     for (const tier of tariffConfig.tou_rates) {
       if (tier.hours.includes(hour)) {
         return tier.rate_inr_per_kwh;
@@ -26,8 +36,7 @@ export function getHourTariffRate(timestampStr: string, tariffConfig: TariffConf
 
 export function isPeakHour(timestampStr: string, tariffConfig: TariffConfig): boolean {
   try {
-    const dt = new Date(timestampStr);
-    const hour = dt.getUTCHours();
+    const hour = extractHourFromTimestamp(timestampStr);
     const peakTier = tariffConfig.tou_rates.find(t => t.zone === 'PEAK');
     return peakTier ? peakTier.hours.includes(hour) : (hour >= 9 && hour <= 12) || (hour >= 18 && hour <= 21);
   } catch {
@@ -138,7 +147,7 @@ export function calculateMetrics(
   const hourly_plant = uniqueTimestamps.slice(0, 24).map((ts, idx) => {
     let hour = idx;
     try {
-      hour = new Date(ts).getUTCHours();
+      hour = extractHourFromTimestamp(ts);
     } catch {}
     const kw = Number(time_slot_power[ts].toFixed(1));
     return {

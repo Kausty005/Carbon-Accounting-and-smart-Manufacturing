@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Sliders, Play, RotateCcw, AlertTriangle, CheckCircle2, ShieldAlert,
   Cpu, Zap, TrendingDown, Layers, FileText, ArrowRight, Gauge,
@@ -43,6 +43,7 @@ interface DigitalTwinViewProps {
   activeSimulation: SimulationResult;
   onApplySimulation: (result: SimulationResult) => void;
   onSelectMachineIn3D?: (id: string) => void;
+  initialMachineId?: string;
 }
 
 type AnalyticsTab = 'simulator' | 'tradeoff' | 'investment' | 'ledger';
@@ -103,8 +104,34 @@ const INDUSTRIAL_CASES: IndustrialCase[] = [
     defaultTab: 'tradeoff',
   },
   {
-    id: 'case-4-safety',
+    id: 'case-4-furnace',
     caseNum: 'CASE 4',
+    title: 'Furnace Soaking Standby Setback',
+    machineId: 'FURN-01',
+    machineName: 'Heat-Treatment Furnace',
+    badge: 'THERMAL OPT',
+    tagClass: 'amber',
+    summary: 'Maintain 15 kW quench holding floor while eliminating thermal drift during standby',
+    targetBenefit: 'Saves 24 kWh/d · ₹216/d',
+    presetId: 'SCN-FURNACE-OPT',
+    defaultTab: 'simulator',
+  },
+  {
+    id: 'case-5-paint',
+    caseNum: 'CASE 5',
+    title: 'Paint Shop Exhaust VFD',
+    machineId: 'PAINT-01',
+    machineName: 'Paint Booth & Exhaust Fan',
+    badge: 'AIRFLOW VFD',
+    tagClass: 'cyan',
+    summary: 'Modulate ventilation exhaust VFD during non-spraying intervals while keeping 5 kW VOC safety minimum',
+    targetBenefit: 'Saves 18 kWh/d · ₹162/d',
+    presetId: 'SCN-PAINT-OPT',
+    defaultTab: 'simulator',
+  },
+  {
+    id: 'case-6-safety',
+    caseNum: 'CASE 6',
     title: 'Production Safety Interlock',
     machineId: 'FURN-01',
     machineName: 'Heat-Treatment Furnace',
@@ -148,7 +175,7 @@ const DEMO_PIPELINE: DemoStep[] = [
     stepNum: 3,
     label: '3. Safe Interlocks',
     ideaTag: 'Idea C: Safe Trade-Offs',
-    caseId: 'case-4-safety',
+    caseId: 'case-6-safety',
     tab: 'tradeoff',
     pitchScript: 'Explain Idea C: Traditional AI blindly suggests cutting furnace power to 10 kW. Our Digital Twin BLOCKS Candidate 1 to protect the furnace from metallurgical quench failure, recommending Candidate 3 instead.',
   },
@@ -169,6 +196,7 @@ export default function DigitalTwinView({
   activeSimulation,
   onApplySimulation,
   onSelectMachineIn3D,
+  initialMachineId,
 }: DigitalTwinViewProps) {
   // Case & preset selection
   const [activeCaseId, setActiveCaseId] = useState<string>('case-1-idle');
@@ -243,6 +271,19 @@ export default function DigitalTwinView({
     }
     setAnalyticsTab(c.defaultTab);
   };
+
+  useEffect(() => {
+    if (initialMachineId) {
+      const resolved = resolveMachineId(initialMachineId);
+      if (MACHINE_PROFILES[resolved]) {
+        setSelectedMachineId(resolved);
+        const matchedCase = INDUSTRIAL_CASES.find(c => c.machineId === resolved);
+        if (matchedCase) {
+          handleSelectCase(matchedCase);
+        }
+      }
+    }
+  }, [initialMachineId]);
 
   // Handle Demo Pipeline Step Click
   const handleDemoStepClick = (step: DemoStep) => {

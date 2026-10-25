@@ -28,7 +28,7 @@
     "technician_notes": "Technician dispatched to floor for vibration analysis.",
     "resolution_notes": "Awaiting spectral results.",
     "created_at": "2026-10-24T10:05:53.699919Z",
-    "updated_at": "2026-10-24T16:01:12.109810Z",
+    "updated_at": "2026-10-25T01:10:52.553946Z",
     "sensor_readings": {
       "discharge_pressure_bar": 7.89,
       "airflow_cfm": 399.8,

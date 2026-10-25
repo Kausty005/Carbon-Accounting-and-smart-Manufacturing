@@ -87,6 +87,48 @@ export const SCENARIO_PRESETS: ScenarioPreset[] = [
       'Achieves up to 12.5% plant-wide energy savings, ₹9,500+ cost reduction per period, and substantial carbon reduction.',
   },
   {
+    id: 'SCN-FURNACE-OPT',
+    title: 'Furnace Soaking Standby Setback',
+    subtitle: 'Maintain 15 kW Quench Floor & Eliminate Drift (FURN-01)',
+    category: 'opt',
+    action: {
+      type: 'reduce_idle_power',
+      machine_id: 'FURN-01',
+      target_power_kw: 15.0,
+      duration_hours: 2.0,
+      target_state: 'idle',
+    },
+    assumptions: {
+      metallurgy_compliance: '15.0 kW minimum quench holding threshold maintained strictly',
+      process_integrity: 'Zero impact on heating cycle or billet metallurgy',
+    },
+    description:
+      'Eliminates idle holding drift on FURN-01, returning soaking cycle to exactly rated 15.0 kW baseline while respecting thermal safety interlocks.',
+    expectedOutcome:
+      'Saves ~24 kWh/day, avoids ₹216/day in electricity charges, and reduces Scope 2 emissions by ~17.2 kg CO₂e.',
+  },
+  {
+    id: 'SCN-PAINT-OPT',
+    title: 'Paint Shop Exhaust VFD Optimization',
+    subtitle: 'Tune Idle Exhaust Power to 5.0 kW (PAINT-01)',
+    category: 'opt',
+    action: {
+      type: 'reduce_idle_power',
+      machine_id: 'PAINT-01',
+      target_power_kw: 5.0,
+      duration_hours: 2.0,
+      target_state: 'idle',
+    },
+    assumptions: {
+      voc_compliance: 'Mandatory 5.0 kW ventilation floor maintained during all shift hours',
+      safety_standard: 'OSHA & CPCB industrial VOC exhaust compliance',
+    },
+    description:
+      'Controls spray booth exhaust fan VFD speed during non-painting lunch transitions, reducing idle ventilation power to 5.0 kW while enforcing VOC interlock.',
+    expectedOutcome:
+      'Saves ~18 kWh/day, avoids ₹162/day electricity charges, and eliminates waste with zero VOC compliance risk.',
+  },
+  {
     id: 'SCN-VIOLATION-TEST',
     title: 'Safety Interlock & Constraint Test',
     subtitle: 'Attempt Over-Capacity Load (45 kW on 30 kW Asset)',

@@ -81,17 +81,36 @@ class ScenarioEngine:
         start_dt = datetime.fromisoformat(start_str) if start_str else None
         end_dt = start_dt + timedelta(hours=duration_hours) if start_dt else None
 
-        for r in records:
-            if r["machine_id"] != mid:
-                continue
-            r_dt = datetime.fromisoformat(r["timestamp"])
-            if start_dt and end_dt:
+        if start_dt and end_dt:
+            for r in records:
+                if r["machine_id"] != mid:
+                    continue
+                r_dt = datetime.fromisoformat(r["timestamp"])
                 if start_dt <= r_dt < end_dt:
                     # Partial hour fraction handling
                     elapsed_in_slot = 1.0
                     r["power_kw"] = target_kw
                     r["energy_kwh"] = target_kw * elapsed_in_slot
                     r["machine_state"] = target_state
+        else:
+            # Default target: reduce idle draw on the machine's idle records (e.g. 11:00-14:00 anomaly for compressor)
+            applied_by_day = {}
+            for r in records:
+                if r["machine_id"] != mid:
+                    continue
+                r_dt = datetime.fromisoformat(r["timestamp"])
+                day_key = r_dt.date()
+                if day_key not in applied_by_day:
+                    applied_by_day[day_key] = 0.0
+
+                h = r_dt.hour
+                is_candidate = (r["machine_state"] == "idle") or (11 <= h <= 11 + int(duration_hours) - 1)
+                if is_candidate and applied_by_day[day_key] < duration_hours:
+                    if r["power_kw"] > target_kw:
+                        r["power_kw"] = target_kw
+                        r["energy_kwh"] = target_kw
+                        r["machine_state"] = target_state
+                        applied_by_day[day_key] += 1.0
 
     def _apply_shift_schedule(self, records: List[Dict[str, Any]], action: Dict[str, Any]):
         mid = action.get("machine_id")

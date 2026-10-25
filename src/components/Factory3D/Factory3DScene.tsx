@@ -22,6 +22,7 @@ import {
   HardDrive,
   WifiOff,
   Cpu,
+  Box,
   Play,
   Pause,
   RotateCcw,
@@ -114,6 +115,8 @@ interface Factory3DSceneProps {
   simMode?: boolean;
   onToggleSimMode?: () => void;
   onResetBaseline?: () => void;
+  mapMode?: '3d' | '2d';
+  setMapMode?: (m: '3d' | '2d') => void;
 }
 
 // ─── Physical Sensor Fleet Metadata ──────────────────────────────────────────
@@ -313,6 +316,8 @@ export default function Factory3DScene({
   simMode = false,
   onToggleSimMode,
   onResetBaseline,
+  mapMode = '3d',
+  setMapMode,
 }: Factory3DSceneProps) {
   // Visual layers toggles
   const [showConduits, setShowConduits] = useState(true);
@@ -605,7 +610,7 @@ export default function Factory3DScene({
         />
       </Canvas>
 
-      {/* ─── Top Control Ribbon (Camera Presets & View Layers) ──────────────── */}
+      {/* ─── Unified Top Header & Pipeline Overlay ───────────────────────── */}
       <div
         style={{
           position: 'absolute',
@@ -613,552 +618,627 @@ export default function Factory3DScene({
           left: 12,
           right: 12,
           display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
+          flexDirection: 'column',
+          gap: 8,
           pointerEvents: 'none',
+          zIndex: 35,
         }}
       >
-        {/* Left: View Presets Buttons */}
+        {/* Row 1: Primary Control Ribbon */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 6,
-            background: 'rgba(235, 226, 212, 0.94)',
-            backdropFilter: 'blur(12px)',
-            border: '1px solid rgba(255, 255, 255, 0.85)',
-            borderRadius: 8,
-            padding: '5px 8px',
-            pointerEvents: 'auto',
-            boxShadow: '4px 4px 14px rgba(188, 176, 158, 0.35)',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 8,
+            width: '100%',
           }}
         >
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--slate-500)', padding: '0 6px', letterSpacing: 1, fontWeight: 700 }}>
-            CAMERA:
-          </span>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="cam-btn"
-            onClick={() => setPreset('isometric')}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: '#1C1917',
-              fontSize: 11,
-              fontFamily: 'var(--font-mono)',
-              fontWeight: 700,
-              padding: '3px 8px',
-              borderRadius: 4,
-              cursor: 'pointer',
-            }}
-          >
-            Overview
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="cam-btn"
-            onClick={() => setPreset('topdown')}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--slate-400)',
-              fontSize: 11,
-              fontFamily: 'var(--font-mono)',
-              padding: '3px 8px',
-              borderRadius: 4,
-              cursor: 'pointer',
-            }}
-          >
-            Top-Down
-          </motion.button>
-          <span style={{ color: 'rgba(90, 75, 55, 0.2)' }}>|</span>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="cam-btn"
-            onClick={() => setPreset('compressor')}
-            style={{
-              background: selectedId === 'compressor' ? 'rgba(217, 119, 6, 0.16)' : 'transparent',
-              border: 'none',
-              color: '#d97706',
-              fontSize: 11,
-              fontFamily: 'var(--font-mono)',
-              fontWeight: 700,
-              padding: '3px 8px',
-              borderRadius: 4,
-              cursor: 'pointer',
-            }}
-          >
-            Compressor
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="cam-btn"
-            onClick={() => setPreset('cnc')}
-            style={{
-              background: selectedId === 'cnc' ? 'rgba(2, 132, 199, 0.16)' : 'transparent',
-              border: 'none',
-              color: '#0284c7',
-              fontSize: 11,
-              fontFamily: 'var(--font-mono)',
-              fontWeight: 700,
-              padding: '3px 8px',
-              borderRadius: 4,
-              cursor: 'pointer',
-            }}
-          >
-            CNC Cell
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="cam-btn"
-            onClick={() => setPreset('furnace')}
-            style={{
-              background: selectedId === 'furnace' ? 'rgba(220, 38, 38, 0.16)' : 'transparent',
-              border: 'none',
-              color: '#dc2626',
-              fontSize: 11,
-              fontFamily: 'var(--font-mono)',
-              fontWeight: 700,
-              padding: '3px 8px',
-              borderRadius: 4,
-              cursor: 'pointer',
-            }}
-          >
-            Furnace
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="cam-btn"
-            onClick={() => setPreset('cooling')}
-            style={{
-              background: selectedId === 'cooling' ? 'rgba(5, 150, 105, 0.16)' : 'transparent',
-              border: 'none',
-              color: '#059669',
-              fontSize: 11,
-              fontFamily: 'var(--font-mono)',
-              fontWeight: 700,
-              padding: '3px 8px',
-              borderRadius: 4,
-              cursor: 'pointer',
-            }}
-          >
-            Cooling
-          </motion.button>
-          <span style={{ color: 'rgba(90, 75, 55, 0.2)' }}>|</span>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="cam-btn"
-            onClick={() => setPreset('gateway')}
-            style={{
-              background: selectedSensorId === 'GW-EDGE-01' ? 'rgba(2, 132, 199, 0.2)' : 'transparent',
-              border: 'none',
-              color: '#0284c7',
-              fontSize: 11,
-              fontFamily: 'var(--font-mono)',
-              fontWeight: 700,
-              padding: '3px 8px',
-              borderRadius: 4,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-            }}
-          >
-            <HardDrive size={11} /> Edge Gateway
-          </motion.button>
-        </div>
-
-        {/* Right: Layer Toggles & Audit Ledger */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            background: 'rgba(235, 226, 212, 0.94)',
-            backdropFilter: 'blur(12px)',
-            border: '1px solid rgba(255, 255, 255, 0.85)',
-            borderRadius: 8,
-            padding: '5px 8px',
-            pointerEvents: 'auto',
-            boxShadow: '4px 4px 14px rgba(188, 176, 158, 0.35)',
-          }}
-        >
-          {/* Edge Buffer Active Indicator */}
-          {isBuffering && (
-            <motion.div
-              animate={{ opacity: [1, 0.6, 1] }}
-              transition={{ repeat: Infinity, duration: 1.2 }}
-              style={{
-                background: '#f59e0b',
-                color: '#000',
-                padding: '2px 8px',
-                borderRadius: 4,
-                fontWeight: 800,
-                fontSize: 10,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-                fontFamily: 'var(--font-mono)',
-              }}
-            >
-              <WifiOff size={11} /> 72H EDGE BUFFERING
-            </motion.div>
-          )}
-
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setShowSensors(!showSensors)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-              background: showSensors ? 'rgba(234, 88, 12, 0.15)' : 'transparent',
-              border: `1px solid ${showSensors ? '#ea580c' : 'transparent'}`,
-              color: showSensors ? '#ea580c' : 'var(--slate-500)',
-              fontSize: 11,
-              fontFamily: 'var(--font-mono)',
-              fontWeight: 600,
-              padding: '3px 8px',
-              borderRadius: 4,
-              cursor: 'pointer',
-            }}
-          >
-            <Radio size={11} /> Physical Sensors
-          </motion.button>
-
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={handleOpenLedgerClick}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-              background: '#0284c7',
-              border: 'none',
-              color: '#ffffff',
-              fontSize: 11,
-              fontFamily: 'var(--font-mono)',
-              fontWeight: 700,
-              padding: '4px 10px',
-              borderRadius: 5,
-              cursor: 'pointer',
-              boxShadow: '0 2px 8px rgba(2, 132, 199, 0.35)',
-            }}
-          >
-            <FileCheck2 size={12} /> Audit Ledger (SEBI/CBAM)
-          </motion.button>
-
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setShowConduits(!showConduits)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-              background: showConduits ? 'rgba(2, 132, 199, 0.15)' : 'transparent',
-              border: `1px solid ${showConduits ? '#0284c7' : 'transparent'}`,
-              color: showConduits ? '#0284c7' : 'var(--slate-500)',
-              fontSize: 11,
-              fontFamily: 'var(--font-mono)',
-              fontWeight: 600,
-              padding: '3px 8px',
-              borderRadius: 4,
-              cursor: 'pointer',
-            }}
-          >
-            <Zap size={11} /> Power Grid
-          </motion.button>
-
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setShowSafetyZones(!showSafetyZones)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-              background: showSafetyZones ? 'rgba(217, 119, 6, 0.15)' : 'transparent',
-              border: `1px solid ${showSafetyZones ? '#d97706' : 'transparent'}`,
-              color: showSafetyZones ? '#d97706' : 'var(--slate-500)',
-              fontSize: 11,
-              fontFamily: 'var(--font-mono)',
-              fontWeight: 600,
-              padding: '3px 8px',
-              borderRadius: 4,
-              cursor: 'pointer',
-            }}
-          >
-            <Shield size={11} /> Safety Bays
-          </motion.button>
-        </div>
-      </div>
-
-      {/* ─── End-to-End Sensor-to-Twin Pipeline Bar (Judging Walkthrough) ── */}
-      {showPipelineGuide ? (
-        <div
-          style={{
-            position: 'absolute',
-            top: 54,
-            left: 12,
-            right: 12,
-            background: 'rgba(248, 245, 238, 0.96)',
-            backdropFilter: 'blur(16px)',
-            border: '1px solid rgba(255, 255, 255, 0.9)',
-            borderRadius: 10,
-            padding: '8px 12px',
-            boxShadow: '0 4px 20px rgba(60, 45, 25, 0.12)',
-            zIndex: 30,
-            pointerEvents: 'auto',
-          }}
-        >
-          {/* Bar Header */}
+          {/* Left Pill: Mode Switcher & Camera Views */}
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: 6,
+              gap: 4,
+              background: 'rgba(235, 226, 212, 0.94)',
+              backdropFilter: 'blur(12px)',
+              border: '1px solid rgba(255, 255, 255, 0.85)',
+              borderRadius: 8,
+              padding: '4px 6px',
+              pointerEvents: 'auto',
+              boxShadow: '4px 4px 14px rgba(188, 176, 158, 0.35)',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span
+            {/* Integrated Mode Switcher */}
+            {setMapMode && (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(215, 204, 188, 0.55)', borderRadius: 6, padding: 2 }}>
+                  <button
+                    onClick={() => setMapMode('3d')}
+                    style={{
+                      background: (mapMode || '3d') === '3d' ? '#1C1917' : 'transparent',
+                      color: (mapMode || '3d') === '3d' ? '#F5EFE6' : 'var(--slate-500)',
+                      border: 'none',
+                      borderRadius: 4,
+                      padding: '3px 8px',
+                      fontSize: 10.5,
+                      fontWeight: 700,
+                      fontFamily: 'var(--font-mono)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      boxShadow: (mapMode || '3d') === '3d' ? '0 1px 4px rgba(0,0,0,0.18)' : 'none',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    <Box size={12} style={{ color: (mapMode || '3d') === '3d' ? '#F59E0B' : 'inherit' }} /> 3D Twin
+                  </button>
+                  <button
+                    onClick={() => setMapMode('2d')}
+                    style={{
+                      background: mapMode === '2d' ? '#1C1917' : 'transparent',
+                      color: mapMode === '2d' ? '#F5EFE6' : 'var(--slate-500)',
+                      border: 'none',
+                      borderRadius: 4,
+                      padding: '3px 8px',
+                      fontSize: 10.5,
+                      fontWeight: 700,
+                      fontFamily: 'var(--font-mono)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      boxShadow: mapMode === '2d' ? '0 1px 4px rgba(0,0,0,0.18)' : 'none',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    <Cpu size={12} style={{ color: mapMode === '2d' ? '#06B6D4' : 'inherit' }} /> 2.5D Mimic
+                  </button>
+                </div>
+                <span style={{ color: 'rgba(90, 75, 55, 0.25)', margin: '0 2px' }}>|</span>
+              </>
+            )}
+
+            {/* Camera Presets */}
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--slate-500)', padding: '0 4px', letterSpacing: 0.5, fontWeight: 700 }}>
+              CAM:
+            </span>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="cam-btn"
+              onClick={() => setPreset('isometric')}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#1C1917',
+                fontSize: 10.5,
+                fontFamily: 'var(--font-mono)',
+                fontWeight: 700,
+                padding: '3px 6px',
+                borderRadius: 4,
+                cursor: 'pointer',
+              }}
+            >
+              Overview
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="cam-btn"
+              onClick={() => setPreset('topdown')}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--slate-400)',
+                fontSize: 10.5,
+                fontFamily: 'var(--font-mono)',
+                padding: '3px 6px',
+                borderRadius: 4,
+                cursor: 'pointer',
+              }}
+            >
+              Top
+            </motion.button>
+            <span style={{ color: 'rgba(90, 75, 55, 0.2)' }}>|</span>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="cam-btn"
+              onClick={() => setPreset('compressor')}
+              style={{
+                background: selectedId === 'compressor' ? 'rgba(217, 119, 6, 0.16)' : 'transparent',
+                border: 'none',
+                color: '#d97706',
+                fontSize: 10.5,
+                fontFamily: 'var(--font-mono)',
+                fontWeight: 700,
+                padding: '3px 6px',
+                borderRadius: 4,
+                cursor: 'pointer',
+              }}
+            >
+              Compressor
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="cam-btn"
+              onClick={() => setPreset('cnc')}
+              style={{
+                background: selectedId === 'cnc' ? 'rgba(2, 132, 199, 0.16)' : 'transparent',
+                border: 'none',
+                color: '#0284c7',
+                fontSize: 10.5,
+                fontFamily: 'var(--font-mono)',
+                fontWeight: 700,
+                padding: '3px 6px',
+                borderRadius: 4,
+                cursor: 'pointer',
+              }}
+            >
+              CNC
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="cam-btn"
+              onClick={() => setPreset('furnace')}
+              style={{
+                background: selectedId === 'furnace' ? 'rgba(220, 38, 38, 0.16)' : 'transparent',
+                border: 'none',
+                color: '#dc2626',
+                fontSize: 10.5,
+                fontFamily: 'var(--font-mono)',
+                fontWeight: 700,
+                padding: '3px 6px',
+                borderRadius: 4,
+                cursor: 'pointer',
+              }}
+            >
+              Furnace
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="cam-btn"
+              onClick={() => setPreset('cooling')}
+              style={{
+                background: selectedId === 'cooling' ? 'rgba(5, 150, 105, 0.16)' : 'transparent',
+                border: 'none',
+                color: '#059669',
+                fontSize: 10.5,
+                fontFamily: 'var(--font-mono)',
+                fontWeight: 700,
+                padding: '3px 6px',
+                borderRadius: 4,
+                cursor: 'pointer',
+              }}
+            >
+              Cooling
+            </motion.button>
+            <span style={{ color: 'rgba(90, 75, 55, 0.2)' }}>|</span>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="cam-btn"
+              onClick={() => setPreset('gateway')}
+              style={{
+                background: selectedSensorId === 'GW-EDGE-01' ? 'rgba(2, 132, 199, 0.2)' : 'transparent',
+                border: 'none',
+                color: '#0284c7',
+                fontSize: 10.5,
+                fontFamily: 'var(--font-mono)',
+                fontWeight: 700,
+                padding: '3px 6px',
+                borderRadius: 4,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+              }}
+            >
+              <HardDrive size={11} /> Gateway
+            </motion.button>
+          </div>
+
+          {/* Right Pill: Layer Toggles, Audit Ledger & Demo Guide Button */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              background: 'rgba(235, 226, 212, 0.94)',
+              backdropFilter: 'blur(12px)',
+              border: '1px solid rgba(255, 255, 255, 0.85)',
+              borderRadius: 8,
+              padding: '4px 6px',
+              pointerEvents: 'auto',
+              boxShadow: '4px 4px 14px rgba(188, 176, 158, 0.35)',
+            }}
+          >
+            {/* Edge Buffer Active Indicator */}
+            {isBuffering && (
+              <motion.div
+                animate={{ opacity: [1, 0.6, 1] }}
+                transition={{ repeat: Infinity, duration: 1.2 }}
                 style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 10,
-                  fontWeight: 800,
-                  letterSpacing: 1,
-                  textTransform: 'uppercase',
-                  color: '#1C1917',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 5,
-                }}
-              >
-                <Sparkles size={12} style={{ color: '#D97706' }} /> End-to-End Physical Sensor &amp; Digital Twin Pipeline
-              </span>
-              <span
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 8.5,
-                  fontWeight: 700,
-                  padding: '1px 6px',
+                  background: '#f59e0b',
+                  color: '#000',
+                  padding: '2px 6px',
                   borderRadius: 4,
-                  background: 'rgba(2, 132, 199, 0.12)',
-                  color: '#0284C7',
-                }}
-              >
-                LIVE CLOSED-LOOP
-              </span>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              {/* Auto-Demo Walkthrough Button */}
-              <button
-                onClick={() => setIsAutoDemoRunning(!isAutoDemoRunning)}
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 10,
-                  fontWeight: 700,
-                  padding: '3px 9px',
-                  borderRadius: 5,
-                  border: isAutoDemoRunning ? '1px solid #16A34A' : '1px solid #CBD5E1',
-                  background: isAutoDemoRunning ? '#16A34A' : '#FFFFFF',
-                  color: isAutoDemoRunning ? '#FFFFFF' : '#334155',
-                  cursor: 'pointer',
+                  fontWeight: 800,
+                  fontSize: 9.5,
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 4,
+                  gap: 3,
+                  fontFamily: 'var(--font-mono)',
                 }}
               >
-                {isAutoDemoRunning ? <Pause size={10} /> : <Play size={10} />}
-                {isAutoDemoRunning ? 'Pause Auto-Demo' : '▶ 2-Min Judging Auto-Walkthrough'}
-              </button>
+                <WifiOff size={10} /> 72H BUFFER
+              </motion.div>
+            )}
 
-              {/* Quick Closed-Loop Simulation Toggle */}
-              {onToggleSimMode && (
+            <motion.button
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.96 }}
+              onClick={() => setShowSensors(!showSensors)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                background: showSensors ? 'rgba(234, 88, 12, 0.15)' : 'transparent',
+                border: `1px solid ${showSensors ? '#ea580c' : 'transparent'}`,
+                color: showSensors ? '#ea580c' : 'var(--slate-500)',
+                fontSize: 10.5,
+                fontFamily: 'var(--font-mono)',
+                fontWeight: 600,
+                padding: '3px 6px',
+                borderRadius: 4,
+                cursor: 'pointer',
+              }}
+              title="Toggle shop-floor physical sensor markers"
+            >
+              <Radio size={11} /> Sensors
+            </motion.button>
+
+            <motion.button
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.96 }}
+              onClick={() => setShowConduits(!showConduits)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                background: showConduits ? 'rgba(2, 132, 199, 0.15)' : 'transparent',
+                border: `1px solid ${showConduits ? '#0284c7' : 'transparent'}`,
+                color: showConduits ? '#0284c7' : 'var(--slate-500)',
+                fontSize: 10.5,
+                fontFamily: 'var(--font-mono)',
+                fontWeight: 600,
+                padding: '3px 6px',
+                borderRadius: 4,
+                cursor: 'pointer',
+              }}
+              title="Toggle live animated power busbars"
+            >
+              <Zap size={11} /> Power
+            </motion.button>
+
+            <motion.button
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.96 }}
+              onClick={() => setShowSafetyZones(!showSafetyZones)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                background: showSafetyZones ? 'rgba(217, 119, 6, 0.15)' : 'transparent',
+                border: `1px solid ${showSafetyZones ? '#d97706' : 'transparent'}`,
+                color: showSafetyZones ? '#d97706' : 'var(--slate-500)',
+                fontSize: 10.5,
+                fontFamily: 'var(--font-mono)',
+                fontWeight: 600,
+                padding: '3px 6px',
+                borderRadius: 4,
+                cursor: 'pointer',
+              }}
+              title="Toggle OSHA safety perimeter zones"
+            >
+              <Shield size={11} /> Safety
+            </motion.button>
+
+            <span style={{ color: 'rgba(90, 75, 55, 0.25)', margin: '0 2px' }}>|</span>
+
+            {/* Audit Ledger Trigger */}
+            <motion.button
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.96 }}
+              onClick={handleOpenLedgerClick}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                background: '#0284c7',
+                border: 'none',
+                color: '#ffffff',
+                fontSize: 10.5,
+                fontFamily: 'var(--font-mono)',
+                fontWeight: 700,
+                padding: '3px 8px',
+                borderRadius: 4,
+                cursor: 'pointer',
+                boxShadow: '0 1px 4px rgba(2, 132, 199, 0.35)',
+              }}
+              title="Open Cryptographic ESG Audit Ledger (SEBI BRSR / CBAM)"
+            >
+              <FileCheck2 size={11} /> Audit Ledger
+            </motion.button>
+
+            <span style={{ color: 'rgba(90, 75, 55, 0.25)', margin: '0 2px' }}>|</span>
+
+            {/* Demo Pipeline Guide Button */}
+            <motion.button
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.96 }}
+              onClick={() => setShowPipelineGuide(!showPipelineGuide)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                background: showPipelineGuide ? 'rgba(5, 150, 105, 0.15)' : 'rgba(255, 255, 255, 0.7)',
+                border: `1px solid ${showPipelineGuide ? '#059669' : '#CBD5E1'}`,
+                color: showPipelineGuide ? '#059669' : '#334155',
+                fontSize: 10.5,
+                fontFamily: 'var(--font-mono)',
+                fontWeight: 700,
+                padding: '3px 8px',
+                borderRadius: 4,
+                cursor: 'pointer',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+              }}
+              title={showPipelineGuide ? 'Hide Judging Pipeline Guide' : 'Show 5-Step Judging Walkthrough Pipeline'}
+            >
+              <Sparkles size={11} style={{ color: showPipelineGuide ? '#059669' : '#D97706' }} />
+              <span>{showPipelineGuide ? 'Pipeline Guide' : 'Show Guide'}</span>
+            </motion.button>
+          </div>
+        </div>
+
+        {/* Row 2: Guided 5-Step Pipeline Bar (Judging Walkthrough) */}
+        {showPipelineGuide && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            style={{
+              background: 'rgba(248, 245, 238, 0.97)',
+              backdropFilter: 'blur(16px)',
+              border: '1px solid rgba(255, 255, 255, 0.95)',
+              borderRadius: 10,
+              padding: '8px 12px',
+              boxShadow: '0 4px 20px rgba(60, 45, 25, 0.12)',
+              pointerEvents: 'auto',
+              width: '100%',
+            }}
+          >
+            {/* Bar Header */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: 6,
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 10,
+                    fontWeight: 800,
+                    letterSpacing: 1,
+                    textTransform: 'uppercase',
+                    color: '#1C1917',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 5,
+                  }}
+                >
+                  <Sparkles size={12} style={{ color: '#D97706' }} /> End-to-End Physical Sensor &amp; Digital Twin Pipeline
+                </span>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 8.5,
+                    fontWeight: 700,
+                    padding: '1px 6px',
+                    borderRadius: 4,
+                    background: 'rgba(2, 132, 199, 0.12)',
+                    color: '#0284C7',
+                  }}
+                >
+                  LIVE CLOSED-LOOP
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                {/* Auto-Demo Walkthrough Button */}
                 <button
-                  onClick={onToggleSimMode}
+                  onClick={() => setIsAutoDemoRunning(!isAutoDemoRunning)}
                   style={{
                     fontFamily: 'var(--font-mono)',
                     fontSize: 10,
                     fontWeight: 700,
                     padding: '3px 9px',
                     borderRadius: 5,
-                    border: 'none',
-                    background: simMode ? '#16A34A' : '#D97706',
-                    color: '#FFFFFF',
+                    border: isAutoDemoRunning ? '1px solid #16A34A' : '1px solid #CBD5E1',
+                    background: isAutoDemoRunning ? '#16A34A' : '#FFFFFF',
+                    color: isAutoDemoRunning ? '#FFFFFF' : '#334155',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     gap: 4,
                   }}
                 >
-                  {simMode ? <CheckCircle2 size={10} /> : <Zap size={10} />}
-                  {simMode ? 'Simulated Fix: 0 kW (-998 kWh)' : 'Simulate Auto-Idle Fix'}
+                  {isAutoDemoRunning ? <Pause size={10} /> : <Play size={10} />}
+                  {isAutoDemoRunning ? 'Pause Auto-Demo' : '▶ 2-Min Judging Auto-Walkthrough'}
                 </button>
-              )}
 
-              {/* Hide bar toggle */}
-              <button
-                onClick={() => setShowPipelineGuide(false)}
-                style={{
-                  border: 'none',
-                  background: 'transparent',
-                  color: '#94A3B8',
-                  cursor: 'pointer',
-                  padding: 2,
-                }}
-                title="Hide Pipeline Guide"
-              >
-                <X size={13} />
-              </button>
-            </div>
-          </div>
+                {/* Quick Closed-Loop Simulation Toggle */}
+                {onToggleSimMode && (
+                  <button
+                    onClick={onToggleSimMode}
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 10,
+                      fontWeight: 700,
+                      padding: '3px 9px',
+                      borderRadius: 5,
+                      border: 'none',
+                      background: simMode ? '#16A34A' : '#D97706',
+                      color: '#FFFFFF',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                    }}
+                  >
+                    {simMode ? <CheckCircle2 size={10} /> : <Zap size={10} />}
+                    {simMode ? 'Simulated Fix: 0 kW (-998 kWh)' : 'Simulate Auto-Idle Fix'}
+                  </button>
+                )}
 
-          {/* Stepper Pills Navigation */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(5, 1fr)',
-              gap: 6,
-            }}
-          >
-            {END_TO_END_PIPELINE.map((step) => {
-              const isStepActive = activePipelineStep === step.stepNum;
-              return (
+                {/* Hide bar toggle */}
                 <button
-                  key={step.stepNum}
-                  onClick={() => handlePipelineStepClick(step.stepNum)}
+                  onClick={() => setShowPipelineGuide(false)}
                   style={{
-                    background: isStepActive ? '#FFFFFF' : 'rgba(255, 255, 255, 0.45)',
-                    border: isStepActive ? '1.5px solid #0284C7' : '1px solid rgba(226, 232, 240, 0.8)',
-                    borderRadius: 6,
-                    padding: '6px 8px',
-                    textAlign: 'left',
+                    border: 'none',
+                    background: 'transparent',
+                    color: '#94A3B8',
                     cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                    boxShadow: isStepActive ? '0 2px 8px rgba(2, 132, 199, 0.18)' : 'none',
+                    padding: 2,
+                    display: 'flex',
+                    alignItems: 'center',
                   }}
+                  title="Hide Pipeline Guide"
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, fontWeight: 800, color: isStepActive ? '#0284C7' : '#1C1917' }}>
-                      {step.label}
-                    </span>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: '#64748B' }}>
-                      Step {step.stepNum}/5
-                    </span>
-                  </div>
-                  <div style={{ fontSize: 9, color: isStepActive ? '#334155' : '#64748B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 2 }}>
-                    {step.tag}
-                  </div>
+                  <X size={13} />
                 </button>
-              );
-            })}
-          </div>
+              </div>
+            </div>
 
-          {/* Pitch Callout Banner for Active Step */}
-          {activePipelineStep !== null && (
+            {/* Stepper Pills Navigation */}
             <div
               style={{
-                marginTop: 8,
-                background: '#FFFFFF',
-                border: '1px solid #E2E8F0',
-                borderRadius: 6,
-                padding: '8px 12px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 12,
+                display: 'grid',
+                gridTemplateColumns: 'repeat(5, 1fr)',
+                gap: 6,
               }}
             >
-              <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 800, color: '#0F172A' }}>
-                    {END_TO_END_PIPELINE[activePipelineStep - 1]?.label} — {END_TO_END_PIPELINE[activePipelineStep - 1]?.description}
-                  </span>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8.5, fontWeight: 700, padding: '1px 5px', borderRadius: 3, background: 'rgba(217, 119, 6, 0.12)', color: '#D97706' }}>
-                    {END_TO_END_PIPELINE[activePipelineStep - 1]?.standard}
-                  </span>
-                </div>
-                <div style={{ fontSize: 10, color: '#334155', lineHeight: 1.45 }}>
-                  <strong style={{ color: '#0284C7' }}>Pitch Script for Judges: </strong>
-                  {END_TO_END_PIPELINE[activePipelineStep - 1]?.pitchScript}
-                </div>
-              </div>
-
-              {/* Step Navigation Controls */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-                <button
-                  disabled={activePipelineStep <= 1}
-                  onClick={() => handlePipelineStepClick(activePipelineStep - 1)}
-                  style={{
-                    border: '1px solid #CBD5E1',
-                    background: '#F8FAFC',
-                    borderRadius: 4,
-                    padding: '4px 6px',
-                    cursor: activePipelineStep <= 1 ? 'not-allowed' : 'pointer',
-                    opacity: activePipelineStep <= 1 ? 0.4 : 1,
-                  }}
-                  title="Previous Step"
-                >
-                  <ChevronLeft size={12} />
-                </button>
-                <button
-                  disabled={activePipelineStep >= 5}
-                  onClick={() => handlePipelineStepClick(activePipelineStep + 1)}
-                  style={{
-                    border: '1px solid #CBD5E1',
-                    background: '#F8FAFC',
-                    borderRadius: 4,
-                    padding: '4px 6px',
-                    cursor: activePipelineStep >= 5 ? 'not-allowed' : 'pointer',
-                    opacity: activePipelineStep >= 5 ? 0.4 : 1,
-                  }}
-                  title="Next Step"
-                >
-                  <ChevronRight size={12} />
-                </button>
-              </div>
+              {END_TO_END_PIPELINE.map((step) => {
+                const isStepActive = activePipelineStep === step.stepNum;
+                return (
+                  <button
+                    key={step.stepNum}
+                    onClick={() => handlePipelineStepClick(step.stepNum)}
+                    style={{
+                      background: isStepActive ? '#FFFFFF' : 'rgba(255, 255, 255, 0.45)',
+                      border: isStepActive ? '1.5px solid #0284C7' : '1px solid rgba(226, 232, 240, 0.8)',
+                      borderRadius: 6,
+                      padding: '6px 8px',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                      boxShadow: isStepActive ? '0 2px 8px rgba(2, 132, 199, 0.18)' : 'none',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, fontWeight: 800, color: isStepActive ? '#0284C7' : '#1C1917' }}>
+                        {step.label}
+                      </span>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: '#64748B' }}>
+                        Step {step.stepNum}/5
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 9, color: isStepActive ? '#334155' : '#64748B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 2 }}>
+                      {step.tag}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
-          )}
-        </div>
-      ) : (
-        <button
-          onClick={() => setShowPipelineGuide(true)}
-          style={{
-            position: 'absolute',
-            top: 54,
-            right: 12,
-            background: 'rgba(235, 226, 212, 0.94)',
-            backdropFilter: 'blur(12px)',
-            border: '1px solid rgba(255, 255, 255, 0.85)',
-            borderRadius: 6,
-            padding: '4px 10px',
-            fontFamily: 'var(--font-mono)',
-            fontSize: 10,
-            fontWeight: 700,
-            color: '#0284C7',
-            cursor: 'pointer',
-            zIndex: 30,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 4,
-            boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-          }}
-        >
-          <Sparkles size={11} /> Show Demo Pipeline Guide
-        </button>
-      )}
+
+            {/* Pitch Callout Banner for Active Step */}
+            {activePipelineStep !== null && (
+              <div
+                style={{
+                  marginTop: 8,
+                  background: '#FFFFFF',
+                  border: '1px solid #E2E8F0',
+                  borderRadius: 6,
+                  padding: '8px 12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                }}
+              >
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 800, color: '#0F172A' }}>
+                      {END_TO_END_PIPELINE[activePipelineStep - 1]?.label} — {END_TO_END_PIPELINE[activePipelineStep - 1]?.description}
+                    </span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8.5, fontWeight: 700, padding: '1px 5px', borderRadius: 3, background: 'rgba(217, 119, 6, 0.12)', color: '#D97706' }}>
+                      {END_TO_END_PIPELINE[activePipelineStep - 1]?.standard}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 10, color: '#334155', lineHeight: 1.45 }}>
+                    <strong style={{ color: '#0284C7' }}>Pitch Script for Judges: </strong>
+                    {END_TO_END_PIPELINE[activePipelineStep - 1]?.pitchScript}
+                  </div>
+                </div>
+
+                {/* Step Navigation Controls */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+                  <button
+                    disabled={activePipelineStep <= 1}
+                    onClick={() => handlePipelineStepClick(activePipelineStep - 1)}
+                    style={{
+                      border: '1px solid #CBD5E1',
+                      background: '#F8FAFC',
+                      borderRadius: 4,
+                      padding: '4px 6px',
+                      cursor: activePipelineStep <= 1 ? 'not-allowed' : 'pointer',
+                      opacity: activePipelineStep <= 1 ? 0.4 : 1,
+                    }}
+                    title="Previous Step"
+                  >
+                    <ChevronLeft size={12} />
+                  </button>
+                  <button
+                    disabled={activePipelineStep >= 5}
+                    onClick={() => handlePipelineStepClick(activePipelineStep + 1)}
+                    style={{
+                      border: '1px solid #CBD5E1',
+                      background: '#F8FAFC',
+                      borderRadius: 4,
+                      padding: '4px 6px',
+                      cursor: activePipelineStep >= 5 ? 'not-allowed' : 'pointer',
+                      opacity: activePipelineStep >= 5 ? 0.4 : 1,
+                    }}
+                    title="Next Step"
+                  >
+                    <ChevronRight size={12} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </div>
 
       {/* ─── Bottom Status Legend ────────────────────────────────────────── */}
       <div

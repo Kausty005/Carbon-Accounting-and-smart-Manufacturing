@@ -1472,65 +1472,66 @@ function ScadaView({
 }) {
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
-      {/* Mode Switcher Toggle Bar */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 14,
-          right: 20,
-          zIndex: 40,
-          display: 'flex',
-          background: 'rgba(235, 226, 212, 0.94)',
-          border: '1px solid rgba(255, 255, 255, 0.85)',
-          borderRadius: 8,
-          padding: 3,
-          backdropFilter: 'blur(12px)',
-          boxShadow: '4px 4px 14px rgba(188, 176, 158, 0.35)',
-        }}
-      >
-        <button
-          onClick={() => setMapMode('3d')}
+      {/* Mode Switcher Toggle Bar (Active in 2.5D Mimic mode; 3D view integrates switcher into unified top control bar) */}
+      {mapMode === '2d' && (
+        <div
           style={{
-            background: mapMode === '3d' ? '#1C1917' : 'transparent',
-            color: mapMode === '3d' ? '#F5EFE6' : 'var(--slate-400)',
-            border: 'none',
-            borderRadius: 6,
-            padding: '5px 12px',
-            fontSize: 11,
-            fontWeight: 700,
-            fontFamily: 'var(--font-mono)',
-            cursor: 'pointer',
+            position: 'absolute',
+            top: 14,
+            right: 20,
+            zIndex: 40,
             display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            transition: 'all 0.15s ease',
-            boxShadow: mapMode === '3d' ? '0 2px 6px rgba(0,0,0,0.12)' : 'none',
+            background: 'rgba(235, 226, 212, 0.94)',
+            border: '1px solid rgba(255, 255, 255, 0.85)',
+            borderRadius: 8,
+            padding: 3,
+            backdropFilter: 'blur(12px)',
+            boxShadow: '4px 4px 14px rgba(188, 176, 158, 0.35)',
           }}
         >
-          <Box size={13} style={{ color: mapMode === '3d' ? '#F59E0B' : 'inherit' }} /> 3D Digital Twin
-        </button>
-        <button
-          onClick={() => setMapMode('2d')}
-          style={{
-            background: mapMode === '2d' ? '#1C1917' : 'transparent',
-            color: mapMode === '2d' ? '#F5EFE6' : 'var(--slate-400)',
-            border: 'none',
-            borderRadius: 6,
-            padding: '5px 12px',
-            fontSize: 11,
-            fontWeight: 700,
-            fontFamily: 'var(--font-mono)',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            transition: 'all 0.15s ease',
-            boxShadow: mapMode === '2d' ? '0 2px 6px rgba(0,0,0,0.12)' : 'none',
-          }}
-        >
-          <Cpu size={13} style={{ color: mapMode === '2d' ? '#06B6D4' : 'inherit' }} /> 2.5D SCADA Mimic
-        </button>
-      </div>
+          <button
+            onClick={() => setMapMode('3d')}
+            style={{
+              background: 'transparent',
+              color: 'var(--slate-400)',
+              border: 'none',
+              borderRadius: 6,
+              padding: '5px 12px',
+              fontSize: 11,
+              fontWeight: 700,
+              fontFamily: 'var(--font-mono)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <Box size={13} style={{ color: 'inherit' }} /> 3D Digital Twin
+          </button>
+          <button
+            onClick={() => setMapMode('2d')}
+            style={{
+              background: '#1C1917',
+              color: '#F5EFE6',
+              border: 'none',
+              borderRadius: 6,
+              padding: '5px 12px',
+              fontSize: 11,
+              fontWeight: 700,
+              fontFamily: 'var(--font-mono)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              transition: 'all 0.15s ease',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.12)',
+            }}
+          >
+            <Cpu size={13} style={{ color: '#06B6D4' }} /> 2.5D SCADA Mimic
+          </button>
+        </div>
+      )}
 
       {mapMode === '3d' ? (
         <Factory3DScene
@@ -1546,6 +1547,8 @@ function ScadaView({
           simMode={simMode}
           onToggleSimMode={onToggleSimMode}
           onResetBaseline={onResetBaseline}
+          mapMode={mapMode}
+          setMapMode={setMapMode}
         />
       ) : (
         <ScadaFloorMap

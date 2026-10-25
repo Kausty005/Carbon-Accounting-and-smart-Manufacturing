@@ -1,35 +1,36 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
   Lock, Mail, Shield, ArrowRight, CheckCircle2,
-  Cpu, Zap, Compass, User, AlertCircle,
+  Cpu, Zap, Compass, User, AlertCircle, Key, ShieldCheck, Sparkles, Building2
 } from 'lucide-react';
+import { RoleId, DEMO_USERS, UserProfile } from '../../auth/authTypes';
 
 interface LoginModalProps {
-  onLogin: (user: { email: string; role: string; name: string }) => void;
+  onLogin: (user: UserProfile) => void;
   onBackToHome: () => void;
+  initialRole?: RoleId;
 }
 
-export default function LoginModal({ onLogin, onBackToHome }: LoginModalProps) {
-  const [email, setEmail] = useState('operator@precisionworks.mfg');
-  const [password, setPassword] = useState('••••••••••••');
-  const [role, setRole] = useState('Plant SCADA Operator');
-  const [loading, setLoading] = useState(false);
+export default function LoginModal({ onLogin, onBackToHome, initialRole = 'operator' }: LoginModalProps) {
+  const [selectedRole, setSelectedRole] = useState<RoleId>(initialRole);
+  const [email, setEmail] = useState<string>(DEMO_USERS[initialRole].email);
+  const [password, setPassword] = useState<string>('••••••••••••');
+  const [loading, setLoading] = useState<boolean>(false);
+
+  const activePersona = DEMO_USERS[selectedRole];
+
+  const handleSelectRole = (roleId: RoleId) => {
+    setSelectedRole(roleId);
+    setEmail(DEMO_USERS[roleId].email);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setTimeout(() => {
-      onLogin({
-        email,
-        role,
-        name: role === 'Plant SCADA Operator' ? 'Vikram Malhotra' : 'Dr. Ananya Sharma',
-      });
-    }, 400);
-  };
-
-  const setDemoRole = (roleName: string, demoEmail: string) => {
-    setRole(roleName);
-    setEmail(demoEmail);
+      onLogin(DEMO_USERS[selectedRole]);
+      setLoading(false);
+    }, 350);
   };
 
   return (
@@ -41,8 +42,9 @@ export default function LoginModal({ onLogin, onBackToHome }: LoginModalProps) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#E4D9C8',
-        padding: 20,
+        background: '#EDE7DC',
+        padding: '24px 16px',
+        overflowY: 'auto',
       }}
     >
       {/* Background subtle architectural grid lines */}
@@ -50,9 +52,9 @@ export default function LoginModal({ onLogin, onBackToHome }: LoginModalProps) {
         style={{
           position: 'absolute',
           inset: 0,
-          backgroundImage: `linear-gradient(to right, rgba(90,75,55,0.05) 1px, transparent 1px),
-                            linear-gradient(to bottom, rgba(90,75,55,0.05) 1px, transparent 1px)`,
-          backgroundSize: '40px 40px',
+          backgroundImage: `linear-gradient(to right, rgba(90,75,55,0.06) 1px, transparent 1px),
+                            linear-gradient(to bottom, rgba(90,75,55,0.06) 1px, transparent 1px)`,
+          backgroundSize: '36px 36px',
           pointerEvents: 'none',
         }}
       />
@@ -62,175 +64,218 @@ export default function LoginModal({ onLogin, onBackToHome }: LoginModalProps) {
         style={{
           position: 'relative',
           width: '100%',
-          maxWidth: 440,
-          background: 'rgba(235, 226, 212, 0.94)',
+          maxWidth: '540px',
+          background: 'rgba(244, 239, 230, 0.94)',
           backdropFilter: 'blur(20px)',
           border: '1px solid rgba(255, 255, 255, 0.85)',
-          borderRadius: 20,
+          borderRadius: '24px',
           padding: '36px 36px 32px',
-          boxShadow: '8px 8px 30px #BCB09E, -8px -8px 30px #FFFFFF',
+          boxShadow: '12px 12px 35px #C4BAAB, -12px -12px 35px #FFFFFF',
         }}
       >
         {/* Top Header */}
-        <div style={{ textAlign: 'center', marginBottom: 26 }}>
+        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
           <div
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: 8,
-              padding: '4px 12px',
-              borderRadius: 9999,
-              background: 'rgba(15, 23, 42, 0.05)',
-              marginBottom: 14,
+              gap: '8px',
+              padding: '5px 14px',
+              borderRadius: '9999px',
+              background: 'rgba(24, 25, 27, 0.05)',
+              marginBottom: '14px',
+              border: '1px solid rgba(255, 255, 255, 0.6)',
             }}
           >
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981' }} />
+            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10B981', boxShadow: '0 0 6px #10B981' }} />
             <span
               style={{
                 fontFamily: "'IBM Plex Mono', monospace",
-                fontSize: 10,
-                fontWeight: 600,
-                letterSpacing: 1.5,
+                fontSize: '10px',
+                fontWeight: 700,
+                letterSpacing: '0.14em',
                 color: '#475569',
                 textTransform: 'uppercase',
               }}
             >
-              PrecisionWorks Terminal 01
+              PrecisionWorks Terminal • RBAC Gateway
             </span>
           </div>
 
           <h2
             style={{
-              fontFamily: "'Cinzel', 'Playfair Display', serif",
-              fontSize: 26,
+              fontFamily: "'Cinzel', 'Playfair Display', Georgia, serif",
+              fontSize: '26px',
               fontWeight: 700,
-              color: '#0f172a',
-              letterSpacing: 1,
-              marginBottom: 6,
+              color: '#18191B',
+              letterSpacing: '-0.01em',
+              marginBottom: '6px',
             }}
           >
-            WATTWISE AI
+            SIGN IN TO WATTWISE AI
           </h2>
-          <p style={{ fontSize: 13, color: '#64748b' }}>
-            Industrial Energy Intelligence &amp; SCADA Twin
+          <p style={{ fontSize: '13px', color: '#68645C', margin: 0 }}>
+            Select an industrial credential role to access authorized telemetry &amp; twin controls.
           </p>
         </div>
 
-        {/* 1-Click Role Quick Selectors */}
-        <div style={{ marginBottom: 22 }}>
+        {/* 1-Click Role Quick Selectors (4 Roles) */}
+        <div style={{ marginBottom: '24px' }}>
           <div
             style={{
               fontFamily: "'IBM Plex Mono', monospace",
-              fontSize: 9,
-              letterSpacing: 1.5,
+              fontSize: '9.5px',
+              letterSpacing: '0.14em',
               textTransform: 'uppercase',
-              color: '#94a3b8',
-              marginBottom: 8,
+              color: '#7E796E',
+              fontWeight: 700,
+              marginBottom: '10px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
             }}
           >
-            DEMO ACCESS ROLES
+            <span>SELECT INDUSTRIAL ROLE (1-CLICK DEMO)</span>
+            <span style={{ color: activePersona.avatarColor, fontWeight: 800 }}>
+              {activePersona.allowedViews.length} OF 11 MODULES
+            </span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-            <button
-              type="button"
-              onClick={() => setDemoRole('Plant SCADA Operator', 'operator@precisionworks.mfg')}
-              style={{
-                background: role === 'Plant SCADA Operator' ? '#0f172a' : 'rgba(255, 255, 255, 0.9)',
-                color: role === 'Plant SCADA Operator' ? '#ffffff' : '#334155',
-                border: `1px solid ${role === 'Plant SCADA Operator' ? '#0f172a' : 'rgba(0, 0, 0, 0.08)'}`,
-                borderRadius: 8,
-                padding: '8px 10px',
-                fontSize: 11,
-                fontWeight: 600,
-                cursor: 'pointer',
-                textAlign: 'left',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              Operator
-              <span style={{ display: 'block', fontSize: 9, opacity: 0.75, fontWeight: 400 }}>
-                Live SCADA Control
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setDemoRole('Energy Auditor', 'auditor@kirloskar.com')}
-              style={{
-                background: role === 'Energy Auditor' ? '#0f172a' : 'rgba(255, 255, 255, 0.9)',
-                color: role === 'Energy Auditor' ? '#ffffff' : '#334155',
-                border: `1px solid ${role === 'Energy Auditor' ? '#0f172a' : 'rgba(0, 0, 0, 0.08)'}`,
-                borderRadius: 8,
-                padding: '8px 10px',
-                fontSize: 11,
-                fontWeight: 600,
-                cursor: 'pointer',
-                textAlign: 'left',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              Energy Auditor
-              <span style={{ display: 'block', fontSize: 9, opacity: 0.75, fontWeight: 400 }}>
-                What-If &amp; Carbon Reports
-              </span>
-            </button>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+            {(Object.keys(DEMO_USERS) as RoleId[]).map((roleKey) => {
+              const u = DEMO_USERS[roleKey];
+              const isSelected = selectedRole === roleKey;
+              return (
+                <button
+                  key={roleKey}
+                  type="button"
+                  onClick={() => handleSelectRole(roleKey)}
+                  style={{
+                    backgroundColor: isSelected ? '#18191B' : 'rgba(255, 255, 255, 0.8)',
+                    color: isSelected ? '#EDE7DC' : '#2D2B28',
+                    border: isSelected ? '1px solid #18191B' : '1px solid rgba(0, 0, 0, 0.08)',
+                    borderRadius: '14px',
+                    padding: '12px 14px',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    transition: 'all 0.2s',
+                    boxShadow: isSelected
+                      ? '0 6px 16px rgba(0,0,0,0.22)'
+                      : '2px 2px 6px rgba(0,0,0,0.03)',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span
+                        style={{
+                          width: '10px',
+                          height: '10px',
+                          borderRadius: '50%',
+                          backgroundColor: u.avatarColor,
+                          boxShadow: `0 0 8px ${u.avatarColor}`,
+                        }}
+                      />
+                      <span
+                        style={{
+                          fontSize: '11.5px',
+                          fontWeight: 700,
+                          fontFamily: "'IBM Plex Mono', monospace",
+                          color: isSelected ? '#FFFFFF' : '#18191B',
+                        }}
+                      >
+                        {u.name}
+                      </span>
+                    </div>
+                    {isSelected && <CheckCircle2 size={13} color="#10B981" />}
+                  </div>
+
+                  <div style={{ fontSize: '11px', fontWeight: 600, opacity: isSelected ? 0.9 : 0.8 }}>
+                    {u.roleTitle}
+                  </div>
+                  <div style={{ fontSize: '9.5px', color: isSelected ? '#A8A29E' : '#78716C', marginTop: '2px' }}>
+                    {u.allowedViews.length} Authorized Views
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Active Role Description Callout */}
+          <div
+            style={{
+              marginTop: '12px',
+              padding: '10px 14px',
+              borderRadius: '10px',
+              backgroundColor: 'rgba(255, 255, 255, 0.65)',
+              border: '1px solid rgba(0, 0, 0, 0.06)',
+              fontSize: '11.5px',
+              color: '#4B4843',
+              lineHeight: 1.45,
+            }}
+          >
+            <strong style={{ color: '#18191B' }}>Permissions: </strong>
+            {activePersona.description}
           </div>
         </div>
 
-        {/* Standard Form */}
+        {/* Credentials Form */}
         <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: 14 }}>
+          <div style={{ marginBottom: '14px' }}>
             <label
               style={{
                 display: 'block',
                 fontFamily: "'IBM Plex Mono', monospace",
-                fontSize: 10,
-                color: '#475569',
-                letterSpacing: 1,
+                fontSize: '10px',
+                fontWeight: 700,
+                color: '#5C584F',
+                letterSpacing: '0.1em',
                 textTransform: 'uppercase',
-                marginBottom: 6,
+                marginBottom: '6px',
               }}
             >
-              Operator ID / Email
+              Operator / Auditor Email
             </label>
             <div style={{ position: 'relative' }}>
               <input
-                type="text"
+                type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 style={{
                   width: '100%',
-                  background: 'rgba(255, 255, 255, 0.95)',
+                  backgroundColor: 'rgba(255, 255, 255, 0.95)',
                   border: '1px solid rgba(0, 0, 0, 0.12)',
-                  borderRadius: 8,
-                  padding: '9px 12px 9px 34px',
-                  fontSize: 13,
-                  color: '#0f172a',
+                  borderRadius: '10px',
+                  padding: '10px 12px 10px 36px',
+                  fontSize: '13px',
+                  color: '#18191B',
                   outline: 'none',
                   fontFamily: "'IBM Plex Mono', monospace",
+                  boxSizing: 'border-box',
                 }}
               />
               <Mail
                 size={14}
-                color="#94a3b8"
-                style={{ position: 'absolute', left: 12, top: 11 }}
+                color="#78716C"
+                style={{ position: 'absolute', left: 12, top: 13 }}
               />
             </div>
           </div>
 
-          <div style={{ marginBottom: 20 }}>
+          <div style={{ marginBottom: '22px' }}>
             <label
               style={{
                 display: 'block',
                 fontFamily: "'IBM Plex Mono', monospace",
-                fontSize: 10,
-                color: '#475569',
-                letterSpacing: 1,
+                fontSize: '10px',
+                fontWeight: 700,
+                color: '#5C584F',
+                letterSpacing: '0.1em',
                 textTransform: 'uppercase',
-                marginBottom: 6,
+                marginBottom: '6px',
               }}
             >
-              Security PIN / Password
+              Industrial PIN / Security Password
             </label>
             <div style={{ position: 'relative' }}>
               <input
@@ -240,20 +285,21 @@ export default function LoginModal({ onLogin, onBackToHome }: LoginModalProps) {
                 required
                 style={{
                   width: '100%',
-                  background: 'rgba(255, 255, 255, 0.95)',
+                  backgroundColor: 'rgba(255, 255, 255, 0.95)',
                   border: '1px solid rgba(0, 0, 0, 0.12)',
-                  borderRadius: 8,
-                  padding: '9px 12px 9px 34px',
-                  fontSize: 13,
-                  color: '#0f172a',
+                  borderRadius: '10px',
+                  padding: '10px 12px 10px 36px',
+                  fontSize: '13px',
+                  color: '#18191B',
                   outline: 'none',
                   fontFamily: "'IBM Plex Mono', monospace",
+                  boxSizing: 'border-box',
                 }}
               />
               <Lock
                 size={14}
-                color="#94a3b8"
-                style={{ position: 'absolute', left: 12, top: 11 }}
+                color="#78716C"
+                style={{ position: 'absolute', left: 12, top: 13 }}
               />
             </div>
           </div>
@@ -264,49 +310,49 @@ export default function LoginModal({ onLogin, onBackToHome }: LoginModalProps) {
             disabled={loading}
             style={{
               width: '100%',
-              background: '#0f172a',
-              color: '#ffffff',
+              backgroundColor: '#18191B',
+              color: '#EDE7DC',
               border: 'none',
-              borderRadius: 8,
-              padding: '11px 16px',
-              fontSize: 13,
-              fontWeight: 600,
+              borderRadius: '12px',
+              padding: '12px 18px',
+              fontSize: '13px',
+              fontWeight: 700,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: 8,
-              boxShadow: '0 4px 14px rgba(15, 23, 42, 0.18)',
-              transition: 'opacity 0.2s',
+              gap: '8px',
+              boxShadow: '0 6px 18px rgba(0, 0, 0, 0.2)',
+              transition: 'all 0.2s',
             }}
           >
             {loading ? (
-              <span>Authenticating...</span>
+              <span>Authenticating Credentials...</span>
             ) : (
               <>
-                <span>Enter PrecisionWorks Plant</span>
-                <ArrowRight size={14} />
+                <span>Sign In as {activePersona.roleTitle}</span>
+                <ArrowRight size={15} />
               </>
             )}
           </button>
         </form>
 
         {/* Back to Home Link */}
-        <div style={{ textAlign: 'center', marginTop: 18 }}>
+        <div style={{ textAlign: 'center', marginTop: '18px' }}>
           <button
             type="button"
             onClick={onBackToHome}
             style={{
               background: 'transparent',
               border: 'none',
-              color: '#64748b',
-              fontSize: 12,
-              fontWeight: 500,
+              color: '#78716C',
+              fontSize: '12px',
+              fontWeight: 600,
               cursor: 'pointer',
               textDecoration: 'underline',
             }}
           >
-            Back to Interactive Glide Home
+            ← Back to Interactive 3D Landing Page
           </button>
         </div>
       </div>

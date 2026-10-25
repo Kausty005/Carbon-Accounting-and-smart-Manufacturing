@@ -19,7 +19,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.2558
     },
-    "audit_signature": "71d60e4bd8a85a94956904c1d09ba56ab322a8472ecf2aa2c23e6ec48db4151b"
+    "audit_signature": "71d60e4bd8a85a94956904c1d09ba56ab322a8472ecf2aa2c23e6ec48db4151b",
+    "block_hash": "71d60e4bd8a85a94956904c1d09ba56ab322a8472ecf2aa2c23e6ec48db4151b",
+    "previous_block_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "timestamp_iso": "2026-10-23T15:50:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.15
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 1,
@@ -41,7 +72,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "4181455a6bdad3afad09683a17e1957507056a0ec3af95949dc6f52fda5536eb"
+    "audit_signature": "4181455a6bdad3afad09683a17e1957507056a0ec3af95949dc6f52fda5536eb",
+    "block_hash": "4181455a6bdad3afad09683a17e1957507056a0ec3af95949dc6f52fda5536eb",
+    "previous_block_hash": "71d60e4bd8a85a94956904c1d09ba56ab322a8472ecf2aa2c23e6ec48db4151b",
+    "timestamp_iso": "2026-10-23T16:05:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 2,
@@ -63,7 +125,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "1a7e7c44ff43b15f1f9591e5069e22849e13f2096a0476a2f1f74164402a1f63"
+    "audit_signature": "1a7e7c44ff43b15f1f9591e5069e22849e13f2096a0476a2f1f74164402a1f63",
+    "block_hash": "1a7e7c44ff43b15f1f9591e5069e22849e13f2096a0476a2f1f74164402a1f63",
+    "previous_block_hash": "4181455a6bdad3afad09683a17e1957507056a0ec3af95949dc6f52fda5536eb",
+    "timestamp_iso": "2026-10-23T16:20:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 3,
@@ -85,7 +178,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "70ff5631e2ae87e053f8d95cea2c21cd5c4174236968a2e19785dd9a24f81574"
+    "audit_signature": "70ff5631e2ae87e053f8d95cea2c21cd5c4174236968a2e19785dd9a24f81574",
+    "block_hash": "70ff5631e2ae87e053f8d95cea2c21cd5c4174236968a2e19785dd9a24f81574",
+    "previous_block_hash": "1a7e7c44ff43b15f1f9591e5069e22849e13f2096a0476a2f1f74164402a1f63",
+    "timestamp_iso": "2026-10-23T16:35:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 4,
@@ -107,7 +231,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "ceaa12f5b7f14c62eaaaa08879c07af31363a077831ef069877b702fe46f35a3"
+    "audit_signature": "ceaa12f5b7f14c62eaaaa08879c07af31363a077831ef069877b702fe46f35a3",
+    "block_hash": "ceaa12f5b7f14c62eaaaa08879c07af31363a077831ef069877b702fe46f35a3",
+    "previous_block_hash": "70ff5631e2ae87e053f8d95cea2c21cd5c4174236968a2e19785dd9a24f81574",
+    "timestamp_iso": "2026-10-23T16:50:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 5,
@@ -129,7 +284,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "2890cc9f1214aed004dfa36ca088cea419eb6d724fb84b5049f0a054a5663639"
+    "audit_signature": "2890cc9f1214aed004dfa36ca088cea419eb6d724fb84b5049f0a054a5663639",
+    "block_hash": "2890cc9f1214aed004dfa36ca088cea419eb6d724fb84b5049f0a054a5663639",
+    "previous_block_hash": "ceaa12f5b7f14c62eaaaa08879c07af31363a077831ef069877b702fe46f35a3",
+    "timestamp_iso": "2026-10-23T17:05:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 6,
@@ -151,7 +337,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "9d780dba9135e3ecaa826539693df8566b4b6eb221b85d07201a67935ace3cc0"
+    "audit_signature": "9d780dba9135e3ecaa826539693df8566b4b6eb221b85d07201a67935ace3cc0",
+    "block_hash": "9d780dba9135e3ecaa826539693df8566b4b6eb221b85d07201a67935ace3cc0",
+    "previous_block_hash": "2890cc9f1214aed004dfa36ca088cea419eb6d724fb84b5049f0a054a5663639",
+    "timestamp_iso": "2026-10-23T17:20:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 7,
@@ -173,7 +390,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "d1a921a3bafa3aec50fbafde7562616970c4b26ce04cf53e60c1e7e38c229be4"
+    "audit_signature": "d1a921a3bafa3aec50fbafde7562616970c4b26ce04cf53e60c1e7e38c229be4",
+    "block_hash": "d1a921a3bafa3aec50fbafde7562616970c4b26ce04cf53e60c1e7e38c229be4",
+    "previous_block_hash": "9d780dba9135e3ecaa826539693df8566b4b6eb221b85d07201a67935ace3cc0",
+    "timestamp_iso": "2026-10-23T17:35:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 8,
@@ -195,7 +443,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "6d34b2f5a10697b042a4bdca8ab2e24c10ebfdb08f163c41b7dc7b145e38d8f7"
+    "audit_signature": "6d34b2f5a10697b042a4bdca8ab2e24c10ebfdb08f163c41b7dc7b145e38d8f7",
+    "block_hash": "6d34b2f5a10697b042a4bdca8ab2e24c10ebfdb08f163c41b7dc7b145e38d8f7",
+    "previous_block_hash": "d1a921a3bafa3aec50fbafde7562616970c4b26ce04cf53e60c1e7e38c229be4",
+    "timestamp_iso": "2026-10-23T17:50:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 9,
@@ -217,7 +496,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "fd360ea00b820098784441c471104c92cd57086eeb835072d0d3c6c30dbdcefe"
+    "audit_signature": "fd360ea00b820098784441c471104c92cd57086eeb835072d0d3c6c30dbdcefe",
+    "block_hash": "fd360ea00b820098784441c471104c92cd57086eeb835072d0d3c6c30dbdcefe",
+    "previous_block_hash": "6d34b2f5a10697b042a4bdca8ab2e24c10ebfdb08f163c41b7dc7b145e38d8f7",
+    "timestamp_iso": "2026-10-23T18:05:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 10,
@@ -239,7 +549,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "49e0fc22a6518f2591b19565e10bdd005a2dd18b0d8862806023e1643b7f7c35"
+    "audit_signature": "49e0fc22a6518f2591b19565e10bdd005a2dd18b0d8862806023e1643b7f7c35",
+    "block_hash": "49e0fc22a6518f2591b19565e10bdd005a2dd18b0d8862806023e1643b7f7c35",
+    "previous_block_hash": "fd360ea00b820098784441c471104c92cd57086eeb835072d0d3c6c30dbdcefe",
+    "timestamp_iso": "2026-10-23T18:20:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 11,
@@ -261,7 +602,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "bf8f1797cfb52b7f00c159a922fb0b40f92bb7e1d998d14433d24d3221140dda"
+    "audit_signature": "bf8f1797cfb52b7f00c159a922fb0b40f92bb7e1d998d14433d24d3221140dda",
+    "block_hash": "bf8f1797cfb52b7f00c159a922fb0b40f92bb7e1d998d14433d24d3221140dda",
+    "previous_block_hash": "49e0fc22a6518f2591b19565e10bdd005a2dd18b0d8862806023e1643b7f7c35",
+    "timestamp_iso": "2026-10-23T18:35:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 12,
@@ -283,7 +655,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "e1f3d1854e4c6a000bc83a636a7ceb56954d6bb3af452fab57f195cb6ef2902d"
+    "audit_signature": "e1f3d1854e4c6a000bc83a636a7ceb56954d6bb3af452fab57f195cb6ef2902d",
+    "block_hash": "e1f3d1854e4c6a000bc83a636a7ceb56954d6bb3af452fab57f195cb6ef2902d",
+    "previous_block_hash": "bf8f1797cfb52b7f00c159a922fb0b40f92bb7e1d998d14433d24d3221140dda",
+    "timestamp_iso": "2026-10-23T18:50:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 13,
@@ -305,7 +708,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "8d81e5f329abed2a67da8c0c976b572490e9ff2d3161466a2e13c1f004925533"
+    "audit_signature": "8d81e5f329abed2a67da8c0c976b572490e9ff2d3161466a2e13c1f004925533",
+    "block_hash": "8d81e5f329abed2a67da8c0c976b572490e9ff2d3161466a2e13c1f004925533",
+    "previous_block_hash": "e1f3d1854e4c6a000bc83a636a7ceb56954d6bb3af452fab57f195cb6ef2902d",
+    "timestamp_iso": "2026-10-23T19:05:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 14,
@@ -327,7 +761,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "e139833103e2473eb35f5419927206ff52bded686bb71df1bf562c9d1393ad6a"
+    "audit_signature": "e139833103e2473eb35f5419927206ff52bded686bb71df1bf562c9d1393ad6a",
+    "block_hash": "e139833103e2473eb35f5419927206ff52bded686bb71df1bf562c9d1393ad6a",
+    "previous_block_hash": "8d81e5f329abed2a67da8c0c976b572490e9ff2d3161466a2e13c1f004925533",
+    "timestamp_iso": "2026-10-23T19:20:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 15,
@@ -349,7 +814,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "4eddc5fdea3dc42ce2f8fa0a4eb9a43aff143191e95437f9f853e4f1e51f743f"
+    "audit_signature": "4eddc5fdea3dc42ce2f8fa0a4eb9a43aff143191e95437f9f853e4f1e51f743f",
+    "block_hash": "4eddc5fdea3dc42ce2f8fa0a4eb9a43aff143191e95437f9f853e4f1e51f743f",
+    "previous_block_hash": "e139833103e2473eb35f5419927206ff52bded686bb71df1bf562c9d1393ad6a",
+    "timestamp_iso": "2026-10-23T19:35:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 16,
@@ -371,7 +867,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.2558
     },
-    "audit_signature": "598595e480d78c76ef632f2efe13a1b1cb75fbecf750cc1068b543bc2875d72c"
+    "audit_signature": "598595e480d78c76ef632f2efe13a1b1cb75fbecf750cc1068b543bc2875d72c",
+    "block_hash": "598595e480d78c76ef632f2efe13a1b1cb75fbecf750cc1068b543bc2875d72c",
+    "previous_block_hash": "4eddc5fdea3dc42ce2f8fa0a4eb9a43aff143191e95437f9f853e4f1e51f743f",
+    "timestamp_iso": "2026-10-23T19:50:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.15
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 17,
@@ -393,7 +920,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "9942080acec3ef58a2e06af9e69f20e078e401d8edb343c146bf4f2249dff8c7"
+    "audit_signature": "9942080acec3ef58a2e06af9e69f20e078e401d8edb343c146bf4f2249dff8c7",
+    "block_hash": "9942080acec3ef58a2e06af9e69f20e078e401d8edb343c146bf4f2249dff8c7",
+    "previous_block_hash": "598595e480d78c76ef632f2efe13a1b1cb75fbecf750cc1068b543bc2875d72c",
+    "timestamp_iso": "2026-10-23T20:05:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 18,
@@ -415,7 +973,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "a4411bd648f0b643ad343888289844b37a26358fb36ab68782cc5812eb524762"
+    "audit_signature": "a4411bd648f0b643ad343888289844b37a26358fb36ab68782cc5812eb524762",
+    "block_hash": "a4411bd648f0b643ad343888289844b37a26358fb36ab68782cc5812eb524762",
+    "previous_block_hash": "9942080acec3ef58a2e06af9e69f20e078e401d8edb343c146bf4f2249dff8c7",
+    "timestamp_iso": "2026-10-23T20:20:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 19,
@@ -437,7 +1026,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "eb68555b54a40f2f4a2b08eabc1bfc874677144c1387f3034277fbbeba684b3c"
+    "audit_signature": "eb68555b54a40f2f4a2b08eabc1bfc874677144c1387f3034277fbbeba684b3c",
+    "block_hash": "eb68555b54a40f2f4a2b08eabc1bfc874677144c1387f3034277fbbeba684b3c",
+    "previous_block_hash": "a4411bd648f0b643ad343888289844b37a26358fb36ab68782cc5812eb524762",
+    "timestamp_iso": "2026-10-23T20:35:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 20,
@@ -459,7 +1079,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "de5f5deb2a53e47b3cc0f882209eef4ac4650e49bed8b5dba4569c0cc9c03f06"
+    "audit_signature": "de5f5deb2a53e47b3cc0f882209eef4ac4650e49bed8b5dba4569c0cc9c03f06",
+    "block_hash": "de5f5deb2a53e47b3cc0f882209eef4ac4650e49bed8b5dba4569c0cc9c03f06",
+    "previous_block_hash": "eb68555b54a40f2f4a2b08eabc1bfc874677144c1387f3034277fbbeba684b3c",
+    "timestamp_iso": "2026-10-23T20:50:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 21,
@@ -481,7 +1132,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "9095e07a7d4c60f68c864f2eea343219933da21321489bcce9168a0fdc9d1d53"
+    "audit_signature": "9095e07a7d4c60f68c864f2eea343219933da21321489bcce9168a0fdc9d1d53",
+    "block_hash": "9095e07a7d4c60f68c864f2eea343219933da21321489bcce9168a0fdc9d1d53",
+    "previous_block_hash": "de5f5deb2a53e47b3cc0f882209eef4ac4650e49bed8b5dba4569c0cc9c03f06",
+    "timestamp_iso": "2026-10-23T21:05:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 22,
@@ -503,7 +1185,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "8aa873cea50379ebce6a82f36efe8df056e5619199a73a2d303c005080d6a966"
+    "audit_signature": "8aa873cea50379ebce6a82f36efe8df056e5619199a73a2d303c005080d6a966",
+    "block_hash": "8aa873cea50379ebce6a82f36efe8df056e5619199a73a2d303c005080d6a966",
+    "previous_block_hash": "9095e07a7d4c60f68c864f2eea343219933da21321489bcce9168a0fdc9d1d53",
+    "timestamp_iso": "2026-10-23T21:20:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 23,
@@ -525,7 +1238,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "3fcfea73d20bcb7ca44c6635e7f3f2e294e6e037e3538375ea2ce3a1f8adffbb"
+    "audit_signature": "3fcfea73d20bcb7ca44c6635e7f3f2e294e6e037e3538375ea2ce3a1f8adffbb",
+    "block_hash": "3fcfea73d20bcb7ca44c6635e7f3f2e294e6e037e3538375ea2ce3a1f8adffbb",
+    "previous_block_hash": "8aa873cea50379ebce6a82f36efe8df056e5619199a73a2d303c005080d6a966",
+    "timestamp_iso": "2026-10-23T21:35:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 24,
@@ -547,7 +1291,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "d2d1edac11ae652af2a1da2fc52419a1bc3674b35cfd02257dbc320cf4027398"
+    "audit_signature": "d2d1edac11ae652af2a1da2fc52419a1bc3674b35cfd02257dbc320cf4027398",
+    "block_hash": "d2d1edac11ae652af2a1da2fc52419a1bc3674b35cfd02257dbc320cf4027398",
+    "previous_block_hash": "3fcfea73d20bcb7ca44c6635e7f3f2e294e6e037e3538375ea2ce3a1f8adffbb",
+    "timestamp_iso": "2026-10-23T21:50:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 25,
@@ -569,7 +1344,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "c767ce26d9009b171c69ca9d25ac1ae0a0111478bdb4d427edfdcd1f30ec9cc6"
+    "audit_signature": "c767ce26d9009b171c69ca9d25ac1ae0a0111478bdb4d427edfdcd1f30ec9cc6",
+    "block_hash": "c767ce26d9009b171c69ca9d25ac1ae0a0111478bdb4d427edfdcd1f30ec9cc6",
+    "previous_block_hash": "d2d1edac11ae652af2a1da2fc52419a1bc3674b35cfd02257dbc320cf4027398",
+    "timestamp_iso": "2026-10-23T22:05:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 26,
@@ -591,7 +1397,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "b6db2b704e0aef81cf2e971d0f6e93353b902366e21e9d1155066e2e5145a157"
+    "audit_signature": "b6db2b704e0aef81cf2e971d0f6e93353b902366e21e9d1155066e2e5145a157",
+    "block_hash": "b6db2b704e0aef81cf2e971d0f6e93353b902366e21e9d1155066e2e5145a157",
+    "previous_block_hash": "c767ce26d9009b171c69ca9d25ac1ae0a0111478bdb4d427edfdcd1f30ec9cc6",
+    "timestamp_iso": "2026-10-23T22:20:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 27,
@@ -613,7 +1450,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "da3d6d86a965a65f4c0f14e46805008c04c9ca02ed0a3e9449ed8639d057581e"
+    "audit_signature": "da3d6d86a965a65f4c0f14e46805008c04c9ca02ed0a3e9449ed8639d057581e",
+    "block_hash": "da3d6d86a965a65f4c0f14e46805008c04c9ca02ed0a3e9449ed8639d057581e",
+    "previous_block_hash": "b6db2b704e0aef81cf2e971d0f6e93353b902366e21e9d1155066e2e5145a157",
+    "timestamp_iso": "2026-10-23T22:35:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 28,
@@ -635,7 +1503,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "051e1772eca983486d962613990e841fad99cd48e31385434233c2a32341a632"
+    "audit_signature": "051e1772eca983486d962613990e841fad99cd48e31385434233c2a32341a632",
+    "block_hash": "051e1772eca983486d962613990e841fad99cd48e31385434233c2a32341a632",
+    "previous_block_hash": "da3d6d86a965a65f4c0f14e46805008c04c9ca02ed0a3e9449ed8639d057581e",
+    "timestamp_iso": "2026-10-23T22:50:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 29,
@@ -657,7 +1556,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "c08d309d95d06c72a57c45f9ed9a8dacb5d2dd1d21236cd352cb5a0532a9ec6a"
+    "audit_signature": "c08d309d95d06c72a57c45f9ed9a8dacb5d2dd1d21236cd352cb5a0532a9ec6a",
+    "block_hash": "c08d309d95d06c72a57c45f9ed9a8dacb5d2dd1d21236cd352cb5a0532a9ec6a",
+    "previous_block_hash": "051e1772eca983486d962613990e841fad99cd48e31385434233c2a32341a632",
+    "timestamp_iso": "2026-10-23T23:05:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 30,
@@ -679,7 +1609,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "567c7f79b656571a90546900c09dcb855d571d0451288c9df16d9668099c639f"
+    "audit_signature": "567c7f79b656571a90546900c09dcb855d571d0451288c9df16d9668099c639f",
+    "block_hash": "567c7f79b656571a90546900c09dcb855d571d0451288c9df16d9668099c639f",
+    "previous_block_hash": "c08d309d95d06c72a57c45f9ed9a8dacb5d2dd1d21236cd352cb5a0532a9ec6a",
+    "timestamp_iso": "2026-10-23T23:20:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 31,
@@ -701,7 +1662,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "dd05a023a7816ed55d4dc28e182f74079f625f79a38f7e5f72d249c6c9d91fd7"
+    "audit_signature": "dd05a023a7816ed55d4dc28e182f74079f625f79a38f7e5f72d249c6c9d91fd7",
+    "block_hash": "dd05a023a7816ed55d4dc28e182f74079f625f79a38f7e5f72d249c6c9d91fd7",
+    "previous_block_hash": "567c7f79b656571a90546900c09dcb855d571d0451288c9df16d9668099c639f",
+    "timestamp_iso": "2026-10-23T23:35:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 32,
@@ -723,7 +1715,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.2558
     },
-    "audit_signature": "3f0c397c69c17022ea7307e76058e926dcf2ccf95104551802e6afd22510f351"
+    "audit_signature": "3f0c397c69c17022ea7307e76058e926dcf2ccf95104551802e6afd22510f351",
+    "block_hash": "3f0c397c69c17022ea7307e76058e926dcf2ccf95104551802e6afd22510f351",
+    "previous_block_hash": "dd05a023a7816ed55d4dc28e182f74079f625f79a38f7e5f72d249c6c9d91fd7",
+    "timestamp_iso": "2026-10-23T23:50:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.15
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 33,
@@ -745,7 +1768,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "c8a08209a87ac0339da4201c86ed9ebb40d286a543a6aa15630ae3736c61ceec"
+    "audit_signature": "c8a08209a87ac0339da4201c86ed9ebb40d286a543a6aa15630ae3736c61ceec",
+    "block_hash": "c8a08209a87ac0339da4201c86ed9ebb40d286a543a6aa15630ae3736c61ceec",
+    "previous_block_hash": "3f0c397c69c17022ea7307e76058e926dcf2ccf95104551802e6afd22510f351",
+    "timestamp_iso": "2026-10-24T00:05:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 34,
@@ -767,7 +1821,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "9da4dc6345532bce935d2fa6cf8852a1f4d071b3d2d4473db28cf7dea198ac04"
+    "audit_signature": "9da4dc6345532bce935d2fa6cf8852a1f4d071b3d2d4473db28cf7dea198ac04",
+    "block_hash": "9da4dc6345532bce935d2fa6cf8852a1f4d071b3d2d4473db28cf7dea198ac04",
+    "previous_block_hash": "c8a08209a87ac0339da4201c86ed9ebb40d286a543a6aa15630ae3736c61ceec",
+    "timestamp_iso": "2026-10-24T00:20:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 35,
@@ -789,7 +1874,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "e0503f6bbdd96e63055a45520f18fdfe634f520797299824986bb35bfd9bd82e"
+    "audit_signature": "e0503f6bbdd96e63055a45520f18fdfe634f520797299824986bb35bfd9bd82e",
+    "block_hash": "e0503f6bbdd96e63055a45520f18fdfe634f520797299824986bb35bfd9bd82e",
+    "previous_block_hash": "9da4dc6345532bce935d2fa6cf8852a1f4d071b3d2d4473db28cf7dea198ac04",
+    "timestamp_iso": "2026-10-24T00:35:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 36,
@@ -811,7 +1927,38 @@
       "scope2_location_based": 1.0938,
       "total_gross_interval": 1.4183
     },
-    "audit_signature": "67f3bf7d2f9fff33504ff16a598ac8620d2dedf773949fba90ead67c6911acf1"
+    "audit_signature": "67f3bf7d2f9fff33504ff16a598ac8620d2dedf773949fba90ead67c6911acf1",
+    "block_hash": "67f3bf7d2f9fff33504ff16a598ac8620d2dedf773949fba90ead67c6911acf1",
+    "previous_block_hash": "e0503f6bbdd96e63055a45520f18fdfe634f520797299824986bb35bfd9bd82e",
+    "timestamp_iso": "2026-10-24T00:50:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1500.7
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 51.0
+      },
+      {
+        "metric": "png_sm3",
+        "value": 43.7
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 19.8
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 16.3
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 37,
@@ -833,7 +1980,38 @@
       "scope2_location_based": 1.0938,
       "total_gross_interval": 1.4183
     },
-    "audit_signature": "9447cac29c26301ef9ef2fa9eb13415e7e008953d72504116b692494a5ae5cdd"
+    "audit_signature": "9447cac29c26301ef9ef2fa9eb13415e7e008953d72504116b692494a5ae5cdd",
+    "block_hash": "9447cac29c26301ef9ef2fa9eb13415e7e008953d72504116b692494a5ae5cdd",
+    "previous_block_hash": "67f3bf7d2f9fff33504ff16a598ac8620d2dedf773949fba90ead67c6911acf1",
+    "timestamp_iso": "2026-10-24T01:05:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1500.7
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 51.0
+      },
+      {
+        "metric": "png_sm3",
+        "value": 43.7
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 19.8
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 16.3
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 38,
@@ -855,7 +2033,38 @@
       "scope2_location_based": 1.0938,
       "total_gross_interval": 1.4183
     },
-    "audit_signature": "8b2d2a4bf1c81f2172b7ab376b2024e0d4a6e70b3bdf4436d7d0d649ec75eb65"
+    "audit_signature": "8b2d2a4bf1c81f2172b7ab376b2024e0d4a6e70b3bdf4436d7d0d649ec75eb65",
+    "block_hash": "8b2d2a4bf1c81f2172b7ab376b2024e0d4a6e70b3bdf4436d7d0d649ec75eb65",
+    "previous_block_hash": "9447cac29c26301ef9ef2fa9eb13415e7e008953d72504116b692494a5ae5cdd",
+    "timestamp_iso": "2026-10-24T01:20:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1500.7
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 51.0
+      },
+      {
+        "metric": "png_sm3",
+        "value": 43.7
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 19.8
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 16.3
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 39,
@@ -877,7 +2086,38 @@
       "scope2_location_based": 1.0938,
       "total_gross_interval": 1.4183
     },
-    "audit_signature": "8afbbd11e805a4cd234254c9f586a422d820e7dc8a875a707b7ef17ab68d41ea"
+    "audit_signature": "8afbbd11e805a4cd234254c9f586a422d820e7dc8a875a707b7ef17ab68d41ea",
+    "block_hash": "8afbbd11e805a4cd234254c9f586a422d820e7dc8a875a707b7ef17ab68d41ea",
+    "previous_block_hash": "8b2d2a4bf1c81f2172b7ab376b2024e0d4a6e70b3bdf4436d7d0d649ec75eb65",
+    "timestamp_iso": "2026-10-24T01:35:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1500.7
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 51.0
+      },
+      {
+        "metric": "png_sm3",
+        "value": 43.7
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 19.8
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 16.3
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 40,
@@ -899,7 +2139,38 @@
       "scope2_location_based": 1.0938,
       "total_gross_interval": 1.4183
     },
-    "audit_signature": "4c2fedd35598612796bbb3c42c85890cc1dab0f37dd329dc4324982830c951dc"
+    "audit_signature": "4c2fedd35598612796bbb3c42c85890cc1dab0f37dd329dc4324982830c951dc",
+    "block_hash": "4c2fedd35598612796bbb3c42c85890cc1dab0f37dd329dc4324982830c951dc",
+    "previous_block_hash": "8afbbd11e805a4cd234254c9f586a422d820e7dc8a875a707b7ef17ab68d41ea",
+    "timestamp_iso": "2026-10-24T01:50:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1500.7
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 51.0
+      },
+      {
+        "metric": "png_sm3",
+        "value": 43.7
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 19.8
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 16.3
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 41,
@@ -921,7 +2192,38 @@
       "scope2_location_based": 1.0938,
       "total_gross_interval": 1.4183
     },
-    "audit_signature": "e013eb5622d899df41167a283828b3fc57fefaba54c85c8fd9d8eba17c8e75ac"
+    "audit_signature": "e013eb5622d899df41167a283828b3fc57fefaba54c85c8fd9d8eba17c8e75ac",
+    "block_hash": "e013eb5622d899df41167a283828b3fc57fefaba54c85c8fd9d8eba17c8e75ac",
+    "previous_block_hash": "4c2fedd35598612796bbb3c42c85890cc1dab0f37dd329dc4324982830c951dc",
+    "timestamp_iso": "2026-10-24T02:05:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1500.7
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 51.0
+      },
+      {
+        "metric": "png_sm3",
+        "value": 43.7
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 19.8
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 16.3
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 42,
@@ -943,7 +2245,38 @@
       "scope2_location_based": 1.0938,
       "total_gross_interval": 1.4183
     },
-    "audit_signature": "86297f1a14c4376372987b57f5bc9eee9f59f6d37add27095ad45d35f23e03d7"
+    "audit_signature": "86297f1a14c4376372987b57f5bc9eee9f59f6d37add27095ad45d35f23e03d7",
+    "block_hash": "86297f1a14c4376372987b57f5bc9eee9f59f6d37add27095ad45d35f23e03d7",
+    "previous_block_hash": "e013eb5622d899df41167a283828b3fc57fefaba54c85c8fd9d8eba17c8e75ac",
+    "timestamp_iso": "2026-10-24T02:20:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1500.7
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 51.0
+      },
+      {
+        "metric": "png_sm3",
+        "value": 43.7
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 19.8
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 16.3
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 43,
@@ -965,7 +2298,38 @@
       "scope2_location_based": 1.0938,
       "total_gross_interval": 1.4183
     },
-    "audit_signature": "5fbe056271a742115686a5449f8f5fba85954fa5a30913d4c80657fd9d68a2c4"
+    "audit_signature": "5fbe056271a742115686a5449f8f5fba85954fa5a30913d4c80657fd9d68a2c4",
+    "block_hash": "5fbe056271a742115686a5449f8f5fba85954fa5a30913d4c80657fd9d68a2c4",
+    "previous_block_hash": "86297f1a14c4376372987b57f5bc9eee9f59f6d37add27095ad45d35f23e03d7",
+    "timestamp_iso": "2026-10-24T02:35:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1500.7
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 51.0
+      },
+      {
+        "metric": "png_sm3",
+        "value": 43.7
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 19.8
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 16.3
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 44,
@@ -987,7 +2351,38 @@
       "scope2_location_based": 1.0938,
       "total_gross_interval": 1.4183
     },
-    "audit_signature": "c75312a20f4ff084ff69c52047306850aa185b661b21edca8c2c18cc0f79fb68"
+    "audit_signature": "c75312a20f4ff084ff69c52047306850aa185b661b21edca8c2c18cc0f79fb68",
+    "block_hash": "c75312a20f4ff084ff69c52047306850aa185b661b21edca8c2c18cc0f79fb68",
+    "previous_block_hash": "5fbe056271a742115686a5449f8f5fba85954fa5a30913d4c80657fd9d68a2c4",
+    "timestamp_iso": "2026-10-24T02:50:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1500.7
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 51.0
+      },
+      {
+        "metric": "png_sm3",
+        "value": 43.7
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 19.8
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 16.3
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 45,
@@ -1009,7 +2404,38 @@
       "scope2_location_based": 1.0938,
       "total_gross_interval": 1.4183
     },
-    "audit_signature": "823ea2770b5d5adee4274d692c0658b197066efaeeec625488c63d479738b5f5"
+    "audit_signature": "823ea2770b5d5adee4274d692c0658b197066efaeeec625488c63d479738b5f5",
+    "block_hash": "823ea2770b5d5adee4274d692c0658b197066efaeeec625488c63d479738b5f5",
+    "previous_block_hash": "c75312a20f4ff084ff69c52047306850aa185b661b21edca8c2c18cc0f79fb68",
+    "timestamp_iso": "2026-10-24T03:05:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1500.7
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 51.0
+      },
+      {
+        "metric": "png_sm3",
+        "value": 43.7
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 19.8
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 16.3
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 46,
@@ -1031,7 +2457,38 @@
       "scope2_location_based": 1.0938,
       "total_gross_interval": 1.4183
     },
-    "audit_signature": "328bb3006fe50757db71eb1857a89beae2f8a2061c9a811da97d31bd340d878e"
+    "audit_signature": "328bb3006fe50757db71eb1857a89beae2f8a2061c9a811da97d31bd340d878e",
+    "block_hash": "328bb3006fe50757db71eb1857a89beae2f8a2061c9a811da97d31bd340d878e",
+    "previous_block_hash": "823ea2770b5d5adee4274d692c0658b197066efaeeec625488c63d479738b5f5",
+    "timestamp_iso": "2026-10-24T03:20:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1500.7
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 51.0
+      },
+      {
+        "metric": "png_sm3",
+        "value": 43.7
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 19.8
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 16.3
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 47,
@@ -1053,7 +2510,38 @@
       "scope2_location_based": 1.0938,
       "total_gross_interval": 1.4183
     },
-    "audit_signature": "f3aa44ce456491189626231fc49c5e9e74218825effef50d0398e426a35efa00"
+    "audit_signature": "f3aa44ce456491189626231fc49c5e9e74218825effef50d0398e426a35efa00",
+    "block_hash": "f3aa44ce456491189626231fc49c5e9e74218825effef50d0398e426a35efa00",
+    "previous_block_hash": "328bb3006fe50757db71eb1857a89beae2f8a2061c9a811da97d31bd340d878e",
+    "timestamp_iso": "2026-10-24T03:35:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1500.7
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 51.0
+      },
+      {
+        "metric": "png_sm3",
+        "value": 43.7
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 19.8
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 16.3
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 48,
@@ -1075,7 +2563,38 @@
       "scope2_location_based": 1.0938,
       "total_gross_interval": 1.6478
     },
-    "audit_signature": "b0ee75535a9547a96480b2cbbef21d053cb138fb152ea1f868de19b867817d49"
+    "audit_signature": "b0ee75535a9547a96480b2cbbef21d053cb138fb152ea1f868de19b867817d49",
+    "block_hash": "b0ee75535a9547a96480b2cbbef21d053cb138fb152ea1f868de19b867817d49",
+    "previous_block_hash": "f3aa44ce456491189626231fc49c5e9e74218825effef50d0398e426a35efa00",
+    "timestamp_iso": "2026-10-24T03:50:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1500.7
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 51.0
+      },
+      {
+        "metric": "png_sm3",
+        "value": 43.7
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 19.8
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.15
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 16.3
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 49,
@@ -1097,7 +2616,38 @@
       "scope2_location_based": 1.0938,
       "total_gross_interval": 1.4183
     },
-    "audit_signature": "848aed0d18be5d77f96a75849c595abed75d04b4960958e9b6a7b659ab5f9560"
+    "audit_signature": "848aed0d18be5d77f96a75849c595abed75d04b4960958e9b6a7b659ab5f9560",
+    "block_hash": "848aed0d18be5d77f96a75849c595abed75d04b4960958e9b6a7b659ab5f9560",
+    "previous_block_hash": "b0ee75535a9547a96480b2cbbef21d053cb138fb152ea1f868de19b867817d49",
+    "timestamp_iso": "2026-10-24T04:05:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1500.7
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 51.0
+      },
+      {
+        "metric": "png_sm3",
+        "value": 43.7
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 19.8
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 16.3
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 50,
@@ -1119,7 +2669,38 @@
       "scope2_location_based": 1.0938,
       "total_gross_interval": 1.4183
     },
-    "audit_signature": "66a83377942a2c0286de0873a423f9b63ef613578e9fe4201dcfbea94046a9d3"
+    "audit_signature": "66a83377942a2c0286de0873a423f9b63ef613578e9fe4201dcfbea94046a9d3",
+    "block_hash": "66a83377942a2c0286de0873a423f9b63ef613578e9fe4201dcfbea94046a9d3",
+    "previous_block_hash": "848aed0d18be5d77f96a75849c595abed75d04b4960958e9b6a7b659ab5f9560",
+    "timestamp_iso": "2026-10-24T04:20:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1500.7
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 51.0
+      },
+      {
+        "metric": "png_sm3",
+        "value": 43.7
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 19.8
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 16.3
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 51,
@@ -1141,7 +2722,38 @@
       "scope2_location_based": 1.0938,
       "total_gross_interval": 1.4183
     },
-    "audit_signature": "70355fd719b92fee83eb941ae65ee4851674da7f6d9620b7c3840017e12d567c"
+    "audit_signature": "70355fd719b92fee83eb941ae65ee4851674da7f6d9620b7c3840017e12d567c",
+    "block_hash": "70355fd719b92fee83eb941ae65ee4851674da7f6d9620b7c3840017e12d567c",
+    "previous_block_hash": "66a83377942a2c0286de0873a423f9b63ef613578e9fe4201dcfbea94046a9d3",
+    "timestamp_iso": "2026-10-24T04:35:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1500.7
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 51.0
+      },
+      {
+        "metric": "png_sm3",
+        "value": 43.7
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 19.8
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 16.3
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 52,
@@ -1163,7 +2775,38 @@
       "scope2_location_based": 1.0938,
       "total_gross_interval": 1.4183
     },
-    "audit_signature": "6d10fe7c36c2518586954913b00dd7356085670eb3250f261cefad51411dbf48"
+    "audit_signature": "6d10fe7c36c2518586954913b00dd7356085670eb3250f261cefad51411dbf48",
+    "block_hash": "6d10fe7c36c2518586954913b00dd7356085670eb3250f261cefad51411dbf48",
+    "previous_block_hash": "70355fd719b92fee83eb941ae65ee4851674da7f6d9620b7c3840017e12d567c",
+    "timestamp_iso": "2026-10-24T04:50:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1500.7
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 51.0
+      },
+      {
+        "metric": "png_sm3",
+        "value": 43.7
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 19.8
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 16.3
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 53,
@@ -1185,7 +2828,38 @@
       "scope2_location_based": 1.0938,
       "total_gross_interval": 1.4183
     },
-    "audit_signature": "6888b04b99947a7897a761d93bcfe909cd984bd5573eab3e32bc49718dfb38dd"
+    "audit_signature": "6888b04b99947a7897a761d93bcfe909cd984bd5573eab3e32bc49718dfb38dd",
+    "block_hash": "6888b04b99947a7897a761d93bcfe909cd984bd5573eab3e32bc49718dfb38dd",
+    "previous_block_hash": "6d10fe7c36c2518586954913b00dd7356085670eb3250f261cefad51411dbf48",
+    "timestamp_iso": "2026-10-24T05:05:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1500.7
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 51.0
+      },
+      {
+        "metric": "png_sm3",
+        "value": 43.7
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 19.8
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 16.3
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 54,
@@ -1207,7 +2881,38 @@
       "scope2_location_based": 1.0938,
       "total_gross_interval": 1.4183
     },
-    "audit_signature": "bca7481dac458d19fac799145f699e6eee7a4fc92c95c07744e1090b9c91384b"
+    "audit_signature": "bca7481dac458d19fac799145f699e6eee7a4fc92c95c07744e1090b9c91384b",
+    "block_hash": "bca7481dac458d19fac799145f699e6eee7a4fc92c95c07744e1090b9c91384b",
+    "previous_block_hash": "6888b04b99947a7897a761d93bcfe909cd984bd5573eab3e32bc49718dfb38dd",
+    "timestamp_iso": "2026-10-24T05:20:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1500.7
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 51.0
+      },
+      {
+        "metric": "png_sm3",
+        "value": 43.7
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 19.8
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 16.3
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 55,
@@ -1229,7 +2934,38 @@
       "scope2_location_based": 1.0938,
       "total_gross_interval": 1.4183
     },
-    "audit_signature": "83cf630185657f055bda408c2d536981f2868ac0e8a7b37b2e8654e81e051022"
+    "audit_signature": "83cf630185657f055bda408c2d536981f2868ac0e8a7b37b2e8654e81e051022",
+    "block_hash": "83cf630185657f055bda408c2d536981f2868ac0e8a7b37b2e8654e81e051022",
+    "previous_block_hash": "bca7481dac458d19fac799145f699e6eee7a4fc92c95c07744e1090b9c91384b",
+    "timestamp_iso": "2026-10-24T05:35:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1500.7
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 51.0
+      },
+      {
+        "metric": "png_sm3",
+        "value": 43.7
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 19.8
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 16.3
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 56,
@@ -1251,7 +2987,38 @@
       "scope2_location_based": 1.0938,
       "total_gross_interval": 1.4183
     },
-    "audit_signature": "6707dc3ae28793dc73651eccdb18ec5a98d5d22fad31429454124b9023408106"
+    "audit_signature": "6707dc3ae28793dc73651eccdb18ec5a98d5d22fad31429454124b9023408106",
+    "block_hash": "6707dc3ae28793dc73651eccdb18ec5a98d5d22fad31429454124b9023408106",
+    "previous_block_hash": "83cf630185657f055bda408c2d536981f2868ac0e8a7b37b2e8654e81e051022",
+    "timestamp_iso": "2026-10-24T05:50:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1500.7
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 51.0
+      },
+      {
+        "metric": "png_sm3",
+        "value": 43.7
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 19.8
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 16.3
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 57,
@@ -1273,7 +3040,38 @@
       "scope2_location_based": 1.0938,
       "total_gross_interval": 1.4183
     },
-    "audit_signature": "c7659b88367a4619182282c38157bc4deb1aebef9712e4d267c1020a16478296"
+    "audit_signature": "c7659b88367a4619182282c38157bc4deb1aebef9712e4d267c1020a16478296",
+    "block_hash": "c7659b88367a4619182282c38157bc4deb1aebef9712e4d267c1020a16478296",
+    "previous_block_hash": "6707dc3ae28793dc73651eccdb18ec5a98d5d22fad31429454124b9023408106",
+    "timestamp_iso": "2026-10-24T06:05:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1500.7
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 51.0
+      },
+      {
+        "metric": "png_sm3",
+        "value": 43.7
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 19.8
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 16.3
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 58,
@@ -1295,7 +3093,38 @@
       "scope2_location_based": 1.0938,
       "total_gross_interval": 1.4183
     },
-    "audit_signature": "b1b5c698591b47c5518eb9e5d72242e624d7b32c4847601cb775efcdc8451daf"
+    "audit_signature": "b1b5c698591b47c5518eb9e5d72242e624d7b32c4847601cb775efcdc8451daf",
+    "block_hash": "b1b5c698591b47c5518eb9e5d72242e624d7b32c4847601cb775efcdc8451daf",
+    "previous_block_hash": "c7659b88367a4619182282c38157bc4deb1aebef9712e4d267c1020a16478296",
+    "timestamp_iso": "2026-10-24T06:20:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1500.7
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 51.0
+      },
+      {
+        "metric": "png_sm3",
+        "value": 43.7
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 19.8
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 16.3
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 59,
@@ -1317,7 +3146,38 @@
       "scope2_location_based": 1.0938,
       "total_gross_interval": 1.4183
     },
-    "audit_signature": "cb92891fa4f4b159d6751dc747f4ece6f8b74d7139ab0c6ddf17145e7ed7d9d7"
+    "audit_signature": "cb92891fa4f4b159d6751dc747f4ece6f8b74d7139ab0c6ddf17145e7ed7d9d7",
+    "block_hash": "cb92891fa4f4b159d6751dc747f4ece6f8b74d7139ab0c6ddf17145e7ed7d9d7",
+    "previous_block_hash": "b1b5c698591b47c5518eb9e5d72242e624d7b32c4847601cb775efcdc8451daf",
+    "timestamp_iso": "2026-10-24T06:35:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1500.7
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 51.0
+      },
+      {
+        "metric": "png_sm3",
+        "value": 43.7
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 19.8
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 16.3
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 60,
@@ -1339,7 +3199,38 @@
       "scope2_location_based": 1.0938,
       "total_gross_interval": 1.4183
     },
-    "audit_signature": "4217a90eee7aeaa2b34898f46a4245fc48a385ee0a99ce1fb2fc0e4b65b36732"
+    "audit_signature": "4217a90eee7aeaa2b34898f46a4245fc48a385ee0a99ce1fb2fc0e4b65b36732",
+    "block_hash": "4217a90eee7aeaa2b34898f46a4245fc48a385ee0a99ce1fb2fc0e4b65b36732",
+    "previous_block_hash": "cb92891fa4f4b159d6751dc747f4ece6f8b74d7139ab0c6ddf17145e7ed7d9d7",
+    "timestamp_iso": "2026-10-24T06:50:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1500.7
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 51.0
+      },
+      {
+        "metric": "png_sm3",
+        "value": 43.7
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 19.8
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 16.3
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 61,
@@ -1361,7 +3252,38 @@
       "scope2_location_based": 1.0938,
       "total_gross_interval": 1.4183
     },
-    "audit_signature": "058738af93f5da051fb4f3b8d8a0c9a534739b7d36837ac3f57023b124d37f18"
+    "audit_signature": "058738af93f5da051fb4f3b8d8a0c9a534739b7d36837ac3f57023b124d37f18",
+    "block_hash": "058738af93f5da051fb4f3b8d8a0c9a534739b7d36837ac3f57023b124d37f18",
+    "previous_block_hash": "4217a90eee7aeaa2b34898f46a4245fc48a385ee0a99ce1fb2fc0e4b65b36732",
+    "timestamp_iso": "2026-10-24T07:05:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1500.7
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 51.0
+      },
+      {
+        "metric": "png_sm3",
+        "value": 43.7
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 19.8
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 16.3
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 62,
@@ -1383,7 +3305,38 @@
       "scope2_location_based": 1.0938,
       "total_gross_interval": 1.4183
     },
-    "audit_signature": "76f7caa13c90331a106b89dff7ca4bc44fe65fadded183bff0bcb9746cf7f365"
+    "audit_signature": "76f7caa13c90331a106b89dff7ca4bc44fe65fadded183bff0bcb9746cf7f365",
+    "block_hash": "76f7caa13c90331a106b89dff7ca4bc44fe65fadded183bff0bcb9746cf7f365",
+    "previous_block_hash": "058738af93f5da051fb4f3b8d8a0c9a534739b7d36837ac3f57023b124d37f18",
+    "timestamp_iso": "2026-10-24T07:20:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1500.7
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 51.0
+      },
+      {
+        "metric": "png_sm3",
+        "value": 43.7
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 19.8
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 16.3
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 63,
@@ -1405,7 +3358,38 @@
       "scope2_location_based": 1.0938,
       "total_gross_interval": 1.4183
     },
-    "audit_signature": "92cd6a237a2a463af741adcf4db0f6a439d2030e418f0af8731bd550c2fde988"
+    "audit_signature": "92cd6a237a2a463af741adcf4db0f6a439d2030e418f0af8731bd550c2fde988",
+    "block_hash": "92cd6a237a2a463af741adcf4db0f6a439d2030e418f0af8731bd550c2fde988",
+    "previous_block_hash": "76f7caa13c90331a106b89dff7ca4bc44fe65fadded183bff0bcb9746cf7f365",
+    "timestamp_iso": "2026-10-24T07:35:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1500.7
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 51.0
+      },
+      {
+        "metric": "png_sm3",
+        "value": 43.7
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 19.8
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 16.3
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 64,
@@ -1427,7 +3411,38 @@
       "scope2_location_based": 1.0938,
       "total_gross_interval": 1.6478
     },
-    "audit_signature": "4c9064f0b9d410a68a9f07b16e147a23c13f63a2925821c1477f2009a7727489"
+    "audit_signature": "4c9064f0b9d410a68a9f07b16e147a23c13f63a2925821c1477f2009a7727489",
+    "block_hash": "4c9064f0b9d410a68a9f07b16e147a23c13f63a2925821c1477f2009a7727489",
+    "previous_block_hash": "92cd6a237a2a463af741adcf4db0f6a439d2030e418f0af8731bd550c2fde988",
+    "timestamp_iso": "2026-10-24T07:50:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1500.7
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 51.0
+      },
+      {
+        "metric": "png_sm3",
+        "value": 43.7
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 19.8
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.15
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 16.3
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 65,
@@ -1449,7 +3464,38 @@
       "scope2_location_based": 1.0938,
       "total_gross_interval": 1.4183
     },
-    "audit_signature": "2c137d7afc57bd39336a7ecd04d24a9df6d026d8971b2230dfbf3a9b63c60532"
+    "audit_signature": "2c137d7afc57bd39336a7ecd04d24a9df6d026d8971b2230dfbf3a9b63c60532",
+    "block_hash": "2c137d7afc57bd39336a7ecd04d24a9df6d026d8971b2230dfbf3a9b63c60532",
+    "previous_block_hash": "4c9064f0b9d410a68a9f07b16e147a23c13f63a2925821c1477f2009a7727489",
+    "timestamp_iso": "2026-10-24T08:05:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1500.7
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 51.0
+      },
+      {
+        "metric": "png_sm3",
+        "value": 43.7
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 19.8
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 16.3
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 66,
@@ -1471,7 +3517,38 @@
       "scope2_location_based": 1.0938,
       "total_gross_interval": 1.4183
     },
-    "audit_signature": "933523e97774a3cf89e26790044eb27a98c463845d568aa1a09311d886185196"
+    "audit_signature": "933523e97774a3cf89e26790044eb27a98c463845d568aa1a09311d886185196",
+    "block_hash": "933523e97774a3cf89e26790044eb27a98c463845d568aa1a09311d886185196",
+    "previous_block_hash": "2c137d7afc57bd39336a7ecd04d24a9df6d026d8971b2230dfbf3a9b63c60532",
+    "timestamp_iso": "2026-10-24T08:20:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1500.7
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 51.0
+      },
+      {
+        "metric": "png_sm3",
+        "value": 43.7
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 19.8
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 16.3
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 67,
@@ -1493,7 +3570,38 @@
       "scope2_location_based": 1.0938,
       "total_gross_interval": 1.4183
     },
-    "audit_signature": "e7e560cc66d23837a0c522f79fdddbf9392413d29e3768d458b079e7641b6221"
+    "audit_signature": "e7e560cc66d23837a0c522f79fdddbf9392413d29e3768d458b079e7641b6221",
+    "block_hash": "e7e560cc66d23837a0c522f79fdddbf9392413d29e3768d458b079e7641b6221",
+    "previous_block_hash": "933523e97774a3cf89e26790044eb27a98c463845d568aa1a09311d886185196",
+    "timestamp_iso": "2026-10-24T08:35:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1500.7
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 51.0
+      },
+      {
+        "metric": "png_sm3",
+        "value": 43.7
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 19.8
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 16.3
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 68,
@@ -1515,7 +3623,38 @@
       "scope2_location_based": 1.0938,
       "total_gross_interval": 1.4183
     },
-    "audit_signature": "9cefe5b1e7e4887404f2058644e6f9915c155d462c76c7c5d9a283ee44aba821"
+    "audit_signature": "9cefe5b1e7e4887404f2058644e6f9915c155d462c76c7c5d9a283ee44aba821",
+    "block_hash": "9cefe5b1e7e4887404f2058644e6f9915c155d462c76c7c5d9a283ee44aba821",
+    "previous_block_hash": "e7e560cc66d23837a0c522f79fdddbf9392413d29e3768d458b079e7641b6221",
+    "timestamp_iso": "2026-10-24T08:50:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1500.7
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 51.0
+      },
+      {
+        "metric": "png_sm3",
+        "value": 43.7
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 19.8
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 16.3
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 69,
@@ -1537,7 +3676,38 @@
       "scope2_location_based": 1.0938,
       "total_gross_interval": 1.4183
     },
-    "audit_signature": "a9a96b7baf47b12064942848dd81bee1e24ea07468d3d5ad585c450b1b8bd408"
+    "audit_signature": "a9a96b7baf47b12064942848dd81bee1e24ea07468d3d5ad585c450b1b8bd408",
+    "block_hash": "a9a96b7baf47b12064942848dd81bee1e24ea07468d3d5ad585c450b1b8bd408",
+    "previous_block_hash": "9cefe5b1e7e4887404f2058644e6f9915c155d462c76c7c5d9a283ee44aba821",
+    "timestamp_iso": "2026-10-24T09:05:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1500.7
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 51.0
+      },
+      {
+        "metric": "png_sm3",
+        "value": 43.7
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 19.8
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 16.3
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 70,
@@ -1559,7 +3729,38 @@
       "scope2_location_based": 1.0938,
       "total_gross_interval": 1.4183
     },
-    "audit_signature": "e69ecaab16d38752100ca37096f8fd4be739952a48373ab77f3f701e202d967c"
+    "audit_signature": "e69ecaab16d38752100ca37096f8fd4be739952a48373ab77f3f701e202d967c",
+    "block_hash": "e69ecaab16d38752100ca37096f8fd4be739952a48373ab77f3f701e202d967c",
+    "previous_block_hash": "a9a96b7baf47b12064942848dd81bee1e24ea07468d3d5ad585c450b1b8bd408",
+    "timestamp_iso": "2026-10-24T09:20:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1500.7
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 51.0
+      },
+      {
+        "metric": "png_sm3",
+        "value": 43.7
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 19.8
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 16.3
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 71,
@@ -1581,7 +3782,38 @@
       "scope2_location_based": 1.0938,
       "total_gross_interval": 1.4183
     },
-    "audit_signature": "071712aed0dbb7c271e2d7b83cf95195bfe72d09b2409ed6504c475796658c57"
+    "audit_signature": "071712aed0dbb7c271e2d7b83cf95195bfe72d09b2409ed6504c475796658c57",
+    "block_hash": "071712aed0dbb7c271e2d7b83cf95195bfe72d09b2409ed6504c475796658c57",
+    "previous_block_hash": "e69ecaab16d38752100ca37096f8fd4be739952a48373ab77f3f701e202d967c",
+    "timestamp_iso": "2026-10-24T09:35:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1500.7
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 51.0
+      },
+      {
+        "metric": "png_sm3",
+        "value": 43.7
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 19.8
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 16.3
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 72,
@@ -1603,7 +3835,38 @@
       "scope2_location_based": 1.0938,
       "total_gross_interval": 1.4183
     },
-    "audit_signature": "5787ffbc791dc0caba2930ce525b513a8444583e28100d1da7ce312caa3e45ba"
+    "audit_signature": "5787ffbc791dc0caba2930ce525b513a8444583e28100d1da7ce312caa3e45ba",
+    "block_hash": "5787ffbc791dc0caba2930ce525b513a8444583e28100d1da7ce312caa3e45ba",
+    "previous_block_hash": "071712aed0dbb7c271e2d7b83cf95195bfe72d09b2409ed6504c475796658c57",
+    "timestamp_iso": "2026-10-24T09:50:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1500.7
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 51.0
+      },
+      {
+        "metric": "png_sm3",
+        "value": 43.7
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 19.8
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 16.3
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 73,
@@ -1625,7 +3888,38 @@
       "scope2_location_based": 1.0938,
       "total_gross_interval": 1.4183
     },
-    "audit_signature": "1e4fe1f2762f746b1b9b02c0e04fe0c619041b98df753a126eacd41e8a662c61"
+    "audit_signature": "1e4fe1f2762f746b1b9b02c0e04fe0c619041b98df753a126eacd41e8a662c61",
+    "block_hash": "1e4fe1f2762f746b1b9b02c0e04fe0c619041b98df753a126eacd41e8a662c61",
+    "previous_block_hash": "5787ffbc791dc0caba2930ce525b513a8444583e28100d1da7ce312caa3e45ba",
+    "timestamp_iso": "2026-10-24T10:05:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1500.7
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 51.0
+      },
+      {
+        "metric": "png_sm3",
+        "value": 43.7
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 19.8
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 16.3
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 74,
@@ -1647,7 +3941,38 @@
       "scope2_location_based": 1.0938,
       "total_gross_interval": 1.4183
     },
-    "audit_signature": "b0bdaee84ce50b7fd30d45107fca26dbe3577468e9d03fb8fb3796cc004d3018"
+    "audit_signature": "b0bdaee84ce50b7fd30d45107fca26dbe3577468e9d03fb8fb3796cc004d3018",
+    "block_hash": "b0bdaee84ce50b7fd30d45107fca26dbe3577468e9d03fb8fb3796cc004d3018",
+    "previous_block_hash": "1e4fe1f2762f746b1b9b02c0e04fe0c619041b98df753a126eacd41e8a662c61",
+    "timestamp_iso": "2026-10-24T10:20:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1500.7
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 51.0
+      },
+      {
+        "metric": "png_sm3",
+        "value": 43.7
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 19.8
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 16.3
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 75,
@@ -1669,7 +3994,38 @@
       "scope2_location_based": 1.0938,
       "total_gross_interval": 1.4183
     },
-    "audit_signature": "bab05073bb86b8ee494f9b6ec67b2fabeee3bc9efc0a17f582ad76eed26c5947"
+    "audit_signature": "bab05073bb86b8ee494f9b6ec67b2fabeee3bc9efc0a17f582ad76eed26c5947",
+    "block_hash": "bab05073bb86b8ee494f9b6ec67b2fabeee3bc9efc0a17f582ad76eed26c5947",
+    "previous_block_hash": "b0bdaee84ce50b7fd30d45107fca26dbe3577468e9d03fb8fb3796cc004d3018",
+    "timestamp_iso": "2026-10-24T10:35:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1500.7
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 51.0
+      },
+      {
+        "metric": "png_sm3",
+        "value": 43.7
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 19.8
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 16.3
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 76,
@@ -1691,7 +4047,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "76ea8028be79c7d16f4063a75a9a653ca09d829fdbd412b337b03d2f35b31594"
+    "audit_signature": "76ea8028be79c7d16f4063a75a9a653ca09d829fdbd412b337b03d2f35b31594",
+    "block_hash": "76ea8028be79c7d16f4063a75a9a653ca09d829fdbd412b337b03d2f35b31594",
+    "previous_block_hash": "bab05073bb86b8ee494f9b6ec67b2fabeee3bc9efc0a17f582ad76eed26c5947",
+    "timestamp_iso": "2026-10-24T10:50:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 77,
@@ -1713,7 +4100,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "45a9fc34c6478b3c793f420c9ee2334d607316532b073f9e3c6f85835f711fad"
+    "audit_signature": "45a9fc34c6478b3c793f420c9ee2334d607316532b073f9e3c6f85835f711fad",
+    "block_hash": "45a9fc34c6478b3c793f420c9ee2334d607316532b073f9e3c6f85835f711fad",
+    "previous_block_hash": "76ea8028be79c7d16f4063a75a9a653ca09d829fdbd412b337b03d2f35b31594",
+    "timestamp_iso": "2026-10-24T11:05:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 78,
@@ -1735,7 +4153,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "42d7b484e7751ffd80459cc5d96a9f40958c11cfcbfb016c8850bad4e103a3fa"
+    "audit_signature": "42d7b484e7751ffd80459cc5d96a9f40958c11cfcbfb016c8850bad4e103a3fa",
+    "block_hash": "42d7b484e7751ffd80459cc5d96a9f40958c11cfcbfb016c8850bad4e103a3fa",
+    "previous_block_hash": "45a9fc34c6478b3c793f420c9ee2334d607316532b073f9e3c6f85835f711fad",
+    "timestamp_iso": "2026-10-24T11:20:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 79,
@@ -1757,7 +4206,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "afbbb85c4ec1939ba13229c19bd14194e071f85217dbc590fc86018a98073048"
+    "audit_signature": "afbbb85c4ec1939ba13229c19bd14194e071f85217dbc590fc86018a98073048",
+    "block_hash": "afbbb85c4ec1939ba13229c19bd14194e071f85217dbc590fc86018a98073048",
+    "previous_block_hash": "42d7b484e7751ffd80459cc5d96a9f40958c11cfcbfb016c8850bad4e103a3fa",
+    "timestamp_iso": "2026-10-24T11:35:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 80,
@@ -1779,7 +4259,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.2558
     },
-    "audit_signature": "41901a89840df1fa9b8aed604a1abbadaed4dc58a9c466b22555a5c534b04888"
+    "audit_signature": "41901a89840df1fa9b8aed604a1abbadaed4dc58a9c466b22555a5c534b04888",
+    "block_hash": "41901a89840df1fa9b8aed604a1abbadaed4dc58a9c466b22555a5c534b04888",
+    "previous_block_hash": "afbbb85c4ec1939ba13229c19bd14194e071f85217dbc590fc86018a98073048",
+    "timestamp_iso": "2026-10-24T11:50:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.15
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 81,
@@ -1801,7 +4312,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "dfe58ca12ea2e17399b7945ca25f2e468278e7a3c5fa0043b77c18bc9ba0730b"
+    "audit_signature": "dfe58ca12ea2e17399b7945ca25f2e468278e7a3c5fa0043b77c18bc9ba0730b",
+    "block_hash": "dfe58ca12ea2e17399b7945ca25f2e468278e7a3c5fa0043b77c18bc9ba0730b",
+    "previous_block_hash": "41901a89840df1fa9b8aed604a1abbadaed4dc58a9c466b22555a5c534b04888",
+    "timestamp_iso": "2026-10-24T12:05:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 82,
@@ -1823,7 +4365,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "277ec907ed7e87716d10833dde65289f319604c8eabbea7e6ad44cc93781e021"
+    "audit_signature": "277ec907ed7e87716d10833dde65289f319604c8eabbea7e6ad44cc93781e021",
+    "block_hash": "277ec907ed7e87716d10833dde65289f319604c8eabbea7e6ad44cc93781e021",
+    "previous_block_hash": "dfe58ca12ea2e17399b7945ca25f2e468278e7a3c5fa0043b77c18bc9ba0730b",
+    "timestamp_iso": "2026-10-24T12:20:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 83,
@@ -1845,7 +4418,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "194adc7c22306765a6808bcd941f76fb1d19a14929dae366e171c4f4c965c326"
+    "audit_signature": "194adc7c22306765a6808bcd941f76fb1d19a14929dae366e171c4f4c965c326",
+    "block_hash": "194adc7c22306765a6808bcd941f76fb1d19a14929dae366e171c4f4c965c326",
+    "previous_block_hash": "277ec907ed7e87716d10833dde65289f319604c8eabbea7e6ad44cc93781e021",
+    "timestamp_iso": "2026-10-24T12:35:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 84,
@@ -1867,7 +4471,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "d72fd19666f34dc204c89e7b05d5c699ebbcd2d25d93822529d36178457019d7"
+    "audit_signature": "d72fd19666f34dc204c89e7b05d5c699ebbcd2d25d93822529d36178457019d7",
+    "block_hash": "d72fd19666f34dc204c89e7b05d5c699ebbcd2d25d93822529d36178457019d7",
+    "previous_block_hash": "194adc7c22306765a6808bcd941f76fb1d19a14929dae366e171c4f4c965c326",
+    "timestamp_iso": "2026-10-24T12:50:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 85,
@@ -1889,7 +4524,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "e30d68a3c7ae0aa1078e5d10b992ffec8515f7fac8c605fb6e20090a9692de3f"
+    "audit_signature": "e30d68a3c7ae0aa1078e5d10b992ffec8515f7fac8c605fb6e20090a9692de3f",
+    "block_hash": "e30d68a3c7ae0aa1078e5d10b992ffec8515f7fac8c605fb6e20090a9692de3f",
+    "previous_block_hash": "d72fd19666f34dc204c89e7b05d5c699ebbcd2d25d93822529d36178457019d7",
+    "timestamp_iso": "2026-10-24T13:05:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 86,
@@ -1911,7 +4577,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "16b22e82ab6b18a1cf2d69415bdc68f8d6e55b2100f3e1534b9bbc4eda27aa43"
+    "audit_signature": "16b22e82ab6b18a1cf2d69415bdc68f8d6e55b2100f3e1534b9bbc4eda27aa43",
+    "block_hash": "16b22e82ab6b18a1cf2d69415bdc68f8d6e55b2100f3e1534b9bbc4eda27aa43",
+    "previous_block_hash": "e30d68a3c7ae0aa1078e5d10b992ffec8515f7fac8c605fb6e20090a9692de3f",
+    "timestamp_iso": "2026-10-24T13:20:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 87,
@@ -1933,7 +4630,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "01b672ce4269d03113511530eb4e77e77638426518255938774f2b92dbc6c2c5"
+    "audit_signature": "01b672ce4269d03113511530eb4e77e77638426518255938774f2b92dbc6c2c5",
+    "block_hash": "01b672ce4269d03113511530eb4e77e77638426518255938774f2b92dbc6c2c5",
+    "previous_block_hash": "16b22e82ab6b18a1cf2d69415bdc68f8d6e55b2100f3e1534b9bbc4eda27aa43",
+    "timestamp_iso": "2026-10-24T13:35:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 88,
@@ -1955,7 +4683,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "f29a6976cc7d32b2f0df3d2501deb5724f955f13c19d6e66b877d5614606a500"
+    "audit_signature": "f29a6976cc7d32b2f0df3d2501deb5724f955f13c19d6e66b877d5614606a500",
+    "block_hash": "f29a6976cc7d32b2f0df3d2501deb5724f955f13c19d6e66b877d5614606a500",
+    "previous_block_hash": "01b672ce4269d03113511530eb4e77e77638426518255938774f2b92dbc6c2c5",
+    "timestamp_iso": "2026-10-24T13:50:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 89,
@@ -1977,7 +4736,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "5b2702f7999a040e5ecbf9914bb8ebc3d0ce94f4e620647693a6c7000a923611"
+    "audit_signature": "5b2702f7999a040e5ecbf9914bb8ebc3d0ce94f4e620647693a6c7000a923611",
+    "block_hash": "5b2702f7999a040e5ecbf9914bb8ebc3d0ce94f4e620647693a6c7000a923611",
+    "previous_block_hash": "f29a6976cc7d32b2f0df3d2501deb5724f955f13c19d6e66b877d5614606a500",
+    "timestamp_iso": "2026-10-24T14:05:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 90,
@@ -1999,7 +4789,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "84fb9e7aceb79adff61389ba8c088991fae4682dacc89a8bc2f5f7644c9ac11d"
+    "audit_signature": "84fb9e7aceb79adff61389ba8c088991fae4682dacc89a8bc2f5f7644c9ac11d",
+    "block_hash": "84fb9e7aceb79adff61389ba8c088991fae4682dacc89a8bc2f5f7644c9ac11d",
+    "previous_block_hash": "5b2702f7999a040e5ecbf9914bb8ebc3d0ce94f4e620647693a6c7000a923611",
+    "timestamp_iso": "2026-10-24T14:20:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 91,
@@ -2021,7 +4842,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "d78a1d0eaf7607d86bcedc506f02f005accf9b7a006af5631ef2cab9205fcd58"
+    "audit_signature": "d78a1d0eaf7607d86bcedc506f02f005accf9b7a006af5631ef2cab9205fcd58",
+    "block_hash": "d78a1d0eaf7607d86bcedc506f02f005accf9b7a006af5631ef2cab9205fcd58",
+    "previous_block_hash": "84fb9e7aceb79adff61389ba8c088991fae4682dacc89a8bc2f5f7644c9ac11d",
+    "timestamp_iso": "2026-10-24T14:35:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 92,
@@ -2043,7 +4895,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "26d69555ff2fa07f5545965990d8de9ca2d21c8c40fa9b8dd144bb8f5105f8fe"
+    "audit_signature": "26d69555ff2fa07f5545965990d8de9ca2d21c8c40fa9b8dd144bb8f5105f8fe",
+    "block_hash": "26d69555ff2fa07f5545965990d8de9ca2d21c8c40fa9b8dd144bb8f5105f8fe",
+    "previous_block_hash": "d78a1d0eaf7607d86bcedc506f02f005accf9b7a006af5631ef2cab9205fcd58",
+    "timestamp_iso": "2026-10-24T14:50:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 93,
@@ -2065,7 +4948,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "3e2578d0ebb4b270bac8b787c450e58d06dd8b4b441ddb8afa0907b4ee27565c"
+    "audit_signature": "3e2578d0ebb4b270bac8b787c450e58d06dd8b4b441ddb8afa0907b4ee27565c",
+    "block_hash": "3e2578d0ebb4b270bac8b787c450e58d06dd8b4b441ddb8afa0907b4ee27565c",
+    "previous_block_hash": "26d69555ff2fa07f5545965990d8de9ca2d21c8c40fa9b8dd144bb8f5105f8fe",
+    "timestamp_iso": "2026-10-24T15:05:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 94,
@@ -2087,7 +5001,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "748cc4d2f56160e0c9044093a608785ba87bd1c911fb7f94bc5ae338745f37e0"
+    "audit_signature": "748cc4d2f56160e0c9044093a608785ba87bd1c911fb7f94bc5ae338745f37e0",
+    "block_hash": "748cc4d2f56160e0c9044093a608785ba87bd1c911fb7f94bc5ae338745f37e0",
+    "previous_block_hash": "3e2578d0ebb4b270bac8b787c450e58d06dd8b4b441ddb8afa0907b4ee27565c",
+    "timestamp_iso": "2026-10-24T15:20:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 95,
@@ -2109,7 +5054,38 @@
       "scope2_location_based": 0.8085,
       "total_gross_interval": 1.0263
     },
-    "audit_signature": "695133501decc2892c8c9448e5a3c14fa2ebebb7a004123609751247fc118f38"
+    "audit_signature": "695133501decc2892c8c9448e5a3c14fa2ebebb7a004123609751247fc118f38",
+    "block_hash": "695133501decc2892c8c9448e5a3c14fa2ebebb7a004123609751247fc118f38",
+    "previous_block_hash": "748cc4d2f56160e0c9044093a608785ba87bd1c911fb7f94bc5ae338745f37e0",
+    "timestamp_iso": "2026-10-24T15:35:38.194883+00:00",
+    "transaction_count": 6,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1109.2
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 29.7
+      },
+      {
+        "metric": "png_sm3",
+        "value": 32.3
+      },
+      {
+        "metric": "lpg_kg",
+        "value": 14.4
+      },
+      {
+        "metric": "refrigerant_leak_kg",
+        "value": 0.0
+      },
+      {
+        "metric": "etp_cod_mass_kg",
+        "value": 12.1
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 96,
@@ -2125,7 +5101,22 @@
       "scope2_grid": 1.057,
       "total": 1.191
     },
-    "audit_signature": "0f21244410c1c7949454ac83ced69befb51f5baa67a6ae5597fab20751d70821"
+    "audit_signature": "0f21244410c1c7949454ac83ced69befb51f5baa67a6ae5597fab20751d70821",
+    "block_hash": "0f21244410c1c7949454ac83ced69befb51f5baa67a6ae5597fab20751d70821",
+    "previous_block_hash": "695133501decc2892c8c9448e5a3c14fa2ebebb7a004123609751247fc118f38",
+    "timestamp_iso": "2026-10-24T15:50:41.829100+00:00",
+    "transaction_count": 2,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1450.0
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 50.0
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 97,
@@ -2141,7 +5132,22 @@
       "scope2_grid": 1.057,
       "total": 1.191
     },
-    "audit_signature": "6d8956805c369023032e65b82fe7e40372ce060ee312f3bdd2b278b8343aab28"
+    "audit_signature": "6d8956805c369023032e65b82fe7e40372ce060ee312f3bdd2b278b8343aab28",
+    "block_hash": "6d8956805c369023032e65b82fe7e40372ce060ee312f3bdd2b278b8343aab28",
+    "previous_block_hash": "0f21244410c1c7949454ac83ced69befb51f5baa67a6ae5597fab20751d70821",
+    "timestamp_iso": "2026-10-24T15:51:12.184312+00:00",
+    "transaction_count": 2,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1450.0
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 50.0
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 98,
@@ -2157,7 +5163,22 @@
       "scope2_grid": 1.057,
       "total": 1.191
     },
-    "audit_signature": "7431776046e4842e4747849b999a7e442985da8a96aad4a381defe946f5577b3"
+    "audit_signature": "7431776046e4842e4747849b999a7e442985da8a96aad4a381defe946f5577b3",
+    "block_hash": "7431776046e4842e4747849b999a7e442985da8a96aad4a381defe946f5577b3",
+    "previous_block_hash": "6d8956805c369023032e65b82fe7e40372ce060ee312f3bdd2b278b8343aab28",
+    "timestamp_iso": "2026-10-24T15:51:41.562708+00:00",
+    "transaction_count": 2,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1450.0
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 50.0
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 99,
@@ -2173,7 +5194,22 @@
       "scope2_grid": 1.057,
       "total": 1.191
     },
-    "audit_signature": "5afdd978c61800eb115380b74a840c8b6b7e9c24492d61302bfe56076cc4abf6"
+    "audit_signature": "5afdd978c61800eb115380b74a840c8b6b7e9c24492d61302bfe56076cc4abf6",
+    "block_hash": "5afdd978c61800eb115380b74a840c8b6b7e9c24492d61302bfe56076cc4abf6",
+    "previous_block_hash": "7431776046e4842e4747849b999a7e442985da8a96aad4a381defe946f5577b3",
+    "timestamp_iso": "2026-10-24T16:01:35.152988+00:00",
+    "transaction_count": 2,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1450.0
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 50.0
+      }
+    ],
+    "verified_valid": true
   },
   {
     "block_height": 100,
@@ -2189,6 +5225,349 @@
       "scope2_grid": 1.057,
       "total": 1.191
     },
-    "audit_signature": "b2266d1eddb9f3306ad38e5bb48dac0eceee7f20085f708fe88078036dd93b88"
+    "audit_signature": "b2266d1eddb9f3306ad38e5bb48dac0eceee7f20085f708fe88078036dd93b88",
+    "block_hash": "b2266d1eddb9f3306ad38e5bb48dac0eceee7f20085f708fe88078036dd93b88",
+    "previous_block_hash": "5afdd978c61800eb115380b74a840c8b6b7e9c24492d61302bfe56076cc4abf6",
+    "timestamp_iso": "2026-10-24T16:01:47.436749+00:00",
+    "transaction_count": 2,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1450.0
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 50.0
+      }
+    ],
+    "verified_valid": true
+  },
+  {
+    "block_height": 101,
+    "timestamp": "2026-10-24T17:56:00.341077+00:00",
+    "prev_hash": "b2266d1eddb9f3306ad38e5bb48dac0eceee7f20085f708fe88078036dd93b88",
+    "merkle_root": "9166cc6ad43b83271671e1f235f27f715fc7cbb83e5bed10311ebbd340b7890a",
+    "telemetry_summary": {
+      "grid_electricity_kwh": 1450.0,
+      "diesel_liters": 50.0
+    },
+    "gross_carbon_tco2e": {
+      "scope1_combustion": 0.134,
+      "scope2_grid": 1.057,
+      "total": 1.191
+    },
+    "audit_signature": "8276a6d6ec2d667b6b92674daf16024a061911e25cd2b12732bd257d43a3cf3a",
+    "block_hash": "8276a6d6ec2d667b6b92674daf16024a061911e25cd2b12732bd257d43a3cf3a",
+    "previous_block_hash": "b2266d1eddb9f3306ad38e5bb48dac0eceee7f20085f708fe88078036dd93b88",
+    "timestamp_iso": "2026-10-24T17:56:00.341077+00:00",
+    "transaction_count": 2,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1450.0
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 50.0
+      }
+    ],
+    "verified_valid": true
+  },
+  {
+    "block_height": 102,
+    "timestamp": "2026-10-24T17:59:53.510529+00:00",
+    "prev_hash": "8276a6d6ec2d667b6b92674daf16024a061911e25cd2b12732bd257d43a3cf3a",
+    "merkle_root": "9166cc6ad43b83271671e1f235f27f715fc7cbb83e5bed10311ebbd340b7890a",
+    "telemetry_summary": {
+      "grid_electricity_kwh": 1450.0,
+      "diesel_liters": 50.0
+    },
+    "gross_carbon_tco2e": {
+      "scope1_combustion": 0.134,
+      "scope2_grid": 1.057,
+      "total": 1.191
+    },
+    "audit_signature": "8da3c9c62be5b21d214952b3c934b87b41a4e6349772bb39c47582ff4ac8b0f9",
+    "block_hash": "8da3c9c62be5b21d214952b3c934b87b41a4e6349772bb39c47582ff4ac8b0f9",
+    "previous_block_hash": "8276a6d6ec2d667b6b92674daf16024a061911e25cd2b12732bd257d43a3cf3a",
+    "timestamp_iso": "2026-10-24T17:59:53.510529+00:00",
+    "transaction_count": 2,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1450.0
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 50.0
+      }
+    ],
+    "verified_valid": true
+  },
+  {
+    "block_height": 103,
+    "timestamp": "2026-10-24T19:46:06.827245+00:00",
+    "prev_hash": "8da3c9c62be5b21d214952b3c934b87b41a4e6349772bb39c47582ff4ac8b0f9",
+    "merkle_root": "9166cc6ad43b83271671e1f235f27f715fc7cbb83e5bed10311ebbd340b7890a",
+    "telemetry_summary": {
+      "grid_electricity_kwh": 1450.0,
+      "diesel_liters": 50.0
+    },
+    "gross_carbon_tco2e": {
+      "scope1_combustion": 0.134,
+      "scope2_grid": 1.057,
+      "total": 1.191
+    },
+    "audit_signature": "7cfcb8db9fe3a4ee3febbfaa5e6f365ede944476466ffe53d34be8ac451b1994",
+    "block_hash": "7cfcb8db9fe3a4ee3febbfaa5e6f365ede944476466ffe53d34be8ac451b1994",
+    "previous_block_hash": "8da3c9c62be5b21d214952b3c934b87b41a4e6349772bb39c47582ff4ac8b0f9",
+    "timestamp_iso": "2026-10-24T19:46:06.827245+00:00",
+    "transaction_count": 2,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1450.0
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 50.0
+      }
+    ],
+    "verified_valid": true
+  },
+  {
+    "block_height": 104,
+    "timestamp": "2026-10-24T19:46:40.392305+00:00",
+    "prev_hash": "7cfcb8db9fe3a4ee3febbfaa5e6f365ede944476466ffe53d34be8ac451b1994",
+    "merkle_root": "190f61bf2a322e2e00ca5edfb0911107d62b6972cfb8638a846a68c62c3b4723",
+    "telemetry_summary": {
+      "event": "CARBON_CREDIT_RETIREMENT",
+      "serial": "BEE-IN-CCTS-KPCL-2026-000005-000011",
+      "quantity": 6.85
+    },
+    "gross_carbon_tco2e": {
+      "offset_applied": 6.85
+    },
+    "audit_signature": "d935eead59a83b4122123e2796ff82d5339eda7b10ab40c1dbb1c81a7b8e536a",
+    "block_hash": "d935eead59a83b4122123e2796ff82d5339eda7b10ab40c1dbb1c81a7b8e536a",
+    "previous_block_hash": "7cfcb8db9fe3a4ee3febbfaa5e6f365ede944476466ffe53d34be8ac451b1994",
+    "timestamp_iso": "2026-10-24T19:46:40.392305+00:00",
+    "transaction_count": 3,
+    "transactions": [
+      {
+        "metric": "event",
+        "value": "CARBON_CREDIT_RETIREMENT"
+      },
+      {
+        "metric": "serial",
+        "value": "BEE-IN-CCTS-KPCL-2026-000005-000011"
+      },
+      {
+        "metric": "quantity",
+        "value": 6.85
+      }
+    ],
+    "verified_valid": true
+  },
+  {
+    "block_height": 105,
+    "timestamp": "2026-10-24T19:47:07.382593+00:00",
+    "prev_hash": "d935eead59a83b4122123e2796ff82d5339eda7b10ab40c1dbb1c81a7b8e536a",
+    "merkle_root": "190f61bf2a322e2e00ca5edfb0911107d62b6972cfb8638a846a68c62c3b4723",
+    "telemetry_summary": {
+      "event": "CARBON_CREDIT_RETIREMENT",
+      "serial": "BEE-IN-CCTS-KPCL-2026-000005-000011",
+      "quantity": 6.85
+    },
+    "gross_carbon_tco2e": {
+      "offset_applied": 6.85
+    },
+    "audit_signature": "7263b91dd006aa7b51570d75cd49194701e22e6738ea1b36c9c1dcb060f97c64",
+    "block_hash": "7263b91dd006aa7b51570d75cd49194701e22e6738ea1b36c9c1dcb060f97c64",
+    "previous_block_hash": "d935eead59a83b4122123e2796ff82d5339eda7b10ab40c1dbb1c81a7b8e536a",
+    "timestamp_iso": "2026-10-24T19:47:07.382593+00:00",
+    "transaction_count": 3,
+    "transactions": [
+      {
+        "metric": "event",
+        "value": "CARBON_CREDIT_RETIREMENT"
+      },
+      {
+        "metric": "serial",
+        "value": "BEE-IN-CCTS-KPCL-2026-000005-000011"
+      },
+      {
+        "metric": "quantity",
+        "value": 6.85
+      }
+    ],
+    "verified_valid": true
+  },
+  {
+    "block_height": 106,
+    "timestamp": "2026-10-24T19:47:27.475083+00:00",
+    "prev_hash": "7263b91dd006aa7b51570d75cd49194701e22e6738ea1b36c9c1dcb060f97c64",
+    "merkle_root": "190f61bf2a322e2e00ca5edfb0911107d62b6972cfb8638a846a68c62c3b4723",
+    "telemetry_summary": {
+      "event": "CARBON_CREDIT_RETIREMENT",
+      "serial": "BEE-IN-CCTS-KPCL-2026-000005-000011",
+      "quantity": 6.85
+    },
+    "gross_carbon_tco2e": {
+      "offset_applied": 6.85
+    },
+    "audit_signature": "28267307dd81f19edcd9814adfabec7b31e588a31f6f156504d4d33635f68af7",
+    "block_hash": "28267307dd81f19edcd9814adfabec7b31e588a31f6f156504d4d33635f68af7",
+    "previous_block_hash": "7263b91dd006aa7b51570d75cd49194701e22e6738ea1b36c9c1dcb060f97c64",
+    "timestamp_iso": "2026-10-24T19:47:27.475083+00:00",
+    "transaction_count": 3,
+    "transactions": [
+      {
+        "metric": "event",
+        "value": "CARBON_CREDIT_RETIREMENT"
+      },
+      {
+        "metric": "serial",
+        "value": "BEE-IN-CCTS-KPCL-2026-000005-000011"
+      },
+      {
+        "metric": "quantity",
+        "value": 6.85
+      }
+    ],
+    "verified_valid": true
+  },
+  {
+    "block_height": 107,
+    "timestamp": "2026-10-24T19:47:45.713206+00:00",
+    "prev_hash": "28267307dd81f19edcd9814adfabec7b31e588a31f6f156504d4d33635f68af7",
+    "merkle_root": "190f61bf2a322e2e00ca5edfb0911107d62b6972cfb8638a846a68c62c3b4723",
+    "telemetry_summary": {
+      "event": "CARBON_CREDIT_RETIREMENT",
+      "serial": "BEE-IN-CCTS-KPCL-2026-000005-000011",
+      "quantity": 6.85
+    },
+    "gross_carbon_tco2e": {
+      "offset_applied": 6.85
+    },
+    "audit_signature": "4e6b35bf4961450363ae480a1a6614d3cbdc536fdf9e81920d2b34156e720ef1",
+    "block_hash": "4e6b35bf4961450363ae480a1a6614d3cbdc536fdf9e81920d2b34156e720ef1",
+    "previous_block_hash": "28267307dd81f19edcd9814adfabec7b31e588a31f6f156504d4d33635f68af7",
+    "timestamp_iso": "2026-10-24T19:47:45.713206+00:00",
+    "transaction_count": 3,
+    "transactions": [
+      {
+        "metric": "event",
+        "value": "CARBON_CREDIT_RETIREMENT"
+      },
+      {
+        "metric": "serial",
+        "value": "BEE-IN-CCTS-KPCL-2026-000005-000011"
+      },
+      {
+        "metric": "quantity",
+        "value": 6.85
+      }
+    ],
+    "verified_valid": true
+  },
+  {
+    "block_height": 108,
+    "timestamp": "2026-10-24T20:11:52.625882+00:00",
+    "prev_hash": "4e6b35bf4961450363ae480a1a6614d3cbdc536fdf9e81920d2b34156e720ef1",
+    "merkle_root": "190f61bf2a322e2e00ca5edfb0911107d62b6972cfb8638a846a68c62c3b4723",
+    "telemetry_summary": {
+      "event": "CARBON_CREDIT_RETIREMENT",
+      "serial": "BEE-IN-CCTS-KPCL-2026-000005-000011",
+      "quantity": 6.85
+    },
+    "gross_carbon_tco2e": {
+      "offset_applied": 6.85
+    },
+    "audit_signature": "ee1f6d50ec21acde8809b276c394a00c833e0ca763929ea8be470c7e5ee4deb8",
+    "block_hash": "ee1f6d50ec21acde8809b276c394a00c833e0ca763929ea8be470c7e5ee4deb8",
+    "previous_block_hash": "4e6b35bf4961450363ae480a1a6614d3cbdc536fdf9e81920d2b34156e720ef1",
+    "timestamp_iso": "2026-10-24T20:11:52.625882+00:00",
+    "transaction_count": 3,
+    "transactions": [
+      {
+        "metric": "event",
+        "value": "CARBON_CREDIT_RETIREMENT"
+      },
+      {
+        "metric": "serial",
+        "value": "BEE-IN-CCTS-KPCL-2026-000005-000011"
+      },
+      {
+        "metric": "quantity",
+        "value": 6.85
+      }
+    ],
+    "verified_valid": true
+  },
+  {
+    "block_height": 109,
+    "timestamp": "2026-10-24T20:44:00.948053+00:00",
+    "prev_hash": "ee1f6d50ec21acde8809b276c394a00c833e0ca763929ea8be470c7e5ee4deb8",
+    "merkle_root": "190f61bf2a322e2e00ca5edfb0911107d62b6972cfb8638a846a68c62c3b4723",
+    "telemetry_summary": {
+      "event": "CARBON_CREDIT_RETIREMENT",
+      "serial": "BEE-IN-CCTS-KPCL-2026-000005-000011",
+      "quantity": 6.85
+    },
+    "gross_carbon_tco2e": {
+      "offset_applied": 6.85
+    },
+    "audit_signature": "300303e4234da3497e753582b58ab76bbd0e790dc45aaae7e53911c3b09821bd",
+    "block_hash": "300303e4234da3497e753582b58ab76bbd0e790dc45aaae7e53911c3b09821bd",
+    "previous_block_hash": "ee1f6d50ec21acde8809b276c394a00c833e0ca763929ea8be470c7e5ee4deb8",
+    "timestamp_iso": "2026-10-24T20:44:00.948053+00:00",
+    "transaction_count": 3,
+    "transactions": [
+      {
+        "metric": "event",
+        "value": "CARBON_CREDIT_RETIREMENT"
+      },
+      {
+        "metric": "serial",
+        "value": "BEE-IN-CCTS-KPCL-2026-000005-000011"
+      },
+      {
+        "metric": "quantity",
+        "value": 6.85
+      }
+    ],
+    "verified_valid": true
+  },
+  {
+    "block_height": 110,
+    "timestamp": "2026-10-24T20:44:22.269850+00:00",
+    "prev_hash": "300303e4234da3497e753582b58ab76bbd0e790dc45aaae7e53911c3b09821bd",
+    "merkle_root": "9166cc6ad43b83271671e1f235f27f715fc7cbb83e5bed10311ebbd340b7890a",
+    "telemetry_summary": {
+      "grid_electricity_kwh": 1450.0,
+      "diesel_liters": 50.0
+    },
+    "gross_carbon_tco2e": {
+      "scope1_combustion": 0.134,
+      "scope2_grid": 1.057,
+      "total": 1.191
+    },
+    "audit_signature": "5212a75c2794f1946c0d9d007285a83067834d4548046cd8f83229b1af12158b",
+    "block_hash": "5212a75c2794f1946c0d9d007285a83067834d4548046cd8f83229b1af12158b",
+    "previous_block_hash": "300303e4234da3497e753582b58ab76bbd0e790dc45aaae7e53911c3b09821bd",
+    "timestamp_iso": "2026-10-24T20:44:22.269850+00:00",
+    "transaction_count": 2,
+    "transactions": [
+      {
+        "metric": "grid_electricity_kwh",
+        "value": 1450.0
+      },
+      {
+        "metric": "diesel_liters",
+        "value": 50.0
+      }
+    ],
+    "verified_valid": true
   }
 ]

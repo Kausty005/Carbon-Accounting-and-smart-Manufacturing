@@ -4,7 +4,7 @@ import {
   Globe, ShieldCheck, CheckCircle2, Sliders, ArrowUpRight,
   Download, Printer, AlertTriangle, Zap, Flame, Leaf,
   TrendingDown, FileText, RefreshCw, ChevronRight, BarChart3,
-  Calendar, Layers, Sparkles, X, Sun, Moon, DollarSign
+  Calendar, Layers, Sparkles, X, Sun, Moon, DollarSign, Award, Coins
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -13,6 +13,8 @@ import {
 import { PLANT, SimParams, calcSimResult, CARBON } from '../../data/mockData';
 import { ScopePie } from '../Charts';
 import type { CarbonCalculateResponse, CeaMethodology } from '../../services/carbonApi';
+import { CarbonCreditsEngine } from './CarbonCreditsEngine';
+import { CarbonComplianceFilingPortal } from './CarbonComplianceFilingPortal';
 
 interface CarbonAccountingViewProps {
   params: SimParams;
@@ -51,7 +53,7 @@ export default function CarbonAccountingView({
   const [lpgFactor, setLpgFactor] = useState(2.98); // kg CO2e / kg LPG
   const [shadowCarbonPrice, setShadowCarbonPrice] = useState(2000); // ₹2,000 / tCO2e
   const [solarShiftSimulated, setSolarShiftSimulated] = useState(params.staggerFurnace);
-  const [selectedTab, setSelectedTab] = useState<'ledger' | 'zombie' | 'passport' | 'solartod'>('ledger');
+  const [selectedTab, setSelectedTab] = useState<'ledger' | 'zombie' | 'passport' | 'solartod' | 'credits' | 'filing'>('ledger');
 
   // Dynamic calculations based on user-editable factors
   const s1KgCO2e = (lpgKg * lpgFactor);
@@ -706,6 +708,48 @@ export default function CarbonAccountingView({
         >
           <Sun size={13} />
           <span>Feature D &amp; E: Solar Shift &amp; Shadow Pricing</span>
+        </button>
+
+        <button
+          onClick={() => setSelectedTab('credits')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 18px',
+            borderRadius: 8,
+            backgroundColor: selectedTab === 'credits' ? '#1C1917' : '#EFE6D7',
+            color: selectedTab === 'credits' ? '#F5EFE6' : '#57534E',
+            border: 'none',
+            fontSize: 12,
+            fontWeight: 700,
+            cursor: 'pointer',
+            transition: 'all 0.15s ease',
+          }}
+        >
+          <Award size={13} />
+          <span>Feature F: Carbon Credits &amp; CCTS Offsetting</span>
+        </button>
+
+        <button
+          onClick={() => setSelectedTab('filing')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 18px',
+            borderRadius: 8,
+            backgroundColor: selectedTab === 'filing' ? '#1C1917' : '#EFE6D7',
+            color: selectedTab === 'filing' ? '#F5EFE6' : '#57534E',
+            border: 'none',
+            fontSize: 12,
+            fontWeight: 700,
+            cursor: 'pointer',
+            transition: 'all 0.15s ease',
+          }}
+        >
+          <FileText size={13} />
+          <span>Feature G: Statutory Compliance &amp; Filing Dossiers</span>
         </button>
       </div>
 
@@ -1464,6 +1508,20 @@ export default function CarbonAccountingView({
               Shadow carbon pricing boosts project IRR by +20.5%, proving that ESG compliance directly expands financial returns.
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ─── TAB 5: FEATURE F - CARBON CREDITS & CCTS OFFSETTING ENGINE ──────── */}
+      {selectedTab === 'credits' && (
+        <div style={{ marginTop: 8 }}>
+          <CarbonCreditsEngine />
+        </div>
+      )}
+
+      {/* ─── TAB 6: FEATURE G - STATUTORY COMPLIANCE & FILING DOSSIERS ──────── */}
+      {selectedTab === 'filing' && (
+        <div style={{ marginTop: 8 }}>
+          <CarbonComplianceFilingPortal />
         </div>
       )}
     </div>

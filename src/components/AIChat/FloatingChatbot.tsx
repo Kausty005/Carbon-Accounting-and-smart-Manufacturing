@@ -10,6 +10,7 @@ import {
   CornerDownLeft,
   ChevronDown,
   Info,
+  Bot,
 } from 'lucide-react';
 import { useAIExplain } from '../AIExplain/AIExplainContext';
 
@@ -72,54 +73,52 @@ export function FloatingChatbot() {
 
   return (
     <>
-      {/* ─── Persistent Floating Trigger Button (Bottom-Right) ───────────── */}
+      {/* ─── Persistent Floating Trigger Button (Bottom-Right: Black Robot Icon) ─── */}
       {!isChatOpen && (
         <button
           onClick={toggleChat}
           aria-label="Open AI Assistant"
+          title="Ask WattWise AI Assistant"
           style={{
             position: 'fixed',
             bottom: 24,
             right: 24,
             zIndex: 9998,
-            background: 'linear-gradient(135deg, #0284C7 0%, #0369A1 100%)',
-            color: '#FFFFFF',
-            border: 'none',
-            borderRadius: 9999,
-            padding: '10px 18px',
+            width: 52,
+            height: 52,
+            borderRadius: '50%',
+            background: '#18191B',
+            color: '#F5EFE6',
+            border: '1.5px solid rgba(255, 255, 255, 0.15)',
             display: 'flex',
             alignItems: 'center',
-            gap: 8,
-            boxShadow: '0 4px 16px rgba(2, 132, 199, 0.35), 0 2px 4px rgba(0,0,0,0.1)',
+            justifyContent: 'center',
+            boxShadow: '0 4px 18px rgba(0, 0, 0, 0.35), 0 2px 6px rgba(0, 0, 0, 0.2)',
             cursor: 'pointer',
-            transition: 'transform 0.18s ease, box-shadow 0.18s ease',
+            transition: 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, background-color 0.2s ease',
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.transform = 'translateY(-2px)')}
-          onMouseLeave={(e) => (e.currentTarget.style.transform = 'translateY(0)')}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-3px) scale(1.05)';
+            e.currentTarget.style.boxShadow = '0 6px 22px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.25)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0) scale(1)';
+            e.currentTarget.style.boxShadow = '0 4px 18px rgba(0, 0, 0, 0.35), 0 2px 6px rgba(0, 0, 0, 0.2)';
+          }}
         >
-          <div
-            style={{
-              width: 22,
-              height: 22,
-              borderRadius: '50%',
-              background: 'rgba(255, 255, 255, 0.2)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Sparkles size={14} color="#FFFFFF" />
-          </div>
-          <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: '-0.01em' }}>
-            Ask AI Assistant
-          </span>
+          <Bot size={24} color="#F5EFE6" strokeWidth={2.2} />
+          {/* Subtle online status indicator */}
           <span
             style={{
-              width: 8,
-              height: 8,
+              position: 'absolute',
+              top: 3,
+              right: 3,
+              width: 10,
+              height: 10,
               borderRadius: '50%',
-              background: '#22C55E',
-              boxShadow: '0 0 6px #22C55E',
+              background: aiStatus?.status === 'ready' ? '#22C55E' : '#10B981',
+              border: '2px solid #18191B',
+              boxShadow: '0 0 6px rgba(34, 197, 94, 0.8)',
             }}
           />
         </button>
@@ -165,14 +164,14 @@ export function FloatingChatbot() {
                   width: 32,
                   height: 32,
                   borderRadius: 8,
-                  background: '#E0F2FE',
-                  border: '1px solid #BAE6FD',
+                  background: '#18191B',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
               >
-                <Sparkles size={16} color="#0284C7" />
+                <Bot size={17} color="#F5EFE6" />
               </div>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>

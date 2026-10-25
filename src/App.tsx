@@ -6,7 +6,8 @@ import {
   Building2, Sun, CloudRain, Coins, Info, Wrench,
   Flame, Fan, Server, Box, Compass, LogOut, User, RotateCcw,
   PanelRightClose, PanelRightOpen, Activity, ArrowRight,
-  Shield, Gauge, Printer, Download, ShieldAlert
+  Shield, Gauge, Printer, Download, ShieldAlert,
+  Award, Terminal, Database, ShieldCheck, Lock, UserCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -19,6 +20,8 @@ import ScadaFloorMap from './components/ScadaFloorMap';
 import Factory3DScene from './components/Factory3D/Factory3DScene';
 import HomePage from './components/HomePage/HomePage';
 import LoginModal from './components/Auth/LoginModal';
+import { AccessDeniedView } from './components/Auth/AccessDeniedView';
+import { RoleId, UserProfile, DEMO_USERS, hasViewAccess, VIEW_SECURITY_METADATA } from './auth/authTypes';
 import DigitalTwinView from './components/DigitalTwin/DigitalTwinView';
 import CarbonAccountingView from './components/Carbon/CarbonAccountingView';
 import AIAnomalyIntelligence from './components/AIAnomaly/AIAnomalyIntelligence';
@@ -2387,11 +2390,8 @@ function InspectorPanel({
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<'home' | 'login' | 'platform'>('home');
-  const [currentUser, setCurrentUser] = useState<{ email: string; role: string; name: string } | null>({
-    email: 'operator@precisionworks.mfg',
-    role: 'Plant SCADA Operator',
-    name: 'Vikram Malhotra',
-  });
+  const [currentUser, setCurrentUser] = useState<UserProfile>(() => DEMO_USERS.operator);
+  const [isRoleMenuOpen, setIsRoleMenuOpen] = useState(false);
   const [view, setView] = useState<View>('overview');
   const [selectedAsset, setSelectedAsset] = useState<string | null>(null);
   const [mapMode, setMapMode] = useState<'3d' | '2d'>('3d');
@@ -2632,6 +2632,7 @@ export default function App() {
           <HomePage
             onLaunchPlatform={() => setCurrentPage('platform')}
             onOpenLogin={() => setCurrentPage('login')}
+            currentUser={currentUser}
           />
         </motion.div>
       </AnimatePresence>
@@ -2643,6 +2644,7 @@ export default function App() {
       <AnimatePresence mode="wait">
         <motion.div key="login" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ position: 'fixed', inset: 0, zIndex: 100 }}>
           <LoginModal
+            initialRole={currentUser?.roleId || 'operator'}
             onLogin={(user) => {
               setCurrentUser(user);
               setCurrentPage('platform');
@@ -2792,24 +2794,255 @@ export default function App() {
             }} />
           </div>
 
-          {/* User Profile */}
-          <div
-            onClick={() => setCurrentPage('login')}
-            style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
-            title="Switch User / Sign Out"
-          >
-            <div style={{
-              width: 30, height: 30, borderRadius: '50%',
-              background: '#E2D9CC', color: '#44403C',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 11, fontWeight: 700
-            }}>
-              VM
+          {/* User Profile & Quick Role Switcher */}
+          <div style={{ position: 'relative' }}>
+            <div
+              onClick={() => setIsRoleMenuOpen(!isRoleMenuOpen)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                cursor: 'pointer',
+                padding: '4px 8px 4px 6px',
+                borderRadius: 9999,
+                backgroundColor: isRoleMenuOpen ? '#E2D9CC' : 'transparent',
+                transition: 'background 0.15s',
+              }}
+              title="Click to Switch Industrial Role or Sign Out"
+            >
+              <div
+                style={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: '50%',
+                  background: currentUser.avatarColor,
+                  color: '#FFFFFF',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 11,
+                  fontWeight: 800,
+                  boxShadow: `0 0 8px ${currentUser.avatarColor}66`,
+                }}
+              >
+                {currentUser.initials}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: '#1E252D', lineHeight: 1.2 }}>
+                    {currentUser.name}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: '9px',
+                      fontFamily: "'IBM Plex Mono', monospace",
+                      fontWeight: 700,
+                      padding: '1px 6px',
+                      borderRadius: 9999,
+                      backgroundColor: currentUser.badge.bg,
+                      color: currentUser.badge.color,
+                      border: `1px solid ${currentUser.badge.border}`,
+                    }}
+                  >
+                    {currentUser.badge.label.split(' ')[0]}
+                  </span>
+                </div>
+                <span style={{ fontSize: 10, color: '#6B7280', lineHeight: 1.2 }}>
+                  {currentUser.roleTitle}
+                </span>
+              </div>
+              <ChevronDown
+                size={13}
+                color="#64748B"
+                style={{
+                  transform: isRoleMenuOpen ? 'rotate(180deg)' : 'none',
+                  transition: 'transform 0.2s',
+                  marginLeft: 2,
+                }}
+              />
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: 12, fontWeight: 700, color: '#1E252D', lineHeight: 1.2 }}>Vikram Malhotra</span>
-              <span style={{ fontSize: 10, color: '#6B7280', lineHeight: 1.2 }}>Plant Manager</span>
-            </div>
+
+            {/* Quick Role Switcher Dropdown Modal */}
+            {isRoleMenuOpen && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '120%',
+                  right: 0,
+                  width: '320px',
+                  backgroundColor: '#FFFFFF',
+                  borderRadius: '16px',
+                  border: '1px solid rgba(0, 0, 0, 0.1)',
+                  boxShadow: '0 16px 36px rgba(0,0,0,0.16), 0 2px 6px rgba(0,0,0,0.06)',
+                  padding: '16px',
+                  zIndex: 200,
+                  fontFamily: 'var(--font-ui, sans-serif)',
+                }}
+              >
+                {/* Active User Header */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    paddingBottom: '12px',
+                    borderBottom: '1px solid #F1F5F9',
+                    marginBottom: '12px',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: '50%',
+                      background: currentUser.avatarColor,
+                      color: '#FFFFFF',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 12,
+                      fontWeight: 800,
+                    }}
+                  >
+                    {currentUser.initials}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {currentUser.name}
+                    </div>
+                    <div style={{ fontSize: '10.5px', color: '#64748B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {currentUser.email}
+                    </div>
+                    <div style={{ fontSize: '10px', color: '#059669', fontWeight: 600, marginTop: '2px' }}>
+                      ✓ {currentUser.allowedViews.length} of 11 Modules Authorized
+                    </div>
+                  </div>
+                </div>
+
+                {/* 1-Click Role Switcher */}
+                <div
+                  style={{
+                    fontSize: '9.5px',
+                    fontFamily: "'IBM Plex Mono', monospace",
+                    fontWeight: 700,
+                    color: '#64748B',
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    marginBottom: '8px',
+                  }}
+                >
+                  SWITCH ROLE (INSTANT RBAC DEMO)
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '14px' }}>
+                  {(Object.keys(DEMO_USERS) as RoleId[]).map((rKey) => {
+                    const u = DEMO_USERS[rKey];
+                    const isSelected = currentUser.roleId === rKey;
+                    return (
+                      <button
+                        key={rKey}
+                        onClick={() => {
+                          setCurrentUser(u);
+                          setIsRoleMenuOpen(false);
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '8px 10px',
+                          borderRadius: '8px',
+                          border: isSelected ? '1px solid #0F172A' : '1px solid #E2E8F0',
+                          backgroundColor: isSelected ? '#0F172A' : '#F8FAFC',
+                          color: isSelected ? '#FFFFFF' : '#1E252D',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          transition: 'all 0.15s',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span
+                            style={{
+                              width: 8,
+                              height: 8,
+                              borderRadius: '50%',
+                              backgroundColor: u.avatarColor,
+                            }}
+                          />
+                          <div>
+                            <div style={{ fontSize: '11.5px', fontWeight: 700 }}>
+                              {u.roleTitle}
+                            </div>
+                            <div style={{ fontSize: '10px', opacity: 0.75 }}>
+                              {u.name} ({u.allowedViews.length} views)
+                            </div>
+                          </div>
+                        </div>
+                        {isSelected && <CheckCircle2 size={13} color="#22C55E" />}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Actions Footer */}
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                    borderTop: '1px solid #F1F5F9',
+                    paddingTop: '10px',
+                  }}
+                >
+                  <button
+                    onClick={() => {
+                      setIsRoleMenuOpen(false);
+                      setCurrentPage('login');
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      background: 'none',
+                      border: 'none',
+                      padding: '6px 8px',
+                      fontSize: '11.5px',
+                      color: '#334155',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      borderRadius: 6,
+                      textAlign: 'left',
+                    }}
+                  >
+                    <User size={13} />
+                    <span>Open Full Sign In Screen</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setIsRoleMenuOpen(false);
+                      setCurrentPage('home');
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      background: 'none',
+                      border: 'none',
+                      padding: '6px 8px',
+                      fontSize: '11.5px',
+                      color: '#EF4444',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      borderRadius: 6,
+                      textAlign: 'left',
+                    }}
+                  >
+                    <LogOut size={13} />
+                    <span>Sign Out to 3D Glide Home</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </header>
@@ -2846,6 +3079,8 @@ export default function App() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2, padding: '4px 6px' }}>
           {NAV.map(n => {
             const isActive = view === n.id;
+            const isPermitted = hasViewAccess(currentUser.roleId, n.id);
+            const viewMeta = VIEW_SECURITY_METADATA[n.id];
             return (
               <div
                 key={n.id}
@@ -2858,11 +3093,34 @@ export default function App() {
                   fontSize: 12.5, fontWeight: isActive ? 600 : 500,
                   background: isActive ? '#E0F2FE' : 'transparent',
                   color: isActive ? '#0284C7' : (n.id === 'anomalies' ? '#0284C7' : '#334155'),
+                  opacity: isPermitted ? 1 : 0.65,
                   transition: 'all 0.15s ease',
+                  position: 'relative',
                 }}
               >
                 {n.icon}
-                <span>{n.label}</span>
+                <span style={{ flex: 1 }}>{n.label}</span>
+                {!isPermitted && (
+                  <span
+                    style={{
+                      fontSize: '9px',
+                      fontFamily: 'var(--font-mono, monospace)',
+                      padding: '1px 5px',
+                      borderRadius: '4px',
+                      backgroundColor: '#F1F5F9',
+                      color: '#64748B',
+                      border: '1px solid #CBD5E1',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '3px',
+                      fontWeight: 600,
+                    }}
+                    title={`Restricted. Required: ${viewMeta?.requiredRoles.map(r => DEMO_USERS[r].roleTitle).join(', ')}`}
+                  >
+                    <Lock size={8} />
+                    <span>LOCKED</span>
+                  </span>
+                )}
               </div>
             );
           })}
@@ -2920,88 +3178,134 @@ export default function App() {
       {/* Main */}
       <main className="main-content">
         <AnimatePresence mode="wait">
-          {view === 'overview' && (
-            <motion.div key="overview" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%' }}>
-              <OverviewView
-                setView={setView}
-                carbonData={carbonData}
-                gridEF={gridEF}
-                onSelectAsset={handleSelectAsset}
-                assets={simulatedAssets}
-                livePlantPower={liveTick?.plant_power_kw}
-                activeAnomaly={liveTick?.active_anomaly}
-                liveTick={liveTick?.tick}
+          {!hasViewAccess(currentUser.roleId, view) ? (
+            <motion.div
+              key={`access-denied-${view}`}
+              variants={PAGE_VARIANTS}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              style={{ width: '100%', height: '100%', overflowY: 'auto' }}
+            >
+              <AccessDeniedView
+                currentRole={currentUser.roleId}
+                viewId={view}
+                onSwitchRole={(r) => setCurrentUser(DEMO_USERS[r])}
+                onGoToOverview={() => setView('overview')}
               />
             </motion.div>
-          )}
-          {view === 'scada' && (
-            <motion.div key="scada" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }}>
-              <ScadaView
-                assets={simulatedAssets}
-                selectedId={selectedAsset}
-                onSelect={handleSelectAsset}
-                onSimulate={handleSimulate}
-                mapMode={mapMode}
-                setMapMode={setMapMode}
-              />
-            </motion.div>
-          )}
-          {view === 'simulator' && (
-            <motion.div key="simulator" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%' }}>
-              <DigitalTwinView
-                baselineRecords={baselineRecords}
-                tariffConfig={DEFAULT_TARIFF_CONFIG}
-                emissionFactor={DEFAULT_EMISSION_FACTOR}
-                activeSimulation={activeSimulation}
-                onApplySimulation={handleApplySimulation}
-                onSelectMachineIn3D={(machineId) => {
-                  setSelectedAsset(machineId);
-                  setView('scada');
-                }}
-              />
-            </motion.div>
-          )}
-          {view === 'forecast' && (
-            <motion.div key="forecast" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
-              <EnergyForecastDashboard
-                assets={simulatedAssets}
-                params={params}
-                onNavigateToSimulator={() => setView('simulator')}
-                onSelectAsset={(id) => {
-                  setSelectedAsset(id);
-                  setView('scada');
-                }}
-              />
-            </motion.div>
-          )}
-          {view === 'carbon' && (
-            <motion.div key="carbon" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%' }}>
-              <CarbonView
-                params={params}
-                gridEF={gridEF}
-                setGridEF={setGridEF}
-                carbonData={carbonData}
-                carbonLoading={carbonLoading}
-                carbonError={carbonError}
-                backendStatus={backendStatus}
-                onRecalculate={triggerCalculation}
-                reportingYear={reportingYear}
-                setReportingYear={setReportingYear}
-                ceaMethodology={ceaMethodology}
-                setCeaMethodology={setCeaMethodology}
-                availableYears={availableYears}
-              />
-            </motion.div>
-          )}
-          {view === 'anomalies' && (
-            <motion.div key="anomalies" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%' }}>
-              <AIAnomalyIntelligence />
-            </motion.div>
-          )}
-          {view === 'reports' && (
-            <motion.div key="reports" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%' }}>
-              <ReportView params={params} carbonData={carbonData} activeSimulation={activeSimulation} />
-            </motion.div>
+          ) : (
+            <>
+              {view === 'overview' && (
+                <motion.div key="overview" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%' }}>
+                  <OverviewView
+                    setView={setView}
+                    carbonData={carbonData}
+                    gridEF={gridEF}
+                    onSelectAsset={handleSelectAsset}
+                    assets={simulatedAssets}
+                    livePlantPower={liveTick?.plant_power_kw}
+                    activeAnomaly={liveTick?.active_anomaly}
+                    liveTick={liveTick?.tick}
+                  />
+                </motion.div>
+              )}
+              {view === 'executive' && (
+                <motion.div key="executive" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+                  <ExecutivePresentationView
+                    carbonData={carbonData}
+                    onNavigateToDiagnostics={() => setView('diagnostics')}
+                    onNavigateToConfigurator={() => setView('configurator')}
+                  />
+                </motion.div>
+              )}
+              {view === 'diagnostics' && (
+                <motion.div key="diagnostics" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+                  <EngineeringDiagnosticView
+                    onNavigateToExecutive={() => setView('executive')}
+                  />
+                </motion.div>
+              )}
+              {view === 'scada' && (
+                <motion.div key="scada" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }}>
+                  <ScadaView
+                    assets={simulatedAssets}
+                    selectedId={selectedAsset}
+                    onSelect={handleSelectAsset}
+                    onSimulate={handleSimulate}
+                    mapMode={mapMode}
+                    setMapMode={setMapMode}
+                  />
+                </motion.div>
+              )}
+              {view === 'simulator' && (
+                <motion.div key="simulator" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%' }}>
+                  <DigitalTwinView
+                    baselineRecords={baselineRecords}
+                    tariffConfig={DEFAULT_TARIFF_CONFIG}
+                    emissionFactor={DEFAULT_EMISSION_FACTOR}
+                    activeSimulation={activeSimulation}
+                    onApplySimulation={handleApplySimulation}
+                    onSelectMachineIn3D={(machineId) => {
+                      setSelectedAsset(machineId);
+                      setView('scada');
+                    }}
+                  />
+                </motion.div>
+              )}
+              {view === 'configurator' && (
+                <motion.div key="configurator" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+                  <AssetLibraryConfigurator />
+                </motion.div>
+              )}
+              {view === 'quota' && (
+                <motion.div key="quota" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+                  <CarbonQuotaInterlock />
+                </motion.div>
+              )}
+              {view === 'forecast' && (
+                <motion.div key="forecast" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+                  <EnergyForecastDashboard
+                    assets={simulatedAssets}
+                    params={params}
+                    onNavigateToSimulator={() => setView('simulator')}
+                    onSelectAsset={(id) => {
+                      setSelectedAsset(id);
+                      setView('scada');
+                    }}
+                  />
+                </motion.div>
+              )}
+              {view === 'carbon' && (
+                <motion.div key="carbon" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%' }}>
+                  <CarbonView
+                    params={params}
+                    gridEF={gridEF}
+                    setGridEF={setGridEF}
+                    carbonData={carbonData}
+                    carbonLoading={carbonLoading}
+                    carbonError={carbonError}
+                    backendStatus={backendStatus}
+                    onRecalculate={triggerCalculation}
+                    reportingYear={reportingYear}
+                    setReportingYear={setReportingYear}
+                    ceaMethodology={ceaMethodology}
+                    setCeaMethodology={setCeaMethodology}
+                    availableYears={availableYears}
+                  />
+                </motion.div>
+              )}
+              {view === 'anomalies' && (
+                <motion.div key="anomalies" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%' }}>
+                  <AIAnomalyIntelligence />
+                </motion.div>
+              )}
+              {view === 'reports' && (
+                <motion.div key="reports" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%' }}>
+                  <ReportView params={params} carbonData={carbonData} activeSimulation={activeSimulation} />
+                </motion.div>
+              )}
+            </>
           )}
         </AnimatePresence>
       </main>

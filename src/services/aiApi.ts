@@ -15,8 +15,8 @@ export interface ChartSeriesInfo {
 }
 
 export interface ExplainContext {
-  component_type: string;
-  title: string;
+  component_type?: string;
+  title?: string;
   identifier?: string;
   value?: any;
   unit?: string;
@@ -31,6 +31,7 @@ export interface ExplainContext {
   evidence?: Record<string, any>;
   series?: ChartSeriesInfo[];
   additional_context?: string;
+  [key: string]: any;
 }
 
 export interface ExplainRequest {

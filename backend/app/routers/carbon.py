@@ -13,6 +13,11 @@ from backend.app.models import (
 from backend.app.services.audit_ledger import audit_ledger_service
 from backend.app.services.carbon_service import carbon_service
 from backend.app.services.reference_data import reference_data_service
+from backend.app.services.carbon_credits_service import (
+    carbon_credits_service,
+    AdditionalityInput,
+)
+from backend.app.services.compliance_filing_service import compliance_filing_service
 
 router = APIRouter(prefix="/api/v1/carbon", tags=["Carbon Accounting"])
 
@@ -91,11 +96,130 @@ def check_carbon_quota(request: CarbonQuotaRequest):
 @router.get("/quota/status", response_model=CarbonQuotaResponse)
 def get_current_quota_status():
     """Returns active operational carbon quota status and interlock guardrails for current shift."""
-    # Default shift: 18.0 tCO2e daily cap, 14.47 tCO2e actual, 0.75 day elapsed -> BRI = 14.47 / (18 * 0.75) = 1.07 (Lockout warning)
     req = CarbonQuotaRequest(
         permitted_budget_tco2e=18.0,
         actual_emissions_tco2e=14.47,
         elapsed_fraction=0.82
     )
     return carbon_service.evaluate_carbon_quota(req)
+
+
+# ─── Carbon Credits, Additionality & CCTS Offsetting Endpoints ────────────────
+
+@router.get("/credits/portfolio")
+def get_carbon_credits_portfolio():
+    """
+    Returns full Carbon Credit portfolio (CCTS, ESCerts, Verra VCS, Gold Standard),
+    including generated, purchased, and retired volumes with real-time market value.
+    """
+    return carbon_credits_service.get_portfolio()
+
+
+@router.post("/credits/additionality")
+def evaluate_additionality(input_data: AdditionalityInput):
+    """
+    Evaluates ISO 14064-2 additionality for an energy efficiency project:
+    Carbon Credits = Baseline Emissions - Actual Monitored Emissions - Leakage
+    Checks regulatory additionality, financial hurdle, and technological barriers.
+    """
+    return carbon_credits_service.evaluate_additionality(input_data)
+
+
+@router.post("/credits/retire")
+def retire_carbon_credit(payload: Dict[str, Any]):
+    """
+    Permanently cancels / retires a verified carbon credit against statutory quota overage.
+    Appends the retirement event to the cryptographic audit ledger.
+    """
+    serial = payload.get("serial_number")
+    reason = payload.get("reason", "Statutory Carbon Quota Compliance")
+    beneficiary = payload.get("beneficiary", "PrecisionWorks Manufacturing Facility")
+    if not serial:
+        raise HTTPException(status_code=400, detail="serial_number is required.")
+    try:
+        return carbon_credits_service.retire_credit(serial_number=serial, reason=reason, beneficiary=beneficiary)
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+
+
+@router.post("/credits/issue")
+def issue_credit_from_intervention(payload: Dict[str, Any]):
+    """
+    Mints new verified carbon credits and equivalent BEE ESCerts from digital twin intervention savings.
+    """
+    project_name = payload.get("project_name", "Pneumatic Auto-Idle Cutoff")
+    quantity_tco2e = float(payload.get("quantity_tco2e", 5.0))
+    intervention_type = payload.get("intervention_type", "Digital Twin Optimization")
+    vintage = int(payload.get("vintage", 2026))
+    return carbon_credits_service.issue_new_credit_from_intervention(
+        project_name=project_name,
+        quantity_tco2e=quantity_tco2e,
+        intervention_type=intervention_type,
+        vintage=vintage,
+    )
+
+
+# ─── Statutory Compliance & Filing Dossier Endpoints ─────────────────────────
+
+@router.get("/compliance/dossier")
+def get_full_compliance_filing_dossier():
+    """
+    Consolidates the complete multi-standard filing packet (ISO 14064, IPMVP M&V,
+    SEBI BRSR Core, EU CBAM, and Offset Registry Pipeline) with cryptographic integrity hash.
+    """
+    return compliance_filing_service.get_full_filing_dossier()
+
+
+@router.get("/compliance/iso14064")
+def get_iso_14064_compliance_log(year: str = Query("2025-26", description="Reporting fiscal year")):
+    """
+    Returns verifiable ISO 14064-1 & GHG Protocol audit log documenting Scope 1 & Scope 2
+    calculations with transparent emission factors and uncertainty metrics.
+    """
+    return compliance_filing_service.get_iso_14064_compliance_log(reporting_year=year)
+
+
+@router.get("/compliance/ipmvp")
+def get_ipmvp_protocol():
+    """
+    Returns IPMVP Option B/C standardized measurement & verification documentation
+    with 14-day submeter baseline vs reporting period regression and statistical confidence.
+    """
+    return compliance_filing_service.get_ipmvp_protocol()
+
+
+@router.get("/compliance/sebi-brsr")
+def get_sebi_brsr_disclosure():
+    """
+    Returns SEBI BRSR Core Principle 6 Environmental Disclosure report
+    with energy/GHG intensities per rupee of turnover and per physical part.
+    """
+    return compliance_filing_service.get_sebi_brsr_disclosure()
+
+
+@router.get("/compliance/eu-cbam")
+def get_eu_cbam_disclosure():
+    """
+    Returns EU Carbon Border Adjustment Mechanism (Regulation EU 2023/956) disclosure
+    calculating direct and indirect specific embedded emissions per unit for cross-border export.
+    """
+    return compliance_filing_service.get_eu_cbam_disclosure()
+
+
+@router.get("/compliance/registry-filings")
+def get_registry_filings():
+    """
+    Returns the lifecycle pipeline of carbon credit project filings across CCTS, BEE PAT,
+    Verra VCS, Gold Standard, and GCC.
+    """
+    return compliance_filing_service.get_registry_filings()
+
+
+@router.post("/compliance/registry-filings")
+def submit_new_registry_filing(payload: Dict[str, Any]):
+    """
+    Submits a new carbon credit project registration filing into the registry pipeline.
+    """
+    return compliance_filing_service.submit_new_filing(payload)
+
 

@@ -11,6 +11,13 @@ import sys
 from typing import Any, Dict, Optional
 import joblib
 import pandas as pd
+import sklearn.compose._column_transformer
+
+# Backwards-compatibility for models serialized with scikit-learn <= 1.6
+if not hasattr(sklearn.compose._column_transformer, '_RemainderColsList'):
+    class _RemainderColsList(list):
+        pass
+    sklearn.compose._column_transformer._RemainderColsList = _RemainderColsList
 
 # Ensure repository root is on sys.path dynamically
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
@@ -64,6 +71,23 @@ class EnergyForecastingService:
 
             self._artifact = artifact
             self._model = artifact["model"]
+
+            # Patch unpickled SimpleImputer instances for compatibility with scikit-learn 1.8+
+            try:
+                from sklearn.impute import SimpleImputer
+                if hasattr(self._model, 'named_steps'):
+                    for step_name, step in self._model.named_steps.items():
+                        if hasattr(step, 'transformers_'):
+                            for name, trans, cols in step.transformers_:
+                                if hasattr(trans, 'named_steps'):
+                                    for s_name, s in trans.named_steps.items():
+                                        if isinstance(s, SimpleImputer) and not hasattr(s, '_fill_dtype'):
+                                            s._fill_dtype = object if any(isinstance(x, str) for x in getattr(s, 'statistics_', [])) else float
+                                elif isinstance(trans, SimpleImputer) and not hasattr(trans, '_fill_dtype'):
+                                    trans._fill_dtype = object if any(isinstance(x, str) for x in getattr(trans, 'statistics_', [])) else float
+            except Exception as patch_err:
+                print(f"[WARN] Imputer compatibility patch skipped: {patch_err}")
+
             self._metadata = {
                 "model_class": artifact.get("model_class", "HistGradientBoostingRegressor"),
                 "dataset_hash": artifact.get("dataset_hash"),

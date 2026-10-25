@@ -322,3 +322,93 @@ def test_missing_artifact_raises_503_not_silent_fallback(client, monkeypatch, tm
     assert resp.status_code == 503
     assert "artifact" in resp.json()["detail"].lower() or "not found" in resp.json()["detail"].lower()
 
+
+# ─── 11. Multi-Horizon Forecasting Tests (15m, 1d, 1w) ────────────────────────
+
+def test_next_day_forecast_hourly_points_and_power(client):
+    """Verify next 1-day forecast produces 24 hourly intervals and exact power math."""
+    payload = {
+        "machine_id": "AIR_COMP_01",
+        "machine_type": "AIR_COMPRESSOR",
+        "rated_power_kw": 45.0,
+        "power_kw": 18.0,
+        "operating_state": 2,
+        "load_factor": 0.40,
+        "shift_pattern": "3_shift",
+    }
+    resp = client.post("/api/v1/forecast/next-day", json=payload)
+    assert resp.status_code == 200, resp.text
+    data = resp.json()
+
+    assert data["forecast_horizon"] == "1d"
+    assert data["forecast_target"] == "next_24h_energy_kwh"
+    assert data["forecast_duration_hours"] == 24.0
+    assert data["granularity"] == "hourly"
+    assert len(data["time_series"]) == 24
+    assert data["predicted_energy_kwh"] > 0
+
+    # Hourly sum equals total 24h energy
+    hourly_sum = sum(pt["predicted_energy_kwh"] for pt in data["time_series"])
+    assert abs(hourly_sum - data["predicted_energy_kwh"]) < 0.05
+
+    # Power equals energy / 24.0
+    expected_power = round(data["predicted_energy_kwh"] / 24.0, 2)
+    assert abs(data["equivalent_average_power_kw"] - expected_power) <= 0.02
+
+
+def test_next_week_forecast_daily_points_and_power(client):
+    """Verify next 1-week forecast produces 7 daily intervals and exact power math."""
+    payload = {
+        "machine_id": "FURNACE_01",
+        "machine_type": "OVEN_FURNACE",
+        "rated_power_kw": 85.0,
+        "power_kw": 85.0,
+        "operating_state": 2,
+        "load_factor": 1.0,
+        "shift_pattern": "3_shift",
+    }
+    resp = client.post("/api/v1/forecast/next-week", json=payload)
+    assert resp.status_code == 200, resp.text
+    data = resp.json()
+
+    assert data["forecast_horizon"] == "1w"
+    assert data["forecast_target"] == "next_7d_energy_kwh"
+    assert data["forecast_duration_hours"] == 168.0
+    assert data["granularity"] == "daily"
+    assert len(data["time_series"]) == 7
+    assert data["predicted_energy_kwh"] > 0
+
+    # Daily sum equals total 7d energy
+    daily_sum = sum(pt["predicted_energy_kwh"] for pt in data["time_series"])
+    assert abs(daily_sum - data["predicted_energy_kwh"]) < 0.1
+
+    # Power equals energy / 168.0
+    expected_power = round(data["predicted_energy_kwh"] / 168.0, 2)
+    assert abs(data["equivalent_average_power_kw"] - expected_power) <= 0.02
+
+
+def test_plant_fleet_forecast_aggregation(client):
+    """Verify plant fleet forecast aggregates 4 digital twin machines across horizons."""
+    machines = [
+        {"machine_id": "compressor", "machine_type": "AIR_COMPRESSOR", "rated_power_kw": 45.0, "power_kw": 18.0, "operating_state": 1},
+        {"machine_id": "cnc", "machine_type": "CNC_MILL", "rated_power_kw": 32.0, "power_kw": 28.0, "operating_state": 2},
+        {"machine_id": "furnace", "machine_type": "OVEN_FURNACE", "rated_power_kw": 85.0, "power_kw": 85.0, "operating_state": 2},
+        {"machine_id": "cooling", "machine_type": "PUMP", "rated_power_kw": 28.0, "power_kw": 22.0, "operating_state": 2},
+    ]
+
+    for horizon in ["15m", "1d", "1w"]:
+        resp = client.post("/api/v1/forecast/plant", json={"horizon": horizon, "machines": machines})
+        assert resp.status_code == 200, resp.text
+        data = resp.json()
+
+        assert data["machine_id"] == "PLANT"
+        assert data["forecast_horizon"] == horizon
+        assert data["coverage_count"] == 4
+        assert data["total_machines"] == 4
+        assert data["is_complete_coverage"] is True
+        assert len(data["machine_breakdown"]) == 4
+
+        # Sum of breakdown matches total predicted energy
+        breakdown_sum = sum(mb["predicted_energy_kwh"] for mb in data["machine_breakdown"])
+        assert abs(breakdown_sum - data["predicted_energy_kwh"]) < 0.1
+

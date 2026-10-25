@@ -223,3 +223,58 @@ def submit_new_registry_filing(payload: Dict[str, Any]):
     return compliance_filing_service.submit_new_filing(payload)
 
 
+# ─── International-Standard Corporate Carbon Audit & PDF Endpoints ───────────
+
+from fastapi.responses import StreamingResponse
+import io
+from backend.app.models import (
+    AuditReportGenerateRequest,
+    CompanyFacilityProfile,
+    CorporateAuditReport,
+    CarbonCreditTransaction,
+)
+from backend.app.services.audit_report_service import audit_report_service
+
+
+@router.get("/audit/companies", response_model=List[CompanyFacilityProfile])
+def get_audit_companies():
+    """Returns registered industrial enterprises and manufacturing facility boundaries."""
+    return audit_report_service.get_supported_companies()
+
+
+@router.get("/audit/credits", response_model=List[CarbonCreditTransaction])
+def get_company_carbon_credits(company_id: str = Query(default="precisionworks")):
+    """Returns verified carbon credit transactions for the specified company."""
+    return audit_report_service.get_credit_transactions(company_id)
+
+
+@router.post("/audit/generate", response_model=CorporateAuditReport)
+def generate_corporate_audit_report(request: AuditReportGenerateRequest):
+    """
+    Generates a full-scope Corporate Carbon Accounting & Emissions Audit Report
+    aligned with ISO 14064-1:2018 and GHG Protocol Corporate Standard.
+    Reconciles statutory carbon allowances and certified carbon credit holdings.
+    """
+    return audit_report_service.generate_report(request)
+
+
+@router.post("/audit/download-pdf")
+def download_corporate_audit_pdf(request: AuditReportGenerateRequest):
+    """
+    Generates and streams an official, publication-grade multi-page PDF audit report
+    complete with executive summary, line-item inventory, allowance reconciliation,
+    credit holdings, and cryptographic SHA-256 audit trail.
+    """
+    report = audit_report_service.generate_report(request)
+    pdf_bytes = audit_report_service.generate_pdf_bytes(report)
+    filename = f"WattWise_Carbon_Audit_{report.metadata.report_id}.pdf"
+
+    return StreamingResponse(
+        io.BytesIO(pdf_bytes),
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Access-Control-Expose-Headers": "Content-Disposition",
+        }
+    )
+

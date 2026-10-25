@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowRight, X, Printer, Download, CheckCircle2,
   AlertTriangle, Sliders, Leaf, Activity, Sparkles,
-  ChevronLeft, ChevronRight, Zap, ShieldCheck, Gauge
+  ChevronLeft, ChevronRight, Zap, ShieldCheck, Gauge, TrendingDown
 } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts';
 import { PLANT, SimParams, calcSimResult } from '../../data/mockData';
@@ -20,6 +20,12 @@ const CARD_SHADOW = '8px 8px 24px #BCB09E, -8px -8px 24px #FFFFFF';
 const PILL_SHADOW = '4px 4px 12px #BCB09E, -4px -4px 12px #FFFFFF';
 const BORDER_WHITE = '1px solid rgba(255, 255, 255, 0.85)';
 
+export interface BenefitCard {
+  icon: 'zap' | 'activity' | 'trending-down' | 'gauge' | 'alert';
+  title: string;
+  desc: string;
+}
+
 export interface MachineStation {
   id: string;
   code: string;
@@ -29,6 +35,7 @@ export interface MachineStation {
   adEyebrow: string;
   adHeadline: [string, string];
   adHook: string;
+  benefits: BenefitCard[];
   adMetrics: { label: string; value: string; hint: string }[];
   tag: string;
   tagWarning: string;
@@ -58,10 +65,15 @@ export const STATIONS: MachineStation[] = [
     adHeadline: ['STOP LEAKING POWER.', 'RECLAIM ₹7,987 / PERIOD.'],
     adHook:
       'Standard factory meters only report bulk kilowatt-hours. WattWise AI isolates unloaded idle waste in real-time, enforcing smart auto-cutoffs and optimizing industrial power efficiency without production loss.',
+    benefits: [
+      { icon: 'zap', title: 'ENERGY MONITORING', desc: 'Identify unnecessary power consumption.' },
+      { icon: 'activity', title: 'WASTE DETECTION', desc: 'Spot inefficient operating patterns.' },
+      { icon: 'trending-down', title: 'COST OPTIMIZATION', desc: 'Find opportunities to reduce energy costs.' },
+    ],
     adMetrics: [
-      { label: 'IDLE LOSS', value: '18 kW', hint: '3.2 hrs unmetered waste daily' },
-      { label: 'WEEKLY LEAK', value: '₹7,987', hint: 'Directly recoverable capital' },
-      { label: 'POWER FACTOR', value: '0.78', hint: 'Avoids utility penalty tier' },
+      { label: 'IDLE POWER', value: '18 kW', hint: 'Unloaded compressor draw' },
+      { label: 'ESTIMATED WASTE', value: '₹7,987', hint: 'Potential periodic cost' },
+      { label: 'POWER FACTOR', value: '0.78', hint: 'Below target 0.95' },
     ],
     tag: '01 / AIR COMPRESSOR (ELGi EG-55)',
     tagWarning: '— Warning: High Idle Detected (45 kW)',
@@ -97,6 +109,11 @@ export const STATIONS: MachineStation[] = [
     adHeadline: ['PRECISION MACHINING.', 'ZERO UNPRODUCTIVE WATTS.'],
     adHook:
       'Eliminate the gap between machine uptime and wasted energy. WattWise synchronizes CNC G-code cycle telemetry with high-frequency power draw, maintaining optimal Specific Energy Consumption (1.82 kWh/part) while cutting baseload draw 14%.',
+    benefits: [
+      { icon: 'gauge', title: 'MACHINE LOAD', desc: 'Monitor spindle draw during active cycles.' },
+      { icon: 'activity', title: 'CYCLE EFFICIENCY', desc: 'Spot energy waste across machining runs.' },
+      { icon: 'trending-down', title: 'ENERGY PER PART', desc: 'Optimize specific energy consumption.' },
+    ],
     adMetrics: [
       { label: 'SPINDLE LOAD', value: '32 kW', hint: 'Synced high-speed cutting' },
       { label: 'SPECIFIC ENERGY', value: '1.82 kWh', hint: 'Per verified finished part' },
@@ -136,6 +153,11 @@ export const STATIONS: MachineStation[] = [
     adHeadline: ['PREEMPT GRID SPIKES.', 'CRUSH kVA SURCHARGES.'],
     adHook:
       'Heavy 840°C metallurgical ramp-ups during evening peak ToD hours trigger severe maximum demand penalties. WattWise predicts thermal draw 45 minutes ahead, automatically staggering batch heating cycles to shave 18% off peak kVA.',
+    benefits: [
+      { icon: 'zap', title: 'THERMAL EFFICIENCY', desc: 'Track heat retention and batch demand.' },
+      { icon: 'alert', title: 'PEAK DEMAND', desc: 'Preempt peak ToD tariff surcharges.' },
+      { icon: 'trending-down', title: 'HEAT OPTIMIZATION', desc: 'Stagger heating cycles to cut kVA costs.' },
+    ],
     adMetrics: [
       { label: 'THERMAL RATING', value: '85 kW', hint: '840°C continuous heat batch' },
       { label: 'PEAK DEMAND', value: '147.2 kVA', hint: 'Preemptively managed limit' },
@@ -175,6 +197,11 @@ export const STATIONS: MachineStation[] = [
     adHeadline: ['AUTOMATED NET-ZERO.', 'CEA BASELINE V22 AUDIT.'],
     adHook:
       'Replace retrospective spreadsheets and static emission estimates with sub-second accuracy. WattWise links variable chiller COP (4.1) directly with official CEA Baseline v22 emission factors, delivering certified Scope 1 & 2 audit reports in seconds.',
+    benefits: [
+      { icon: 'zap', title: 'COOLING EFFICIENCY', desc: 'Track continuous thermal COP performance.' },
+      { icon: 'activity', title: 'COOLING DEMAND', desc: 'Balance variable loads with plant needs.' },
+      { icon: 'trending-down', title: 'CHILLER OPTIMIZATION', desc: 'Improve loop efficiency and baseload use.' },
+    ],
     adMetrics: [
       { label: 'BASELOAD DRAW', value: '28 kW', hint: 'Continuous variable chiller loop' },
       { label: 'LOOP EFFICIENCY', value: '4.1 COP', hint: 'Verified thermal coefficient' },
@@ -1176,9 +1203,9 @@ export default function HomePage({ onLaunchPlatform, onOpenLogin, currentUser }:
           <button
             onClick={() => setActiveIndex((prev) => (prev + 1) % STATIONS.length)}
             style={{
-              padding: '8px 18px',
+              padding: '10px 22px',
               borderRadius: '9999px',
-              fontSize: '12px',
+              fontSize: '13px',
               fontWeight: 600,
               color: '#18191B',
               backgroundColor: NEUMORPHIC_BG,
@@ -1193,49 +1220,11 @@ export default function HomePage({ onLaunchPlatform, onOpenLogin, currentUser }:
           </button>
 
           <button
-            onClick={() => setIsWhatIfOpen(true)}
-            style={{
-              padding: '8px 18px',
-              borderRadius: '9999px',
-              fontSize: '12px',
-              fontWeight: 600,
-              color: '#18191B',
-              backgroundColor: NEUMORPHIC_BG,
-              backdropFilter: 'blur(12px)',
-              border: BORDER_WHITE,
-              boxShadow: PILL_SHADOW,
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-            }}
-          >
-            What-if Lab
-          </button>
-
-          <button
-            onClick={() => setIsReportsOpen(true)}
-            style={{
-              padding: '8px 18px',
-              borderRadius: '9999px',
-              fontSize: '12px',
-              fontWeight: 600,
-              color: '#18191B',
-              backgroundColor: NEUMORPHIC_BG,
-              backdropFilter: 'blur(12px)',
-              border: BORDER_WHITE,
-              boxShadow: PILL_SHADOW,
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-            }}
-          >
-            Reports
-          </button>
-
-          <button
             onClick={onOpenLogin}
             style={{
-              padding: '8px 18px',
+              padding: '10px 22px',
               borderRadius: '9999px',
-              fontSize: '12px',
+              fontSize: '13px',
               fontWeight: 600,
               color: '#18191B',
               backgroundColor: NEUMORPHIC_BG,
@@ -1283,9 +1272,9 @@ export default function HomePage({ onLaunchPlatform, onOpenLogin, currentUser }:
           <button
             onClick={onLaunchPlatform}
             style={{
-              padding: '9px 24px',
+              padding: '11px 28px',
               borderRadius: '9999px',
-              fontSize: '12px',
+              fontSize: '13px',
               fontWeight: 700,
               letterSpacing: '0.08em',
               color: '#EDE7DC',
@@ -1302,24 +1291,24 @@ export default function HomePage({ onLaunchPlatform, onOpenLogin, currentUser }:
         </nav>
       </header>
 
-      {/* ─── LEFT EDITORIAL COLUMN: PROFESSIONAL CREATIVE ADVERTISEMENT ─────── */}
+      {/* ─── LEFT EDITORIAL COLUMN: CLEAN EDITORIAL HERO CONTENT ───────────── */}
       <div
         style={{
           position: 'fixed',
-          left: '44px',
-          top: '18%',
+          left: 'clamp(28px, 3.5vw, 44px)',
+          top: 'clamp(110px, 18vh, 160px)',
           zIndex: 20,
-          maxWidth: '460px',
+          maxWidth: '470px',
           pointerEvents: 'none',
         }}
       >
         <AnimatePresence mode="wait">
           <motion.div
             key={currentStation.id}
-            initial={{ opacity: 0, y: 20, filter: 'blur(6px)' }}
+            initial={{ opacity: 0, y: 16, filter: 'blur(4px)' }}
             animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-            exit={{ opacity: 0, y: -20, filter: 'blur(6px)' }}
-            transition={{ duration: 0.44, ease: [0.16, 1, 0.3, 1] }}
+            exit={{ opacity: 0, y: -16, filter: 'blur(4px)' }}
+            transition={{ duration: 0.36, ease: [0.16, 1, 0.3, 1] }}
           >
             {/* Category Domain Badge with Glowing Dot */}
             <div
@@ -1361,9 +1350,9 @@ export default function HomePage({ onLaunchPlatform, onOpenLogin, currentUser }:
             <h1
               style={{
                 fontFamily: "'Cinzel', 'Playfair Display', Georgia, serif",
-                fontSize: '44px',
-                lineHeight: 1.06,
-                letterSpacing: '-0.025em',
+                fontSize: 'clamp(32px, 3.4vw, 40px)',
+                lineHeight: 1.1,
+                letterSpacing: '-0.02em',
                 color: '#18191B',
                 fontWeight: 700,
                 marginBottom: '16px',
@@ -1374,115 +1363,92 @@ export default function HomePage({ onLaunchPlatform, onOpenLogin, currentUser }:
               {currentStation.adHeadline[1]}
             </h1>
 
-            {/* Creative Grabbing Value Pitch */}
+            {/* Concise Value Pitch */}
             <p
               style={{
                 fontSize: '13px',
                 color: '#4A463F',
-                lineHeight: 1.62,
-                marginBottom: '20px',
-                maxWidth: '410px',
+                lineHeight: 1.6,
+                margin: 0,
+                maxWidth: '430px',
               }}
             >
               {currentStation.adHook}
             </p>
 
-            {/* Quantified Business ROI Micro-Cards */}
+            {/* Three Compact Informational Benefit Cards */}
             <div
               style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(3, 1fr)',
-                gap: '8px',
-                marginBottom: '22px',
-                maxWidth: '430px',
+                gap: '10px',
+                marginTop: '22px',
+                maxWidth: '470px',
+                pointerEvents: 'auto',
               }}
             >
-              {currentStation.adMetrics.map((m, idx) => (
+              {currentStation.benefits.map((card, idx) => (
                 <div
                   key={idx}
                   style={{
-                    padding: '10px 12px',
-                    borderRadius: '14px',
+                    padding: '12px 11px',
+                    borderRadius: '16px',
                     backgroundColor: NEUMORPHIC_BG,
+                    backdropFilter: 'blur(12px)',
                     border: BORDER_WHITE,
                     boxShadow: PILL_SHADOW,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
                   }}
                 >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div
+                      style={{
+                        width: '20px',
+                        height: '20px',
+                        borderRadius: '6px',
+                        backgroundColor: 'rgba(24, 25, 27, 0.05)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: currentStation.glowColor === '#F59E0B' ? '#B45309' : currentStation.glowColor,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {card.icon === 'zap' && <Zap size={11} />}
+                      {card.icon === 'activity' && <Activity size={11} />}
+                      {card.icon === 'trending-down' && <TrendingDown size={11} />}
+                      {card.icon === 'gauge' && <Gauge size={11} />}
+                      {card.icon === 'alert' && <AlertTriangle size={11} />}
+                    </div>
+                    <span
+                      style={{
+                        fontFamily: "'IBM Plex Mono', monospace",
+                        fontSize: '9px',
+                        fontWeight: 800,
+                        letterSpacing: '0.06em',
+                        color: '#18191B',
+                        textTransform: 'uppercase',
+                        lineHeight: 1.2,
+                      }}
+                    >
+                      {card.title}
+                    </span>
+                  </div>
                   <p
                     style={{
-                      fontSize: '8.5px',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.12em',
-                      color: '#68645C',
-                      fontWeight: 700,
-                      marginBottom: '2px',
+                      fontSize: '11px',
+                      lineHeight: 1.45,
+                      color: '#4A463F',
+                      margin: 0,
+                      fontWeight: 500,
                     }}
                   >
-                    {m.label}
-                  </p>
-                  <p
-                    style={{
-                      fontSize: '13px',
-                      fontFamily: "'IBM Plex Mono', monospace",
-                      fontWeight: 800,
-                      color: '#18191B',
-                    }}
-                  >
-                    {m.value}
-                  </p>
-                  <p style={{ fontSize: '8.5px', color: '#7E796E', marginTop: '2px', lineHeight: 1.2 }}>
-                    {m.hint}
+                    {card.desc}
                   </p>
                 </div>
               ))}
-            </div>
-
-            {/* Interactive Action Buttons */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', pointerEvents: 'auto' }}>
-              <button
-                onClick={onLaunchPlatform}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '10px 20px',
-                  borderRadius: '12px',
-                  backgroundColor: '#18191B',
-                  color: '#EDE7DC',
-                  fontSize: '12px',
-                  fontWeight: 700,
-                  letterSpacing: '0.04em',
-                  border: 'none',
-                  boxShadow: '0 6px 16px rgba(0,0,0,0.18)',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                }}
-              >
-                <span>Launch Digital Twin</span>
-                <ArrowRight size={14} />
-              </button>
-
-              <button
-                onClick={() => setIsWhatIfOpen(true)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '10px 18px',
-                  borderRadius: '12px',
-                  backgroundColor: NEUMORPHIC_BG,
-                  color: '#18191B',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  border: BORDER_WHITE,
-                  boxShadow: PILL_SHADOW,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                }}
-              >
-                <Sliders size={13} />
-                <span>Simulate Savings</span>
-              </button>
             </div>
           </motion.div>
         </AnimatePresence>

@@ -1,0 +1,72 @@
+{
+  "dataset_hash": "047b2ae0a14ccc50",
+  "trained_at_utc": "2026-10-24T17:23:27.813073+00:00",
+  "horizons": {
+    "hourly_model_for_next_day": {
+      "artifact": "energy_forecasting_hourly_model.joblib",
+      "features": [
+        "machine_type",
+        "shift_pattern",
+        "rated_power_kw",
+        "hour",
+        "day_of_week",
+        "is_weekend",
+        "hour_sin",
+        "hour_cos",
+        "day_sin",
+        "day_cos",
+        "ambient_temp_c",
+        "load_factor"
+      ],
+      "split": {
+        "train_range": "2025-01-01 to 2025-05-05 (129,000 records)",
+        "val_range": "2025-05-06 to 2025-06-02 (28,896 records)",
+        "test_range": "2025-06-03 to 2025-06-29 (27,864 records)"
+      },
+      "val_metrics": {
+        "mae_kwh": 0.2537,
+        "rmse_kwh": 0.4656,
+        "r2_score": 0.9972,
+        "wape_pct": 2.86
+      },
+      "test_metrics": {
+        "mae_kwh": 0.2549,
+        "rmse_kwh": 0.4758,
+        "r2_score": 0.997,
+        "wape_pct": 2.89
+      }
+    },
+    "daily_model_for_next_week": {
+      "artifact": "energy_forecasting_daily_model.joblib",
+      "features": [
+        "machine_type",
+        "shift_pattern",
+        "rated_power_kw",
+        "day_of_week",
+        "is_weekend",
+        "day_sin",
+        "day_cos",
+        "ambient_temp_c",
+        "load_factor"
+      ],
+      "split": {
+        "train_range": "2025-01-01 to 2025-05-05 (5,375 records)",
+        "val_range": "2025-05-06 to 2025-06-02 (1,204 records)",
+        "test_range": "2025-06-03 to 2025-06-29 (1,161 records)"
+      },
+      "val_metrics": {
+        "mae_kwh": 3.2053,
+        "rmse_kwh": 4.9428,
+        "r2_score": 0.999,
+        "wape_pct": 1.51
+      },
+      "test_metrics": {
+        "mae_kwh": 3.2382,
+        "rmse_kwh": 6.1434,
+        "r2_score": 0.9985,
+        "wape_pct": 1.53
+      }
+    }
+  },
+  "duration_seconds": 6.18
+}

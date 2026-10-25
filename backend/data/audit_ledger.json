@@ -5225,6 +5225,7 @@
       "scope2_grid": 1.057,
       "total": 1.191
     },
+<<<<<<< HEAD
     "audit_signature": "b2266d1eddb9f3306ad38e5bb48dac0eceee7f20085f708fe88078036dd93b88",
     "block_hash": "b2266d1eddb9f3306ad38e5bb48dac0eceee7f20085f708fe88078036dd93b88",
     "previous_block_hash": "5afdd978c61800eb115380b74a840c8b6b7e9c24492d61302bfe56076cc4abf6",
@@ -5245,6 +5246,13 @@
   {
     "block_height": 101,
     "timestamp": "2026-10-24T17:56:00.341077+00:00",
+=======
+    "audit_signature": "b2266d1eddb9f3306ad38e5bb48dac0eceee7f20085f708fe88078036dd93b88"
+  },
+  {
+    "block_height": 101,
+    "timestamp": "2026-10-24T20:47:00.691383+00:00",
+>>>>>>> eec32f0fda5c8ebbc75bd95a877a5a4f4f1d6a42
     "prev_hash": "b2266d1eddb9f3306ad38e5bb48dac0eceee7f20085f708fe88078036dd93b88",
     "merkle_root": "9166cc6ad43b83271671e1f235f27f715fc7cbb83e5bed10311ebbd340b7890a",
     "telemetry_summary": {
@@ -5256,6 +5264,7 @@
       "scope2_grid": 1.057,
       "total": 1.191
     },
+<<<<<<< HEAD
     "audit_signature": "8276a6d6ec2d667b6b92674daf16024a061911e25cd2b12732bd257d43a3cf3a",
     "block_hash": "8276a6d6ec2d667b6b92674daf16024a061911e25cd2b12732bd257d43a3cf3a",
     "previous_block_hash": "b2266d1eddb9f3306ad38e5bb48dac0eceee7f20085f708fe88078036dd93b88",
@@ -5277,6 +5286,14 @@
     "block_height": 102,
     "timestamp": "2026-10-24T17:59:53.510529+00:00",
     "prev_hash": "8276a6d6ec2d667b6b92674daf16024a061911e25cd2b12732bd257d43a3cf3a",
+=======
+    "audit_signature": "22e5f9ba6179b36138c78b6c0674e995e4b49c3f2c1594de30c20ab7e8524eef"
+  },
+  {
+    "block_height": 102,
+    "timestamp": "2026-10-24T20:52:37.948062+00:00",
+    "prev_hash": "22e5f9ba6179b36138c78b6c0674e995e4b49c3f2c1594de30c20ab7e8524eef",
+>>>>>>> eec32f0fda5c8ebbc75bd95a877a5a4f4f1d6a42
     "merkle_root": "9166cc6ad43b83271671e1f235f27f715fc7cbb83e5bed10311ebbd340b7890a",
     "telemetry_summary": {
       "grid_electricity_kwh": 1450.0,
@@ -5287,6 +5304,7 @@
       "scope2_grid": 1.057,
       "total": 1.191
     },
+<<<<<<< HEAD
     "audit_signature": "8da3c9c62be5b21d214952b3c934b87b41a4e6349772bb39c47582ff4ac8b0f9",
     "block_hash": "8da3c9c62be5b21d214952b3c934b87b41a4e6349772bb39c47582ff4ac8b0f9",
     "previous_block_hash": "8276a6d6ec2d667b6b92674daf16024a061911e25cd2b12732bd257d43a3cf3a",

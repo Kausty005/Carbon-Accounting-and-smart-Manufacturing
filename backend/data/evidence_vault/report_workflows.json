@@ -1,0 +1,55 @@
+{
+  "REP-AUDIT-PW-2026-10": {
+    "report_id": "REP-AUDIT-PW-2026-10",
+    "status": "APPROVED",
+    "version": "v1.2",
+    "company_id": "precisionworks",
+    "reporting_period_desc": "October 2026 (Monthly Standard)",
+    "created_at": "2026-10-24T18:00:00+00:00",
+    "created_by": "Dr. Ananya Sharma (Lead Energy Auditor)",
+    "approval_history": [
+      {
+        "action": "SUBMITTED_FOR_REVIEW",
+        "actor_name": "Dr. Ananya Sharma",
+        "actor_role": "auditor",
+        "timestamp": "2026-10-24T18:00:00+00:00",
+        "comments": "Completed inventory reconciliation against MSEDCL bill and BPCL delivery receipt. Verified submeter Class 0.2S."
+      },
+      {
+        "action": "REVIEWED_ESG_CHECK",
+        "actor_name": "Kavita Rao",
+        "actor_role": "esg_officer",
+        "timestamp": "2026-10-24T19:30:00+00:00",
+        "comments": "Confirmed SEBI BRSR Core intensity calculations per rupee turnover. All Scope 1 & 2 boundary checks passed."
+      },
+      {
+        "action": "APPROVED",
+        "actor_name": "Rajesh Nair",
+        "actor_role": "manager",
+        "timestamp": "2026-10-24T20:15:00+00:00",
+        "comments": "Authorized official publication. Statutory allowance burn rate is within compliance limit. Report signed."
+      }
+    ],
+    "reviewer_comments": [
+      {
+        "id": "c-01",
+        "author_name": "Dr. Ananya Sharma",
+        "author_role": "auditor",
+        "section_reference": "Scope 2 Location-Based Electricity",
+        "comment_text": "CEA v22.0 factor 0.716 applied correctly with 16,606 kWh monthly activity confirmed via submeter pulse logs.",
+        "timestamp": "2026-10-24T18:05:00+00:00"
+      },
+      {
+        "id": "c-02",
+        "author_name": "Kavita Rao",
+        "author_role": "esg_officer",
+        "section_reference": "Allowance Reconciliation",
+        "comment_text": "Total gross footprint 14.47 tCO2e leaves 3.53 tCO2e buffer under statutory 18.0 tCO2e monthly allowance.",
+        "timestamp": "2026-10-24T19:35:00+00:00"
+      }
+    ],
+    "missing_evidence_count": 0,
+    "can_approve": true,
+    "audit_pack_available": true
+  }
+}

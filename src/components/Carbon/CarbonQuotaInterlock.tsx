@@ -131,7 +131,7 @@ export function CarbonQuotaInterlock() {
   const briStyle = getBriBadge(quota?.burn_rate_status);
 
   return (
-    <div style={{ background: '#F8F9FA', minHeight: '100%', padding: '24px 32px 48px', color: '#1E252D' }}>
+    <div style={{ background: 'var(--bg-root, #F4EEE5)', minHeight: '100%', padding: '24px 32px 48px', color: '#1E252D' }}>
       {/* ─── Top Header ────────────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
         <div>
@@ -147,7 +147,7 @@ export function CarbonQuotaInterlock() {
         </div>
 
         {/* Tab Switcher */}
-        <div style={{ display: 'flex', background: '#E5E7EB', padding: 3, borderRadius: 10 }}>
+        <div style={{ display: 'flex', background: '#FAF7F2', border: '1px solid #EAE3D7', padding: 3, borderRadius: 10 }}>
           <button
             onClick={() => setActiveTab('quota')}
             style={{
@@ -229,7 +229,7 @@ export function CarbonQuotaInterlock() {
               metric={`${quota?.statutory_monthly_quota_t != null ? quota.statutory_monthly_quota_t.toFixed(2) : '18.00'} tCO₂e`}
               context={{ statutoryLimit: 18.0, currentMonth: 'October 2026', authority: 'State Pollution Control Board' }}
             >
-              <div style={{ background: '#FFFFFF', padding: 20, borderRadius: 14, border: '1px solid #E5E7EB', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+              <div style={{ background: '#FFFFFF', padding: 20, borderRadius: 14, border: '1px solid #EAE3D7', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', marginBottom: 4 }}>
                   Statutory Monthly Cap
                 </div>
@@ -249,7 +249,7 @@ export function CarbonQuotaInterlock() {
               metric={`${quota?.cumulative_emissions_t != null ? quota.cumulative_emissions_t.toFixed(2) : '14.47'} tCO₂e (${quota?.quota_utilization_pct != null ? quota.quota_utilization_pct.toFixed(1) : '80.4'}%)`}
               context={{ cumulative: quota?.cumulative_emissions_t, expectedProRata: quota?.pro_rata_expected_emissions_t }}
             >
-              <div style={{ background: '#FFFFFF', padding: 20, borderRadius: 14, border: '1px solid #E5E7EB', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+              <div style={{ background: '#FFFFFF', padding: 20, borderRadius: 14, border: '1px solid #EAE3D7', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', marginBottom: 4 }}>
                   Cumulative Emissions (MTD)
                 </div>
@@ -294,7 +294,7 @@ export function CarbonQuotaInterlock() {
               metric={`${quota?.hours_to_quota_breach != null ? `${quota.hours_to_quota_breach.toFixed(1)}h` : 'No Breach Expected'}`}
               context={{ remainingBudget: (((quota?.statutory_monthly_quota_t ?? 18) - (quota?.cumulative_emissions_t ?? 14.47))).toFixed(2) }}
             >
-              <div style={{ background: '#FFFFFF', padding: 20, borderRadius: 14, border: '1px solid #E5E7EB', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+              <div style={{ background: '#FFFFFF', padding: 20, borderRadius: 14, border: '1px solid #EAE3D7', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', marginBottom: 4 }}>
                   Countdown to Breach
                 </div>
@@ -309,7 +309,7 @@ export function CarbonQuotaInterlock() {
           </div>
 
           {/* Operational Interlocks Cockpit */}
-          <div style={{ background: '#FFFFFF', borderRadius: 14, border: '1px solid #E5E7EB', padding: 24, marginBottom: 24 }}>
+          <div style={{ background: '#FFFFFF', borderRadius: 14, border: '1px solid #EAE3D7', padding: 24, marginBottom: 24 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <div>
                 <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: '#111827' }}>
@@ -341,7 +341,7 @@ export function CarbonQuotaInterlock() {
             </div>
 
             {/* Interactive Simulation Controls */}
-            <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 12, padding: 18, marginBottom: 20 }}>
+            <div style={{ background: '#FAF7F2', border: '1px solid #EAE3D7', borderRadius: 12, padding: 18, marginBottom: 20 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                 <span style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>
                   Test Interlock Response with Simulated Emission Surge:
@@ -370,7 +370,7 @@ export function CarbonQuotaInterlock() {
             {/* Interlock Cards Grid */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               {/* Interlock 1: Dual-Fuel Switching */}
-              <div style={{ border: '1px solid #E5E7EB', borderRadius: 12, padding: 18, background: fuelSwitched ? '#ECFDF5' : '#FFFFFF' }}>
+              <div style={{ border: '1px solid #EAE3D7', borderRadius: 12, padding: 18, background: fuelSwitched ? '#ECFDF5' : '#FFFFFF' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <Flame size={18} color="#EA580C" />
@@ -453,7 +453,7 @@ export function CarbonQuotaInterlock() {
            ═════════════════════════════════════════════════════════════════════════ */
         <div>
           {/* Verification Banner */}
-          <div style={{ background: '#FFFFFF', borderRadius: 14, border: '1px solid #E5E7EB', padding: 20, marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+          <div style={{ background: '#FFFFFF', borderRadius: 14, border: '1px solid #EAE3D7', padding: 20, marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <CheckCircle size={20} color="#059669" />
@@ -507,7 +507,7 @@ export function CarbonQuotaInterlock() {
           {/* Blocks List + Block Payload Inspector */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 420px', gap: 20 }}>
             {/* Blocks List */}
-            <div style={{ background: '#FFFFFF', borderRadius: 14, border: '1px solid #E5E7EB', padding: 18 }}>
+            <div style={{ background: '#FFFFFF', borderRadius: 14, border: '1px solid #EAE3D7', padding: 18 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 12 }}>
                 Recent 15-Minute Epoch Blocks
               </div>

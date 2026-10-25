@@ -1300,6 +1300,7 @@ export function CarbonCreditsEngine() {
 
       {/* Traceability Drawer */}
       <CarbonTraceabilityDrawer
+        isOpen={Boolean(selectedTraceMetric)}
         metricId={selectedTraceMetric}
         onClose={() => setSelectedTraceMetric(null)}
       />

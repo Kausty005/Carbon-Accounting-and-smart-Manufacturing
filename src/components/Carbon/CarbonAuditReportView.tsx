@@ -1702,6 +1702,7 @@ Latest Merkle Root:           ${rep.metadata.latest_merkle_root}
 
       {/* Traceability Drawer */}
       <CarbonTraceabilityDrawer
+        isOpen={Boolean(selectedTraceMetric)}
         metricId={selectedTraceMetric}
         onClose={() => setSelectedTraceMetric(null)}
       />

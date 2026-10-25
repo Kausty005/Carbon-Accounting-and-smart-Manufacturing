@@ -61,7 +61,7 @@ export function ExecutivePresentationView({
   };
 
   return (
-    <div style={{ background: '#F8F9FA', minHeight: '100%', padding: '28px 36px 60px', color: '#1E252D' }}>
+    <div style={{ background: 'var(--bg-root, #F4EEE5)', minHeight: '100%', padding: '28px 36px 60px', color: '#1E252D' }}>
       {/* ─── Top Executive Banner ──────────────────────────────────────────────── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28 }}>
         <div>
@@ -113,7 +113,7 @@ export function ExecutivePresentationView({
           summary: 'Plant operations are performing within 0.2% of target efficiency; steam boiler thermal load is optimal, with zero statutory carbon quota violations detected in the last 24 hours.'
         }}
       >
-        <div style={{ background: '#FFFFFF', borderRadius: 14, border: '1px solid #E5E7EB', padding: '18px 24px', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
+        <div style={{ background: '#FFFFFF', borderRadius: 14, border: '1px solid #EAE3D7', padding: '18px 24px', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
           <div style={{ width: 44, height: 44, borderRadius: 10, background: '#ECFDF5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <ShieldCheck size={24} color="#059669" />
           </div>
@@ -125,7 +125,7 @@ export function ExecutivePresentationView({
               Plant operations are performing within 0.2% of target efficiency; steam boiler thermal load is optimal, with zero statutory carbon quota violations detected in the last 24 hours.
             </div>
           </div>
-          <div style={{ padding: '6px 12px', background: '#F3F4F6', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#4B5563', whiteSpace: 'nowrap' }}>
+          <div style={{ padding: '6px 12px', background: '#FAF7F2', border: '1px solid #EAE3D7', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#4B5563', whiteSpace: 'nowrap' }}>
             Oct 2026 Shift-A
           </div>
         </div>
@@ -140,7 +140,7 @@ export function ExecutivePresentationView({
           metric={`${healthScore}% (Grade A)`}
           context={{ efficiency: '96%', compliance: '99.8%', reliability: '92%', safety: '100%' }}
         >
-          <div style={{ background: '#FFFFFF', borderRadius: 14, border: '1px solid #E5E7EB', padding: 22, boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+          <div style={{ background: '#FFFFFF', borderRadius: 14, border: '1px solid #EAE3D7', padding: 22, boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
               <span style={{ fontSize: 12, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>
                 Overall Plant Health
@@ -165,7 +165,7 @@ export function ExecutivePresentationView({
           metric={`${grossCO2e} / ${statutoryLimit} tCO₂e (${utilizationPct}%)`}
           context={{ statutoryLimit, evaluated: grossCO2e, bufferRemaining: (statutoryLimit - grossCO2e).toFixed(2) }}
         >
-          <div style={{ background: '#FFFFFF', borderRadius: 14, border: '1px solid #E5E7EB', padding: 22, boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+          <div style={{ background: '#FFFFFF', borderRadius: 14, border: '1px solid #EAE3D7', padding: 22, boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
               <span style={{ fontSize: 12, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>
                 Statutory Carbon Quota
@@ -178,7 +178,7 @@ export function ExecutivePresentationView({
               {grossCO2e} <span style={{ fontSize: 16, color: '#9CA3AF', fontWeight: 500 }}>/ {statutoryLimit} t</span>
             </div>
             {/* Progress Bar */}
-            <div style={{ width: '100%', height: 8, background: '#F3F4F6', borderRadius: 4, marginTop: 10, overflow: 'hidden' }}>
+            <div style={{ width: '100%', height: 8, background: '#EAE3D7', borderRadius: 4, marginTop: 10, overflow: 'hidden' }}>
               <div style={{ width: `${utilizationPct}%`, height: '100%', background: utilizationPct > 90 ? '#EF4444' : '#2563EB', borderRadius: 4 }} />
             </div>
             <div style={{ fontSize: 11, color: '#6B7280', marginTop: 6 }}>
@@ -194,7 +194,7 @@ export function ExecutivePresentationView({
           metric="₹23,044"
           context={{ baselineDaily: '₹26,850', tariff: '₹8.75/kWh avg', powerFactorIncentive: '₹420 credit' }}
         >
-          <div style={{ background: '#FFFFFF', borderRadius: 14, border: '1px solid #E5E7EB', padding: 22, boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+          <div style={{ background: '#FFFFFF', borderRadius: 14, border: '1px solid #EAE3D7', padding: 22, boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
               <span style={{ fontSize: 12, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>
                 Daily Energy Cost
@@ -219,7 +219,7 @@ export function ExecutivePresentationView({
           metric={`${avoidedCO2e} tCO₂e avoided`}
           context={{ digitalTwinOptimization: '1,940 kg CO₂e saved through peak trimming and boiler oxygen trim' }}
         >
-          <div style={{ background: '#FFFFFF', borderRadius: 14, border: '1px solid #E5E7EB', padding: 22, boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+          <div style={{ background: '#FFFFFF', borderRadius: 14, border: '1px solid #EAE3D7', padding: 22, boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
               <span style={{ fontSize: 12, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>
                 Avoided Emissions (Twin)
@@ -239,7 +239,7 @@ export function ExecutivePresentationView({
       </div>
 
       {/* ─── Statutory ESG Governance & Compliance Table ─────────────────────── */}
-      <div style={{ background: '#FFFFFF', borderRadius: 14, border: '1px solid #E5E7EB', padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+      <div style={{ background: '#FFFFFF', borderRadius: 14, border: '1px solid #EAE3D7', padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: '#111827' }}>
             Statutory Environmental Governance & Compliance Audit Matrix
@@ -252,7 +252,7 @@ export function ExecutivePresentationView({
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid #E5E7EB', color: '#6B7280', fontSize: 11, textTransform: 'uppercase' }}>
+              <tr style={{ borderBottom: '1px solid #EAE3D7', background: '#FAF7F2', color: '#6B7280', fontSize: 11, textTransform: 'uppercase' }}>
                 <th style={{ padding: '10px 12px' }}>Scope / Vector</th>
                 <th style={{ padding: '10px 12px' }}>Primary Physical Source</th>
                 <th style={{ padding: '10px 12px' }}>Activity Data</th>
@@ -262,7 +262,7 @@ export function ExecutivePresentationView({
               </tr>
             </thead>
             <tbody>
-              <tr style={{ borderBottom: '1px solid #F3F4F6' }}>
+              <tr style={{ borderBottom: '1px solid #F5F2EB' }}>
                 <td style={{ padding: '12px', fontWeight: 600 }}>Scope 1 Combustion</td>
                 <td style={{ padding: '12px' }}>PNG Boiler & Standby HSD DG</td>
                 <td style={{ padding: '12px' }}>3,420 m³ PNG + 450 L HSD</td>
@@ -272,7 +272,7 @@ export function ExecutivePresentationView({
                   <span style={{ color: '#059669', background: '#DCFCE7', padding: '3px 8px', borderRadius: 10, fontSize: 11, fontWeight: 700 }}>✓ PASS</span>
                 </td>
               </tr>
-              <tr style={{ borderBottom: '1px solid #F3F4F6' }}>
+              <tr style={{ borderBottom: '1px solid #F5F2EB' }}>
                 <td style={{ padding: '12px', fontWeight: 600 }}>Scope 1 Process & Fugitive</td>
                 <td style={{ padding: '12px' }}>Chiller Refrigerant (R-134a) + Welding CO₂</td>
                 <td style={{ padding: '12px' }}>0.4 kg R-134a + 120 Nm³ Shielding</td>
@@ -282,7 +282,7 @@ export function ExecutivePresentationView({
                   <span style={{ color: '#059669', background: '#DCFCE7', padding: '3px 8px', borderRadius: 10, fontSize: 11, fontWeight: 700 }}>✓ PASS</span>
                 </td>
               </tr>
-              <tr style={{ borderBottom: '1px solid #F3F4F6' }}>
+              <tr style={{ borderBottom: '1px solid #F5F2EB' }}>
                 <td style={{ padding: '12px', fontWeight: 600 }}>Scope 1 Wastewater (ETP)</td>
                 <td style={{ padding: '12px' }}>Biological Effluent Plant (COD=850 mg/L)</td>
                 <td style={{ padding: '12px' }}>45 m³/day treated discharge</td>

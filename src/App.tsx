@@ -3374,9 +3374,11 @@ export default function App() {
     );
   }
 
+  const isInspectorEligible = view === 'scada' || view === 'simulator' || view === 'anomalies' || view === 'carbon';
+
   return (
     <AIExplainProvider>
-      <div className={`app-shell ${view === 'overview' ? 'overview-mode' : (showInspector ? '' : 'no-inspector')}`}>
+      <div className={`app-shell ${view === 'overview' ? 'overview-mode' : (isInspectorEligible && showInspector ? '' : 'no-inspector')}`}>
 
       {/* Top bar matching reference screenshot */}
       <header className="topbar">
@@ -3429,7 +3431,7 @@ export default function App() {
         </div>
 
         <div className="topbar-right" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          {view !== 'overview' && (
+          {isInspectorEligible && (
             <button
               onClick={() => setShowInspector(!showInspector)}
               style={{
@@ -4029,7 +4031,7 @@ export default function App() {
       </main>
 
       {/* Inspector (Shown on SCADA / Digital Twin workbench views) */}
-      {view !== 'overview' && view !== 'forecast' && view !== 'executive' && view !== 'configurator' && view !== 'quota' && view !== 'evidence' && view !== 'reports' && showInspector && (
+      {isInspectorEligible && showInspector && (
         <InspectorPanel
           selectedId={selectedAsset}
           selectedSensorId={selectedSensor}

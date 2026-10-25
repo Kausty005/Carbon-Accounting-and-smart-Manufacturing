@@ -29,19 +29,20 @@ interface CarbonTraceabilityDrawerProps {
 }
 
 export const CarbonTraceabilityDrawer: React.FC<CarbonTraceabilityDrawerProps> = ({
-  isOpen = true,
+  isOpen,
   onClose,
   metricId,
   period = '2026-10',
   onNavigateToEvidence,
 }) => {
+  const isDrawerVisible = Boolean((isOpen !== undefined ? isOpen : Boolean(metricId)) && metricId);
   const [data, setData] = useState<CalculationTraceabilityResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [copiedHash, setCopiedHash] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isOpen || !metricId) return;
+    if (!isDrawerVisible || !metricId) return;
 
     let isMounted = true;
     setLoading(true);
@@ -65,7 +66,7 @@ export const CarbonTraceabilityDrawer: React.FC<CarbonTraceabilityDrawerProps> =
     return () => {
       isMounted = false;
     };
-  }, [isOpen, metricId, period]);
+  }, [isDrawerVisible, metricId, period]);
 
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -75,7 +76,7 @@ export const CarbonTraceabilityDrawer: React.FC<CarbonTraceabilityDrawerProps> =
 
   return (
     <AnimatePresence>
-      {isOpen && (
+      {isDrawerVisible && (
         <div
           style={{
             position: 'fixed',

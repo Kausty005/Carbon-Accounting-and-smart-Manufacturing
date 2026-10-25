@@ -400,7 +400,7 @@ export function PlantWideFleetDashboard({
   };
 
   return (
-    <div style={{ background: '#FAF7F2', minHeight: '100%', padding: '24px 32px 64px', color: '#1E252D', fontFamily: 'var(--font-sans)' }}>
+    <div style={{ background: 'var(--bg-root, #F4EEE5)', minHeight: '100%', padding: '24px 32px 64px', color: '#1E252D', fontFamily: 'var(--font-sans)' }}>
       {/* ─── 1. Header & Overview KPIs ────────────────────────────────────────── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, flexWrap: 'wrap', gap: 16 }}>
         <div>

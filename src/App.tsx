@@ -1429,6 +1429,9 @@ function ScadaView({
   isBuffering = false,
   onToggleOutage,
   onOpenLedger,
+  simMode = false,
+  onToggleSimMode,
+  onResetBaseline,
 }: {
   assets: Asset[];
   selectedId: string | null;
@@ -1441,6 +1444,9 @@ function ScadaView({
   isBuffering?: boolean;
   onToggleOutage?: (isOffline: boolean) => void;
   onOpenLedger?: () => void;
+  simMode?: boolean;
+  onToggleSimMode?: () => void;
+  onResetBaseline?: () => void;
 }) {
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
@@ -1515,6 +1521,9 @@ function ScadaView({
           onOpenLedger={onOpenLedger}
           isBuffering={isBuffering}
           onToggleOutage={onToggleOutage}
+          simMode={simMode}
+          onToggleSimMode={onToggleSimMode}
+          onResetBaseline={onResetBaseline}
         />
       ) : (
         <ScadaFloorMap
@@ -2220,6 +2229,8 @@ function InspectorPanel({
   isBuffering = false,
   onToggleOutage,
   onOpenLedger,
+  simMode = false,
+  onToggleSimMode,
 }: {
   selectedId: string | null;
   selectedSensorId?: string | null;
@@ -2234,6 +2245,8 @@ function InspectorPanel({
   isBuffering?: boolean;
   onToggleOutage?: (isOffline: boolean) => void;
   onOpenLedger?: () => void;
+  simMode?: boolean;
+  onToggleSimMode?: () => void;
 }) {
   const [tab, setTab] = useState<'asset' | 'alerts' | 'sensors' | 'kpis'>('alerts');
   const [activeSensorId, setActiveSensorId] = useState<string>('EM-102');
@@ -2346,6 +2359,42 @@ function InspectorPanel({
       </div>
 
       <div className="inspector-body">
+        {/* Closed-Loop Sensor & Digital Twin Pipeline Quick Toggle */}
+        <div
+          style={{
+            marginBottom: 12,
+            background: simMode ? 'rgba(22, 163, 74, 0.08)' : 'rgba(217, 119, 6, 0.08)',
+            border: `1px solid ${simMode ? '#16A34A' : '#D97706'}`,
+            borderRadius: 8,
+            padding: '10px',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, fontWeight: 800, color: simMode ? '#16A34A' : '#D97706', letterSpacing: 0.5 }}>
+              {simMode ? '● DIGITAL TWIN CLOSED-LOOP: ACTIVE' : '● PHYSICAL BASELINE: UNOPTIMIZED'}
+            </span>
+            <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: '#64748B' }}>
+              {simMode ? 'Auto-Idle Applied' : '18 kW Idle Draw'}
+            </span>
+          </div>
+
+          <button
+            className={`btn btn-sm btn-full ${simMode ? 'btn-outline' : 'btn-emerald'}`}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontWeight: 700 }}
+            onClick={onToggleSimMode}
+          >
+            {simMode ? <RotateCcw size={11} /> : <Zap size={11} />}
+            {simMode ? 'Reset to Physical Baseline' : 'Simulate Digital Twin Optimization'}
+          </button>
+
+          <div style={{ marginTop: 6, fontSize: 9, color: '#475569', lineHeight: 1.45, fontFamily: 'var(--font-mono)' }}>
+            {simMode ? (
+              <span>✓ Sensor EM-102 register 40023 dropped to 0 kW (-998 kWh/day, -727.7 kg CO₂e).</span>
+            ) : (
+              <span>⚠ Physical sensor EM-102 reads 18 kW unloaded idle draw during lunch break.</span>
+            )}
+          </div>
+        </div>
         {/* Alerts tab */}
         {tab === 'alerts' && (
           <>
@@ -3549,6 +3598,15 @@ export default function App() {
                 isBuffering={isBuffering}
                 onToggleOutage={handleToggleOutage}
                 onOpenLedger={() => setIsAuditLedgerOpen(true)}
+                simMode={simMode}
+                onToggleSimMode={() => {
+                  if (!simMode) {
+                    handleSimulate('compressor');
+                  } else {
+                    handleResetBaseline();
+                  }
+                }}
+                onResetBaseline={handleResetBaseline}
               />
             </motion.div>
           )}
@@ -3628,6 +3686,14 @@ export default function App() {
           isBuffering={isBuffering}
           onToggleOutage={handleToggleOutage}
           onOpenLedger={() => setIsAuditLedgerOpen(true)}
+          simMode={simMode}
+          onToggleSimMode={() => {
+            if (!simMode) {
+              handleSimulate('compressor');
+            } else {
+              handleResetBaseline();
+            }
+          }}
         />
       )}
 

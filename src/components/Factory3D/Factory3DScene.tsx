@@ -22,6 +22,15 @@ import {
   HardDrive,
   WifiOff,
   Cpu,
+  Play,
+  Pause,
+  RotateCcw,
+  ChevronRight,
+  ChevronLeft,
+  CheckCircle2,
+  Sparkles,
+  Sliders,
+  X,
 } from 'lucide-react';
 import {
   ModbusEnergyMeter3D,
@@ -34,6 +43,64 @@ import SensorDataConduits from './SensorDataConduits';
 import type { SensorMetadata } from './SensorHudPopup';
 import AuditLedgerModal from './AuditLedgerModal';
 
+export interface PipelineStep {
+  stepNum: number;
+  label: string;
+  tag: string;
+  standard: string;
+  targetComponent: 'compressor' | 'gateway' | 'anomaly' | 'simulator' | 'ledger';
+  description: string;
+  pitchScript: string;
+}
+
+export const END_TO_END_PIPELINE: PipelineStep[] = [
+  {
+    stepNum: 1,
+    label: '1. Physical Sensor',
+    tag: 'Shopfloor Hardware',
+    standard: 'IEC 62053-22 Class 0.5S',
+    targetComponent: 'compressor',
+    description: 'Yokogawa Class 0.5S Multi-Function Meter (EM-102) & Coriolis Flow (FM-201)',
+    pitchScript: 'Judges, look at the compressor feed: Yokogawa Class 0.5S meter EM-102 measures live line current, 37.0 kW active power, and 7.2 bar discharge pressure directly on the shop floor via physical CT clamps.',
+  },
+  {
+    stepNum: 2,
+    label: '2. Edge Gateway & Buffer',
+    tag: '72h Outage Resilience',
+    standard: 'IEC 61000-6-2/4 Heavy Industrial',
+    targetComponent: 'gateway',
+    description: 'Moxa UC-8100-LX with 72h Circular NVRAM & SHA-256 Chaining',
+    pitchScript: 'Physical telemetry flows over RS-485 Modbus to our IP66 Edge Gateway. If factory internet cuts out, an on-chip 72-hour circular buffer queues every packet locally with zero data loss.',
+  },
+  {
+    stepNum: 3,
+    label: '3. SCADA & AI Anomaly',
+    tag: 'Anomaly Intelligence',
+    standard: 'Isolation Forest + CUSUM',
+    targetComponent: 'anomaly',
+    description: 'Isolation Forest detects 18 kW unloaded idle waste during break hours',
+    pitchScript: 'Our AI engine processes the stream in real time and flags COMP-01 drawing 18 kW unloaded power while factory machines are paused for lunch. That is pure energy waste.',
+  },
+  {
+    stepNum: 4,
+    label: '4. Digital Twin Simulation',
+    tag: 'Physics & Safety Interlocks',
+    standard: 'IPMVP Option B / ISO 50001',
+    targetComponent: 'simulator',
+    description: 'Virtual what-if test: Auto-Idle Cutoff passes pneumatic pressure limits',
+    pitchScript: 'Instead of blind automation, our Digital Twin tests the Auto-Idle Cutoff in software first, verifying line pressure never dips below 6.8 bar. Applying it cuts compressor power to 0 kW, saving 998 kWh daily.',
+  },
+  {
+    stepNum: 5,
+    label: '5. Cryptographic ESG Audit',
+    tag: 'SEBI BRSR & CBAM Proof',
+    standard: 'ISO 14064-1/3 Reasonable Assurance',
+    targetComponent: 'ledger',
+    description: 'Avoided Scope 2 emissions (727.7 kg CO₂e) cryptographically verified',
+    pitchScript: 'Statutory auditors reject manual utility spreadsheets. Our system mathematically seals every baseline reduction into an unbroken SHA-256 Merkle chain compliant with SEBI BRSR Core and EU CBAM.',
+  },
+];
+
 interface Factory3DSceneProps {
   assets: Asset[];
   selectedId: string | null;
@@ -44,6 +111,9 @@ interface Factory3DSceneProps {
   onOpenLedger?: () => void;
   isBuffering?: boolean;
   onToggleOutage?: (isOffline: boolean) => void;
+  simMode?: boolean;
+  onToggleSimMode?: () => void;
+  onResetBaseline?: () => void;
 }
 
 // ─── Physical Sensor Fleet Metadata ──────────────────────────────────────────
@@ -240,12 +310,20 @@ export default function Factory3DScene({
   onOpenLedger,
   isBuffering = false,
   onToggleOutage,
+  simMode = false,
+  onToggleSimMode,
+  onResetBaseline,
 }: Factory3DSceneProps) {
   // Visual layers toggles
   const [showConduits, setShowConduits] = useState(true);
   const [showSafetyZones, setShowSafetyZones] = useState(true);
   const [showSensors, setShowSensors] = useState(true);
   const [internalLedgerOpen, setInternalLedgerOpen] = useState(false);
+
+  // Guided 5-Step End-to-End Pipeline Walkthrough State
+  const [activePipelineStep, setActivePipelineStep] = useState<number | null>(1);
+  const [isAutoDemoRunning, setIsAutoDemoRunning] = useState<boolean>(false);
+  const [showPipelineGuide, setShowPipelineGuide] = useState<boolean>(true);
 
   // Camera presets
   const [camTarget, setCamTarget] = useState({
@@ -326,6 +404,53 @@ export default function Factory3DScene({
         break;
     }
   };
+
+  // Handle Guided Pipeline Step Click
+  const handlePipelineStepClick = useCallback(
+    (stepNum: number) => {
+      setActivePipelineStep(stepNum);
+      const step = END_TO_END_PIPELINE.find((s) => s.stepNum === stepNum);
+      if (!step) return;
+
+      switch (step.targetComponent) {
+        case 'compressor':
+          handleSelectMachine('compressor');
+          onSelectSensor?.('EM-102');
+          break;
+        case 'gateway':
+          handleSelectSensor('GW-EDGE-01');
+          break;
+        case 'anomaly':
+          handleSelectMachine('compressor');
+          break;
+        case 'simulator':
+          if (!simMode && onToggleSimMode) {
+            onToggleSimMode();
+          }
+          handleSelectMachine('compressor');
+          break;
+        case 'ledger':
+          handleOpenLedgerClick();
+          break;
+      }
+    },
+    [handleSelectMachine, handleSelectSensor, onSelectSensor, simMode, onToggleSimMode]
+  );
+
+  // Auto-Demo Player: Walks through 1 -> 2 -> 3 -> 4 -> 5 smoothly
+  useEffect(() => {
+    if (!isAutoDemoRunning) return;
+
+    const timer = setInterval(() => {
+      setActivePipelineStep((prev) => {
+        const nextStep = prev === null || prev >= 5 ? 1 : prev + 1;
+        handlePipelineStepClick(nextStep);
+        return nextStep;
+      });
+    }, 6500);
+
+    return () => clearInterval(timer);
+  }, [isAutoDemoRunning, handlePipelineStepClick]);
 
   const handleOpenLedgerClick = () => {
     if (onOpenLedger) {
@@ -777,6 +902,263 @@ export default function Factory3DScene({
           </motion.button>
         </div>
       </div>
+
+      {/* ─── End-to-End Sensor-to-Twin Pipeline Bar (Judging Walkthrough) ── */}
+      {showPipelineGuide ? (
+        <div
+          style={{
+            position: 'absolute',
+            top: 54,
+            left: 12,
+            right: 12,
+            background: 'rgba(248, 245, 238, 0.96)',
+            backdropFilter: 'blur(16px)',
+            border: '1px solid rgba(255, 255, 255, 0.9)',
+            borderRadius: 10,
+            padding: '8px 12px',
+            boxShadow: '0 4px 20px rgba(60, 45, 25, 0.12)',
+            zIndex: 30,
+            pointerEvents: 'auto',
+          }}
+        >
+          {/* Bar Header */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: 6,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 10,
+                  fontWeight: 800,
+                  letterSpacing: 1,
+                  textTransform: 'uppercase',
+                  color: '#1C1917',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 5,
+                }}
+              >
+                <Sparkles size={12} style={{ color: '#D97706' }} /> End-to-End Physical Sensor &amp; Digital Twin Pipeline
+              </span>
+              <span
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 8.5,
+                  fontWeight: 700,
+                  padding: '1px 6px',
+                  borderRadius: 4,
+                  background: 'rgba(2, 132, 199, 0.12)',
+                  color: '#0284C7',
+                }}
+              >
+                LIVE CLOSED-LOOP
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              {/* Auto-Demo Walkthrough Button */}
+              <button
+                onClick={() => setIsAutoDemoRunning(!isAutoDemoRunning)}
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 10,
+                  fontWeight: 700,
+                  padding: '3px 9px',
+                  borderRadius: 5,
+                  border: isAutoDemoRunning ? '1px solid #16A34A' : '1px solid #CBD5E1',
+                  background: isAutoDemoRunning ? '#16A34A' : '#FFFFFF',
+                  color: isAutoDemoRunning ? '#FFFFFF' : '#334155',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                }}
+              >
+                {isAutoDemoRunning ? <Pause size={10} /> : <Play size={10} />}
+                {isAutoDemoRunning ? 'Pause Auto-Demo' : '▶ 2-Min Judging Auto-Walkthrough'}
+              </button>
+
+              {/* Quick Closed-Loop Simulation Toggle */}
+              {onToggleSimMode && (
+                <button
+                  onClick={onToggleSimMode}
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 10,
+                    fontWeight: 700,
+                    padding: '3px 9px',
+                    borderRadius: 5,
+                    border: 'none',
+                    background: simMode ? '#16A34A' : '#D97706',
+                    color: '#FFFFFF',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                  }}
+                >
+                  {simMode ? <CheckCircle2 size={10} /> : <Zap size={10} />}
+                  {simMode ? 'Simulated Fix: 0 kW (-998 kWh)' : 'Simulate Auto-Idle Fix'}
+                </button>
+              )}
+
+              {/* Hide bar toggle */}
+              <button
+                onClick={() => setShowPipelineGuide(false)}
+                style={{
+                  border: 'none',
+                  background: 'transparent',
+                  color: '#94A3B8',
+                  cursor: 'pointer',
+                  padding: 2,
+                }}
+                title="Hide Pipeline Guide"
+              >
+                <X size={13} />
+              </button>
+            </div>
+          </div>
+
+          {/* Stepper Pills Navigation */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(5, 1fr)',
+              gap: 6,
+            }}
+          >
+            {END_TO_END_PIPELINE.map((step) => {
+              const isStepActive = activePipelineStep === step.stepNum;
+              return (
+                <button
+                  key={step.stepNum}
+                  onClick={() => handlePipelineStepClick(step.stepNum)}
+                  style={{
+                    background: isStepActive ? '#FFFFFF' : 'rgba(255, 255, 255, 0.45)',
+                    border: isStepActive ? '1.5px solid #0284C7' : '1px solid rgba(226, 232, 240, 0.8)',
+                    borderRadius: 6,
+                    padding: '6px 8px',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    boxShadow: isStepActive ? '0 2px 8px rgba(2, 132, 199, 0.18)' : 'none',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, fontWeight: 800, color: isStepActive ? '#0284C7' : '#1C1917' }}>
+                      {step.label}
+                    </span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: '#64748B' }}>
+                      Step {step.stepNum}/5
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 9, color: isStepActive ? '#334155' : '#64748B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 2 }}>
+                    {step.tag}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Pitch Callout Banner for Active Step */}
+          {activePipelineStep !== null && (
+            <div
+              style={{
+                marginTop: 8,
+                background: '#FFFFFF',
+                border: '1px solid #E2E8F0',
+                borderRadius: 6,
+                padding: '8px 12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 12,
+              }}
+            >
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 800, color: '#0F172A' }}>
+                    {END_TO_END_PIPELINE[activePipelineStep - 1]?.label} — {END_TO_END_PIPELINE[activePipelineStep - 1]?.description}
+                  </span>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8.5, fontWeight: 700, padding: '1px 5px', borderRadius: 3, background: 'rgba(217, 119, 6, 0.12)', color: '#D97706' }}>
+                    {END_TO_END_PIPELINE[activePipelineStep - 1]?.standard}
+                  </span>
+                </div>
+                <div style={{ fontSize: 10, color: '#334155', lineHeight: 1.45 }}>
+                  <strong style={{ color: '#0284C7' }}>Pitch Script for Judges: </strong>
+                  {END_TO_END_PIPELINE[activePipelineStep - 1]?.pitchScript}
+                </div>
+              </div>
+
+              {/* Step Navigation Controls */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+                <button
+                  disabled={activePipelineStep <= 1}
+                  onClick={() => handlePipelineStepClick(activePipelineStep - 1)}
+                  style={{
+                    border: '1px solid #CBD5E1',
+                    background: '#F8FAFC',
+                    borderRadius: 4,
+                    padding: '4px 6px',
+                    cursor: activePipelineStep <= 1 ? 'not-allowed' : 'pointer',
+                    opacity: activePipelineStep <= 1 ? 0.4 : 1,
+                  }}
+                  title="Previous Step"
+                >
+                  <ChevronLeft size={12} />
+                </button>
+                <button
+                  disabled={activePipelineStep >= 5}
+                  onClick={() => handlePipelineStepClick(activePipelineStep + 1)}
+                  style={{
+                    border: '1px solid #CBD5E1',
+                    background: '#F8FAFC',
+                    borderRadius: 4,
+                    padding: '4px 6px',
+                    cursor: activePipelineStep >= 5 ? 'not-allowed' : 'pointer',
+                    opacity: activePipelineStep >= 5 ? 0.4 : 1,
+                  }}
+                  title="Next Step"
+                >
+                  <ChevronRight size={12} />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <button
+          onClick={() => setShowPipelineGuide(true)}
+          style={{
+            position: 'absolute',
+            top: 54,
+            right: 12,
+            background: 'rgba(235, 226, 212, 0.94)',
+            backdropFilter: 'blur(12px)',
+            border: '1px solid rgba(255, 255, 255, 0.85)',
+            borderRadius: 6,
+            padding: '4px 10px',
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            fontWeight: 700,
+            color: '#0284C7',
+            cursor: 'pointer',
+            zIndex: 30,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+          }}
+        >
+          <Sparkles size={11} /> Show Demo Pipeline Guide
+        </button>
+      )}
 
       {/* ─── Bottom Status Legend ────────────────────────────────────────── */}
       <div

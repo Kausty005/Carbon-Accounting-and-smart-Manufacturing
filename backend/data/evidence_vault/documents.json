@@ -1,0 +1,226 @@
+[
+  {
+    "document_id": "DOC-ELEC-2026-10-001",
+    "filename": "MSEDCL_HT_Bill_Oct2026_PrecisionWorks.pdf",
+    "file_type": "ELECTRICITY_BILL",
+    "file_size_bytes": 348290,
+    "sha256_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "uploaded_at": "2026-10-24T09:15:22+00:00",
+    "uploaded_by": "Vikram Malhotra (Plant SCADA Operator)",
+    "reporting_period": "2026-10",
+    "company_id": "precisionworks",
+    "status": "CONFIRMED_LINKED",
+    "extracted_fields": {
+      "supplier_name": "Maharashtra State Electricity Distribution Co. Ltd. (MSEDCL)",
+      "consumer_number": "049019284711",
+      "invoice_number": "MSEDCL-PUN-HT-2026-10842",
+      "billing_period_start": "2026-10-01",
+      "billing_period_end": "2026-10-31",
+      "activity_metric": "grid_electricity_kwh",
+      "consumption_value": 16606.0,
+      "unit": "kWh",
+      "contract_demand_kva": 120.0,
+      "recorded_max_demand_kva": 88.4,
+      "tariff_rate_inr": 9.2,
+      "total_cost_inr": 152775.2,
+      "meter_serial_number": "MTR-LT-8821-GEN4",
+      "detected_scope": "Scope 2 (Location-Based Electricity)",
+      "confidence_score": 0.98
+    },
+    "confirmed_fields": {
+      "consumption_value": 16606.0,
+      "unit": "kWh",
+      "invoice_number": "MSEDCL-PUN-HT-2026-10842",
+      "meter_serial_number": "MTR-LT-8821-GEN4",
+      "verified_against_scada": true
+    },
+    "linked_calculation_target": "scope2_grid",
+    "version_history": [
+      {
+        "version": 1,
+        "timestamp": "2026-10-24T09:15:22+00:00",
+        "modified_by": "System AI OCR Extractor",
+        "note": "Initial OCR telemetry ingestion from utility bill PDF."
+      },
+      {
+        "version": 2,
+        "timestamp": "2026-10-24T10:02:14+00:00",
+        "modified_by": "Dr. Ananya Sharma (Lead Energy Auditor)",
+        "note": "Reconciled with 15-minute submeter pulse logger channel 1. Confirmed."
+      }
+    ],
+    "provenance": "OFFICIAL_UTILITY_INVOICE",
+    "discrepancy_flags": [],
+    "preview_url": "/api/v1/carbon/evidence/DOC-ELEC-2026-10-001/preview"
+  },
+  {
+    "document_id": "DOC-LPG-2026-10-002",
+    "filename": "BPCL_Industrial_LPG_Batch_Receipt_Oct2026.pdf",
+    "file_type": "FUEL_INVOICE",
+    "file_size_bytes": 182400,
+    "sha256_hash": "a1b2c3d4e5f67890123456789abcdef0123456789abcdef0123456789abcdef0",
+    "uploaded_at": "2026-10-23T14:20:00+00:00",
+    "uploaded_by": "Kavita Rao (Sustainability Lead)",
+    "reporting_period": "2026-10",
+    "company_id": "precisionworks",
+    "status": "CONFIRMED_LINKED",
+    "extracted_fields": {
+      "supplier_name": "Bharat Petroleum Corporation Ltd. (BPCL)",
+      "invoice_number": "BPCL-IND-BULK-99412",
+      "billing_period_start": "2026-10-05",
+      "billing_period_end": "2026-10-05",
+      "activity_metric": "lpg_kg",
+      "consumption_value": 705.0,
+      "unit": "kg",
+      "batch_number": "LPG-TK-04-2026",
+      "density_kg_per_m3": 540.0,
+      "total_cost_inr": 62392.5,
+      "meter_serial_number": "FLOW-LPG-FURNACE-01",
+      "detected_scope": "Scope 1 (Stationary Combustion)",
+      "confidence_score": 0.96
+    },
+    "confirmed_fields": {
+      "consumption_value": 705.0,
+      "unit": "kg",
+      "invoice_number": "BPCL-IND-BULK-99412",
+      "meter_serial_number": "FLOW-LPG-FURNACE-01",
+      "verified_against_batch_receipt": true
+    },
+    "linked_calculation_target": "scope1_lpg",
+    "version_history": [
+      {
+        "version": 1,
+        "timestamp": "2026-10-23T14:20:00+00:00",
+        "modified_by": "Kavita Rao (Sustainability Lead)",
+        "note": "Tanker weighbridge slip verified and linked to heat treatment furnace batch record."
+      }
+    ],
+    "provenance": "SUPPLIER_BATCH_RECEIPT",
+    "discrepancy_flags": [],
+    "preview_url": "/api/v1/carbon/evidence/DOC-LPG-2026-10-002/preview"
+  },
+  {
+    "document_id": "DOC-DIESEL-2026-10-003",
+    "filename": "IOCL_Diesel_Genset_Delivery_Challan_Oct2026.pdf",
+    "file_type": "FUEL_INVOICE",
+    "file_size_bytes": 142100,
+    "sha256_hash": "b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3",
+    "uploaded_at": "2026-10-24T11:45:00+00:00",
+    "uploaded_by": "Vikram Malhotra (Plant SCADA Operator)",
+    "reporting_period": "2026-10",
+    "company_id": "precisionworks",
+    "status": "CONFIRMED_LINKED",
+    "extracted_fields": {
+      "supplier_name": "Indian Oil Corporation Limited (IOCL)",
+      "invoice_number": "IOCL-PUN-DIESEL-4091",
+      "billing_period_start": "2026-10-18",
+      "billing_period_end": "2026-10-18",
+      "activity_metric": "diesel_liters",
+      "consumption_value": 50.0,
+      "unit": "liters",
+      "total_cost_inr": 4480.0,
+      "meter_serial_number": "GENSET-DG-01-MTR",
+      "detected_scope": "Scope 1 (Backup Generation)",
+      "confidence_score": 0.94
+    },
+    "confirmed_fields": {
+      "consumption_value": 50.0,
+      "unit": "liters",
+      "invoice_number": "IOCL-PUN-DIESEL-4091",
+      "meter_serial_number": "GENSET-DG-01-MTR"
+    },
+    "linked_calculation_target": "scope1_diesel",
+    "version_history": [
+      {
+        "version": 1,
+        "timestamp": "2026-10-24T11:45:00+00:00",
+        "modified_by": "Vikram Malhotra",
+        "note": "Emergency generator quarterly load test consumption delivery."
+      }
+    ],
+    "provenance": "SUPPLIER_BATCH_RECEIPT",
+    "discrepancy_flags": [],
+    "preview_url": "/api/v1/carbon/evidence/DOC-DIESEL-2026-10-003/preview"
+  },
+  {
+    "document_id": "DOC-CALIB-2026-004",
+    "filename": "NABL_Annual_Submeter_Calibration_Certificate_2026.pdf",
+    "file_type": "CALIBRATION_CERT",
+    "file_size_bytes": 451800,
+    "sha256_hash": "c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4",
+    "uploaded_at": "2026-04-12T08:00:00+00:00",
+    "uploaded_by": "Dr. Ananya Sharma (Lead Energy Auditor)",
+    "reporting_period": "2026-10",
+    "company_id": "precisionworks",
+    "status": "CONFIRMED_LINKED",
+    "extracted_fields": {
+      "supplier_name": "National Accreditation Board for Testing and Calibration Laboratories (NABL)",
+      "certificate_number": "NABL-CAL-PUN-2026-8819",
+      "calibration_date": "2026-04-10",
+      "valid_until": "2027-04-09",
+      "meter_serial_number": "MTR-LT-8821-GEN4",
+      "accuracy_class": "Class 0.2S",
+      "uncertainty_margin_pct": 0.2,
+      "detected_scope": "Quality Assurance & Measurement Integrity",
+      "confidence_score": 0.99
+    },
+    "confirmed_fields": {
+      "certificate_number": "NABL-CAL-PUN-2026-8819",
+      "accuracy_class": "Class 0.2S",
+      "is_valid": true
+    },
+    "linked_calculation_target": "qa_calibration",
+    "version_history": [
+      {
+        "version": 1,
+        "timestamp": "2026-04-12T08:00:00+00:00",
+        "modified_by": "Dr. Ananya Sharma",
+        "note": "Annual calibration compliance certificate uploaded."
+      }
+    ],
+    "provenance": "ACCREDITED_LAB_CERTIFICATE",
+    "discrepancy_flags": [],
+    "preview_url": "/api/v1/carbon/evidence/DOC-CALIB-2026-004/preview"
+  },
+  {
+    "document_id": "DOC-SOLAR-2026-005",
+    "filename": "CleanPower_Rooftop_Solar_PPA_Invoice_Oct2026.pdf",
+    "file_type": "RENEWABLE_PPA",
+    "file_size_bytes": 268000,
+    "sha256_hash": "d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5",
+    "uploaded_at": "2026-10-24T16:10:00+00:00",
+    "uploaded_by": "Kavita Rao (Sustainability Lead)",
+    "reporting_period": "2026-10",
+    "company_id": "precisionworks",
+    "status": "CONFIRMED_LINKED",
+    "extracted_fields": {
+      "supplier_name": "CleanPower Solar Industrial Solutions Pvt. Ltd.",
+      "invoice_number": "CP-PPA-ROOFTOP-2026-10",
+      "billing_period_start": "2026-10-01",
+      "billing_period_end": "2026-10-31",
+      "activity_metric": "solar_ppa_kwh",
+      "consumption_value": 3840.0,
+      "unit": "kWh",
+      "contracted_rate_inr": 4.5,
+      "zero_emission_verified": true,
+      "confidence_score": 0.97
+    },
+    "confirmed_fields": {
+      "consumption_value": 3840.0,
+      "unit": "kWh",
+      "invoice_number": "CP-PPA-ROOFTOP-2026-10"
+    },
+    "linked_calculation_target": "scope2_solar_ppa",
+    "version_history": [
+      {
+        "version": 1,
+        "timestamp": "2026-10-24T16:10:00+00:00",
+        "modified_by": "Kavita Rao",
+        "note": "Captive solar generation credit matched with net meter readings."
+      }
+    ],
+    "provenance": "OFFICIAL_PPA_INVOICE",
+    "discrepancy_flags": [],
+    "preview_url": "/api/v1/carbon/evidence/DOC-SOLAR-2026-005/preview"
+  }
+]

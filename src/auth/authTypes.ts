@@ -47,7 +47,7 @@ export const DEMO_USERS: Record<RoleId, UserProfile> = {
     department: 'Energy Auditing & ISO 50001 Advisory',
     initials: 'AS',
     avatarColor: '#8B5CF6',
-    allowedViews: ['overview', 'simulator', 'forecast', 'carbon', 'reports', 'configurator', 'diagnostics'],
+    allowedViews: ['overview', 'simulator', 'forecast', 'carbon', 'evidence', 'reports', 'configurator', 'diagnostics'],
     description: 'Time-of-Day tariff arbitrage, Specific Energy Consumption (SEC), ISO 50001 audits, and peak shaving.',
     badge: {
       label: 'ENERGY AUDITOR',
@@ -65,7 +65,7 @@ export const DEMO_USERS: Record<RoleId, UserProfile> = {
     department: 'Corporate Sustainability & Carbon Compliance',
     initials: 'KR',
     avatarColor: '#06B6D4',
-    allowedViews: ['overview', 'carbon', 'quota', 'reports', 'executive', 'forecast'],
+    allowedViews: ['overview', 'carbon', 'quota', 'evidence', 'reports', 'executive', 'forecast'],
     description: 'Scope 1 & 2 carbon accounting, CEA India grid emission factors, statutory quotas, and BRSR disclosures.',
     badge: {
       label: 'ESG OFFICER',
@@ -94,6 +94,7 @@ export const DEMO_USERS: Record<RoleId, UserProfile> = {
       'forecast',
       'carbon',
       'anomalies',
+      'evidence',
       'reports',
     ],
     description: 'Unrestricted plant-wide authority, high-level executive KPI dashboards, and interlock authorization.',
@@ -163,6 +164,11 @@ export const VIEW_SECURITY_METADATA: Record<
     title: 'AI Anomaly Intelligence & Triage',
     requiredRoles: ['operator', 'manager'],
     category: 'Operations',
+  },
+  evidence: {
+    title: 'Evidence & Compliance Vault',
+    requiredRoles: ['auditor', 'esg_officer', 'manager'],
+    category: 'Sustainability',
   },
   reports: {
     title: 'Certified Audit Reports',

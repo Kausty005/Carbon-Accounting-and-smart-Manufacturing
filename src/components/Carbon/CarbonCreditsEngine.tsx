@@ -14,12 +14,23 @@ import {
   retireCarbonCredit,
   issueCreditsFromSavings,
 } from '../../services/carbonCreditsApi';
+import {
+  evidenceVaultApi,
+  type CreditProjectLifecycle,
+} from '../../services/evidenceVaultApi';
+import { CarbonTraceabilityDrawer } from './CarbonTraceabilityDrawer';
 import { Explainable } from '../AIExplain/Explainable';
 
 export function CarbonCreditsEngine() {
   const [portfolio, setPortfolio] = useState<{ summary: PortfolioSummary; credits: CarbonCreditItem[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Tab state: Portfolio & Ledger vs Project Lifecycle Tracker
+  const [engineTab, setEngineTab] = useState<'registry' | 'projects'>('registry');
+  const [creditProjects, setCreditProjects] = useState<CreditProjectLifecycle[]>([]);
+  const [loadingProjects, setLoadingProjects] = useState<boolean>(false);
+  const [selectedTraceMetric, setSelectedTraceMetric] = useState<string | null>(null);
 
   // Filter state for Registry Table
   const [filterCategory, setFilterCategory] = useState<'ALL' | 'GENERATED_ISSUED' | 'PURCHASED' | 'SURRENDERED_RETIRED'>('ALL');
@@ -43,7 +54,20 @@ export function CarbonCreditsEngine() {
   useEffect(() => {
     loadPortfolio();
     runAdditionality();
+    loadProjects();
   }, []);
+
+  const loadProjects = async () => {
+    setLoadingProjects(true);
+    try {
+      const data = await evidenceVaultApi.getCreditProjects();
+      setCreditProjects(data);
+    } catch (e) {
+      console.warn('Failed to load credit projects', e);
+    } finally {
+      setLoadingProjects(false);
+    }
+  };
 
   useEffect(() => {
     runAdditionality();
@@ -260,30 +284,70 @@ export function CarbonCreditsEngine() {
           </p>
         </div>
 
-        <button
-          onClick={loadPortfolio}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            padding: '9px 16px',
-            borderRadius: 10,
-            backgroundColor: '#18191B',
-            color: '#EDE7DC',
-            fontSize: 12,
-            fontWeight: 700,
-            border: 'none',
-            cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-          }}
-        >
-          <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
-          <span>Refresh Portfolio</span>
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          {/* Sub-tab Switch */}
+          <div style={{ display: 'flex', background: '#E2D9CC', padding: 3, borderRadius: 10, gap: 2 }}>
+            <button
+              onClick={() => setEngineTab('registry')}
+              style={{
+                border: 'none',
+                padding: '7px 14px',
+                borderRadius: 8,
+                fontSize: 11.5,
+                fontWeight: 700,
+                cursor: 'pointer',
+                backgroundColor: engineTab === 'registry' ? '#18191B' : 'transparent',
+                color: engineTab === 'registry' ? '#EDE7DC' : '#57534E',
+                transition: 'all 0.15s',
+              }}
+            >
+              1. Portfolio &amp; Offsetting Ledger
+            </button>
+            <button
+              onClick={() => setEngineTab('projects')}
+              style={{
+                border: 'none',
+                padding: '7px 14px',
+                borderRadius: 8,
+                fontSize: 11.5,
+                fontWeight: 700,
+                cursor: 'pointer',
+                backgroundColor: engineTab === 'projects' ? '#18191B' : 'transparent',
+                color: engineTab === 'projects' ? '#EDE7DC' : '#57534E',
+                transition: 'all 0.15s',
+              }}
+            >
+              2. Project Lifecycle &amp; Verification Tracker
+            </button>
+          </div>
+
+          <button
+            onClick={() => { loadPortfolio(); loadProjects(); }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '9px 16px',
+              borderRadius: 10,
+              backgroundColor: '#18191B',
+              color: '#EDE7DC',
+              fontSize: 12,
+              fontWeight: 700,
+              border: 'none',
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            }}
+          >
+            <RefreshCw size={13} className={loading || loadingProjects ? 'animate-spin' : ''} />
+            <span>Refresh</span>
+          </button>
+        </div>
       </div>
 
-      {/* ─── 4 CORE KPI CARDS ───────────────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+      {engineTab === 'registry' && (
+        <>
+          {/* ─── 4 CORE KPI CARDS ───────────────────────────────────────────────── */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
         {/* Card 1: Active Credit Balance */}
         <div
           style={{
@@ -823,6 +887,209 @@ export function CarbonCreditsEngine() {
           </table>
         </div>
       </div>
+      </>
+      )}
+
+      {/* ─── TAB 2: CARBON CREDIT PROJECT LIFECYCLE & VERIFICATION TRACKER ─── */}
+      {engineTab === 'projects' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {/* Statutory Integrity Directive Alert */}
+          <div
+            style={{
+              background: '#FFFBEB',
+              border: '1.5px solid #FCD34D',
+              borderRadius: 14,
+              padding: '16px 20px',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 14,
+            }}
+          >
+            <ShieldCheck size={22} color="#D97706" style={{ flexShrink: 0, marginTop: 2 }} />
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: '#92400E', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                Statutory Integrity Directive &bull; Carbon Credit Project Segregation Policy
+              </div>
+              <div style={{ fontSize: 12, color: '#78350F', marginTop: 4, lineHeight: 1.5 }}>
+                Under <b>ISO 14064-1:2018</b> and <b>GHG Protocol Corporate Standard</b>, carbon offset projects are strictly segregated from operational Scope 1 and Scope 2 emissions inventories.
+                Reductions simulated by digital twin telemetry (e.g., heat balance models) are classified as <b>SIMULATED ESTIMATES</b> and <b>NEVER netted against gross inventory</b>. Only independently validated, VVB-verified credits with official registry serial numbers (BEE ICM / Verra / Gold Standard) may be retired or traded.
+              </div>
+            </div>
+          </div>
+
+          {/* 9-Stage Lifecycle Architecture Banner */}
+          <div
+            style={{
+              background: 'rgba(235, 226, 212, 0.94)',
+              borderRadius: 14,
+              padding: '18px 22px',
+              border: '1px solid rgba(255,255,255,0.85)',
+              boxShadow: '4px 4px 14px rgba(188, 176, 158, 0.25)',
+            }}
+          >
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#57534E', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
+              End-to-End Mitigation Project Lifecycle Pipeline (ISO 14064-2 &amp; CCTS 2023)
+            </div>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))',
+              gap: 8,
+            }}>
+              {[
+                { stage: '1. Eligibility', desc: 'Additionality & regulatory screen' },
+                { stage: '2. Methodology', desc: 'Approved baseline calculation standard' },
+                { stage: '3. Baseline', desc: 'Historic counterfactual benchmark' },
+                { stage: '4. Simulation', desc: 'Real-time telemetry reduction run' },
+                { stage: '5. Monitoring', desc: 'Continuous sub-second SCADA audit' },
+                { stage: '6. Validation', desc: 'Independent project design audit' },
+                { stage: '7. Verification', desc: 'Third-party VVB meter true-up' },
+                { stage: '8. Issuance', desc: 'Official registry serial minting' },
+                { stage: '9. Retirement', desc: 'Permanent offset cancellation' },
+              ].map((s) => (
+                <div
+                  key={s.stage}
+                  style={{
+                    background: '#FFFFFF',
+                    border: '1px solid #E2E8F0',
+                    borderRadius: 8,
+                    padding: '8px 10px',
+                    textAlign: 'center',
+                  }}
+                >
+                  <div style={{ fontSize: 11, fontWeight: 800, color: '#1C1917' }}>{s.stage}</div>
+                  <div style={{ fontSize: 9.5, color: '#64748B', marginTop: 2 }}>{s.desc}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Projects Card Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: 16 }}>
+            {creditProjects.map((proj) => {
+              const isSimulated = proj.status_category === 'SIMULATED_ESTIMATE';
+              return (
+                <div
+                  key={proj.project_id}
+                  style={{
+                    background: '#FFFFFF',
+                    border: isSimulated ? '1.5px dashed #F59E0B' : '1.5px solid #10B981',
+                    borderRadius: 14,
+                    padding: '20px',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <div>
+                    {/* Header */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                          <span style={{
+                            fontSize: 10,
+                            fontWeight: 700,
+                            padding: '2px 6px',
+                            borderRadius: 4,
+                            background: isSimulated ? '#FEF3C7' : '#D1FAE5',
+                            color: isSimulated ? '#92400E' : '#065F46',
+                            fontFamily: "'IBM Plex Mono', monospace",
+                          }}>
+                            {isSimulated ? 'SIMULATED ESTIMATE (UNISSUED)' : 'OFFICIALLY ISSUED REGISTRY ASSET'}
+                          </span>
+                          <span style={{ fontSize: 10, color: '#64748B', fontFamily: "'IBM Plex Mono', monospace" }}>
+                            {proj.project_id}
+                          </span>
+                        </div>
+                        <h3 style={{ fontSize: 16, fontWeight: 800, color: '#1C1917', margin: 0 }}>
+                          {proj.project_name}
+                        </h3>
+                      </div>
+                      <span style={{
+                        fontSize: 10.5,
+                        fontWeight: 700,
+                        padding: '3px 8px',
+                        borderRadius: 6,
+                        background: '#F1F5F9',
+                        color: '#475569',
+                        border: '1px solid #CBD5E1',
+                        fontFamily: "'IBM Plex Mono', monospace",
+                      }}>
+                        STAGE: {proj.current_stage}
+                      </span>
+                    </div>
+
+                    <p style={{ fontSize: 12, color: '#64748B', lineHeight: 1.4, margin: '0 0 14px' }}>
+                      {proj.audit_note}
+                    </p>
+
+                    {/* Metrics Grid */}
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(2, 1fr)',
+                      gap: 8,
+                      background: '#FAFAF9',
+                      padding: '10px 12px',
+                      borderRadius: 8,
+                      border: '1px solid #E2E8F0',
+                      marginBottom: 14,
+                    }}>
+                      <div>
+                        <div style={{ fontSize: 10, color: '#64748B' }}>Est. Annual Reductions</div>
+                        <div style={{ fontSize: 14, fontWeight: 800, color: '#059669', fontFamily: "'IBM Plex Mono', monospace" }}>
+                          {proj.estimated_annual_reduction_tco2e.toFixed(2)} tCO₂e
+                        </div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 10, color: '#64748B' }}>Verified Issued</div>
+                        <div style={{ fontSize: 14, fontWeight: 800, color: proj.is_registry_certified ? '#047857' : '#94A3B8', fontFamily: "'IBM Plex Mono', monospace" }}>
+                          {(proj.issued_credits_tco2e ?? 0).toFixed(2)} tCO₂e
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Metadata details */}
+                    <div style={{ fontSize: 11, color: '#475569', display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 14 }}>
+                      <div><b>Registry &amp; Standard:</b> {proj.standard_registry}</div>
+                      <div><b>Methodology:</b> <span style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{proj.methodology}</span></div>
+                      <div><b>Serial Batch:</b> <span style={{ fontFamily: "'IBM Plex Mono', monospace", color: isSimulated ? '#94A3B8' : '#065F46' }}>{proj.serial_number_batch || 'UNISSUED_SIMULATION'}</span></div>
+                      <div><b>Verification Body:</b> {proj.vvb_auditor || 'Pending VVB Appointment'}</div>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10, borderTop: '1px solid #F1F5F9' }}>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTraceMetric('avoided_savings')}
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: 6,
+                        background: 'rgba(2, 132, 199, 0.1)',
+                        color: '#0284C7',
+                        border: '1px solid rgba(2, 132, 199, 0.3)',
+                        fontSize: 11,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                      }}
+                    >
+                      <Sparkles size={12} />
+                      <span>Trace Avoided Savings</span>
+                    </button>
+
+                    <span style={{ fontSize: 10.5, color: '#94A3B8', fontFamily: "'IBM Plex Mono', monospace" }}>
+                      Period {proj.crediting_period_start} &rarr; {proj.crediting_period_end}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* ─── RETIREMENT MODAL ──────────────────────────────────────────────── */}
       <AnimatePresence>
@@ -1030,6 +1297,12 @@ export function CarbonCreditsEngine() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Traceability Drawer */}
+      <CarbonTraceabilityDrawer
+        metricId={selectedTraceMetric}
+        onClose={() => setSelectedTraceMetric(null)}
+      />
     </div>
   );
 }

@@ -20,6 +20,12 @@ import {
   Lock,
   ArrowUpRight,
   Check,
+  Archive,
+  MessageSquare,
+  Send,
+  UserCheck,
+  Search,
+  FileCheck2,
 } from 'lucide-react';
 import {
   fetchAuditCompanies,
@@ -31,6 +37,13 @@ import {
   type AuditReportGenerateRequest,
   type ReportingPeriodType,
 } from '../../services/carbonApi';
+import {
+  evidenceVaultApi,
+  type ReportWorkflowState,
+  type DataQualityCheckResult,
+  type EvidenceDocument,
+} from '../../services/evidenceVaultApi';
+import { CarbonTraceabilityDrawer } from './CarbonTraceabilityDrawer';
 
 export function CarbonAuditReportView() {
   const [companies, setCompanies] = useState<CompanyFacilityProfile[]>([]);
@@ -43,7 +56,16 @@ export function CarbonAuditReportView() {
   const [report, setReport] = useState<CorporateAuditReport | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [downloadingPdf, setDownloadingPdf] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<'exec' | 'inventory' | 'allowance' | 'methodology' | 'boundaries' | 'audit_trail'>('exec');
+  const [downloadingPack, setDownloadingPack] = useState<boolean>(false);
+  const [workflowState, setWorkflowState] = useState<ReportWorkflowState | null>(null);
+  const [dataQuality, setDataQuality] = useState<DataQualityCheckResult | null>(null);
+  const [evidenceDocs, setEvidenceDocs] = useState<EvidenceDocument[]>([]);
+  const [selectedTraceMetric, setSelectedTraceMetric] = useState<string | null>(null);
+  const [commentText, setCommentText] = useState<string>('');
+  const [commentRole, setCommentRole] = useState<'auditor' | 'manager' | 'compliance_officer'>('auditor');
+  const [commentAuthor, setCommentAuthor] = useState<string>('Dr. Ananya Sharma');
+  const [transitioningState, setTransitioningState] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<'exec' | 'inventory' | 'allowance' | 'methodology' | 'boundaries' | 'audit_trail' | 'evidence_index'>('exec');
   const [feedbackMsg, setFeedbackMsg] = useState<{ text: string; type: 'success' | 'info' | 'warn' } | null>(null);
 
   useEffect(() => {
@@ -57,6 +79,22 @@ export function CarbonAuditReportView() {
       setCompanies(data);
     } catch (e) {
       console.warn('Using fallback companies', e);
+    }
+  };
+
+  const loadComplianceAndWorkflow = async (reportId?: string) => {
+    try {
+      const period = `${calendarYear}-${String(calendarMonth).padStart(2, '0')}`;
+      const [status, dq, docs] = await Promise.all([
+        reportId ? evidenceVaultApi.getWorkflowStatus(reportId).catch(() => null) : null,
+        evidenceVaultApi.evaluateDataQuality(period).catch(() => null),
+        evidenceVaultApi.getDocuments(period).catch(() => []),
+      ]);
+      if (status) setWorkflowState(status);
+      if (dq) setDataQuality(dq);
+      if (docs) setEvidenceDocs(docs);
+    } catch (e) {
+      console.warn('Compliance data loading error', e);
     }
   };
 
@@ -77,14 +115,83 @@ export function CarbonAuditReportView() {
     try {
       const rep = await generateCorporateAuditReport(req);
       setReport(rep);
+      await loadComplianceAndWorkflow(rep.metadata.report_id);
       setFeedbackMsg({ text: `Audit report generated successfully (${rep.metadata.report_id})`, type: 'success' });
     } catch (err) {
       console.warn('Backend unavailable, generating verified offline fallback report', err);
       const fallbackRep = getOfflineFallbackAuditReport(req);
       setReport(fallbackRep);
+      await loadComplianceAndWorkflow(fallbackRep.metadata.report_id);
       setFeedbackMsg({ text: 'Report rendered via client-side offline calculation engine', type: 'info' });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleWorkflowTransition = async (targetState: 'DRAFT' | 'IN_REVIEW' | 'APPROVED' | 'EXPORTED') => {
+    if (!report) return;
+    setTransitioningState(true);
+    try {
+      const res = await evidenceVaultApi.transitionWorkflow({
+        report_id: report.metadata.report_id,
+        target_status: targetState,
+        actor_name: commentAuthor,
+        actor_role: commentRole,
+        comments: `Transitioned to ${targetState} by ${commentAuthor} (${commentRole})`,
+      });
+      setWorkflowState(res);
+      setFeedbackMsg({ text: `Report successfully transitioned to ${targetState}`, type: 'success' });
+    } catch (err: any) {
+      setFeedbackMsg({ text: `Transition error: ${err.message}`, type: 'warn' });
+    } finally {
+      setTransitioningState(false);
+    }
+  };
+
+  const handleAddComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!report || !commentText.trim()) return;
+    try {
+      const res = await evidenceVaultApi.addReviewerComment({
+        report_id: report.metadata.report_id,
+        author_name: commentAuthor,
+        author_role: commentRole,
+        comment_text: commentText.trim(),
+        section_reference: 'General Audit',
+      });
+      setWorkflowState(res);
+      setCommentText('');
+      setFeedbackMsg({ text: 'Reviewer comment logged in audit trail', type: 'success' });
+    } catch (err: any) {
+      setFeedbackMsg({ text: `Failed to post comment: ${err.message}`, type: 'warn' });
+    }
+  };
+
+  const handleDownloadPack = async () => {
+    if (!report) return;
+    setDownloadingPack(true);
+    setFeedbackMsg(null);
+    try {
+      const blob = await evidenceVaultApi.downloadReportPack(
+        selectedCompanyId,
+        periodType,
+        calendarYear,
+        calendarMonth
+      );
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `WattWise_Carbon_Report_Pack_${report.metadata.report_id}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      setFeedbackMsg({ text: 'Complete Official Report Pack (ZIP) downloaded successfully (PDF + CSV Workbook + Evidence Index + Reconciliation + Compliance Statement)', type: 'success' });
+    } catch (err: any) {
+      console.error(err);
+      setFeedbackMsg({ text: `Failed to generate report pack ZIP: ${err.message}`, type: 'warn' });
+    } finally {
+      setDownloadingPack(false);
     }
   };
 
@@ -310,6 +417,29 @@ Latest Merkle Root:           ${rep.metadata.latest_merkle_root}
                 {downloadingPdf ? <RefreshCw size={13} className="spin" /> : <Download size={13} />}
                 <span>{downloadingPdf ? 'Generating PDF...' : 'Download Official PDF'}</span>
               </button>
+
+              <button
+                type="button"
+                onClick={handleDownloadPack}
+                disabled={downloadingPack || !report}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  background: '#059669',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: 7,
+                  padding: '7px 15px',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: downloadingPack || !report ? 'not-allowed' : 'pointer',
+                  boxShadow: '0 1px 2px rgba(5, 150, 105, 0.25)',
+                }}
+              >
+                {downloadingPack ? <RefreshCw size={13} className="spin" /> : <Archive size={13} />}
+                <span>{downloadingPack ? 'Bundling Pack...' : 'Download Report Pack (ZIP)'}</span>
+              </button>
             </div>
           </div>
 
@@ -451,7 +581,295 @@ Latest Merkle Root:           ${rep.metadata.latest_merkle_root}
           )}
         </div>
 
-        {/* ─── 2. COMPACT SUMMARY KPI CARDS ───────────────────────────────────────── */}
+        {/* ─── WORKFLOW & QUALITY INTEGRATION BANNERS ──────────────────────────────── */}
+        {report && (
+          <div style={{ marginBottom: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {/* Missing Evidence / Quality Alert */}
+            {dataQuality && (dataQuality.audit_readiness_status !== 'AUDIT_READY' || dataQuality.missing_documents.length > 0) && (
+              <div style={{
+                background: '#FFFBEB',
+                border: '1.5px solid #FCD34D',
+                borderRadius: 10,
+                padding: '12px 18px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: 12,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <AlertTriangle size={18} color="#D97706" style={{ flexShrink: 0 }} />
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#92400E' }}>
+                      Compliance Alert: {dataQuality.missing_documents.length} Missing Primary Evidence Document(s)
+                    </div>
+                    <div style={{ fontSize: 11.5, color: '#B45309', marginTop: 2 }}>
+                      Required for period <b>{dataQuality.reporting_period}</b>: {dataQuality.missing_documents.map(m => m.expected_document).join(', ')}. Statutory compliance score: <b>{dataQuality.compliance_score_pct}%</b>.
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('evidence_index')}
+                  style={{
+                    padding: '5px 12px',
+                    borderRadius: 6,
+                    background: '#D97706',
+                    color: '#FFFFFF',
+                    fontSize: 11,
+                    fontWeight: 700,
+                    border: 'none',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Review Missing Evidence
+                </button>
+              </div>
+            )}
+
+            {/* Workflow State Tracker & Governance Controls */}
+            <div style={{
+              background: '#FFFFFF',
+              border: '1.5px solid #EAE3D7',
+              borderRadius: 12,
+              padding: '16px 20px',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14, marginBottom: 14 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <ShieldCheck size={18} color="#0284C7" />
+                  <span style={{ fontSize: 13, fontWeight: 800, color: '#1C1917', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                    Report Governance &amp; Approval Workflow
+                  </span>
+                  <span style={{
+                    fontSize: 10.5,
+                    fontWeight: 700,
+                    padding: '2px 8px',
+                    borderRadius: 6,
+                    background: workflowState?.status === 'APPROVED' ? '#ECFDF5' : workflowState?.status === 'EXPORTED' ? '#EDE9FE' : workflowState?.status === 'IN_REVIEW' ? '#EFF6FF' : '#F1F5F9',
+                    color: workflowState?.status === 'APPROVED' ? '#065F46' : workflowState?.status === 'EXPORTED' ? '#5B21B6' : workflowState?.status === 'IN_REVIEW' ? '#1E40AF' : '#475569',
+                    border: '1px solid currentColor',
+                  }}>
+                    {workflowState?.status || 'DRAFT'} &bull; v{workflowState?.version || 1}
+                  </span>
+                </div>
+
+                {/* Workflow Transition Action Buttons */}
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {(!workflowState || workflowState.status === 'DRAFT') && (
+                    <button
+                      type="button"
+                      disabled={transitioningState}
+                      onClick={() => handleWorkflowTransition('IN_REVIEW')}
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: 6,
+                        background: '#0284C7',
+                        color: '#FFFFFF',
+                        fontSize: 11,
+                        fontWeight: 700,
+                        border: 'none',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                      }}
+                    >
+                      <UserCheck size={12} />
+                      <span>Submit for ESG Review</span>
+                    </button>
+                  )}
+                  {workflowState?.status === 'IN_REVIEW' && (
+                    <button
+                      type="button"
+                      disabled={transitioningState}
+                      onClick={() => handleWorkflowTransition('APPROVED')}
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: 6,
+                        background: '#059669',
+                        color: '#FFFFFF',
+                        fontSize: 11,
+                        fontWeight: 700,
+                        border: 'none',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                      }}
+                    >
+                      <CheckCircle2 size={12} />
+                      <span>Sign &amp; Approve Report</span>
+                    </button>
+                  )}
+                  {workflowState?.status === 'APPROVED' && (
+                    <button
+                      type="button"
+                      disabled={transitioningState}
+                      onClick={() => handleWorkflowTransition('EXPORTED')}
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: 6,
+                        background: '#7C3AED',
+                        color: '#FFFFFF',
+                        fontSize: 11,
+                        fontWeight: 700,
+                        border: 'none',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                      }}
+                    >
+                      <Lock size={12} />
+                      <span>Lock &amp; Mark Exported</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* 4-Stage Progress Line */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(4, 1fr)',
+                gap: 8,
+                padding: '10px 14px',
+                background: '#FAFAF9',
+                borderRadius: 8,
+                border: '1px solid #EAE3D7',
+                marginBottom: 14,
+              }}>
+                {[
+                  { key: 'DRAFT', label: '1. Calculation Draft', desc: 'Generated by calculation engine' },
+                  { key: 'IN_REVIEW', label: '2. Under ESG Review', desc: 'Auditor & engineering verification' },
+                  { key: 'APPROVED', label: '3. Plant Sign-Off', desc: 'Authorized by Plant GM / Auditor' },
+                  { key: 'EXPORTED', label: '4. Filed & Exported', desc: 'Report pack locked for BRSR/BEE' },
+                ].map((step, idx) => {
+                  const states = ['DRAFT', 'IN_REVIEW', 'APPROVED', 'EXPORTED'];
+                  const curIdx = states.indexOf(workflowState?.status || 'DRAFT');
+                  const isDone = curIdx >= idx;
+                  const isCur = curIdx === idx;
+                  return (
+                    <div key={step.key} style={{
+                      padding: '6px 8px',
+                      borderRadius: 6,
+                      background: isCur ? '#FFFFFF' : 'transparent',
+                      border: isCur ? '1px solid #CBD5E1' : '1px solid transparent',
+                      boxShadow: isCur ? '0 1px 2px rgba(0,0,0,0.04)' : 'none',
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                        <div style={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: '50%',
+                          background: isDone ? '#059669' : '#CBD5E1',
+                        }} />
+                        <span style={{ fontSize: 11, fontWeight: isCur ? 800 : 600, color: isCur ? '#1C1917' : '#64748B' }}>
+                          {step.label}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 9.5, color: '#94A3B8', paddingLeft: 14 }}>
+                        {step.desc}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Reviewer Comments & Add Comment Box */}
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <MessageSquare size={12} />
+                  <span>Reviewer Comments &amp; Sign-off Trail ({workflowState?.reviewer_comments?.length || 0})</span>
+                </div>
+                {workflowState?.reviewer_comments && workflowState.reviewer_comments.length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>
+                    {workflowState.reviewer_comments.map((c, i) => (
+                      <div key={i} style={{
+                        padding: '8px 12px',
+                        borderRadius: 6,
+                        background: '#FAFAF9',
+                        border: '1px solid #F1F5F9',
+                        fontSize: 11.5,
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
+                          <span style={{ fontWeight: 700, color: '#1C1917' }}>
+                            {c.author_name} &bull; <span style={{ fontSize: 10, color: '#0284C7', textTransform: 'uppercase' }}>{c.author_role}</span>
+                          </span>
+                          <span style={{ fontSize: 10, color: '#94A3B8', fontFamily: 'var(--font-mono)' }}>
+                            {new Date(c.timestamp).toLocaleString()}
+                          </span>
+                        </div>
+                        <div style={{ color: '#475569', lineHeight: 1.4 }}>
+                          {c.comment_text}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Add Comment Input Form */}
+                <form onSubmit={handleAddComment} style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    type="text"
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    placeholder="Enter audit note, reconciliation comment, or approval remark..."
+                    style={{
+                      flex: 1,
+                      background: '#FAFAF9',
+                      border: '1px solid #D6D3D1',
+                      borderRadius: 6,
+                      padding: '6px 10px',
+                      fontSize: 11.5,
+                      outline: 'none',
+                    }}
+                  />
+                  <select
+                    value={commentRole}
+                    onChange={(e) => setCommentRole(e.target.value as any)}
+                    style={{
+                      background: '#FAFAF9',
+                      border: '1px solid #D6D3D1',
+                      borderRadius: 6,
+                      padding: '6px 8px',
+                      fontSize: 11,
+                      fontWeight: 600,
+                      outline: 'none',
+                    }}
+                  >
+                    <option value="auditor">Auditor (BEE)</option>
+                    <option value="manager">Plant GM</option>
+                    <option value="compliance_officer">Compliance Lead</option>
+                  </select>
+                  <button
+                    type="submit"
+                    disabled={!commentText.trim()}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: 6,
+                      background: '#1C1917',
+                      color: '#FFFFFF',
+                      fontSize: 11,
+                      fontWeight: 700,
+                      border: 'none',
+                      cursor: commentText.trim() ? 'pointer' : 'not-allowed',
+                      opacity: commentText.trim() ? 1 : 0.6,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
+                    }}
+                  >
+                    <Send size={11} />
+                    <span>Post Comment</span>
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ─── 2. COMPACT SUMMARY KPI CARDS (TRACEABLE) ────────────────────────────── */}
         {report && (
           <div style={{
             display: 'grid',
@@ -460,9 +878,34 @@ Latest Merkle Root:           ${rep.metadata.latest_merkle_root}
             marginBottom: 20,
           }}>
             {/* KPI 1: Gross Footprint */}
-            <div style={{ background: '#FFFFFF', border: '1px solid #EAE3D7', borderRadius: 10, padding: '14px 16px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
-              <div style={{ fontSize: 10.5, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                Total Gross Emissions
+            <div
+              onClick={() => setSelectedTraceMetric('total_gross')}
+              title="Click to trace formula derivation, activity data, and primary supporting evidence"
+              style={{
+                background: '#FFFFFF',
+                border: '1px solid #EAE3D7',
+                borderRadius: 10,
+                padding: '14px 16px',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = '#0284C7';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = '#EAE3D7';
+                e.currentTarget.style.transform = 'none';
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 10.5, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  Total Gross Emissions
+                </span>
+                <span style={{ fontSize: 10, color: '#0284C7', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Search size={10} /> Trace
+                </span>
               </div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 4 }}>
                 <span style={{ fontSize: 22, fontWeight: 800, color: '#1C1917', fontFamily: 'var(--font-mono)' }}>
@@ -470,15 +913,40 @@ Latest Merkle Root:           ${rep.metadata.latest_merkle_root}
                 </span>
                 <span style={{ fontSize: 11, color: '#64748B', fontWeight: 600 }}>tCO₂e</span>
               </div>
-              <div style={{ fontSize: 10.5, color: '#64748B', marginTop: 4 }}>
-                100% of reported operational boundary
+              <div style={{ fontSize: 10.5, color: '#0284C7', marginTop: 4 }}>
+                🔍 Click to trace derivation &amp; evidence
               </div>
             </div>
 
             {/* KPI 2: Scope 1 */}
-            <div style={{ background: '#FFFFFF', border: '1px solid #EAE3D7', borderRadius: 10, padding: '14px 16px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
-              <div style={{ fontSize: 10.5, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                Scope 1 (Direct Combustion &amp; ETP)
+            <div
+              onClick={() => setSelectedTraceMetric('scope1_lpg')}
+              title="Click to trace Scope 1 direct combustion invoices and factors"
+              style={{
+                background: '#FFFFFF',
+                border: '1px solid #EAE3D7',
+                borderRadius: 10,
+                padding: '14px 16px',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = '#0284C7';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = '#EAE3D7';
+                e.currentTarget.style.transform = 'none';
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 10.5, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  Scope 1 (Direct Combustion)
+                </span>
+                <span style={{ fontSize: 10, color: '#0284C7', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Search size={10} /> Trace
+                </span>
               </div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 4 }}>
                 <span style={{ fontSize: 22, fontWeight: 800, color: '#1C1917', fontFamily: 'var(--font-mono)' }}>
@@ -487,14 +955,39 @@ Latest Merkle Root:           ${rep.metadata.latest_merkle_root}
                 <span style={{ fontSize: 11, color: '#64748B', fontWeight: 600 }}>tCO₂e</span>
               </div>
               <div style={{ fontSize: 10.5, color: '#64748B', marginTop: 4 }}>
-                {((report.scope1_total_tco2e / (report.gross_emissions_tco2e || 1)) * 100).toFixed(1)}% of gross emissions
+                {((report.scope1_total_tco2e / (report.gross_emissions_tco2e || 1)) * 100).toFixed(1)}% of gross &bull; LPG &amp; Diesel
               </div>
             </div>
 
             {/* KPI 3: Scope 2 */}
-            <div style={{ background: '#FFFFFF', border: '1px solid #EAE3D7', borderRadius: 10, padding: '14px 16px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
-              <div style={{ fontSize: 10.5, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                Scope 2 (CEA Grid Electricity)
+            <div
+              onClick={() => setSelectedTraceMetric('scope2_grid')}
+              title="Click to trace Scope 2 CEA Grid electricity derivation and utility bills"
+              style={{
+                background: '#FFFFFF',
+                border: '1px solid #EAE3D7',
+                borderRadius: 10,
+                padding: '14px 16px',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = '#0284C7';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = '#EAE3D7';
+                e.currentTarget.style.transform = 'none';
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 10.5, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  Scope 2 (CEA Grid Electricity)
+                </span>
+                <span style={{ fontSize: 10, color: '#0284C7', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Search size={10} /> Trace
+                </span>
               </div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 4 }}>
                 <span style={{ fontSize: 22, fontWeight: 800, color: '#1C1917', fontFamily: 'var(--font-mono)' }}>
@@ -584,6 +1077,7 @@ Latest Merkle Root:           ${rep.metadata.latest_merkle_root}
                 { id: 'methodology', label: '4. Methodology & Factors' },
                 { id: 'boundaries', label: '5. Boundaries & Scope 3' },
                 { id: 'audit_trail', label: '6. Cryptographic Audit Trail' },
+                { id: 'evidence_index', label: '7. Evidence Index & Provenance' },
               ].map(t => (
                 <button
                   key={t.id}
@@ -703,6 +1197,7 @@ Latest Merkle Root:           ${rep.metadata.latest_merkle_root}
                           <th style={{ padding: '8px 10px', color: '#475569', fontWeight: 700 }}>Emission Factor</th>
                           <th style={{ padding: '8px 10px', color: '#475569', fontWeight: 700, textAlign: 'right' }}>Emissions (tCO₂e)</th>
                           <th style={{ padding: '8px 10px', color: '#475569', fontWeight: 700, textAlign: 'right' }}>Share (%)</th>
+                          <th style={{ padding: '8px 10px', color: '#475569', fontWeight: 700, textAlign: 'center' }}>Traceability</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -737,6 +1232,36 @@ Latest Merkle Root:           ${rep.metadata.latest_merkle_root}
                             <td style={{ padding: '8px 10px', textAlign: 'right', color: '#64748B', fontFamily: 'var(--font-mono)' }}>
                               {item.percentage_of_gross.toFixed(1)}%
                             </td>
+                            <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const metricId = item.source_name.toLowerCase().includes('grid') || item.source_category.toLowerCase().includes('electricity')
+                                    ? 'scope2_grid'
+                                    : item.source_name.toLowerCase().includes('lpg')
+                                    ? 'scope1_lpg'
+                                    : 'total_gross';
+                                  setSelectedTraceMetric(metricId);
+                                }}
+                                style={{
+                                  padding: '3px 8px',
+                                  borderRadius: 4,
+                                  background: 'rgba(2, 132, 199, 0.1)',
+                                  color: '#0284C7',
+                                  border: '1px solid rgba(2, 132, 199, 0.3)',
+                                  fontSize: 10,
+                                  fontWeight: 700,
+                                  cursor: 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 4,
+                                }}
+                                title="Trace mathematical formula, emission factor source, and primary supporting evidence documents"
+                              >
+                                <Search size={10} />
+                                <span>Trace</span>
+                              </button>
+                            </td>
                           </tr>
                         ))}
                         {/* Totals Row */}
@@ -749,6 +1274,28 @@ Latest Merkle Root:           ${rep.metadata.latest_merkle_root}
                           </td>
                           <td style={{ padding: '10px', textAlign: 'right', color: '#1C1917', fontSize: 13, fontFamily: 'var(--font-mono)' }}>
                             100.0%
+                          </td>
+                          <td style={{ padding: '10px', textAlign: 'center' }}>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedTraceMetric('total_gross')}
+                              style={{
+                                padding: '4px 10px',
+                                borderRadius: 4,
+                                background: '#1C1917',
+                                color: '#FFFFFF',
+                                border: 'none',
+                                fontSize: 10,
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 4,
+                              }}
+                            >
+                              <Search size={10} />
+                              <span>Trace All</span>
+                            </button>
                           </td>
                         </tr>
                       </tbody>
@@ -1025,11 +1572,139 @@ Latest Merkle Root:           ${rep.metadata.latest_merkle_root}
                 </div>
               )}
 
+              {/* TAB 7: EVIDENCE INDEX & PROVENANCE */}
+              {activeTab === 'evidence_index' && (
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                    <div>
+                      <h3 style={{ fontSize: 14, fontWeight: 700, color: '#1C1917', margin: '0 0 4px' }}>
+                        Linked Supporting Evidence &amp; Provenance Index
+                      </h3>
+                      <p style={{ fontSize: 11.5, color: '#64748B', margin: 0 }}>
+                        Primary physical source documents, utility invoices, and calibration certificates linked to period {calendarYear}-{String(calendarMonth).padStart(2, '0')}.
+                      </p>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button
+                        type="button"
+                        onClick={handleDownloadPack}
+                        disabled={downloadingPack}
+                        style={{
+                          padding: '6px 12px',
+                          borderRadius: 6,
+                          background: '#059669',
+                          color: '#FFFFFF',
+                          fontSize: 11,
+                          fontWeight: 700,
+                          border: 'none',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                        }}
+                      >
+                        <Archive size={12} />
+                        <span>{downloadingPack ? 'Bundling...' : 'Download Full Pack (ZIP)'}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Table of Evidence Documents */}
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11.5, textAlign: 'left' }}>
+                      <thead>
+                        <tr style={{ background: '#F8FAFC', borderBottom: '2px solid #CBD5E1' }}>
+                          <th style={{ padding: '8px 10px', color: '#475569', fontWeight: 700 }}>Document ID</th>
+                          <th style={{ padding: '8px 10px', color: '#475569', fontWeight: 700 }}>File Name</th>
+                          <th style={{ padding: '8px 10px', color: '#475569', fontWeight: 700 }}>Type</th>
+                          <th style={{ padding: '8px 10px', color: '#475569', fontWeight: 700 }}>Extracted Activity</th>
+                          <th style={{ padding: '8px 10px', color: '#475569', fontWeight: 700 }}>Target Scope</th>
+                          <th style={{ padding: '8px 10px', color: '#475569', fontWeight: 700 }}>SHA-256 Checksum</th>
+                          <th style={{ padding: '8px 10px', color: '#475569', fontWeight: 700 }}>Status</th>
+                          <th style={{ padding: '8px 10px', color: '#475569', fontWeight: 700, textAlign: 'right' }}>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {evidenceDocs.map((doc) => (
+                          <tr key={doc.document_id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                            <td style={{ padding: '8px 10px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#0284C7' }}>
+                              {doc.document_id}
+                            </td>
+                            <td style={{ padding: '8px 10px', color: '#1C1917', fontWeight: 600 }}>
+                              {doc.filename}
+                            </td>
+                            <td style={{ padding: '8px 10px', color: '#64748B' }}>
+                              {doc.file_type}
+                            </td>
+                            <td style={{ padding: '8px 10px', fontFamily: 'var(--font-mono)' }}>
+                              {doc.extracted_fields?.consumption_value != null
+                                ? `${doc.extracted_fields.consumption_value.toLocaleString()} ${doc.extracted_fields.unit || ''}`
+                                : '—'}
+                            </td>
+                            <td style={{ padding: '8px 10px' }}>
+                              <span style={{ fontSize: 10, padding: '2px 6px', borderRadius: 4, background: '#F1F5F9', color: '#475569', fontFamily: 'var(--font-mono)' }}>
+                                {doc.linked_calculation_target || 'UNASSIGNED'}
+                              </span>
+                            </td>
+                            <td style={{ padding: '8px 10px', fontFamily: 'var(--font-mono)', fontSize: 10, color: '#64748B' }}>
+                              {doc.sha256_hash.slice(0, 16)}...
+                            </td>
+                            <td style={{ padding: '8px 10px' }}>
+                              <span style={{
+                                fontSize: 10,
+                                fontWeight: 700,
+                                padding: '2px 6px',
+                                borderRadius: 4,
+                                background: doc.status === 'CONFIRMED_LINKED' ? 'rgba(5, 150, 105, 0.1)' : 'rgba(217, 119, 6, 0.1)',
+                                color: doc.status === 'CONFIRMED_LINKED' ? '#059669' : '#D97706',
+                              }}>
+                                {doc.status === 'CONFIRMED_LINKED' ? 'CONFIRMED' : 'PENDING'}
+                              </span>
+                            </td>
+                            <td style={{ padding: '8px 10px', textAlign: 'right' }}>
+                              <button
+                                type="button"
+                                onClick={() => setSelectedTraceMetric(doc.linked_calculation_target || 'total_gross')}
+                                style={{
+                                  padding: '3px 8px',
+                                  borderRadius: 4,
+                                  background: 'rgba(2, 132, 199, 0.1)',
+                                  color: '#0284C7',
+                                  border: '1px solid rgba(2, 132, 199, 0.3)',
+                                  fontSize: 10,
+                                  fontWeight: 700,
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                Trace Derivation
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                        {evidenceDocs.length === 0 && (
+                          <tr>
+                            <td colSpan={8} style={{ padding: '24px', textAlign: 'center', color: '#94A3B8' }}>
+                              No evidence documents uploaded yet for this period.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
             </div>
           </div>
         )}
 
       </div>
+
+      {/* Traceability Drawer */}
+      <CarbonTraceabilityDrawer
+        metricId={selectedTraceMetric}
+        onClose={() => setSelectedTraceMetric(null)}
+      />
     </div>
   );
 }

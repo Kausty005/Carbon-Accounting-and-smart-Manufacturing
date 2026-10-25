@@ -278,3 +278,177 @@ def download_corporate_audit_pdf(request: AuditReportGenerateRequest):
         }
     )
 
+
+# ─── Evidence & Compliance Workspace Endpoints ─────────────────────────────────
+
+from backend.app.models import (
+    CalculationTraceabilityResponse,
+    CreditProjectLifecycle,
+    DataQualityCheckResult,
+    EvidenceConfirmRequest,
+    EvidenceDocument,
+    EvidenceUploadRequest,
+    ReportWorkflowState,
+    ReviewerCommentRequest,
+    WorkflowTransitionRequest,
+)
+from backend.app.services.evidence_vault_service import evidence_vault_service
+
+
+@router.get("/evidence/documents", response_model=List[EvidenceDocument])
+def get_evidence_documents(
+    period: Optional[str] = Query(default=None, description="Reporting period filter (e.g. 2026-10)"),
+    doc_type: Optional[str] = Query(default=None, description="Document type filter (e.g. ELECTRICITY_BILL)")
+):
+    """Returns stored primary evidence documents with OCR extracted values and status."""
+    return evidence_vault_service.get_documents(reporting_period=period, file_type=doc_type)
+
+
+@router.get("/evidence/documents/{doc_id}", response_model=EvidenceDocument)
+def get_evidence_document(doc_id: str):
+    """Fetches a specific evidence document by unique document identifier."""
+    doc = evidence_vault_service.get_document_by_id(doc_id)
+    if not doc:
+        raise HTTPException(status_code=404, detail=f"Evidence document {doc_id} not found.")
+    return doc
+
+
+@router.post("/evidence/upload", response_model=EvidenceDocument)
+def upload_evidence_document(request: EvidenceUploadRequest):
+    """
+    Uploads a primary carbon evidence document (bill, meter log, certificate),
+    computes SHA-256 hash provenance, and extracts structured fields using AI/OCR simulation.
+    """
+    try:
+        return evidence_vault_service.upload_and_extract(request)
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Upload processing failed: {str(e)}")
+
+
+@router.post("/evidence/{doc_id}/confirm", response_model=EvidenceDocument)
+def confirm_evidence_document(doc_id: str, request: EvidenceConfirmRequest):
+    """
+    User confirmation or correction of OCR extracted values, binding confirmed activity data
+    to specific inventory calculation targets and reporting periods.
+    """
+    try:
+        return evidence_vault_service.confirm_evidence(doc_id, request)
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Confirmation failed: {str(e)}")
+
+
+@router.get("/evidence/data-quality", response_model=DataQualityCheckResult)
+def get_data_quality_audit(
+    period: str = Query(default="2026-10", description="Reporting period to audit (e.g. 2026-10)")
+):
+    """
+    Executes automated data quality audit: detects missing required evidence,
+    duplicate documents/invoices, unit anomalies, and computes statutory compliance checklist score.
+    """
+    return evidence_vault_service.evaluate_data_quality(reporting_period=period)
+
+
+@router.get("/traceability/{metric_id}", response_model=CalculationTraceabilityResponse)
+def get_calculation_traceability(
+    metric_id: str,
+    period: str = Query(default="2026-10", description="Reporting period (e.g. 2026-10)")
+):
+    """
+    Returns end-to-end calculation traceability for any inventory figure:
+    activity data breakdown, calculation formula, emission factor citations/version,
+    provenance, and linked supporting primary evidence.
+    """
+    try:
+        return evidence_vault_service.get_traceability(metric_id=metric_id, reporting_period=period)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Traceability calculation failed: {str(e)}")
+
+
+@router.get("/audit/workflow/status", response_model=ReportWorkflowState)
+def get_report_workflow_status(
+    report_id: str = Query(default="REP-AUDIT-PW-2026-10", description="Report ID")
+):
+    """Returns the current workflow state (Draft -> In Review -> Approved -> Exported) and reviewer history."""
+    return evidence_vault_service.get_workflow_state(report_id=report_id)
+
+
+@router.post("/audit/workflow/transition", response_model=ReportWorkflowState)
+def transition_report_workflow(request: WorkflowTransitionRequest):
+    """Transitions a report between workflow stages with validation and permission checks."""
+    try:
+        return evidence_vault_service.transition_workflow(request)
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Workflow transition failed: {str(e)}")
+
+
+@router.post("/audit/workflow/comment", response_model=ReportWorkflowState)
+def add_report_reviewer_comment(request: ReviewerCommentRequest):
+    """Adds a persistent reviewer comment or audit note to the report workflow."""
+    try:
+        return evidence_vault_service.add_reviewer_comment(request)
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to add comment: {str(e)}")
+
+
+@router.post("/audit/download-pack")
+def download_corporate_audit_pack(request: AuditReportGenerateRequest):
+    """
+    Generates and downloads a complete corporate compliance audit pack ZIP containing:
+    1. Official Corporate PDF audit report
+    2. Calculation workbook CSV with line-item traceability
+    3. Primary evidence index JSON
+    4. Compliance & quality checklist Markdown
+    5. Statutory allowance & credit reconciliation CSV
+    """
+    report = audit_report_service.generate_report(request)
+    period = "2026-10"
+    if request.calendar_year and request.calendar_month:
+        period = f"{request.calendar_year}-{request.calendar_month:02d}"
+
+    evidence_docs = evidence_vault_service.get_documents(reporting_period=period)
+    quality = evidence_vault_service.evaluate_data_quality(reporting_period=period)
+    workflow = evidence_vault_service.get_workflow_state(report.metadata.report_id)
+
+    zip_bytes = audit_report_service.generate_report_pack_zip(
+        report=report,
+        evidence_docs=evidence_docs,
+        data_quality=quality,
+        workflow_state=workflow,
+    )
+    filename = f"WattWise_Compliance_Pack_{report.metadata.report_id}.zip"
+
+    return StreamingResponse(
+        io.BytesIO(zip_bytes),
+        media_type="application/zip",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Access-Control-Expose-Headers": "Content-Disposition",
+        }
+    )
+
+
+@router.get("/credits/projects", response_model=List[CreditProjectLifecycle])
+def get_credit_projects(
+    facility: Optional[str] = Query(default=None, description="Optional facility filter")
+):
+    """
+    Returns carbon credit projects across full lifecycle stages:
+    Eligibility, Methodology, Baseline, Monitoring, Validation, Verification, Issuance, Transfers, Retirement.
+    Clearly distinguishes simulated/estimated reductions from verified registry credits.
+    """
+    return evidence_vault_service.get_credit_projects(company_id=facility or "precisionworks")
+
+
+@router.post("/credits/projects", response_model=CreditProjectLifecycle)
+def save_credit_project(project: CreditProjectLifecycle):
+    """Creates or updates a carbon credit project with lifecycle tracking."""
+    return evidence_vault_service.add_or_update_credit_project(project)
+

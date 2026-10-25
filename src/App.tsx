@@ -34,6 +34,7 @@ import { CarbonQuotaInterlock } from './components/Carbon/CarbonQuotaInterlock';
 import { ExecutivePresentationView } from './components/Executive/ExecutivePresentationView';
 import { EngineeringDiagnosticView } from './components/Diagnostics/EngineeringDiagnosticView';
 import { CarbonAuditReportView } from './components/Carbon/CarbonAuditReportView';
+import { EvidenceVaultView } from './components/Carbon/EvidenceVaultView';
 
 import { AIExplainProvider } from './components/AIExplain/AIExplainContext';
 import { AIExplainPopover } from './components/AIExplain/AIExplainPopover';
@@ -90,6 +91,7 @@ type View =
   | 'quota'
   | 'forecast'
   | 'carbon'
+  | 'evidence'
   | 'anomalies'
   | 'reports';
 
@@ -103,6 +105,7 @@ const NAV: { id: View; icon: React.ReactNode; label: string }[] = [
   { id: 'quota',        icon: <ShieldCheck size={14} />,  label: 'Carbon Quotas & Ledger' },
   { id: 'forecast',     icon: <TrendingUp size={14} />,   label: 'Energy Forecast' },
   { id: 'carbon',       icon: <Leaf size={14} />,         label: 'Carbon Accounting' },
+  { id: 'evidence',     icon: <FileCheck2 size={14} />,   label: 'Evidence Vault' },
   { id: 'anomalies',    icon: <Activity size={14} />,     label: 'AI Anomaly Intelligence' },
   { id: 'reports',      icon: <FileText size={14} />,     label: 'Audit Report' },
 ];
@@ -4041,6 +4044,11 @@ export default function App() {
                   <AIAnomalyIntelligence />
                 </motion.div>
               )}
+              {view === 'evidence' && (
+                <motion.div key="evidence" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%' }}>
+                  <EvidenceVaultView />
+                </motion.div>
+              )}
               {view === 'reports' && (
                 <motion.div key="reports" variants={PAGE_VARIANTS} initial="initial" animate="animate" exit="exit" style={{ width: '100%', height: '100%' }}>
                   <CarbonAuditReportView />
@@ -4052,7 +4060,7 @@ export default function App() {
       </main>
 
       {/* Inspector (Shown on SCADA / Digital Twin workbench views) */}
-      {view !== 'overview' && view !== 'forecast' && view !== 'executive' && view !== 'diagnostics' && view !== 'configurator' && view !== 'quota' && view !== 'reports' && showInspector && (
+      {view !== 'overview' && view !== 'forecast' && view !== 'executive' && view !== 'diagnostics' && view !== 'configurator' && view !== 'quota' && view !== 'evidence' && view !== 'reports' && showInspector && (
         <InspectorPanel
           selectedId={selectedAsset}
           selectedSensorId={selectedSensor}

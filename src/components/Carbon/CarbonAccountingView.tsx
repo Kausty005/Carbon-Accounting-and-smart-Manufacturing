@@ -14,6 +14,8 @@ import { PLANT, type SimParams, calcSimResult } from '../../data/mockData';
 import type { CarbonCalculateResponse, CeaMethodology } from '../../services/carbonApi';
 import { CarbonCreditsEngine } from './CarbonCreditsEngine';
 import { CarbonComplianceFilingPortal } from './CarbonComplianceFilingPortal';
+import { CarbonTraceabilityDrawer } from './CarbonTraceabilityDrawer';
+import { EvidenceVaultView } from './EvidenceVaultView';
 
 export interface CarbonAccountingViewProps {
   params: SimParams;
@@ -55,7 +57,8 @@ export default function CarbonAccountingView({
   availableYears,
 }: CarbonAccountingViewProps) {
   // Sub-tab navigation state
-  const [activeTab, setActiveTab] = useState<'accounting' | 'credits' | 'filing'>('accounting');
+  const [activeTab, setActiveTab] = useState<'accounting' | 'credits' | 'filing' | 'evidence'>('accounting');
+  const [traceabilityMetric, setTraceabilityMetric] = useState<string | null>(null);
 
   // Collapsible accordion states
   const [isMethodologyOpen, setIsMethodologyOpen] = useState(false);
@@ -451,6 +454,27 @@ export default function CarbonAccountingView({
             <FileText size={14} color={activeTab === 'filing' ? '#3B82F6' : '#78716C'} />
             <span>Statutory Compliance & Filings</span>
           </button>
+
+          <button
+            onClick={() => setActiveTab('evidence')}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '8px 16px',
+              borderRadius: 8,
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: 13,
+              fontWeight: 600,
+              background: activeTab === 'evidence' ? '#1C1917' : 'transparent',
+              color: activeTab === 'evidence' ? '#FFFFFF' : '#78716C',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <ShieldCheck size={14} color={activeTab === 'evidence' ? '#10B981' : '#78716C'} />
+            <span>Evidence & Compliance Vault</span>
+          </button>
         </div>
 
         {activeTab === 'credits' && (
@@ -462,6 +486,12 @@ export default function CarbonAccountingView({
         {activeTab === 'filing' && (
           <div style={{ marginTop: 8 }}>
             <CarbonComplianceFilingPortal />
+          </div>
+        )}
+
+        {activeTab === 'evidence' && (
+          <div style={{ marginTop: 8 }}>
+            <EvidenceVaultView onBackToAccounting={() => setActiveTab('accounting')} />
           </div>
         )}
 
@@ -494,16 +524,30 @@ export default function CarbonAccountingView({
           gap: 16
         }}>
           {/* KPI 1: Total Gross Emissions */}
-          <div style={{
-            background: '#FFFFFF',
-            border: '1px solid #EAE3D7',
-            borderRadius: 12,
-            padding: '20px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between'
-          }}>
+          <div
+            onClick={() => setTraceabilityMetric('total_gross')}
+            title="Click to view full mathematical derivation, emission factor citation, and primary evidence"
+            style={{
+              background: '#FFFFFF',
+              border: '1px solid #EAE3D7',
+              borderRadius: 12,
+              padding: '20px',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = '#10B981';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.12)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = '#EAE3D7';
+              e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.03)';
+            }}
+          >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
               <span style={{ fontSize: 11, fontWeight: 700, color: '#78716C', letterSpacing: '0.05em' }}>
                 TOTAL GROSS EMISSIONS
@@ -540,20 +584,48 @@ export default function CarbonAccountingView({
                   Scope 1 + 2
                 </span>
               </div>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                marginTop: 8,
+                paddingTop: 8,
+                borderTop: '1px dashed #F5F5F4',
+                fontSize: 10.5,
+                fontWeight: 600,
+                color: '#059669'
+              }}>
+                <span>🔍 Click to trace derivation & evidence</span>
+                <span>→</span>
+              </div>
             </div>
           </div>
 
           {/* KPI 2: Scope 1 Direct Emissions */}
-          <div style={{
-            background: '#FFFFFF',
-            border: '1px solid #EAE3D7',
-            borderRadius: 12,
-            padding: '20px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between'
-          }}>
+          <div
+            onClick={() => setTraceabilityMetric('scope1_lpg')}
+            title="Click to view fuel stoichiometry, delivery slips, and IPCC factors"
+            style={{
+              background: '#FFFFFF',
+              border: '1px solid #EAE3D7',
+              borderRadius: 12,
+              padding: '20px',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = '#EF4444';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.12)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = '#EAE3D7';
+              e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.03)';
+            }}
+          >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
               <span style={{ fontSize: 11, fontWeight: 700, color: '#78716C', letterSpacing: '0.05em' }}>
                 SCOPE 1 (DIRECT FUELS)
@@ -590,20 +662,48 @@ export default function CarbonAccountingView({
                   {s1Percent}% of total
                 </span>
               </div>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                marginTop: 8,
+                paddingTop: 8,
+                borderTop: '1px dashed #F5F5F4',
+                fontSize: 10.5,
+                fontWeight: 600,
+                color: '#DC2626'
+              }}>
+                <span>🔍 Click to trace derivation & evidence</span>
+                <span>→</span>
+              </div>
             </div>
           </div>
 
           {/* KPI 3: Scope 2 Electricity Emissions */}
-          <div style={{
-            background: '#FFFFFF',
-            border: '1px solid #EAE3D7',
-            borderRadius: 12,
-            padding: '20px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between'
-          }}>
+          <div
+            onClick={() => setTraceabilityMetric('scope2_grid')}
+            title="Click to view CEA grid factor provenance, utility invoices, and submeter logs"
+            style={{
+              background: '#FFFFFF',
+              border: '1px solid #EAE3D7',
+              borderRadius: 12,
+              padding: '20px',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = '#0284C7';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(2, 132, 199, 0.12)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = '#EAE3D7';
+              e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.03)';
+            }}
+          >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
               <span style={{ fontSize: 11, fontWeight: 700, color: '#78716C', letterSpacing: '0.05em' }}>
                 SCOPE 2 (ELECTRICITY)
@@ -639,6 +739,20 @@ export default function CarbonAccountingView({
                 }}>
                   {s2Percent}% of total
                 </span>
+              </div>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                marginTop: 8,
+                paddingTop: 8,
+                borderTop: '1px dashed #F5F5F4',
+                fontSize: 10.5,
+                fontWeight: 600,
+                color: '#0284C7'
+              }}>
+                <span>🔍 Click to trace derivation & evidence</span>
+                <span>→</span>
               </div>
             </div>
           </div>
@@ -1411,6 +1525,14 @@ export default function CarbonAccountingView({
         </div>
         </>
         )}
+
+        {/* ─── Clickable Traceability Drawer ─────────────────────────────────── */}
+        <CarbonTraceabilityDrawer
+          isOpen={Boolean(traceabilityMetric)}
+          metricId={traceabilityMetric}
+          onClose={() => setTraceabilityMetric(null)}
+          onNavigateToEvidence={() => setActiveTab('evidence')}
+        />
 
       </div>
     </div>

@@ -596,6 +596,137 @@ class AuditReportGenerateRequest(BaseModel):
     include_credit_holdings: bool = True
 
 
+# ─── Evidence Vault, Traceability & Compliance Workspace Schemas ───────────────
+
+class EvidenceDocument(BaseModel):
+    """Auditable evidence document (bill, invoice, meter log, certificate)."""
+    document_id: str
+    filename: str
+    file_type: str = Field(description="'ELECTRICITY_BILL' | 'FUEL_INVOICE' | 'METER_LOG' | 'RENEWABLE_PPA' | 'CALIBRATION_CERT'")
+    file_size_bytes: int
+    sha256_hash: str
+    uploaded_at: str
+    uploaded_by: str
+    reporting_period: str
+    company_id: str = "precisionworks"
+    status: str = Field(description="'EXTRACTED_PENDING_CONFIRMATION' | 'CONFIRMED_LINKED' | 'FLAGGED_DISCREPANCY' | 'ARCHIVED'")
+    extracted_fields: Dict[str, Any]
+    confirmed_fields: Optional[Dict[str, Any]] = None
+    linked_calculation_target: Optional[str] = None
+    version_history: List[Dict[str, Any]] = Field(default_factory=list)
+    provenance: str = "OFFICIAL_UTILITY_INVOICE"
+    discrepancy_flags: List[str] = Field(default_factory=list)
+    preview_url: Optional[str] = None
+
+
+class EvidenceUploadRequest(BaseModel):
+    """Payload to upload a new piece of carbon evidence."""
+    filename: str
+    file_content_base64: Optional[str] = None
+    file_type: str = "ELECTRICITY_BILL"
+    reporting_period: str = "2026-10"
+    company_id: str = "precisionworks"
+    uploaded_by: str = "Plant Sustainability Team"
+    auto_extract_fields: Optional[Dict[str, Any]] = None
+
+
+class EvidenceConfirmRequest(BaseModel):
+    """Payload for user confirmation/correction of AI-extracted evidence fields."""
+    confirmed_fields: Dict[str, Any]
+    linked_calculation_target: str
+    confirmed_by: str
+    notes: Optional[str] = None
+
+
+class DataQualityCheckResult(BaseModel):
+    """Evaluation of evidence completeness, anomalies, and audit readiness."""
+    reporting_period: str
+    compliance_score_pct: float
+    audit_readiness_status: str = Field(description="'AUDIT_READY' | 'ACTION_REQUIRED' | 'NON_COMPLIANT'")
+    missing_documents: List[Dict[str, Any]] = Field(default_factory=list)
+    duplicate_documents: List[Dict[str, Any]] = Field(default_factory=list)
+    inconsistent_units: List[Dict[str, Any]] = Field(default_factory=list)
+    invalid_values: List[Dict[str, Any]] = Field(default_factory=list)
+    period_gaps: List[str] = Field(default_factory=list)
+    compliance_checklist: List[Dict[str, Any]] = Field(default_factory=list)
+    last_evaluated_at: str
+
+
+class CalculationTraceabilityResponse(BaseModel):
+    """End-to-end transparent derivation of a specific carbon emissions metric."""
+    metric_id: str
+    metric_name: str
+    category: str
+    evaluated_emissions_tco2e: float
+    activity_amount: float
+    activity_unit: str
+    emission_factor: float
+    emission_factor_unit: str
+    emission_factor_provenance: Dict[str, Any]
+    formula_expression: str
+    reporting_period: str
+    operational_boundary: str
+    linked_evidence: List[Dict[str, Any]] = Field(default_factory=list)
+    cryptographic_audit_ref: Dict[str, Any] = Field(default_factory=dict)
+    verification_grade: str = "GRADE_A_DIRECT_MEASUREMENT"
+    disclaimer: str = "Calculated deterministically conforming to ISO 14064-1:2018 and GHG Protocol Standards."
+
+
+class ReportWorkflowState(BaseModel):
+    """Approval lifecycle state for a corporate carbon audit report."""
+    report_id: str
+    status: str = Field(description="'DRAFT' | 'IN_REVIEW' | 'APPROVED' | 'EXPORTED'")
+    version: str = "v1.0"
+    company_id: str
+    reporting_period_desc: str
+    created_at: str
+    created_by: str
+    approval_history: List[Dict[str, Any]] = Field(default_factory=list)
+    reviewer_comments: List[Dict[str, Any]] = Field(default_factory=list)
+    missing_evidence_count: int = 0
+    can_approve: bool = True
+    audit_pack_available: bool = True
+
+
+class WorkflowTransitionRequest(BaseModel):
+    """Payload to transition a report through Draft -> In Review -> Approved -> Exported."""
+    report_id: str
+    target_status: str = Field(description="'DRAFT' | 'IN_REVIEW' | 'APPROVED' | 'EXPORTED'")
+    actor_name: str
+    actor_role: str
+    comments: Optional[str] = None
+
+
+class ReviewerCommentRequest(BaseModel):
+    """Payload to post an auditor/reviewer comment on a report."""
+    report_id: str
+    author_name: str
+    author_role: str
+    comment_text: str
+    section_reference: Optional[str] = "Executive Summary"
+
+
+class CreditProjectLifecycle(BaseModel):
+    """Lifecycle tracking for carbon credit projects separate from operational inventory."""
+    project_id: str
+    project_name: str
+    methodology: str
+    standard_registry: str
+    status_category: str = Field(description="'SIMULATED_ESTIMATE' | 'MONITORED_AND_VALIDATED' | 'OFFICIALLY_ISSUED_REGISTRY' | 'RETIRED'")
+    current_stage: str = Field(description="'ELIGIBILITY_SCREENING' | 'METHODOLOGY_SELECTED' | 'BASELINE_ESTABLISHED' | 'ESTIMATED_REDUCTIONS' | 'MONITORING_UNDERWAY' | 'THIRD_PARTY_VALIDATION' | 'REGISTRY_VERIFICATION' | 'OFFICIAL_ISSUANCE' | 'RETIRED'")
+    estimated_annual_reduction_tco2e: float
+    validated_reduction_tco2e: Optional[float] = None
+    issued_credits_tco2e: Optional[float] = None
+    serial_number_batch: Optional[str] = None
+    vvb_auditor: Optional[str] = None
+    validation_report_hash: Optional[str] = None
+    crediting_period_start: str
+    crediting_period_end: str
+    linked_asset_id: str
+    is_registry_certified: bool = False
+    audit_note: str
+
+
 # Re-export AI schemas for unified access
 from backend.app.schemas.ai import (
     ExplainContext,

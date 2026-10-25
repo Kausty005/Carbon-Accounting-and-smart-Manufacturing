@@ -521,7 +521,7 @@ export function CarbonQuotaInterlock() {
                       style={{
                         padding: '12px 14px',
                         borderRadius: 10,
-                        border: isSelected ? '2px solid #2563EB' : '1px solid #E5E7EB',
+                        border: isSelected ? '2px solid #2563EB' : '1px solid #EAE3D7',
                         background: isSelected ? 'rgba(37,99,235,0.04)' : '#FFFFFF',
                         cursor: 'pointer',
                         transition: 'all 0.15s ease'
@@ -550,42 +550,166 @@ export function CarbonQuotaInterlock() {
 
             {/* Selected Block Inspector */}
             {selectedBlock && (
-              <div style={{ background: '#111827', borderRadius: 14, padding: 20, color: '#F3F4F6', fontFamily: 'monospace', fontSize: 12, height: 'fit-content' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, borderBottom: '1px solid #374151', paddingBottom: 10 }}>
-                  <span style={{ fontWeight: 700, color: '#38BDF8', fontSize: 14 }}>
-                    Block #{selectedBlock.block_height} Details
-                  </span>
-                  <span style={{ fontSize: 11, background: '#065F46', color: '#6EE7B7', padding: '2px 8px', borderRadius: 4 }}>
+              <div
+                style={{
+                  background: '#FFFFFF',
+                  borderRadius: 14,
+                  border: '1px solid #EAE3D7',
+                  padding: 22,
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+                  color: '#1E252D',
+                  fontFamily: "var(--font-ui, 'Inter', sans-serif)",
+                  height: 'fit-content',
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: 16,
+                    borderBottom: '1px solid #EAE3D7',
+                    paddingBottom: 12,
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span
+                      style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        background: '#10B981',
+                      }}
+                    />
+                    <span style={{ fontWeight: 700, color: '#111827', fontSize: 15 }}>
+                      Block #{selectedBlock.block_height} Details
+                    </span>
+                  </div>
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      background: '#DCFCE7',
+                      color: '#15803D',
+                      border: '1px solid #86EFAC',
+                      padding: '3px 10px',
+                      borderRadius: 9999,
+                    }}
+                  >
                     SHA-256 Chained
                   </span>
                 </div>
 
-                <div style={{ marginBottom: 12 }}>
-                  <div style={{ color: '#9CA3AF', fontSize: 10 }}>Block Hash:</div>
-                  <div style={{ color: '#FCD34D', wordBreak: 'break-all', fontSize: 11 }}>{selectedBlock.block_hash || '0'.repeat(64)}</div>
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ color: '#78716C', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', marginBottom: 4, letterSpacing: '0.04em' }}>
+                    Block Hash:
+                  </div>
+                  <div
+                    style={{
+                      background: '#FAF7F2',
+                      border: '1px solid #EAE3D7',
+                      borderRadius: 8,
+                      padding: '8px 10px',
+                      fontFamily: 'var(--font-mono, monospace)',
+                      color: '#B45309',
+                      wordBreak: 'break-all',
+                      fontSize: 11,
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    {selectedBlock.block_hash || '0'.repeat(64)}
+                  </div>
                 </div>
 
-                <div style={{ marginBottom: 12 }}>
-                  <div style={{ color: '#9CA3AF', fontSize: 10 }}>Previous Block Hash:</div>
-                  <div style={{ color: '#93C5FD', wordBreak: 'break-all', fontSize: 11 }}>{selectedBlock.previous_block_hash || '0'.repeat(64)}</div>
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ color: '#78716C', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', marginBottom: 4, letterSpacing: '0.04em' }}>
+                    Previous Block Hash:
+                  </div>
+                  <div
+                    style={{
+                      background: '#FAF7F2',
+                      border: '1px solid #EAE3D7',
+                      borderRadius: 8,
+                      padding: '8px 10px',
+                      fontFamily: 'var(--font-mono, monospace)',
+                      color: '#2563EB',
+                      wordBreak: 'break-all',
+                      fontSize: 11,
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    {selectedBlock.previous_block_hash || '0'.repeat(64)}
+                  </div>
                 </div>
 
-                <div style={{ marginBottom: 12 }}>
-                  <div style={{ color: '#9CA3AF', fontSize: 10 }}>Merkle Root:</div>
-                  <div style={{ color: '#A7F3D0', wordBreak: 'break-all', fontSize: 11 }}>{selectedBlock.merkle_root || '0'.repeat(64)}</div>
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ color: '#78716C', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', marginBottom: 4, letterSpacing: '0.04em' }}>
+                    Merkle Root:
+                  </div>
+                  <div
+                    style={{
+                      background: '#FAF7F2',
+                      border: '1px solid #EAE3D7',
+                      borderRadius: 8,
+                      padding: '8px 10px',
+                      fontFamily: 'var(--font-mono, monospace)',
+                      color: '#059669',
+                      wordBreak: 'break-all',
+                      fontSize: 11,
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    {selectedBlock.merkle_root || '0'.repeat(64)}
+                  </div>
                 </div>
 
-                <div style={{ marginBottom: 12 }}>
-                  <div style={{ color: '#9CA3AF', fontSize: 10 }}>Timestamp:</div>
-                  <div style={{ color: '#E5E7EB' }}>{selectedBlock.timestamp_iso || 'N/A'}</div>
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ color: '#78716C', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', marginBottom: 4, letterSpacing: '0.04em' }}>
+                    Timestamp:
+                  </div>
+                  <div
+                    style={{
+                      color: '#1E252D',
+                      fontSize: 12,
+                      fontFamily: 'var(--font-mono, monospace)',
+                      fontWeight: 500,
+                    }}
+                  >
+                    {selectedBlock.timestamp_iso || 'N/A'}
+                  </div>
                 </div>
 
                 <div>
-                  <div style={{ color: '#9CA3AF', fontSize: 10, marginBottom: 6 }}>
-                    Transactions ({selectedBlock.transaction_count} SCADA Events):
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      color: '#78716C',
+                      fontSize: 11,
+                      fontWeight: 600,
+                      textTransform: 'uppercase',
+                      marginBottom: 6,
+                      letterSpacing: '0.04em',
+                    }}
+                  >
+                    <span>Transactions ({selectedBlock.transaction_count} SCADA Events)</span>
+                    <span style={{ fontSize: 10, color: '#059669', fontWeight: 600 }}>✓ Verified Payload</span>
                   </div>
-                  <div style={{ background: '#1F2937', padding: 10, borderRadius: 6, maxHeight: 180, overflowY: 'auto', fontSize: 10 }}>
-                    <pre style={{ margin: 0 }}>
+                  <div
+                    style={{
+                      background: '#FAF7F2',
+                      border: '1px solid #EAE3D7',
+                      padding: '12px 14px',
+                      borderRadius: 8,
+                      maxHeight: 200,
+                      overflowY: 'auto',
+                      fontSize: 11,
+                      color: '#334155',
+                      fontFamily: 'var(--font-mono, monospace)',
+                    }}
+                  >
+                    <pre style={{ margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
                       {JSON.stringify(selectedBlock.transactions, null, 2)}
                     </pre>
                   </div>

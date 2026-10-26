@@ -304,3 +304,5 @@ Executes `tsc` and `vite build` to guarantee zero TypeScript or bundle warnings.
 Developed for the **KPCL Hackathon 2026** by the **WattWise AI Engineering Team**.  
 *Industry Partner:* **Kirloskar Pneumatic Company Limited (KPCL)**  
 *Project Name:* **Carbon Accounting and Smart Manufacturing**
+
+**END
